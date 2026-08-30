@@ -13,7 +13,7 @@
     "dev": "npm run dev -w @sieamb/frontend",
     "build": "npm run build -w @sieamb/shared && npm run build -w @sieamb/frontend",
     "preview": "npm run preview -w @sieamb/frontend",
-    "test": "npm run test --workspaces --if-present",
+    "test": "npm run test -w @sieamb/shared && npm run test -w @sieamb/frontend",
     "test:e2e": "npm run test -w @sieamb/e2e",
     "lint": "eslint packages/*/src --ext .ts,.tsx",
     "typecheck": "npm run typecheck --workspaces --if-present",
