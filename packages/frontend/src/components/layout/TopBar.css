@@ -7,7 +7,21 @@
 .topbar__inner {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   flex-wrap: wrap;
   gap: var(--space-2);
   padding-block: var(--space-1);
+  min-height: 32px;
+}
+
+.topbar__info {
+  display: flex;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+@media (max-width: 560px) {
+  .topbar__venue {
+    display: none;
+  }
 }

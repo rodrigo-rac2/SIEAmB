@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, NavLink } from 'react-router-dom';
 import { useEvent } from '../../contexts/EventContext';
-import { LanguageSwitcher } from './LanguageSwitcher';
 import './Header.css';
 
 export function Header() {
@@ -55,7 +54,6 @@ export function Header() {
               </li>
             ))}
           </ul>
-          <LanguageSwitcher />
         </nav>
       </div>
     </header>

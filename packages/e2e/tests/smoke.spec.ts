@@ -80,14 +80,21 @@ test.describe('registration form @smoke', () => {
 });
 
 test.describe('i18n @smoke', () => {
-  test('switching language updates the UI', async ({ page, isMobile }) => {
-    test.skip(isMobile, 'language switcher lives in the mobile drawer; covered on desktop');
+  test('defaults to pt-BR regardless of browser language', async ({ browser }) => {
+    const context = await browser.newContext({ locale: 'en-US' });
+    const page = await context.newPage();
     await page.goto('/2026/');
-    await page.getByRole('combobox').selectOption('en');
+    await expect(page.getByRole('link', { name: 'Inscrições', exact: true }).first()).toBeVisible();
+    await context.close();
+  });
+
+  test('flag buttons switch the language', async ({ page }) => {
+    await page.goto('/2026/');
+    await page.getByRole('button', { name: 'English' }).click();
     await expect(page.getByRole('link', { name: 'Registration', exact: true }).first()).toBeVisible();
-    await page.getByRole('combobox').selectOption('zh-CN');
+    await page.getByRole('button', { name: '中文' }).click();
     await expect(page.getByRole('link', { name: '会议注册' }).first()).toBeVisible();
-    await page.getByRole('combobox').selectOption('pt-BR');
+    await page.getByRole('button', { name: 'Português' }).click();
     await expect(
       page.getByRole('link', { name: 'Inscrições', exact: true }).first(),
     ).toBeVisible();

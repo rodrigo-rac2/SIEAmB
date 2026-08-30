@@ -1,9 +1,27 @@
-.lang-switcher select {
-  padding: var(--space-1) var(--space-2);
-  border: 1px solid var(--color-border);
+.lang-switcher {
+  display: flex;
+  gap: var(--space-1);
+  align-items: center;
+}
+
+.lang-switcher__flag {
+  background: none;
+  border: 1px solid transparent;
   border-radius: var(--radius-sm);
-  background: var(--color-surface);
-  color: var(--color-ink);
-  font-size: var(--text-sm);
+  font-size: 1.15rem;
+  line-height: 1;
+  padding: 2px 4px;
   cursor: pointer;
+  opacity: 0.55;
+  transition: opacity 0.15s ease;
+}
+
+.lang-switcher__flag:hover {
+  opacity: 1;
+}
+
+.lang-switcher__flag.is-active {
+  opacity: 1;
+  border-color: rgb(255 255 255 / 0.5);
+  background: rgb(255 255 255 / 0.12);
 }

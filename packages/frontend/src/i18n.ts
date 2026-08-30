@@ -23,8 +23,11 @@ i18n
     fallbackLng: 'pt-BR',
     supportedLngs: SUPPORTED_LOCALES,
     interpolation: { escapeValue: false },
+    // Portuguese is the primary language: first visit always renders pt-BR,
+    // browser language is ignored. Only an explicit user choice (stored in
+    // localStorage) switches the locale.
     detection: {
-      order: ['localStorage', 'navigator'],
+      order: ['localStorage'],
       lookupLocalStorage: 'sieamb-locale',
       caches: ['localStorage'],
     },
