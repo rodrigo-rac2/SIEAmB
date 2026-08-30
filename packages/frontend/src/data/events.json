@@ -1,0 +1,30 @@
+[
+  {
+    "id": "evt-2026",
+    "slug": "2026",
+    "name": "II SIEAmB",
+    "fullName": "II Seminário Internacional de Estudos Ambientais",
+    "edition": 2,
+    "startsAt": "2026-11-25T08:00:00-03:00",
+    "endsAt": "2026-11-27T18:00:00-03:00",
+    "venue": "UFCG — Campina Grande, PB",
+    "isCurrent": true,
+    "isArchived": false,
+    "heroImageUrl": null,
+    "settings": { "registrationOpen": true, "submissionsOpen": false, "showProgram": false }
+  },
+  {
+    "id": "evt-2025",
+    "slug": "2025",
+    "name": "I SIEAmB",
+    "fullName": "I Seminário Internacional de Estudos Ambientais",
+    "edition": 1,
+    "startsAt": "2025-11-26T08:00:00-03:00",
+    "endsAt": "2025-11-28T18:00:00-03:00",
+    "venue": "UFCG — Campina Grande, PB",
+    "isCurrent": false,
+    "isArchived": true,
+    "heroImageUrl": null,
+    "settings": { "registrationOpen": false, "submissionsOpen": false, "showProgram": false }
+  }
+]

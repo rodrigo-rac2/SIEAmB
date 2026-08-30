@@ -1,0 +1,29 @@
+[
+  {
+    "id": "c1",
+    "eventId": "evt-2026",
+    "name": "Coordenação Geral",
+    "role": "Coordenação Geral",
+    "institution": "PPGEGRN / UFCG",
+    "photoUrl": null,
+    "sortOrder": 1
+  },
+  {
+    "id": "c2",
+    "eventId": "evt-2026",
+    "name": "Comitê Científico",
+    "role": "Comitê Científico",
+    "institution": "UFCG",
+    "photoUrl": null,
+    "sortOrder": 2
+  },
+  {
+    "id": "c3",
+    "eventId": "evt-2026",
+    "name": "Comissão Organizadora",
+    "role": "Comissão Organizadora",
+    "institution": "UFCG",
+    "photoUrl": null,
+    "sortOrder": 3
+  }
+]

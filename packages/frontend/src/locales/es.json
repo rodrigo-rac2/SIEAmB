@@ -1,0 +1,165 @@
+{
+  "common": {
+    "eventName": "SIEAmB",
+    "eventFullName": "Seminario Internacional de Estudios Ambientales",
+    "learnMore": "Saber más",
+    "loading": "Cargando…",
+    "error": "Algo salió mal. Inténtelo de nuevo.",
+    "backToHome": "Volver al inicio",
+    "required": "obligatorio",
+    "optional": "opcional",
+    "date": "Fecha",
+    "actions": "Acciones",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "notFoundTitle": "Página no encontrada",
+    "notFoundBody": "La página que busca no existe o fue movida."
+  },
+  "nav": {
+    "home": "Inicio",
+    "about": "El Evento",
+    "committee": "Organización",
+    "areas": "Áreas Temáticas",
+    "submissions": "Envíos",
+    "registration": "Inscripciones",
+    "dates": "Fechas Importantes",
+    "news": "Avisos",
+    "venue": "Sede",
+    "contact": "Contacto",
+    "editions": "Ediciones Anteriores",
+    "login": "Ingresar",
+    "myRegistration": "Mi Inscripción",
+    "logout": "Salir",
+    "menu": "Menú"
+  },
+  "home": {
+    "heroTagline": "Ciencia, gestión y sostenibilidad de los recursos naturales",
+    "quickRegistration": "Inscripciones",
+    "quickRegistrationDesc": "Consulte las categorías, valores y plazos de inscripción.",
+    "quickSubmissions": "Envíos",
+    "quickSubmissionsDesc": "Reglas y plazos para el envío de trabajos científicos.",
+    "quickDates": "Fechas Importantes",
+    "quickDatesDesc": "Manténgase al tanto de todos los plazos del evento.",
+    "quickAreas": "Áreas Temáticas",
+    "quickAreasDesc": "Conozca las líneas temáticas que estructuran el seminario.",
+    "aboutTitle": "Sobre el SIEAmB",
+    "aboutTeaser": "El Seminario Internacional de Estudios Ambientales reúne a investigadores, estudiantes y profesionales para discutir los desafíos de la gestión de recursos naturales y el desarrollo sostenible.",
+    "datesTitle": "Fechas Importantes",
+    "newsTitle": "Últimos Avisos",
+    "allNews": "Ver todos los avisos",
+    "sponsorsTitle": "Organización y Apoyo"
+  },
+  "about": {
+    "title": "El Evento",
+    "organizedBy": "Promovido por el Programa de Posgrado en Ingeniería y Gestión de Recursos Naturales de la UFCG"
+  },
+  "committee": { "title": "Organización" },
+  "areas": { "title": "Áreas Temáticas" },
+  "submissions": {
+    "title": "Envío de Trabajos",
+    "comingSoon": "Los envíos abren pronto",
+    "comingSoonBody": "El sistema de envío de trabajos está en preparación. Siga los avisos para saber cuándo se abrirán los envíos.",
+    "rulesTitle": "Reglas de Envío"
+  },
+  "registration": {
+    "title": "Inscripciones",
+    "feesTitle": "Valores",
+    "category": "Categoría",
+    "modality": "Modalidad",
+    "categories": {
+      "ESTUDANTE_GRADUACAO": "Estudiante de Grado",
+      "ESTUDANTE_POS": "Estudiante de Posgrado",
+      "PROFESSOR": "Profesor / Investigador",
+      "PROFISSIONAL": "Profesional",
+      "COMUNIDADE_UFCG": "Comunidad UFCG"
+    },
+    "modalities": {
+      "PRESENCIAL": "Presencial",
+      "ONLINE": "En línea"
+    },
+    "registerCta": "Preinscribirse",
+    "formTitle": "Preinscripción",
+    "fullName": "Nombre completo",
+    "email": "Correo electrónico",
+    "cpf": "CPF",
+    "passport": "Pasaporte",
+    "cpfOrPassportHint": "Informe CPF (brasileños) o pasaporte (extranjeros).",
+    "country": "País",
+    "institution": "Institución",
+    "password": "Contraseña",
+    "passwordHint": "Mínimo 8 caracteres. Usará esta contraseña para acceder a su inscripción.",
+    "submit": "Enviar preinscripción",
+    "submitting": "Enviando…",
+    "successTitle": "¡Preinscripción recibida!",
+    "successBody": "Su preinscripción fue registrada con éxito. Las instrucciones de pago serán enviadas por correo electrónico pronto. Siga los avisos del evento.",
+    "paymentNote": "El pago de las inscripciones estará disponible pronto. Los preinscritos serán avisados por correo electrónico.",
+    "errors": {
+      "invalid_cpf": "CPF inválido. Verifique los dígitos.",
+      "cpf_or_passport_required": "Informe CPF o pasaporte.",
+      "fullName": "Ingrese su nombre completo.",
+      "email": "Ingrese un correo electrónico válido.",
+      "password": "La contraseña debe tener al menos 8 caracteres.",
+      "duplicate": "Ya existe una inscripción con este correo para este evento."
+    }
+  },
+  "dates": {
+    "title": "Fechas Importantes",
+    "extended": "prorrogado"
+  },
+  "news": {
+    "title": "Avisos",
+    "pinned": "Fijado",
+    "publishedAt": "Publicado el {{date}}",
+    "empty": "Aún no hay avisos publicados.",
+    "readMore": "Leer más"
+  },
+  "venue": {
+    "title": "Sede",
+    "campusTitle": "Cómo llegar",
+    "lodgingTitle": "Alojamiento"
+  },
+  "contact": {
+    "title": "Contacto",
+    "emailLabel": "Correo electrónico",
+    "socialLabel": "Redes sociales"
+  },
+  "editions": {
+    "title": "Ediciones Anteriores",
+    "current": "Edición actual",
+    "archived": "Archivada"
+  },
+  "auth": {
+    "loginTitle": "Ingresar",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "loginCta": "Ingresar",
+    "loggingIn": "Ingresando…",
+    "loginError": "Correo o contraseña incorrectos.",
+    "noAccount": "¿Aún no está inscrito?",
+    "registerLink": "Haga su preinscripción"
+  },
+  "myRegistration": {
+    "title": "Mi Inscripción",
+    "status": "Estado",
+    "statuses": {
+      "PENDING_PAYMENT": "Esperando pago",
+      "CONFIRMED": "Confirmada",
+      "CANCELLED": "Cancelada",
+      "AWAITING_EMPENHO": "Esperando orden de compra"
+    },
+    "none": "Aún no tiene inscripción en este evento."
+  },
+  "footer": {
+    "realization": "Organización",
+    "realizationText": "Universidad Federal de Campina Grande — Programa de Posgrado en Ingeniería y Gestión de Recursos Naturales",
+    "quickLinks": "Enlaces rápidos",
+    "languageLabel": "Idioma"
+  },
+  "language": {
+    "label": "Idioma",
+    "pt-BR": "Português",
+    "en": "English",
+    "es": "Español",
+    "zh-CN": "中文"
+  }
+}

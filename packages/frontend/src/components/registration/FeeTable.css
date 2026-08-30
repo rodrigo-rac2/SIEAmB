@@ -1,0 +1,29 @@
+.fee-table-wrap {
+  overflow-x: auto;
+}
+
+.fee-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.fee-table th,
+.fee-table td {
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  text-align: left;
+}
+
+.fee-table thead th {
+  background: var(--color-primary);
+  color: #fff;
+  font-size: var(--text-sm);
+}
+
+.fee-table tbody th {
+  background: var(--color-surface-alt);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  color: var(--color-ink);
+}

@@ -1,0 +1,16 @@
+.submissions-soon {
+  background: var(--color-accent-light);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  padding: var(--space-6);
+  max-width: 640px;
+}
+
+.submissions-soon h2 {
+  color: var(--color-accent);
+  margin-bottom: var(--space-2);
+}
+
+.submissions-soon p {
+  margin: 0;
+}

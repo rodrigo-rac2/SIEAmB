@@ -1,0 +1,31 @@
+{
+  "name": "sieamb",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Seminário Internacional de Estudos Ambientais - conference platform",
+  "workspaces": [
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "npm run dev -w @sieamb/frontend",
+    "build": "npm run build -w @sieamb/shared && npm run build -w @sieamb/frontend",
+    "preview": "npm run preview -w @sieamb/frontend",
+    "test": "npm run test --workspaces --if-present",
+    "test:e2e": "npm run test -w @sieamb/e2e",
+    "lint": "eslint packages/*/src --ext .ts,.tsx",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "format": "prettier --write \"packages/*/src/**/*.{ts,tsx,css,json}\""
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.18.0",
+    "@typescript-eslint/parser": "^8.18.0",
+    "eslint": "^8.57.1",
+    "eslint-plugin-react": "^7.37.2",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.2"
+  }
+}

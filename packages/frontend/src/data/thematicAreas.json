@@ -1,0 +1,50 @@
+[
+  {
+    "id": "a1",
+    "eventId": "evt-2026",
+    "code": "AT-01",
+    "name": "Gestão de Recursos Hídricos",
+    "description": "Planejamento, uso racional e governança da água em regiões semiáridas e além.",
+    "sortOrder": 1
+  },
+  {
+    "id": "a2",
+    "eventId": "evt-2026",
+    "code": "AT-02",
+    "name": "Meio Ambiente e Sustentabilidade",
+    "description": "Estratégias de desenvolvimento sustentável, conservação e educação ambiental.",
+    "sortOrder": 2
+  },
+  {
+    "id": "a3",
+    "eventId": "evt-2026",
+    "code": "AT-03",
+    "name": "Energias Renováveis",
+    "description": "Transição energética, tecnologias limpas e eficiência energética.",
+    "sortOrder": 3
+  },
+  {
+    "id": "a4",
+    "eventId": "evt-2026",
+    "code": "AT-04",
+    "name": "Mudanças Climáticas e Semiárido",
+    "description": "Impactos, adaptação e mitigação das mudanças climáticas no semiárido brasileiro.",
+    "sortOrder": 4
+  },
+  {
+    "id": "a5",
+    "eventId": "evt-2026",
+    "code": "AT-05",
+    "name": "Saneamento e Resíduos Sólidos",
+    "description": "Tratamento de água e efluentes, gestão de resíduos e economia circular.",
+    "sortOrder": 5
+  },
+  {
+    "id": "a6",
+    "eventId": "evt-2026",
+    "code": "AT-06",
+    "name": "Tecnologias e Inovação Ambiental",
+    "description": "Geotecnologias, sensoriamento remoto e inovação aplicada aos estudos ambientais.",
+    "sortOrder": 6
+  }
+]

@@ -1,0 +1,165 @@
+{
+  "common": {
+    "eventName": "SIEAmB",
+    "eventFullName": "Seminário Internacional de Estudos Ambientais",
+    "learnMore": "Saiba mais",
+    "loading": "Carregando…",
+    "error": "Algo deu errado. Tente novamente.",
+    "backToHome": "Voltar ao início",
+    "required": "obrigatório",
+    "optional": "opcional",
+    "date": "Data",
+    "actions": "Ações",
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "notFoundTitle": "Página não encontrada",
+    "notFoundBody": "A página que você procura não existe ou foi movida."
+  },
+  "nav": {
+    "home": "Início",
+    "about": "O Evento",
+    "committee": "Organização",
+    "areas": "Áreas Temáticas",
+    "submissions": "Submissões",
+    "registration": "Inscrições",
+    "dates": "Datas Importantes",
+    "news": "Avisos",
+    "venue": "Local",
+    "contact": "Contato",
+    "editions": "Edições Anteriores",
+    "login": "Entrar",
+    "myRegistration": "Minha Inscrição",
+    "logout": "Sair",
+    "menu": "Menu"
+  },
+  "home": {
+    "heroTagline": "Ciência, gestão e sustentabilidade dos recursos naturais",
+    "quickRegistration": "Inscrições",
+    "quickRegistrationDesc": "Confira as categorias, valores e prazos de inscrição.",
+    "quickSubmissions": "Submissões",
+    "quickSubmissionsDesc": "Regras e prazos para submissão de trabalhos científicos.",
+    "quickDates": "Datas Importantes",
+    "quickDatesDesc": "Fique por dentro de todos os prazos do evento.",
+    "quickAreas": "Áreas Temáticas",
+    "quickAreasDesc": "Conheça as linhas temáticas que estruturam o seminário.",
+    "aboutTitle": "Sobre o SIEAmB",
+    "aboutTeaser": "O Seminário Internacional de Estudos Ambientais reúne pesquisadores, estudantes e profissionais para discutir os desafios da gestão de recursos naturais e do desenvolvimento sustentável.",
+    "datesTitle": "Datas Importantes",
+    "newsTitle": "Últimos Avisos",
+    "allNews": "Ver todos os avisos",
+    "sponsorsTitle": "Realização e Apoio"
+  },
+  "about": {
+    "title": "O Evento",
+    "organizedBy": "Promovido pelo Programa de Pós-Graduação em Engenharia e Gestão de Recursos Naturais da UFCG"
+  },
+  "committee": { "title": "Organização" },
+  "areas": { "title": "Áreas Temáticas" },
+  "submissions": {
+    "title": "Submissão de Trabalhos",
+    "comingSoon": "As submissões abrem em breve",
+    "comingSoonBody": "O sistema de submissão de trabalhos está em preparação. Acompanhe os avisos para saber quando as submissões serão abertas.",
+    "rulesTitle": "Regras de Submissão"
+  },
+  "registration": {
+    "title": "Inscrições",
+    "feesTitle": "Valores",
+    "category": "Categoria",
+    "modality": "Modalidade",
+    "categories": {
+      "ESTUDANTE_GRADUACAO": "Estudante de Graduação",
+      "ESTUDANTE_POS": "Estudante de Pós-Graduação",
+      "PROFESSOR": "Professor / Pesquisador",
+      "PROFISSIONAL": "Profissional",
+      "COMUNIDADE_UFCG": "Comunidade UFCG"
+    },
+    "modalities": {
+      "PRESENCIAL": "Presencial",
+      "ONLINE": "Online"
+    },
+    "registerCta": "Fazer pré-inscrição",
+    "formTitle": "Pré-inscrição",
+    "fullName": "Nome completo",
+    "email": "E-mail",
+    "cpf": "CPF",
+    "passport": "Passaporte",
+    "cpfOrPassportHint": "Informe CPF (brasileiros) ou passaporte (estrangeiros).",
+    "country": "País",
+    "institution": "Instituição",
+    "password": "Senha",
+    "passwordHint": "Mínimo de 8 caracteres. Você usará essa senha para acessar sua inscrição.",
+    "submit": "Enviar pré-inscrição",
+    "submitting": "Enviando…",
+    "successTitle": "Pré-inscrição recebida!",
+    "successBody": "Sua pré-inscrição foi registrada com sucesso. As instruções de pagamento serão enviadas por e-mail em breve. Acompanhe os avisos do evento.",
+    "paymentNote": "O pagamento das inscrições será disponibilizado em breve. Pré-inscritos serão avisados por e-mail.",
+    "errors": {
+      "invalid_cpf": "CPF inválido. Confira os dígitos.",
+      "cpf_or_passport_required": "Informe CPF ou passaporte.",
+      "fullName": "Informe seu nome completo.",
+      "email": "Informe um e-mail válido.",
+      "password": "A senha deve ter no mínimo 8 caracteres.",
+      "duplicate": "Já existe uma inscrição com este e-mail para este evento."
+    }
+  },
+  "dates": {
+    "title": "Datas Importantes",
+    "extended": "prorrogado"
+  },
+  "news": {
+    "title": "Avisos",
+    "pinned": "Fixado",
+    "publishedAt": "Publicado em {{date}}",
+    "empty": "Nenhum aviso publicado ainda.",
+    "readMore": "Ler mais"
+  },
+  "venue": {
+    "title": "Local",
+    "campusTitle": "Como chegar",
+    "lodgingTitle": "Hospedagem"
+  },
+  "contact": {
+    "title": "Contato",
+    "emailLabel": "E-mail",
+    "socialLabel": "Redes sociais"
+  },
+  "editions": {
+    "title": "Edições Anteriores",
+    "current": "Edição atual",
+    "archived": "Arquivada"
+  },
+  "auth": {
+    "loginTitle": "Entrar",
+    "email": "E-mail",
+    "password": "Senha",
+    "loginCta": "Entrar",
+    "loggingIn": "Entrando…",
+    "loginError": "E-mail ou senha incorretos.",
+    "noAccount": "Ainda não tem inscrição?",
+    "registerLink": "Faça sua pré-inscrição"
+  },
+  "myRegistration": {
+    "title": "Minha Inscrição",
+    "status": "Situação",
+    "statuses": {
+      "PENDING_PAYMENT": "Aguardando pagamento",
+      "CONFIRMED": "Confirmada",
+      "CANCELLED": "Cancelada",
+      "AWAITING_EMPENHO": "Aguardando empenho"
+    },
+    "none": "Você ainda não possui inscrição neste evento."
+  },
+  "footer": {
+    "realization": "Realização",
+    "realizationText": "Universidade Federal de Campina Grande — Programa de Pós-Graduação em Engenharia e Gestão de Recursos Naturais",
+    "quickLinks": "Links rápidos",
+    "languageLabel": "Idioma"
+  },
+  "language": {
+    "label": "Idioma",
+    "pt-BR": "Português",
+    "en": "English",
+    "es": "Español",
+    "zh-CN": "中文"
+  }
+}

@@ -1,0 +1,82 @@
+[
+  {
+    "id": "f1",
+    "eventId": "evt-2026",
+    "category": "ESTUDANTE_GRADUACAO",
+    "modality": "PRESENCIAL",
+    "label": "Lote 1",
+    "amountCents": 5000,
+    "validFrom": "2026-05-04T00:00:00-03:00",
+    "validUntil": "2026-09-30T23:59:00-03:00"
+  },
+  {
+    "id": "f2",
+    "eventId": "evt-2026",
+    "category": "ESTUDANTE_POS",
+    "modality": "PRESENCIAL",
+    "label": "Lote 1",
+    "amountCents": 8000,
+    "validFrom": "2026-05-04T00:00:00-03:00",
+    "validUntil": "2026-09-30T23:59:00-03:00"
+  },
+  {
+    "id": "f3",
+    "eventId": "evt-2026",
+    "category": "PROFESSOR",
+    "modality": "PRESENCIAL",
+    "label": "Lote 1",
+    "amountCents": 15000,
+    "validFrom": "2026-05-04T00:00:00-03:00",
+    "validUntil": "2026-09-30T23:59:00-03:00"
+  },
+  {
+    "id": "f4",
+    "eventId": "evt-2026",
+    "category": "PROFISSIONAL",
+    "modality": "PRESENCIAL",
+    "label": "Lote 1",
+    "amountCents": 18000,
+    "validFrom": "2026-05-04T00:00:00-03:00",
+    "validUntil": "2026-09-30T23:59:00-03:00"
+  },
+  {
+    "id": "f5",
+    "eventId": "evt-2026",
+    "category": "ESTUDANTE_GRADUACAO",
+    "modality": "ONLINE",
+    "label": "Lote 1",
+    "amountCents": 3000,
+    "validFrom": "2026-05-04T00:00:00-03:00",
+    "validUntil": "2026-09-30T23:59:00-03:00"
+  },
+  {
+    "id": "f6",
+    "eventId": "evt-2026",
+    "category": "ESTUDANTE_POS",
+    "modality": "ONLINE",
+    "label": "Lote 1",
+    "amountCents": 5000,
+    "validFrom": "2026-05-04T00:00:00-03:00",
+    "validUntil": "2026-09-30T23:59:00-03:00"
+  },
+  {
+    "id": "f7",
+    "eventId": "evt-2026",
+    "category": "PROFESSOR",
+    "modality": "ONLINE",
+    "label": "Lote 1",
+    "amountCents": 10000,
+    "validFrom": "2026-05-04T00:00:00-03:00",
+    "validUntil": "2026-09-30T23:59:00-03:00"
+  },
+  {
+    "id": "f8",
+    "eventId": "evt-2026",
+    "category": "PROFISSIONAL",
+    "modality": "ONLINE",
+    "label": "Lote 1",
+    "amountCents": 12000,
+    "validFrom": "2026-05-04T00:00:00-03:00",
+    "validUntil": "2026-09-30T23:59:00-03:00"
+  }
+]

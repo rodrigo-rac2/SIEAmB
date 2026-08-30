@@ -1,0 +1,165 @@
+{
+  "common": {
+    "eventName": "SIEAmB",
+    "eventFullName": "国际环境研究研讨会",
+    "learnMore": "了解更多",
+    "loading": "加载中…",
+    "error": "出现错误，请重试。",
+    "backToHome": "返回首页",
+    "required": "必填",
+    "optional": "选填",
+    "date": "日期",
+    "actions": "操作",
+    "save": "保存",
+    "cancel": "取消",
+    "notFoundTitle": "页面未找到",
+    "notFoundBody": "您访问的页面不存在或已被移动。"
+  },
+  "nav": {
+    "home": "首页",
+    "about": "会议简介",
+    "committee": "组织机构",
+    "areas": "主题领域",
+    "submissions": "论文投稿",
+    "registration": "会议注册",
+    "dates": "重要日期",
+    "news": "通知公告",
+    "venue": "会议地点",
+    "contact": "联系我们",
+    "editions": "往届会议",
+    "login": "登录",
+    "myRegistration": "我的注册",
+    "logout": "退出",
+    "menu": "菜单"
+  },
+  "home": {
+    "heroTagline": "自然资源的科学、管理与可持续发展",
+    "quickRegistration": "会议注册",
+    "quickRegistrationDesc": "查看注册类别、费用及截止日期。",
+    "quickSubmissions": "论文投稿",
+    "quickSubmissionsDesc": "科学论文投稿的规则与截止日期。",
+    "quickDates": "重要日期",
+    "quickDatesDesc": "掌握会议的所有重要时间节点。",
+    "quickAreas": "主题领域",
+    "quickAreasDesc": "了解构成研讨会的各个主题方向。",
+    "aboutTitle": "关于 SIEAmB",
+    "aboutTeaser": "国际环境研究研讨会汇聚研究人员、学生和专业人士，共同探讨自然资源管理与可持续发展的挑战。",
+    "datesTitle": "重要日期",
+    "newsTitle": "最新公告",
+    "allNews": "查看全部公告",
+    "sponsorsTitle": "主办与支持单位"
+  },
+  "about": {
+    "title": "会议简介",
+    "organizedBy": "由坎皮纳格兰德联邦大学（UFCG）自然资源工程与管理研究生项目主办"
+  },
+  "committee": { "title": "组织机构" },
+  "areas": { "title": "主题领域" },
+  "submissions": {
+    "title": "论文投稿",
+    "comingSoon": "投稿即将开放",
+    "comingSoonBody": "投稿系统正在准备中。请关注公告以了解投稿开放时间。",
+    "rulesTitle": "投稿规则"
+  },
+  "registration": {
+    "title": "会议注册",
+    "feesTitle": "费用",
+    "category": "类别",
+    "modality": "参会方式",
+    "categories": {
+      "ESTUDANTE_GRADUACAO": "本科生",
+      "ESTUDANTE_POS": "研究生",
+      "PROFESSOR": "教授 / 研究员",
+      "PROFISSIONAL": "专业人士",
+      "COMUNIDADE_UFCG": "UFCG 社区"
+    },
+    "modalities": {
+      "PRESENCIAL": "现场参会",
+      "ONLINE": "线上参会"
+    },
+    "registerCta": "预注册",
+    "formTitle": "预注册",
+    "fullName": "全名",
+    "email": "电子邮箱",
+    "cpf": "CPF",
+    "passport": "护照",
+    "cpfOrPassportHint": "请填写 CPF（巴西人）或护照号（外国人）。",
+    "country": "国家",
+    "institution": "所属机构",
+    "password": "密码",
+    "passwordHint": "至少 8 个字符。您将使用此密码查看您的注册信息。",
+    "submit": "提交预注册",
+    "submitting": "提交中…",
+    "successTitle": "预注册成功！",
+    "successBody": "您的预注册已成功记录。付款说明将稍后通过电子邮件发送。请关注会议公告。",
+    "paymentNote": "注册付款功能即将开放。预注册者将通过电子邮件收到通知。",
+    "errors": {
+      "invalid_cpf": "CPF 无效，请检查号码。",
+      "cpf_or_passport_required": "请填写 CPF 或护照号。",
+      "fullName": "请输入您的全名。",
+      "email": "请输入有效的电子邮箱。",
+      "password": "密码至少需要 8 个字符。",
+      "duplicate": "该邮箱已在本届会议注册过。"
+    }
+  },
+  "dates": {
+    "title": "重要日期",
+    "extended": "已延期"
+  },
+  "news": {
+    "title": "通知公告",
+    "pinned": "置顶",
+    "publishedAt": "发布于 {{date}}",
+    "empty": "暂无公告。",
+    "readMore": "阅读更多"
+  },
+  "venue": {
+    "title": "会议地点",
+    "campusTitle": "交通指南",
+    "lodgingTitle": "住宿"
+  },
+  "contact": {
+    "title": "联系我们",
+    "emailLabel": "电子邮箱",
+    "socialLabel": "社交媒体"
+  },
+  "editions": {
+    "title": "往届会议",
+    "current": "本届会议",
+    "archived": "已归档"
+  },
+  "auth": {
+    "loginTitle": "登录",
+    "email": "电子邮箱",
+    "password": "密码",
+    "loginCta": "登录",
+    "loggingIn": "登录中…",
+    "loginError": "邮箱或密码错误。",
+    "noAccount": "还未注册？",
+    "registerLink": "立即预注册"
+  },
+  "myRegistration": {
+    "title": "我的注册",
+    "status": "状态",
+    "statuses": {
+      "PENDING_PAYMENT": "等待付款",
+      "CONFIRMED": "已确认",
+      "CANCELLED": "已取消",
+      "AWAITING_EMPENHO": "等待采购单"
+    },
+    "none": "您尚未注册本届会议。"
+  },
+  "footer": {
+    "realization": "主办单位",
+    "realizationText": "坎皮纳格兰德联邦大学 — 自然资源工程与管理研究生项目",
+    "quickLinks": "快速链接",
+    "languageLabel": "语言"
+  },
+  "language": {
+    "label": "语言",
+    "pt-BR": "Português",
+    "en": "English",
+    "es": "Español",
+    "zh-CN": "中文"
+  }
+}

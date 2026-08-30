@@ -1,0 +1,26 @@
+[
+  {
+    "id": "n1",
+    "eventId": "evt-2026",
+    "slug": "site-do-ii-sieamb-no-ar",
+    "title": "Site do II SIEAmB está no ar",
+    "excerpt": "Bem-vindos ao portal oficial do II Seminário Internacional de Estudos Ambientais.",
+    "bodyMd": "É com grande satisfação que lançamos o portal oficial do **II Seminário Internacional de Estudos Ambientais (SIEAmB)**.\n\nAqui você encontrará todas as informações sobre o evento: datas importantes, áreas temáticas, regras de submissão e inscrições.\n\nAcompanhe os avisos para não perder nenhum prazo!",
+    "coverImageUrl": null,
+    "status": "PUBLISHED",
+    "isPinned": true,
+    "publishedAt": "2026-08-30T10:00:00-03:00"
+  },
+  {
+    "id": "n2",
+    "eventId": "evt-2026",
+    "slug": "pre-inscricoes-abertas",
+    "title": "Pré-inscrições abertas",
+    "excerpt": "Garanta sua participação no II SIEAmB fazendo sua pré-inscrição.",
+    "bodyMd": "As **pré-inscrições** para o II SIEAmB já estão abertas!\n\nAo se pré-inscrever, você garante prioridade nas comunicações do evento e será avisado assim que o pagamento for disponibilizado.\n\n[Faça sua pré-inscrição](../inscricoes/nova)",
+    "coverImageUrl": null,
+    "status": "PUBLISHED",
+    "isPinned": false,
+    "publishedAt": "2026-08-30T11:00:00-03:00"
+  }
+]

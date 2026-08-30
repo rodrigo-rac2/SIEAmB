@@ -1,0 +1,165 @@
+{
+  "common": {
+    "eventName": "SIEAmB",
+    "eventFullName": "International Seminar on Environmental Studies",
+    "learnMore": "Learn more",
+    "loading": "Loading…",
+    "error": "Something went wrong. Please try again.",
+    "backToHome": "Back to home",
+    "required": "required",
+    "optional": "optional",
+    "date": "Date",
+    "actions": "Actions",
+    "save": "Save",
+    "cancel": "Cancel",
+    "notFoundTitle": "Page not found",
+    "notFoundBody": "The page you are looking for does not exist or has been moved."
+  },
+  "nav": {
+    "home": "Home",
+    "about": "The Event",
+    "committee": "Organization",
+    "areas": "Thematic Areas",
+    "submissions": "Submissions",
+    "registration": "Registration",
+    "dates": "Important Dates",
+    "news": "News",
+    "venue": "Venue",
+    "contact": "Contact",
+    "editions": "Past Editions",
+    "login": "Sign in",
+    "myRegistration": "My Registration",
+    "logout": "Sign out",
+    "menu": "Menu"
+  },
+  "home": {
+    "heroTagline": "Science, management and sustainability of natural resources",
+    "quickRegistration": "Registration",
+    "quickRegistrationDesc": "Check categories, fees and registration deadlines.",
+    "quickSubmissions": "Submissions",
+    "quickSubmissionsDesc": "Rules and deadlines for submitting scientific papers.",
+    "quickDates": "Important Dates",
+    "quickDatesDesc": "Stay on top of every deadline of the event.",
+    "quickAreas": "Thematic Areas",
+    "quickAreasDesc": "Get to know the thematic tracks that structure the seminar.",
+    "aboutTitle": "About SIEAmB",
+    "aboutTeaser": "The International Seminar on Environmental Studies brings together researchers, students and professionals to discuss the challenges of natural resource management and sustainable development.",
+    "datesTitle": "Important Dates",
+    "newsTitle": "Latest News",
+    "allNews": "See all news",
+    "sponsorsTitle": "Organization and Support"
+  },
+  "about": {
+    "title": "The Event",
+    "organizedBy": "Promoted by the Graduate Program in Engineering and Natural Resource Management at UFCG"
+  },
+  "committee": { "title": "Organization" },
+  "areas": { "title": "Thematic Areas" },
+  "submissions": {
+    "title": "Paper Submission",
+    "comingSoon": "Submissions open soon",
+    "comingSoonBody": "The submission system is being prepared. Follow the news to know when submissions open.",
+    "rulesTitle": "Submission Rules"
+  },
+  "registration": {
+    "title": "Registration",
+    "feesTitle": "Fees",
+    "category": "Category",
+    "modality": "Modality",
+    "categories": {
+      "ESTUDANTE_GRADUACAO": "Undergraduate Student",
+      "ESTUDANTE_POS": "Graduate Student",
+      "PROFESSOR": "Professor / Researcher",
+      "PROFISSIONAL": "Professional",
+      "COMUNIDADE_UFCG": "UFCG Community"
+    },
+    "modalities": {
+      "PRESENCIAL": "In person",
+      "ONLINE": "Online"
+    },
+    "registerCta": "Pre-register",
+    "formTitle": "Pre-registration",
+    "fullName": "Full name",
+    "email": "Email",
+    "cpf": "CPF",
+    "passport": "Passport",
+    "cpfOrPassportHint": "Provide CPF (Brazilians) or passport (foreigners).",
+    "country": "Country",
+    "institution": "Institution",
+    "password": "Password",
+    "passwordHint": "Minimum 8 characters. You will use this password to access your registration.",
+    "submit": "Submit pre-registration",
+    "submitting": "Submitting…",
+    "successTitle": "Pre-registration received!",
+    "successBody": "Your pre-registration was recorded successfully. Payment instructions will be sent by email soon. Follow the event news.",
+    "paymentNote": "Registration payment will be available soon. Pre-registered participants will be notified by email.",
+    "errors": {
+      "invalid_cpf": "Invalid CPF. Check the digits.",
+      "cpf_or_passport_required": "Provide CPF or passport.",
+      "fullName": "Enter your full name.",
+      "email": "Enter a valid email.",
+      "password": "Password must be at least 8 characters.",
+      "duplicate": "A registration with this email already exists for this event."
+    }
+  },
+  "dates": {
+    "title": "Important Dates",
+    "extended": "extended"
+  },
+  "news": {
+    "title": "News",
+    "pinned": "Pinned",
+    "publishedAt": "Published on {{date}}",
+    "empty": "No news published yet.",
+    "readMore": "Read more"
+  },
+  "venue": {
+    "title": "Venue",
+    "campusTitle": "Getting there",
+    "lodgingTitle": "Lodging"
+  },
+  "contact": {
+    "title": "Contact",
+    "emailLabel": "Email",
+    "socialLabel": "Social media"
+  },
+  "editions": {
+    "title": "Past Editions",
+    "current": "Current edition",
+    "archived": "Archived"
+  },
+  "auth": {
+    "loginTitle": "Sign in",
+    "email": "Email",
+    "password": "Password",
+    "loginCta": "Sign in",
+    "loggingIn": "Signing in…",
+    "loginError": "Incorrect email or password.",
+    "noAccount": "Not registered yet?",
+    "registerLink": "Pre-register now"
+  },
+  "myRegistration": {
+    "title": "My Registration",
+    "status": "Status",
+    "statuses": {
+      "PENDING_PAYMENT": "Awaiting payment",
+      "CONFIRMED": "Confirmed",
+      "CANCELLED": "Cancelled",
+      "AWAITING_EMPENHO": "Awaiting purchase order"
+    },
+    "none": "You do not have a registration for this event yet."
+  },
+  "footer": {
+    "realization": "Organized by",
+    "realizationText": "Federal University of Campina Grande — Graduate Program in Engineering and Natural Resource Management",
+    "quickLinks": "Quick links",
+    "languageLabel": "Language"
+  },
+  "language": {
+    "label": "Language",
+    "pt-BR": "Português",
+    "en": "English",
+    "es": "Español",
+    "zh-CN": "中文"
+  }
+}

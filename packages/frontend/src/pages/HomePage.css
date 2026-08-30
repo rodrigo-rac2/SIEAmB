@@ -1,0 +1,118 @@
+.hero {
+  /* Placeholder hero — official edition art replaces this background */
+  background: linear-gradient(135deg, var(--color-primary-dark), var(--color-primary));
+  color: #fff;
+  padding-block: var(--space-10);
+  text-align: center;
+}
+
+.hero__edition {
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  font-size: var(--text-sm);
+  color: #cfe3d7;
+  margin-bottom: var(--space-2);
+}
+
+.hero__title {
+  color: #fff;
+  max-width: 720px;
+  margin-inline: auto;
+  margin-bottom: var(--space-3);
+}
+
+.hero__tagline {
+  color: #e6efe9;
+  font-size: var(--text-lg);
+  margin-bottom: var(--space-2);
+}
+
+.hero__meta {
+  color: #cfe3d7;
+  font-size: var(--text-sm);
+  margin-bottom: var(--space-5);
+}
+
+.hero__cta {
+  display: inline-block;
+  background: var(--color-accent);
+  color: #fff;
+  text-decoration: none;
+  font-weight: 700;
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-md);
+}
+
+.hero__cta:hover {
+  filter: brightness(1.08);
+}
+
+.quick-links {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-4);
+}
+
+.quick-links__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
+  text-decoration: none;
+  background: var(--color-surface);
+  transition: box-shadow 0.15s ease;
+}
+
+.quick-links__card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.quick-links__card h2 {
+  font-size: var(--text-lg);
+  color: var(--color-primary);
+}
+
+.quick-links__card p {
+  font-size: var(--text-sm);
+  margin: 0;
+}
+
+.quick-links__more {
+  margin-top: auto;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.section--alt {
+  background: var(--color-surface-alt);
+}
+
+.home-about__text {
+  max-width: 65ch;
+}
+
+.home-news {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--space-4);
+  margin-block: var(--space-4);
+}
+
+.home-news__all {
+  margin: 0;
+}
+
+.home-sponsors {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-5);
+  font-weight: 600;
+}
+
+.home-sponsors a {
+  text-decoration: none;
+}

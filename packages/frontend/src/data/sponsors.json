@@ -1,0 +1,20 @@
+[
+  {
+    "id": "s1",
+    "eventId": "evt-2026",
+    "name": "UFCG",
+    "tier": "realizacao",
+    "logoUrl": "",
+    "website": "https://portal.ufcg.edu.br/",
+    "sortOrder": 1
+  },
+  {
+    "id": "s2",
+    "eventId": "evt-2026",
+    "name": "PPGEGRN",
+    "tier": "realizacao",
+    "logoUrl": "",
+    "website": null,
+    "sortOrder": 2
+  }
+]

@@ -1,0 +1,42 @@
+[
+  {
+    "id": "d1",
+    "eventId": "evt-2026",
+    "label": "Abertura das submissões de trabalhos",
+    "date": "2026-05-04T00:00:00-03:00",
+    "isExtended": false,
+    "sortOrder": 1
+  },
+  {
+    "id": "d2",
+    "eventId": "evt-2026",
+    "label": "Prazo final para submissão de resumos",
+    "date": "2026-08-31T23:59:00-03:00",
+    "isExtended": false,
+    "sortOrder": 2
+  },
+  {
+    "id": "d3",
+    "eventId": "evt-2026",
+    "label": "Divulgação dos trabalhos aprovados",
+    "date": "2026-09-30T00:00:00-03:00",
+    "isExtended": false,
+    "sortOrder": 3
+  },
+  {
+    "id": "d4",
+    "eventId": "evt-2026",
+    "label": "Prazo de inscrição para autores",
+    "date": "2026-10-23T23:59:00-03:00",
+    "isExtended": false,
+    "sortOrder": 4
+  },
+  {
+    "id": "d5",
+    "eventId": "evt-2026",
+    "label": "Realização do evento",
+    "date": "2026-11-25T08:00:00-03:00",
+    "isExtended": false,
+    "sortOrder": 5
+  }
+]
