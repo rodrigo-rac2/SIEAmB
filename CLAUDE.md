@@ -1,5 +1,9 @@
 # SIEAmB - Seminário Internacional de Estudos Ambientais
 
+## Session start
+
+Read `.claude/context/STATUS.md` first — it has the current state, what's placeholder, and next steps. `.claude/context/HISTORY.md` has the session log. Use `/status` to regroup and `/wrap-up` before ending a session. Project skills live in `.claude/skills/` (update-content, apply-identity, new-edition).
+
 ## Project Overview
 
 Academic conference website for UFCG's graduate program in Engineering and Natural Resource Management. Multi-edition support (domain loads the most recent configured event).
