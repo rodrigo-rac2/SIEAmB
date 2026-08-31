@@ -2,6 +2,13 @@
 
 Append a dated entry per working session. Newest first.
 
+## 2026-08-31 — Team setup, onboarding docs, project logging
+
+- Added Samuel (@0Samuel09, estagiário 6º período ADS) as collaborator (write, invite pending); created `develop`; ruleset `protect-main-develop` (PR + 1 approval, no force push/deletion, admin bypass)
+- README rewritten as full pt-BR onboarding doc; CI now also runs on develop pushes
+- Created `.claude/` workspace (STATUS, HISTORY, /status, /wrap-up, 3 skills) and project-local daily logging (`.claude/log/` + /log-daily + /pending-items) — SIEAmB tracking stays in this repo, separate from Rodrigo's personal weekly-log
+- WhatsApp group developments: Thays approved prototype and asked for editais page + logged-in submission area (both fit the plan); Najara asked for a hosting recommendation → **due 2026-09-01**; 2 design people joined the group; itemized design-asset needs sent to the group
+
 ## 2026-08-30 — Phase 0 built and shipped
 
 - Researched ENGEMA 28 (reference site) and cloud options; wrote docs/IMPLEMENTATION_PLAN.md (5 phases, Prisma schema, testing strategy, DevOps). Recommendation: Supabase sa-east-1 + Vercel + Express on Render/Railway; Mercado Pago Checkout Pro for payments (Pix ~0%).
