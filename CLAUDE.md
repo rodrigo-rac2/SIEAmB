@@ -39,6 +39,10 @@ npm run test:e2e      # Run Playwright E2E tests
 npm run lint          # Lint all packages
 ```
 
+## Branching model
+
+`main` (production, auto-deploys to Pages) and `develop` (integration) are protected by a ruleset: PR + 1 approval required, no force push, no deletion. Repo admins (Rodrigo) can bypass; collaborators (Samuel/@0Samuel09, write access) cannot. Day-to-day work: `feature/*` branches → PR to `develop` → periodic PR `develop → main` to release.
+
 ## Conventions
 
 - All code and comments in English
