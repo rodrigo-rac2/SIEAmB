@@ -2,6 +2,13 @@
 
 Append a dated entry per working session. Newest first.
 
+## 2026-09-01 — Per-edition themes (ADR-001)
+
+- Design team (Daniela) asked whether the site is per-event or general; Najara confirmed: permanent site, palette changes every edition. Architecture didn't support that (single global tokens.css) — implemented it the same day.
+- `EventTheme` type in shared + `theme` field on events; `eventThemeVars()` maps it to CSS custom-property overrides applied on the `.event-shell` wrapper in PageLayout. tokens.css becomes neutral fallback; the current edition's identity will live in the event's `theme` (rollover becomes data-only). Full rationale in docs/adr/001-per-edition-themes.md.
+- 2025 got a demo blue palette; E2E asserts the two editions render different topbar colors. 26 unit + 19 E2E green.
+- Group: Lara (design) will send identity as png/jpg; hosting recommendation message drafted for Rodrigo to send (PENDING R1).
+
 ## 2026-08-31 — Team setup, onboarding docs, project logging
 
 - Added Samuel (@0Samuel09, estagiário 6º período ADS) as collaborator (write, invite pending); created `develop`; ruleset `protect-main-develop` (PR + 1 approval, no force push/deletion, admin bypass)

@@ -143,9 +143,16 @@ A variável `VITE_DATA_PROVIDER` (`static` | `supabase` | `api`) escolhe a imple
 - A primeira visita sempre renderiza pt-BR (ignoramos o idioma do navegador de propósito). A troca é pelas bandeirinhas na barra do topo e fica salva no `localStorage`
 - Conteúdo dinâmico (avisos) não é traduzido na Fase 0 — só a interface
 
-### 4. Identidade visual por tokens
+### 4. Identidade visual por tokens + tema por edição
 
-O tema inteiro (cores, fontes, espaçamentos) vive em `packages/frontend/src/styles/tokens.css` como CSS custom properties (`var(--color-primary)` etc.). O visual atual é **provisório** — quando a equipe de design entregar a identidade oficial, a troca acontece só nesse arquivo + logo. Nunca coloque cor/fonte fixa num componente; sempre use `var(--...)`.
+O tema funciona em **duas camadas** (decisão registrada no [ADR-001](docs/adr/001-per-edition-themes.md)):
+
+1. **`packages/frontend/src/styles/tokens.css`** — CSS custom properties globais (`var(--color-primary)` etc.). São os padrões neutros e o fallback, não a identidade de nenhuma edição.
+2. **`theme` do evento** — cada edição pode ter um objeto `theme` (tipo `EventTheme` no shared) em `events.json` que sobrescreve os tokens **só para aquela edição**. O `PageLayout` aplica isso no wrapper da edição via `eventThemeVars()` (`src/lib/theme.ts`).
+
+Por que assim? O site é permanente, mas **a paleta muda a cada edição** (requisito da comissão) — e as edições arquivadas ficam com a paleta delas para sempre. Compare `/2026/` com `/2025/` (que tem tema azul) para ver funcionando.
+
+Regras práticas: a identidade da edição atual entra no `theme` do evento (não no tokens.css); nunca coloque cor/fonte fixa num componente, sempre `var(--...)` — é isso que faz o tema por edição cascatear sem mudança de código.
 
 ## Onde fica cada conteúdo
 

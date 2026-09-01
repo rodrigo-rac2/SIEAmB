@@ -18,6 +18,7 @@
 - Monorepo (npm workspaces): `packages/shared`, `packages/frontend`, `packages/e2e`
 - All public pages in 4 languages (pt-BR default forced, en, es, zh-CN) — flag buttons in the topbar, preference in localStorage (`sieamb-locale`)
 - Multi-event routing: `/2026/` (current), `/2025/` (archived stub), root redirects to current event (configured via `isCurrent` in `packages/frontend/src/data/events.json`)
+- **Per-edition themes** (ADR-001): each event's optional `theme` overrides the CSS tokens for that edition only; archived editions keep their palette forever. Current-edition identity goes in the event `theme`, tokens.css is just the neutral fallback. 2025 has a demo blue theme as proof
 - Pre-registration form with CPF/passport validation (zod schemas in `@sieamb/shared`)
 - News (avisos) list + detail with markdown
 - Tests: 22 unit (Vitest) + 17 E2E (Playwright, desktop + mobile projects), all green
