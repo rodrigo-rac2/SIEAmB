@@ -12,7 +12,11 @@
     "isArchived": false,
     "heroImageUrl": null,
     "theme": null,
-    "settings": { "registrationOpen": true, "submissionsOpen": false, "showProgram": false }
+    "settings": {
+      "registrationOpen": true,
+      "submissionsOpen": false,
+      "showProgram": false
+    }
   },
   {
     "id": "evt-2025",
@@ -20,9 +24,9 @@
     "name": "I SIEAmB",
     "fullName": "I Seminário Internacional de Estudos Ambientais",
     "edition": 1,
-    "startsAt": "2025-11-26T08:00:00-03:00",
-    "endsAt": "2025-11-28T18:00:00-03:00",
-    "venue": "UFCG — Campina Grande, PB",
+    "startsAt": "2025-10-22T08:00:00-03:00",
+    "endsAt": "2025-10-24T18:00:00-03:00",
+    "venue": "Evento online",
     "isCurrent": false,
     "isArchived": true,
     "heroImageUrl": null,
@@ -33,6 +37,10 @@
       "accent": "#c9762d",
       "accentLight": "#f7ead9"
     },
-    "settings": { "registrationOpen": false, "submissionsOpen": false, "showProgram": false }
+    "settings": {
+      "registrationOpen": false,
+      "submissionsOpen": false,
+      "showProgram": false
+    }
   }
 ]

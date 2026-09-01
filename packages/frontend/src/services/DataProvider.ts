@@ -1,4 +1,5 @@
 import type {
+  AnaisEntry,
   CommitteeMember,
   EventSummary,
   FeeTier,
@@ -25,6 +26,8 @@ export interface DataProvider {
   getCommittee(eventId: string): Promise<CommitteeMember[]>;
   getSponsors(eventId: string): Promise<Sponsor[]>;
   getFeeTiers(eventId: string): Promise<FeeTier[]>;
+
+  getAnais(eventId: string): Promise<AnaisEntry[]>;
 
   getPublishedNews(eventId: string): Promise<NewsItem[]>;
   getNewsBySlug(eventId: string, slug: string): Promise<NewsItem | null>;

@@ -116,6 +116,15 @@ export interface FeeTier {
   validUntil: string; // ISO
 }
 
+/** A published proceedings item of an edition: full anais PDF, per-track file, or external link. */
+export interface AnaisEntry {
+  id: string;
+  eventId: string;
+  title: string;
+  url: string;
+  sortOrder: number;
+}
+
 export interface RegistrationInput {
   fullName: string;
   email: string;

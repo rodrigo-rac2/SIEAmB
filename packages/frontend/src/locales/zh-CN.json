@@ -30,7 +30,8 @@
     "login": "登录",
     "myRegistration": "我的注册",
     "logout": "退出",
-    "menu": "菜单"
+    "menu": "菜单",
+    "anais": "论文集"
   },
   "home": {
     "heroTagline": "自然资源的科学、管理与可持续发展",
@@ -53,8 +54,12 @@
     "title": "会议简介",
     "organizedBy": "由坎皮纳格兰德联邦大学（UFCG）自然资源工程与管理研究生项目主办"
   },
-  "committee": { "title": "组织机构" },
-  "areas": { "title": "主题领域" },
+  "committee": {
+    "title": "组织机构"
+  },
+  "areas": {
+    "title": "主题领域"
+  },
   "submissions": {
     "title": "论文投稿",
     "comingSoon": "投稿即将开放",
@@ -126,7 +131,9 @@
   "editions": {
     "title": "往届会议",
     "current": "本届会议",
-    "archived": "已归档"
+    "archived": "已归档",
+    "archivedBanner": "您正在浏览 {{event}} 的往届存档。",
+    "goToCurrent": "前往 {{event}}（本届会议）"
   },
   "auth": {
     "loginTitle": "登录",
@@ -161,5 +168,9 @@
     "en": "English",
     "es": "Español",
     "zh-CN": "中文"
+  },
+  "anais": {
+    "title": "论文集",
+    "empty": "{{event}} 论文集正在整理中，将在本页面发布。"
   }
 }

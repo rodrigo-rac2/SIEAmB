@@ -30,7 +30,8 @@
     "login": "Sign in",
     "myRegistration": "My Registration",
     "logout": "Sign out",
-    "menu": "Menu"
+    "menu": "Menu",
+    "anais": "Proceedings"
   },
   "home": {
     "heroTagline": "Science, management and sustainability of natural resources",
@@ -53,8 +54,12 @@
     "title": "The Event",
     "organizedBy": "Promoted by the Graduate Program in Engineering and Natural Resource Management at UFCG"
   },
-  "committee": { "title": "Organization" },
-  "areas": { "title": "Thematic Areas" },
+  "committee": {
+    "title": "Organization"
+  },
+  "areas": {
+    "title": "Thematic Areas"
+  },
   "submissions": {
     "title": "Paper Submission",
     "comingSoon": "Submissions open soon",
@@ -126,7 +131,9 @@
   "editions": {
     "title": "Past Editions",
     "current": "Current edition",
-    "archived": "Archived"
+    "archived": "Archived",
+    "archivedBanner": "You are browsing the {{event}} archive, a past edition.",
+    "goToCurrent": "Go to {{event}} (current edition)"
   },
   "auth": {
     "loginTitle": "Sign in",
@@ -161,5 +168,9 @@
     "en": "English",
     "es": "Español",
     "zh-CN": "中文"
+  },
+  "anais": {
+    "title": "Proceedings",
+    "empty": "The {{event}} proceedings are being prepared and will be published on this page."
   }
 }

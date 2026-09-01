@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom';
 import { EventProvider, useEvent } from '../../contexts/EventContext';
 import { eventThemeVars } from '../../lib/theme';
+import { ArchivedBanner } from './ArchivedBanner';
 import { Footer } from './Footer';
 import { Header } from './Header';
 import { TopBar } from './TopBar';
@@ -14,6 +15,7 @@ function ThemedShell() {
     <div className="event-shell" style={eventThemeVars(event?.theme)}>
       <TopBar />
       <Header />
+      <ArchivedBanner />
       <main>
         <Outlet />
       </main>

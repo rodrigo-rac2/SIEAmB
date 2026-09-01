@@ -25,5 +25,95 @@
     "institution": "UFCG",
     "photoUrl": null,
     "sortOrder": 3
+  },
+  {
+    "id": "c25-1",
+    "eventId": "evt-2025",
+    "name": "Ma. Najara Escarião Agripino",
+    "role": "Equipe Organizadora",
+    "institution": null,
+    "photoUrl": null,
+    "sortOrder": 1
+  },
+  {
+    "id": "c25-2",
+    "eventId": "evt-2025",
+    "name": "Me. Alex Souza Felix",
+    "role": "Equipe Organizadora",
+    "institution": null,
+    "photoUrl": null,
+    "sortOrder": 2
+  },
+  {
+    "id": "c25-3",
+    "eventId": "evt-2025",
+    "name": "Daniela Torres Teixeira",
+    "role": "Equipe Organizadora",
+    "institution": null,
+    "photoUrl": null,
+    "sortOrder": 3
+  },
+  {
+    "id": "c25-4",
+    "eventId": "evt-2025",
+    "name": "Flávia Romeiro Costa",
+    "role": "Equipe Organizadora",
+    "institution": null,
+    "photoUrl": null,
+    "sortOrder": 4
+  },
+  {
+    "id": "c25-5",
+    "eventId": "evt-2025",
+    "name": "Lara Maria Almeida Ferreira",
+    "role": "Equipe Organizadora",
+    "institution": null,
+    "photoUrl": null,
+    "sortOrder": 5
+  },
+  {
+    "id": "c25-6",
+    "eventId": "evt-2025",
+    "name": "Ma. Jasmyne Karla Vieira Souza Maciel",
+    "role": "Equipe Organizadora",
+    "institution": null,
+    "photoUrl": null,
+    "sortOrder": 6
+  },
+  {
+    "id": "c25-7",
+    "eventId": "evt-2025",
+    "name": "Ma. Thays Alves da Silva",
+    "role": "Equipe de Revisores",
+    "institution": null,
+    "photoUrl": null,
+    "sortOrder": 7
+  },
+  {
+    "id": "c25-8",
+    "eventId": "evt-2025",
+    "name": "Dra. Laura Cristina Feindt Urrejola Silveira",
+    "role": "Equipe de Revisores",
+    "institution": null,
+    "photoUrl": null,
+    "sortOrder": 8
+  },
+  {
+    "id": "c25-9",
+    "eventId": "evt-2025",
+    "name": "Luana Bramorski Cerqueira Cesar",
+    "role": "Equipe de Revisores",
+    "institution": null,
+    "photoUrl": null,
+    "sortOrder": 9
+  },
+  {
+    "id": "c25-10",
+    "eventId": "evt-2025",
+    "name": "Dr. Niklas Werner Weins",
+    "role": "Equipe de Revisores",
+    "institution": null,
+    "photoUrl": null,
+    "sortOrder": 10
   }
 ]

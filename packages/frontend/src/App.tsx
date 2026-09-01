@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { PageLayout } from './components/layout/PageLayout';
 import { AboutPage } from './pages/AboutPage';
+import { AnaisPage } from './pages/AnaisPage';
 import { CommitteePage } from './pages/CommitteePage';
 import { ContactPage } from './pages/ContactPage';
 import { EditionsPage } from './pages/EditionsPage';
@@ -48,6 +49,7 @@ export function App() {
           <Route path="datas-importantes" element={<ImportantDatesPage />} />
           <Route path="avisos" element={<NewsListPage />} />
           <Route path="avisos/:newsSlug" element={<NewsDetailPage />} />
+          <Route path="anais" element={<AnaisPage />} />
           <Route path="local" element={<VenuePage />} />
           <Route path="contato" element={<ContactPage />} />
           <Route path="*" element={<NotFoundPage />} />

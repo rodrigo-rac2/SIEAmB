@@ -30,7 +30,8 @@
     "login": "Ingresar",
     "myRegistration": "Mi Inscripción",
     "logout": "Salir",
-    "menu": "Menú"
+    "menu": "Menú",
+    "anais": "Anales"
   },
   "home": {
     "heroTagline": "Ciencia, gestión y sostenibilidad de los recursos naturales",
@@ -53,8 +54,12 @@
     "title": "El Evento",
     "organizedBy": "Promovido por el Programa de Posgrado en Ingeniería y Gestión de Recursos Naturales de la UFCG"
   },
-  "committee": { "title": "Organización" },
-  "areas": { "title": "Áreas Temáticas" },
+  "committee": {
+    "title": "Organización"
+  },
+  "areas": {
+    "title": "Áreas Temáticas"
+  },
   "submissions": {
     "title": "Envío de Trabajos",
     "comingSoon": "Los envíos abren pronto",
@@ -126,7 +131,9 @@
   "editions": {
     "title": "Ediciones Anteriores",
     "current": "Edición actual",
-    "archived": "Archivada"
+    "archived": "Archivada",
+    "archivedBanner": "Está navegando por el archivo del {{event}}, una edición anterior.",
+    "goToCurrent": "Ir al {{event}} (edición actual)"
   },
   "auth": {
     "loginTitle": "Ingresar",
@@ -161,5 +168,9 @@
     "en": "English",
     "es": "Español",
     "zh-CN": "中文"
+  },
+  "anais": {
+    "title": "Anales",
+    "empty": "Los anales del {{event}} están en preparación y serán publicados en esta página."
   }
 }

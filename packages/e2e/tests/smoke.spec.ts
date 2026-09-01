@@ -56,6 +56,41 @@ test.describe('public site @smoke', () => {
     );
   });
 
+  test('archived edition recap: committee and anais', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'nav links are in the drawer on mobile; covered on desktop');
+    await page.goto('/2025/');
+    // Archived nav is reduced: no registration/submissions, anais present.
+    await expect(page.getByRole('navigation').getByRole('link', { name: 'Anais' })).toBeVisible();
+    await expect(
+      page.getByRole('navigation').getByRole('link', { name: 'Inscrições' }),
+    ).toHaveCount(0);
+
+    await page.goto('/2025/organizacao');
+    await expect(page.getByText('Ma. Najara Escarião Agripino')).toBeVisible();
+    await expect(page.getByText('Equipe de Revisores')).toBeVisible();
+
+    await page.goto('/2025/anais');
+    await expect(page.getByText(/anais do I SIEAmB estão em preparação/i)).toBeVisible();
+  });
+
+  test('editions cross-link: archived banner and nav link', async ({ page, isMobile }) => {
+    // Archived edition shows a banner pointing to the current edition.
+    await page.goto('/2025/');
+    const banner = page.getByRole('note');
+    await expect(banner).toContainText('edição anterior');
+    await banner.getByRole('link').click();
+    await expect(page).toHaveURL(/\/2026\/$/);
+
+    // Current edition reaches the editions index from the nav.
+    test.skip(isMobile, 'nav links are in the drawer on mobile; covered on desktop');
+    await page
+      .getByRole('navigation')
+      .getByRole('link', { name: 'Edições Anteriores' })
+      .click();
+    await expect(page).toHaveURL(/\/edicoes-anteriores$/);
+    await expect(page.getByRole('link', { name: /^I Seminário Internacional/ })).toBeVisible();
+  });
+
   test('each edition renders its own palette', async ({ page }) => {
     const topbarColor = async (path: string) => {
       await page.goto(path);

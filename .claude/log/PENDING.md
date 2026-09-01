@@ -11,7 +11,8 @@
 | P3 | Arquivo/conteúdo do edital | Comissão (Thays confirmou que ainda não existe) | 2026-08-31 | Página de editais é fácil de adicionar quando o conteúdo chegar (referência: modelo ANPOCS, páginas HTML e não PDF) |
 | P4 | Feedback detalhado do protótipo | Najara (vai olhar com calma) + professora Viviane (recebeu o link) | 2026-08-30 | Thays já deu feedback positivo + 2 pedidos (ver P3 e P7) |
 | P5 | Samuel aceitar o convite de colaborador do GitHub | Samuel (@0Samuel09) | 2026-08-31 | Convite enviado com permissão write. Sem aceite, não consegue abrir PRs |
-| P6 | Revisão das traduções zh-CN por falante nativo | A definir | 2026-08-30 | Perguntei no grupo se querem mais idiomas. Sem urgência até o evento |
+| P6 | Revisão das traduções zh-CN por falante nativo | A definir | 2026-08-30 | Perguntei no grupo se querem mais idiomas. Sem urgência até o evento. Nota: Daniela Torres assina com nome em chinês (杜宁娅), pode ser a revisora natural |
+| P7 | Anais do I SIEAmB (PDFs ou links de publicação) | Najara/comissão | 2026-09-01 | A página `/2025/anais` está pronta com estado vazio ("em preparação"). O site antigo (Wix) não tem os anais. Quando chegarem → preencher `anais.json` |
 
 ## Owned by Rodrigo (action needed)
 

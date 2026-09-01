@@ -1,0 +1,20 @@
+.archived-banner {
+  background: var(--color-accent-light);
+  color: var(--color-ink);
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--text-sm);
+}
+
+.archived-banner__inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding-block: var(--space-2);
+}
+
+.archived-banner a {
+  font-weight: 600;
+  white-space: nowrap;
+}

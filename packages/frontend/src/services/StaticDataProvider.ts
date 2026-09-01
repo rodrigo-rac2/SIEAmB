@@ -1,4 +1,5 @@
 import type {
+  AnaisEntry,
   CommitteeMember,
   EventSummary,
   FeeTier,
@@ -11,6 +12,7 @@ import type {
 } from '@sieamb/shared';
 import type { DataProvider } from './DataProvider';
 
+import anais from '../data/anais.json';
 import committee from '../data/committee.json';
 import events from '../data/events.json';
 import feeTiers from '../data/feeTiers.json';
@@ -64,6 +66,12 @@ export class StaticDataProvider implements DataProvider {
 
   async getFeeTiers(eventId: string): Promise<FeeTier[]> {
     return (feeTiers as FeeTier[]).filter((f) => f.eventId === eventId);
+  }
+
+  async getAnais(eventId: string): Promise<AnaisEntry[]> {
+    return (anais as AnaisEntry[])
+      .filter((a) => a.eventId === eventId)
+      .sort((a, b) => a.sortOrder - b.sortOrder);
   }
 
   async getPublishedNews(eventId: string): Promise<NewsItem[]> {

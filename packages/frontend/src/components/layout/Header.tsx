@@ -10,17 +10,30 @@ export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const base = event ? `/${event.slug}` : '';
 
-  const links = [
-    { to: `${base}/`, label: t('nav.home'), end: true },
-    { to: `${base}/o-evento`, label: t('nav.about') },
-    { to: `${base}/areas-tematicas`, label: t('nav.areas') },
-    { to: `${base}/submissoes`, label: t('nav.submissions') },
-    { to: `${base}/inscricoes`, label: t('nav.registration') },
-    { to: `${base}/datas-importantes`, label: t('nav.dates') },
-    { to: `${base}/avisos`, label: t('nav.news') },
-    { to: `${base}/local`, label: t('nav.venue') },
-    { to: `${base}/contato`, label: t('nav.contact') },
-  ];
+  // Archived editions are a recap: committee + anais + dates, no live actions.
+  // Every edition links to the editions index, so past and current versions
+  // always reach each other.
+  const links = event?.isArchived
+    ? [
+        { to: `${base}/`, label: t('nav.home'), end: true },
+        { to: `${base}/organizacao`, label: t('nav.committee') },
+        { to: `${base}/anais`, label: t('nav.anais') },
+        { to: `${base}/datas-importantes`, label: t('nav.dates') },
+        { to: `${base}/contato`, label: t('nav.contact') },
+        { to: '/edicoes-anteriores', label: t('nav.editions') },
+      ]
+    : [
+        { to: `${base}/`, label: t('nav.home'), end: true },
+        { to: `${base}/o-evento`, label: t('nav.about') },
+        { to: `${base}/areas-tematicas`, label: t('nav.areas') },
+        { to: `${base}/submissoes`, label: t('nav.submissions') },
+        { to: `${base}/inscricoes`, label: t('nav.registration') },
+        { to: `${base}/datas-importantes`, label: t('nav.dates') },
+        { to: `${base}/avisos`, label: t('nav.news') },
+        { to: `${base}/local`, label: t('nav.venue') },
+        { to: `${base}/contato`, label: t('nav.contact') },
+        { to: '/edicoes-anteriores', label: t('nav.editions') },
+      ];
 
   return (
     <header className="site-header">

@@ -11,8 +11,13 @@ export function ContactPage() {
         <div className="container" style={{ maxWidth: '72ch' }}>
           <h2>{t('contact.emailLabel')}</h2>
           <p>
-            {/* Placeholder — confirm the official event email with the committee */}
-            <a href="mailto:sieamb@ufcg.edu.br">sieamb@ufcg.edu.br</a>
+            <a href="mailto:sieambufcg@gmail.com">sieambufcg@gmail.com</a>
+          </p>
+          <h2>{t('contact.socialLabel')}</h2>
+          <p>
+            <a href="https://www.instagram.com/sieamb_ppgegrn" target="_blank" rel="noreferrer">
+              @sieamb_ppgegrn
+            </a>
           </p>
         </div>
       </section>
