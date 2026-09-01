@@ -55,6 +55,7 @@ npm run lint          # Lint all packages
 ## Key Architectural Decisions
 
 - Multi-event by design: `events` table with `is_current` flag; all content (news, submissions, registrations) scoped to an event
+- Per-edition visual theme: each event has an optional `theme` (EventTheme) overriding CSS tokens for that edition only (applied in PageLayout via `eventThemeVars`); the palette changes every edition and archived editions keep theirs
 - News system: CRUD with rich text, managed by admin users
 - Paper submission: abstract → full paper → blind review → acceptance workflow
 - Auth: JWT-based, roles (admin, reviewer, author, attendee)

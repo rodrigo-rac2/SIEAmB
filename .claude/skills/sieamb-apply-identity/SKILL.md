@@ -7,9 +7,15 @@ description: Apply the official visual identity from the design team (colors, fo
 
 The entire placeholder theme is token-driven. The design handoff touches exactly these places, nothing else:
 
+## 0. Per-edition palettes (confirmed requirement)
+
+The site is permanent but **the palette changes every edition** (Najara, 2026-09-01). Each event carries an optional `theme` object (`EventTheme` in `@sieamb/shared`) whose fields override the CSS tokens for that edition only — applied by `eventThemeVars()` on the layout wrapper in `PageLayout.tsx`. Archived editions keep their palette forever (see 2025's blue theme in `events.json`).
+
+**So: put the CURRENT edition's identity in the event's `theme` in `events.json`** (or leave `theme: null` and make tokens.css itself the current identity — prefer the `theme` object so the yearly rollover is data-only). `tokens.css` holds neutral defaults/fallbacks.
+
 ## 1. Design tokens — `packages/frontend/src/styles/tokens.css`
 
-Replace the placeholder values: `--color-primary`, `--color-primary-dark`, `--color-primary-light`, `--color-accent`, `--color-accent-light`, and `--font-heading`/`--font-body` if the identity specifies typefaces. Keep the semantic colors (success/warning/error) legible against the new palette.
+Default/fallback values: `--color-primary`, `--color-primary-dark`, `--color-primary-light`, `--color-accent`, `--color-accent-light`, and `--font-heading`/`--font-body` if the identity specifies typefaces. Keep the semantic colors (success/warning/error) legible against the new palette.
 
 Fonts: self-host via `@font-face` in tokens.css with files in `packages/frontend/public/fonts/` (no Google Fonts CDN — keep it self-contained and LGPD-quiet).
 

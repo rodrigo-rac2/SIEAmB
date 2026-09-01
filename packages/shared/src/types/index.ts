@@ -17,6 +17,21 @@ export type RegistrationStatus =
 
 export type NewsStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
 
+/**
+ * Per-edition visual theme. Each field overrides the corresponding CSS token
+ * for every page of that edition; omitted fields fall back to the defaults in
+ * tokens.css. Archived editions keep their palette forever.
+ */
+export interface EventTheme {
+  primary?: string;
+  primaryDark?: string;
+  primaryLight?: string;
+  accent?: string;
+  accentLight?: string;
+  headingFont?: string;
+  bodyFont?: string;
+}
+
 export interface EventSummary {
   id: string;
   slug: string;
@@ -29,6 +44,7 @@ export interface EventSummary {
   isCurrent: boolean;
   isArchived: boolean;
   heroImageUrl: string | null;
+  theme: EventTheme | null;
   settings: EventSettings;
 }
 

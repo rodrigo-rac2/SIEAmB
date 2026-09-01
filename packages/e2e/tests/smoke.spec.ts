@@ -56,6 +56,18 @@ test.describe('public site @smoke', () => {
     );
   });
 
+  test('each edition renders its own palette', async ({ page }) => {
+    const topbarColor = async (path: string) => {
+      await page.goto(path);
+      return page
+        .locator('.topbar')
+        .evaluate((el) => getComputedStyle(el).backgroundColor);
+    };
+    // 2026 uses the tokens.css default; 2025 carries its archived blue theme.
+    expect(await topbarColor('/2026/')).toBe('rgb(20, 64, 44)');
+    expect(await topbarColor('/2025/')).toBe('rgb(12, 54, 72)');
+  });
+
   test('unknown route shows the 404 page', async ({ page }) => {
     await page.goto('/2026/nao-existe');
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Página não encontrada');

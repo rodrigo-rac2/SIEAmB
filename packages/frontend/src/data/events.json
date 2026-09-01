@@ -11,6 +11,7 @@
     "isCurrent": true,
     "isArchived": false,
     "heroImageUrl": null,
+    "theme": null,
     "settings": { "registrationOpen": true, "submissionsOpen": false, "showProgram": false }
   },
   {
@@ -25,6 +26,13 @@
     "isCurrent": false,
     "isArchived": true,
     "heroImageUrl": null,
+    "theme": {
+      "primary": "#14536b",
+      "primaryDark": "#0c3648",
+      "primaryLight": "#e4eff4",
+      "accent": "#c9762d",
+      "accentLight": "#f7ead9"
+    },
     "settings": { "registrationOpen": false, "submissionsOpen": false, "showProgram": false }
   }
 ]
