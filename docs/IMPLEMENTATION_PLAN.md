@@ -58,7 +58,7 @@ Key decisions (locked):
 | API hosting | **[UPDATE] AWS App Runner** (hybrid architecture: managed data plane on Supabase + compute on AWS). Rationale: real AWS surface (ECR, IAM, CloudWatch) at ~US$5-15/mo, cost comparable to Render/Railway, keeps full-AWS migration path open. Set a billing alarm on day 1. Render/Railway remain the documented fallback if App Runner friction appears |
 | DB | PostgreSQL on Supabase (sa-east-1), Prisma ORM + migrations |
 | Auth | Supabase Auth (email/password + Google OAuth); Express verifies Supabase JWT; app roles in our own `users` table |
-| Files | Supabase Storage (private buckets, signed URLs) |
+| Files | **Private** (submissions, camera-ready, certificates): Supabase Storage — private buckets, signed URLs, auth-integrated; Pro plan includes 100 GB (~20 editions at 3-6 GB/edition). **Public archival** (anais downloads): Cloudflare R2 — 10 GB free, zero egress fees — plus permanent deposit on Zenodo (see §8.2). Storage backend is swappable behind the API. **GitHub Pages is prototype-only — nothing is served from it in production** |
 | Payment | Mercado Pago Checkout Pro (Pix ~0%, card 3-4%, boleto) + manual empenho flow. Phase-3 hosting budget presented to the committee as: managed ~R$180-230/mo (recommended) vs full AWS ~R$250-400/mo — decision pending, hybrid keeps both viable |
 | Multi-event | `events` table, `is_current` flag; every content entity has `event_id`; URLs `/:eventSlug/*`, root redirects to current |
 | Per-edition themes | **[UPDATE] ADR-001**: site is permanent, palette changes per edition. `EventTheme` + `logoUrl` on the event override CSS tokens per edition (applied in PageLayout); tokens.css is the neutral fallback; archived editions keep their palette forever |
@@ -871,6 +871,7 @@ any pre-decision state → WITHDRAWN
 ```
 
 Rules (ENGEMA-derived, confirm with committee):
+- **Open-access authorization clause (required for Phase 4 / Zenodo):** the submission terms MUST include the author's authorization to publish the accepted paper in the anais under **CC BY 4.0** (or the license the committee picks). This has to be in the edital/terms BEFORE submissions open — collecting consent retroactively is painful.
 - Resumo expandido obrigatório; artigo completo opcional later (same record, `type` + `finalFileUrl`).
 - Max **3 submissions per author** (any authorship position) — enforced in service on submit, counting `submission_authors` by email per event.
 - Two PDFs per submission: identified + anonymized. Server-side sanity checks on the anonymized file: size/page limits, MIME; (optional) text scan for author names as a warning.
@@ -938,7 +939,8 @@ Rules (ENGEMA-derived, confirm with committee):
 
 - Committee applies for **ISSN** (via IBICT) — start the paperwork in Phase 2, it takes time. DOI optional later (Crossref via a UFCG library partnership, or skip for edition 2).
 - Compilation: script in `backend/src/jobs/anais.ts` — gather ACCEPTED camera-ready PDFs ordered by thematic area, generate front matter (cover, ficha catalográfica, committee, sumário with page numbers) via HTML→PDF, merge with `pdf-lib`, output single `anais-ii-sieamb.pdf` + per-paper split with header/footer stamp (event, ISSN, page range).
-- Publication: `/:event/anais` page — full PDF + browsable list (area → papers → per-paper PDF). Archived editions keep theirs (multi-event pays off here).
+- Publication: `/:event/anais` page — full PDF + browsable list (area → papers → per-paper PDF). Archived editions keep theirs (multi-event pays off here). Public downloads served from **Cloudflare R2** (zero egress) — never from GitHub Pages (prototype-only).
+- **Zenodo deposit (permanent archive + DOI, free):** create the event's Zenodo account with the official event email + a "SIEAmB" community grouping all editions. Deposit the full anais as "conference proceedings" (and optionally one record per paper, each with its own DOI) via the Zenodo REST API from `jobs/anais.ts`, metadata pulled from the DB. License per the authorization clause collected in Phase 2 (CC BY 4.0 recommended). Zenodo complements the ISSN (IBICT): ISSN identifies the series, DOI identifies each deposit. Print the DOI on the anais page and per-paper listings.
 
 ### 8.3 Tasks
 
