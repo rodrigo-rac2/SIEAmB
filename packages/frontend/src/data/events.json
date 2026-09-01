@@ -16,13 +16,14 @@
       "registrationOpen": true,
       "submissionsOpen": false,
       "showProgram": false
-    }
+    },
+    "logoUrl": "logos/sieamb-color.png"
   },
   {
     "id": "evt-2025",
     "slug": "2025",
-    "name": "I SIEAmB",
-    "fullName": "I Seminário Internacional de Estudos Ambientais",
+    "name": "SIEAmb 2025",
+    "fullName": "1º Seminário Internacional de Estudos Ambientais",
     "edition": 1,
     "startsAt": "2025-10-22T08:00:00-03:00",
     "endsAt": "2025-10-24T18:00:00-03:00",
@@ -31,16 +32,17 @@
     "isArchived": true,
     "heroImageUrl": null,
     "theme": {
-      "primary": "#14536b",
-      "primaryDark": "#0c3648",
-      "primaryLight": "#e4eff4",
-      "accent": "#c9762d",
-      "accentLight": "#f7ead9"
+      "primary": "#4a5d23",
+      "primaryDark": "#101f3a",
+      "primaryLight": "#eef0e0",
+      "accent": "#b3902f",
+      "accentLight": "#f6edcf"
     },
     "settings": {
       "registrationOpen": false,
       "submissionsOpen": false,
       "showProgram": false
-    }
+    },
+    "logoUrl": "logos/sieamb-color.png"
   }
 ]

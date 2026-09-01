@@ -11,8 +11,11 @@ export function Header() {
   const base = event ? `/${event.slug}` : '';
 
   // Archived editions are a recap: committee + anais + dates, no live actions.
-  // Every edition links to the editions index, so past and current versions
-  // always reach each other.
+  // Every edition that HAS prior editions links to the editions index; the
+  // first edition has nothing before it, so the link is omitted there.
+  type NavLinkDef = { to: string; label: string; end?: boolean };
+  const editionsLink: NavLinkDef[] =
+    event && event.edition > 1 ? [{ to: '/edicoes-anteriores', label: t('nav.editions') }] : [];
   const links = event?.isArchived
     ? [
         { to: `${base}/`, label: t('nav.home'), end: true },
@@ -20,7 +23,7 @@ export function Header() {
         { to: `${base}/anais`, label: t('nav.anais') },
         { to: `${base}/datas-importantes`, label: t('nav.dates') },
         { to: `${base}/contato`, label: t('nav.contact') },
-        { to: '/edicoes-anteriores', label: t('nav.editions') },
+        ...editionsLink,
       ]
     : [
         { to: `${base}/`, label: t('nav.home'), end: true },
@@ -32,17 +35,28 @@ export function Header() {
         { to: `${base}/avisos`, label: t('nav.news') },
         { to: `${base}/local`, label: t('nav.venue') },
         { to: `${base}/contato`, label: t('nav.contact') },
-        { to: '/edicoes-anteriores', label: t('nav.editions') },
+        ...editionsLink,
       ];
 
   return (
     <header className="site-header">
       <div className="container site-header__inner">
         <Link to={`${base}/`} className="site-header__brand" onClick={() => setMenuOpen(false)}>
-          <span className="site-header__logo" aria-hidden="true">
-            {/* Placeholder mark — replaced by the official logo asset */}
-            🌿
-          </span>
+          {event?.logoUrl ? (
+            <img
+              className="site-header__logo-img"
+              src={
+                /^https?:/.test(event.logoUrl)
+                  ? event.logoUrl
+                  : import.meta.env.BASE_URL + event.logoUrl
+              }
+              alt=""
+            />
+          ) : (
+            <span className="site-header__logo" aria-hidden="true">
+              🌿
+            </span>
+          )}
           <span className="site-header__name">
             {event?.name ?? t('common.eventName')}
           </span>

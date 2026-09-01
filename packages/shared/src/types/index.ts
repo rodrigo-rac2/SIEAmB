@@ -44,6 +44,8 @@ export interface EventSummary {
   isCurrent: boolean;
   isArchived: boolean;
   heroImageUrl: string | null;
+  /** Event logo. Relative paths resolve against the site base URL; absolute URLs pass through. */
+  logoUrl: string | null;
   theme: EventTheme | null;
   settings: EventSettings;
 }

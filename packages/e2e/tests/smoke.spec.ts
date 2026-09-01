@@ -52,7 +52,7 @@ test.describe('public site @smoke', () => {
   test('archived edition is reachable via its slug', async ({ page }) => {
     await page.goto('/2025/');
     await expect(page.getByRole('heading', { level: 1 })).toContainText(
-      'I Seminário Internacional de Estudos Ambientais',
+      '1º Seminário Internacional de Estudos Ambientais',
     );
   });
 
@@ -70,7 +70,12 @@ test.describe('public site @smoke', () => {
     await expect(page.getByText('Equipe de Revisores')).toBeVisible();
 
     await page.goto('/2025/anais');
-    await expect(page.getByText(/anais do I SIEAmB estão em preparação/i)).toBeVisible();
+    await expect(page.getByText(/anais do SIEAmb 2025 estão em preparação/i)).toBeVisible();
+
+    // First edition: nothing before it, so no editions-index link in its nav.
+    await expect(
+      page.getByRole('navigation').getByRole('link', { name: 'Edições Anteriores' }),
+    ).toHaveCount(0);
   });
 
   test('editions cross-link: archived banner and nav link', async ({ page, isMobile }) => {
@@ -88,7 +93,7 @@ test.describe('public site @smoke', () => {
       .getByRole('link', { name: 'Edições Anteriores' })
       .click();
     await expect(page).toHaveURL(/\/edicoes-anteriores$/);
-    await expect(page.getByRole('link', { name: /^I Seminário Internacional/ })).toBeVisible();
+    await expect(page.getByRole('link', { name: /^1º Seminário Internacional/ })).toBeVisible();
   });
 
   test('each edition renders its own palette', async ({ page }) => {
@@ -100,7 +105,7 @@ test.describe('public site @smoke', () => {
     };
     // 2026 uses the tokens.css default; 2025 carries its archived blue theme.
     expect(await topbarColor('/2026/')).toBe('rgb(20, 64, 44)');
-    expect(await topbarColor('/2025/')).toBe('rgb(12, 54, 72)');
+    expect(await topbarColor('/2025/')).toBe('rgb(16, 31, 58)');
   });
 
   test('unknown route shows the 404 page', async ({ page }) => {
