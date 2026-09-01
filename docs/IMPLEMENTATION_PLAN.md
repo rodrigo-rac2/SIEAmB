@@ -1036,7 +1036,7 @@ Phase 1+: Vercel handles frontend (git integration, preview per PR); `deploy-api
 |---|---|
 | Phase 0 | R$0 (Pages + Supabase free) |
 | Phase 1–2 | R$0-ish (Vercel/Supabase free tiers; App Runner ~US$0–5 at low traffic) |
-| Phase 3+ (payments live) | **Option A (recommended, presented to committee): ~R$180–230/mo** — Supabase Pro US$25 (PITR/backups) + App Runner US$5–15 always-on. **Option B (full AWS): ~R$250–400/mo** — RDS sa-east-1 + App Runner/ECS; more robust brand, more ops. Committee decision pending; hybrid architecture keeps both open. Budget guidance given: ~R$200/mo × 4-5 paid-registration months ≈ R$800–1.000/year via empresa júnior |
+| Phase 3+ (payments live) | **Option A (recommended, presented to committee): ~R$180–230/mo** — Supabase Pro US$25 (PITR/backups) + App Runner US$5–15 always-on. **Option B (full big-cloud): ~R$250–400/mo** — any of AWS (RDS + App Runner/ECS), GCP (Cloud SQL + Cloud Run) or Azure (PostgreSQL Flexible + Container Apps), all with São Paulo regions; stronger brand, more ops. The hybrid keeps the compute swappable between the three (Docker image is host-agnostic). Committee decision pending. Budget guidance given: ~R$200/mo × 4-5 paid-registration months ≈ R$800–1.000/year via empresa júnior |
 
 ---
 
