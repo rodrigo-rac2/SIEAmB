@@ -1,9 +1,11 @@
 # SIEAmB — Implementation Plan
 
 Seminário Internacional de Estudos Ambientais (2nd edition) — UFCG.
-Custom-built conference platform, multi-event from day one, maintained by a single developer.
+Custom-built conference platform, multi-event from day one, maintained by Rodrigo (+ Samuel, estagiário).
 
-All code, comments, identifiers, and docs: **English**. All user-facing content: **Portuguese (pt-BR)**. Copy lives in content files (`content/pt-BR/*.ts`), never hardcoded in components, so a future en/es locale is a file drop, not a refactor.
+> **Status (2026-09-01): Phase 0 is COMPLETE and live** at https://rodrigo-rac2.github.io/SIEAmB/ — see `.claude/context/STATUS.md` for the living status. This plan is the roadmap; deltas discovered during Phase 0 are noted inline as **[UPDATE]** blocks.
+
+All code, comments, identifiers, and docs: **English**. User-facing UI: **4 locales via react-i18next — pt-BR (forced default), en, es, zh-CN** (flag-button switcher; zh-CN needs native review). UI strings live in `locales/<locale>.json`, never hardcoded. Dynamic content (news) is pt-BR only for now.
 
 ---
 
@@ -36,8 +38,8 @@ All code, comments, identifiers, and docs: **English**. All user-facing content:
               │                    │                     │
    ┌──────────▼─────────┐ ┌───────▼────────┐  ┌─────────▼─────────┐
    │ Supabase Auth      │ │ Express API    │  │ Supabase Storage  │
-   │ (email + Google)   │ │ (Render/       │  │ (PDFs: papers,    │
-   │ JWT issuer         │ │  Railway)      │  │  certificates)    │
+   │ (email + Google)   │ │ (AWS App      │  │ (PDFs: papers,    │
+   │ JWT issuer         │ │  Runner)       │  │  certificates)    │
    └────────────────────┘ └───────┬────────┘  └───────────────────┘
                                   │ Prisma
                         ┌─────────▼─────────┐      ┌──────────────┐
@@ -50,14 +52,16 @@ Key decisions (locked):
 
 | Concern | Decision |
 |---|---|
-| Repo | npm-workspaces monorepo, single GitHub repo |
-| Frontend | React 18 + TypeScript + Vite, React Router |
+| Repo | npm-workspaces monorepo, single GitHub repo. `main` (prod) + `develop` protected by ruleset (PR + 1 approval); flow `feature/* → develop → main` |
+| Frontend | React 18 + TypeScript + Vite, React Router, react-i18next (pt-BR/en/es/zh-CN) |
 | Backend | Express + TypeScript (Phase 1+), REST `/api/v1/*` |
+| API hosting | **[UPDATE] AWS App Runner** (hybrid architecture: managed data plane on Supabase + compute on AWS). Rationale: real AWS surface (ECR, IAM, CloudWatch) at ~US$5-15/mo, cost comparable to Render/Railway, keeps full-AWS migration path open. Set a billing alarm on day 1. Render/Railway remain the documented fallback if App Runner friction appears |
 | DB | PostgreSQL on Supabase (sa-east-1), Prisma ORM + migrations |
 | Auth | Supabase Auth (email/password + Google OAuth); Express verifies Supabase JWT; app roles in our own `users` table |
 | Files | Supabase Storage (private buckets, signed URLs) |
-| Payment | Mercado Pago Checkout Pro (Pix, card, boleto) + manual empenho flow |
+| Payment | Mercado Pago Checkout Pro (Pix ~0%, card 3-4%, boleto) + manual empenho flow. Phase-3 hosting budget presented to the committee as: managed ~R$180-230/mo (recommended) vs full AWS ~R$250-400/mo — decision pending, hybrid keeps both viable |
 | Multi-event | `events` table, `is_current` flag; every content entity has `event_id`; URLs `/:eventSlug/*`, root redirects to current |
+| Per-edition themes | **[UPDATE] ADR-001**: site is permanent, palette changes per edition. `EventTheme` + `logoUrl` on the event override CSS tokens per edition (applied in PageLayout); tokens.css is the neutral fallback; archived editions keep their palette forever |
 | Identity keys | CPF for Brazilians, passport for foreigners (mutually exclusive, validated) |
 | Email | Resend (or Supabase SMTP for auth-only mails in Phase 1); transactional templates in pt-BR |
 
@@ -630,9 +634,18 @@ Supabase specifics:
 
 ---
 
-## 4. Phase 0 — Visual prototype
+## 4. Phase 0 — Visual prototype ✅ COMPLETE (shipped 2026-08-30/09-01)
 
 **Goal:** deployed, navigable, pt-BR site on GitHub Pages showing the full structure of II SIEAmB; visually agnostic (neutral placeholder theme swappable via CSS tokens when the identity arrives); news list + registration form actually working against Supabase free tier; multi-event routing baked in. **Ship in ~1–2 weeks of evenings.**
+
+**[UPDATE] What actually shipped (beyond/instead of the plan below):**
+- i18n from day one: 4 locales (pt-BR forced default, en, es, zh-CN), flag switcher in the topbar
+- Per-edition themes (ADR-001) + per-event `logoUrl`; official SIEAmb logo recovered from the old Wix site
+- 2025 recap edition populated with real data (team, dates, palette) scraped from the old site; archived editions get a reduced nav (organização, anais, datas, contato) + banner linking to the current edition; editions-index link hidden on the first edition
+- Anais page shipped early (per-event route with empty state) — anais FILES still pending from the committee
+- First-edition naming follows the old site: "SIEAmb 2025", roman numerals start at II
+- Supabase wiring (T0.7–T0.10) NOT done yet — registration is simulated by StaticDataProvider; this is the top of Phase 1
+- Tests green: 26 unit + 21 E2E (chromium + Pixel 7)
 
 ### 4.1 What is functional vs placeholder
 
@@ -811,8 +824,8 @@ Styling: plain CSS modules or vanilla CSS with tokens (no Tailwind — keeps the
 ### 5.1 Infrastructure
 
 - Frontend: move from GitHub Pages → **Vercel** (needed for clean domain, preview deploys, headers). Keep Pages workflow as fallback until cutover. Custom domain + HTTPS.
-- Backend: **Render or Railway** free tier, `@sieamb/backend` Docker or node build. Health endpoint `/api/v1/health`. Note free-tier cold starts; acceptable in Phase 1, revisit before registration crunch.
-- Supabase stays as-is (Auth, Postgres, Storage).
+- Backend: **[UPDATE] AWS App Runner** — `@sieamb/backend` as a Docker image in ECR, deployed to App Runner (~US$5-15/mo, scales to near-zero). Health endpoint `/api/v1/health`. Day-1 AWS hygiene: dedicated account, billing alarm, least-privilege IAM deploy role, CloudWatch logs. (Fallback if App Runner disappoints: Render/Railway as originally planned — the Docker image is host-agnostic.)
+- Supabase stays as-is (Auth, Postgres, Storage), sa-east-1.
 
 ### 5.2 Backend build-out
 
@@ -820,6 +833,7 @@ Styling: plain CSS modules or vanilla CSS with tokens (no Tailwind — keeps the
 - Auth middleware: verify Supabase JWT (`jose` against Supabase JWKS / JWT secret), load `users` row, attach `req.user`; `requireRole('ADMIN'|'EDITOR'|…)` guard.
 - Modules:
   - `events`: GET list/current/by-slug (public); PATCH settings (admin).
+  - `editais`: **[UPDATE — client request (Thays, 2026-08-31)]** editais published as HTML pages (ANPOCS-style, not bare PDFs), visible BEFORE registration. Model as `StaticPage` rows (slug `edital-*`) or a dedicated small table + public listing page; admin CRUD like news. Edital content itself still pending from the committee.
   - `news`: public GET published; admin CRUD, publish/unpublish, pin; image upload to Storage (signed upload URL).
   - `registrations`: POST create (authed), GET mine, admin list/filter/export CSV, admin manual confirm/cancel; proof-of-student upload.
   - `users`: GET/PATCH me (profile completion), admin role management.
@@ -1021,8 +1035,8 @@ Phase 1+: Vercel handles frontend (git integration, preview per PR); `deploy-api
 | Stage | Monthly |
 |---|---|
 | Phase 0 | R$0 (Pages + Supabase free) |
-| Phase 1–2 | R$0 (Vercel/Render/Supabase free tiers) |
-| Phase 3+ (payments live) | ~US$30–40 (Supabase Pro $25 for PITR/backups + Railway/Render paid $5–10 to kill cold starts) — budget line for the committee |
+| Phase 1–2 | R$0-ish (Vercel/Supabase free tiers; App Runner ~US$0–5 at low traffic) |
+| Phase 3+ (payments live) | **Option A (recommended, presented to committee): ~R$180–230/mo** — Supabase Pro US$25 (PITR/backups) + App Runner US$5–15 always-on. **Option B (full AWS): ~R$250–400/mo** — RDS sa-east-1 + App Runner/ECS; more robust brand, more ops. Committee decision pending; hybrid architecture keeps both open. Budget guidance given: ~R$200/mo × 4-5 paid-registration months ≈ R$800–1.000/year via empresa júnior |
 
 ---
 
@@ -1030,8 +1044,8 @@ Phase 1+: Vercel handles frontend (git integration, preview per PR); `deploy-api
 
 | Phase | Duration (solo, part-time) | Ship gate |
 |---|---|---|
-| 0 — Prototype | 1–2 wks | Public Pages URL; registration + avisos working (Supabase-lite); tokens-only theming |
-| 1 — Registration/News prod | 3–4 wks | Express API is sole write path; admin panel; emails; Vercel + domain |
+| 0 — Prototype | ✅ DONE (2026-08-30/09-01) | Public Pages URL; all pages in 4 locales; per-edition themes; 2025 recap; registration simulated (Supabase wiring moved to Phase 1) |
+| 1 — Registration/News prod | 3–4 wks | Supabase wiring + Express API (AWS App Runner) as sole write path; admin panel; editais pages; emails; Vercel + domain |
 | 2 — Submissions | 4–5 wks | Double-blind flow E2E-tested; opens before submission deadline |
 | 3 — Payments | 3 wks | MP live (Pix/card/boleto) + empenho; recon job; Supabase Pro |
 | 4 — Certificates/Anais | 2–3 wks | Validation page live; anais published under event slug |
