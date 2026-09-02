@@ -70,7 +70,13 @@ test.describe('public site @smoke', () => {
     await expect(page.getByText('Equipe de Revisores')).toBeVisible();
 
     await page.goto('/2025/anais');
-    await expect(page.getByText(/anais do SIEAmb 2025 estão em preparação/i)).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: /Journal of Ecoinnovation/ }),
+    ).toHaveAttribute('href', /editoraverde\.org/);
+    await expect(page.getByRole('link', { name: /eduCAPES/ })).toHaveAttribute(
+      'href',
+      /educapes\.capes\.gov\.br/,
+    );
 
     // First edition: nothing before it, so no editions-index link in its nav.
     await expect(

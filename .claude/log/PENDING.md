@@ -12,7 +12,6 @@
 | P4 | Feedback detalhado do protótipo | Najara (vai olhar com calma) + professora Viviane (recebeu o link) | 2026-08-30 | Thays já deu feedback positivo + 2 pedidos (ver P3 e P7) |
 | P5 | Samuel aceitar o convite de colaborador do GitHub | Samuel (@0Samuel09) | 2026-08-31 | Convite enviado com permissão write. Sem aceite, não consegue abrir PRs |
 | P6 | Revisão das traduções zh-CN por falante nativo | A definir | 2026-08-30 | Perguntei no grupo se querem mais idiomas. Sem urgência até o evento. Nota: Daniela Torres assina com nome em chinês (杜宁娅), pode ser a revisora natural |
-| P7 | Anais do I SIEAmB (PDFs ou links de publicação) | Najara/comissão | 2026-09-01 | A página `/2025/anais` está pronta com estado vazio ("em preparação"). O site antigo (Wix) não tem os anais. Quando chegarem → preencher `anais.json` |
 
 ## Owned by Rodrigo (action needed)
 
@@ -29,3 +28,4 @@
 | Protótipo Phase 0 no ar | 2026-08-30 | https://rodrigo-rac2.github.io/SIEAmB/ |
 | Grupo de WhatsApp do projeto criado | 2026-08-31 | Najara criou; Samuel e equipe de design adicionados |
 | Branch protection main/develop + Samuel como colaborador | 2026-08-31 | Ruleset ativo, convite enviado |
+| P7 — Anais do I SIEAmB | 2026-09-02 | Thays enviou os links: resumos no Journal of Ecoinnovation and Environmental Management v.1 n.1 (editoraverde.org) e artigos no eduCAPES. Página `/2025/anais` populada. Nota: a 1ª edição publicou em periódico parceiro, não em anais próprios com ISSN — modelo a discutir para a 2ª edição |

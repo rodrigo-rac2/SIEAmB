@@ -1,1 +1,16 @@
-[]
+[
+  {
+    "id": "an25-1",
+    "eventId": "evt-2025",
+    "title": "Resumos — Journal of Ecoinnovation and Environmental Management, v. 1 n. 1 (2026)",
+    "url": "https://www.editoraverde.org/portal/revistas/index.php/ecoin/issue/view/67",
+    "sortOrder": 1
+  },
+  {
+    "id": "an25-2",
+    "eventId": "evt-2025",
+    "title": "Artigos completos — Repositório eduCAPES",
+    "url": "https://educapes.capes.gov.br/handle/capes/1178973?mode=full",
+    "sortOrder": 2
+  }
+]
