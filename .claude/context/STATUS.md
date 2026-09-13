@@ -31,6 +31,15 @@
 - **Registration does NOT persist** — StaticDataProvider simulates success. Real persistence = Supabase (Phase 0.5/1)
 - **zh-CN translations are machine-drafted** — need native-speaker review before the event
 
+## Budget reality check (2026-09-13)
+
+Professora Viviane (project lead) said there is **no budget for ~R$250/month**. Her Joomla suggestion was evaluated and rejected (legacy install, no registration/payment components, unsafe for CPF/payments — details kept off the public repo). The answer is the **R$0/month architecture**, which the stack already supports:
+
+- Vercel free (frontend) + Supabase free (Postgres 500 MB, Auth, 1 GB storage; weekly `pg_dump` GitHub Action replaces PITR) + API on scale-to-zero compute (AWS App Runner / Cloud Run, ~R$0–10) + Cloudflare R2 free 10 GB for PDFs.
+- Payments with **no monthly fee**: Mercado Pago Checkout Pro / links de pagamento (per-transaction fees only; webhooks retry, so cold starts are fine). Alternative with even less build: Even3 for registration+payment (per-ticket fee, used by the 1st edition), our site stays the public face.
+- Trade-offs: weekly instead of point-in-time backups, cold starts on the API, free-tier pausing mitigated by a scheduled ping.
+- Remaining costs: domain ~R$40/yr + Samuel's bolsa (committee's call).
+
 ## Next steps (in order)
 
 1. **Send the hosting recommendation to the group (due 2026-09-01!)** — Supabase sa-east-1 + Vercel + Render/Railway, R$0 until payments phase, then ~US$30-40/mo (plan §10.5)

@@ -6,13 +6,14 @@
 
 | # | Item | Waiting on | Since | Notes / next check |
 |---|---|---|---|---|
-| P1 | Identidade visual (paleta, logo, fonte, arte do hero) | Equipe de design (2 pessoas adicionadas ao grupo do WhatsApp em 31/08) | 2026-08-30 | Quando chegar → skill `sieamb-apply-identity`. Mensagem itemizando o que precisamos foi enviada ao grupo em 31/08 |
+| P1 | Identidade visual (paleta, logo, fonte, arte do hero) | ~~Equipe de design~~ → **entregue via Canva em 13/09** | 2026-08-30 | Agora depende de P9 (download dos assets). Fontes confirmadas: Garet + Lora |
 | P2 | Conteúdo real do evento (datas, valores, áreas temáticas, comitês, e-mail oficial, texto de apresentação) | Comissão (Najara/Thays) | 2026-08-30 | Pedido na mensagem de lançamento do protótipo. Quando chegar → skill `sieamb-update-content` |
 | P3 | Arquivo/conteúdo do edital | Comissão (Thays confirmou que ainda não existe) | 2026-08-31 | Página de editais é fácil de adicionar quando o conteúdo chegar (referência: modelo ANPOCS, páginas HTML e não PDF) |
 | P4 | Feedback detalhado do protótipo | Najara (vai olhar com calma) + professora Viviane (recebeu o link) | 2026-08-30 | Thays já deu feedback positivo + 2 pedidos (ver P3 e P7) |
 | P5 | Samuel aceitar o convite de colaborador do GitHub | Samuel (@0Samuel09) | 2026-08-31 | Convite enviado com permissão write. Sem aceite, não consegue abrir PRs |
 | P6 | Revisão das traduções zh-CN por falante nativo | A definir | 2026-08-30 | Perguntei no grupo se querem mais idiomas. Sem urgência até o evento. Nota: Daniela Torres assina com nome em chinês (杜宁娅), pode ser a revisora natural |
-| P8 | **Reunião com a professora líder do projeto** — decisões de hospedagem (gerenciado vs nuvem), escolha do domínio, bolsa do Samuel (R$ 700/mês) e cláusula de acesso aberto no edital | Comissão (agendar) | 2026-09-03 | Mensagem completa de custos foi enviada ao grupo em 02-03/09. Tudo da infra paga aguarda essa reunião. Preparar: os 2 artifacts (plano + hospedagem) servem de material de apoio |
+| P8 | **Decisão de hospedagem com a professora Viviane (líder)** — ela informou (13/09) que NÃO há verba para ~R$ 250/mês e sugeriu usar o Joomla do PPGEGRN para inscrições/pagamento | Comissão | 2026-09-03 | Joomla avaliado por Rodrigo em 13/09: instalação legada sem nenhum componente de inscrição/formulário/pagamento — inviável e inseguro para CPF + pagamento (detalhes com Rodrigo, não no repo). Próximo passo: apresentar a **opção R$ 0/mês** (free tiers + Mercado Pago sem mensalidade ou Even3 por transação) — ver STATUS.md |
+| P9 | **Baixar os assets da identidade visual 2026 do Canva** (Daniela enviou link de edição em 13/09; fontes Garet + Lora) | Rodrigo | 2026-09-13 | Link exige login no Canva. Rodrigo baixa (PNG fundo transparente + SVG/PDF) para `packages/frontend/public/brand/` → skill `sieamb-apply-identity`. Verificar licença da fonte Garet antes de self-host (Lora é OFL/Google Fonts) |
 
 ## Owned by Rodrigo (action needed)
 
