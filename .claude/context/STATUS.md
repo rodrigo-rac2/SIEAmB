@@ -35,7 +35,8 @@
 
 Professora Viviane (project lead) said there is **no budget for ~R$250/month**. Her Joomla suggestion was evaluated and rejected (legacy install, no registration/payment components, unsafe for CPF/payments — details kept off the public repo). The answer is the **R$0/month architecture**, which the stack already supports:
 
-- Vercel free (frontend) + Supabase free (Postgres 500 MB, Auth, 1 GB storage; weekly `pg_dump` GitHub Action replaces PITR) + API on scale-to-zero compute (AWS App Runner / Cloud Run, ~R$0–10) + Cloudflare R2 free 10 GB for PDFs.
+- Vercel free (frontend) + Supabase free (Postgres 500 MB, Auth; weekly `pg_dump` GitHub Action replaces PITR) + Express on **AWS Lambda Function URL** (always-free tier; App Runner dropped — it bills idle provisioned memory) + Cloudflare R2 free 10 GB for all PDFs (submissions + anais) + Resend free for email (needs the domain).
+- Roles reviewed against the committee's list (2026-09-13): ADMIN, EDITOR, AREA_CHAIR (new), REVIEWER, PARTICIPANT; "inscrito/não inscrito/autor" are states, not roles.
 - Payments with **no monthly fee**: Mercado Pago Checkout Pro / links de pagamento (per-transaction fees only; webhooks retry, so cold starts are fine). Alternative with even less build: Even3 for registration+payment (per-ticket fee, used by the 1st edition), our site stays the public face.
 - Trade-offs: weekly instead of point-in-time backups, cold starts on the API, free-tier pausing mitigated by a scheduled ping.
 - Remaining costs: domain ~R$40/yr + Samuel's bolsa (committee's call).

@@ -55,7 +55,7 @@ Key decisions (locked):
 | Repo | npm-workspaces monorepo, single GitHub repo. `main` (prod) + `develop` protected by ruleset (PR + 1 approval); flow `feature/* → develop → main` |
 | Frontend | React 18 + TypeScript + Vite, React Router, react-i18next (pt-BR/en/es/zh-CN) |
 | Backend | Express + TypeScript (Phase 1+), REST `/api/v1/*` |
-| API hosting | **[UPDATE] AWS App Runner** (hybrid architecture: managed data plane on Supabase + compute on AWS). Rationale: real AWS surface (ECR, IAM, CloudWatch) at ~US$5-15/mo, cost comparable to Render/Railway, keeps full-AWS migration path open. Set a billing alarm on day 1. Render/Railway remain the documented fallback if App Runner friction appears |
+| API hosting | **[UPDATE 2026-09-13 — R$0 constraint]** Express on **AWS Lambda behind a Function URL** (always-free tier: 1M requests + 400k GB-s per month; no API Gateway needed) via the Lambda Web Adapter or `serverless-http`. Keeps the AWS surface (IAM, CloudWatch, IaC with Terraform/CDK) at R$0. Consequence: uploads never transit the API (6 MB payload cap) — files go browser → storage via signed URLs, which was the design anyway. App Runner was dropped: it bills provisioned memory even when idle (~R$50/mo). Cloud Run (GCP) is the equivalent free-tier alternative; Render free (sleeps) the fallback |
 | DB | PostgreSQL on Supabase (sa-east-1), Prisma ORM + migrations |
 | Auth | Supabase Auth (email/password + Google OAuth); Express verifies Supabase JWT; app roles in our own `users` table |
 | Files | **Private** (submissions, camera-ready, certificates): Supabase Storage — private buckets, signed URLs, auth-integrated; Pro plan includes 100 GB (~20 editions at 3-6 GB/edition). **Public archival** (anais downloads): Cloudflare R2 — 10 GB free, zero egress fees — plus permanent deposit on Zenodo (see §8.2). Storage backend is swappable behind the API. **GitHub Pages is prototype-only — nothing is served from it in production** |
@@ -299,11 +299,15 @@ model StaticPage {
 // ───────────────────────────── Users & auth ─────────────────────────────
 
 enum UserRole {
-  ADMIN        // committee: full access
-  EDITOR       // can manage news/pages, not users/payments
+  ADMIN        // committee: full access (users, roles, registrations, payments)
+  EDITOR       // content only: news/pages/dates, never users or payments
+  AREA_CHAIR   // coordenador de área temática: assigns reviewers within own area(s)
   REVIEWER
-  PARTICIPANT  // default: author/attendee
+  PARTICIPANT  // default for every account: may submit, may register
 }
+// NOTE: "inscrito" / "não inscrito" / "autor" are STATES derived from
+// Registration.status and Submission rows, not roles. The admin panel shows
+// them as filters, and role changes (e.g. promote to REVIEWER) are admin actions.
 
 model User {
   id            String    @id @default(uuid())  // == Supabase auth.users.id
