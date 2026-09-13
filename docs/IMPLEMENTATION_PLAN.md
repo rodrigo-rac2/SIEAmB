@@ -57,7 +57,7 @@ Key decisions (locked):
 | Backend | Express + TypeScript (Phase 1+), REST `/api/v1/*` |
 | API hosting | **[UPDATE 2026-09-13 — R$0 constraint]** Express on **AWS Lambda behind a Function URL** (always-free tier: 1M requests + 400k GB-s per month; no API Gateway needed) via the Lambda Web Adapter or `serverless-http`. Keeps the AWS surface (IAM, CloudWatch, IaC with Terraform/CDK) at R$0. Consequence: uploads never transit the API (6 MB payload cap) — files go browser → storage via signed URLs, which was the design anyway. App Runner was dropped: it bills provisioned memory even when idle (~R$50/mo). Cloud Run (GCP) is the equivalent free-tier alternative; Render free (sleeps) the fallback |
 | DB | PostgreSQL on Supabase (sa-east-1), Prisma ORM + migrations |
-| Auth | Supabase Auth (email/password + Google OAuth); Express verifies Supabase JWT; app roles in our own `users` table |
+| Auth | Supabase Auth (email/password + Google OAuth); Express verifies Supabase JWT. **Roles are per edition** (`event_members`, ADR-002): ADMIN, SCIENTIFIC_CHAIR, AREA_CHAIR, REVIEWER, EDITOR, FINANCE, STAFF + a platform-admin flag. Participation/author are derived states |
 | Files | **Private** (submissions, camera-ready, certificates): Supabase Storage — private buckets, signed URLs, auth-integrated; Pro plan includes 100 GB (~20 editions at 3-6 GB/edition). **Public archival** (anais downloads): Cloudflare R2 — 10 GB free, zero egress fees — plus permanent deposit on Zenodo (see §8.2). **[R$0 path, 2026-09-13]** submission PDFs also live on R2 (Supabase free storage is 1 GB, too tight for ~200 papers × 3 versions); access control stays in the API via signed URLs. Storage backend is swappable behind the API. **GitHub Pages is prototype-only — nothing is served from it in production** |
 | Payment | Mercado Pago Checkout Pro (Pix ~0%, card 3-4%, boleto) + manual empenho flow. Phase-3 hosting budget presented to the committee as: managed ~R$180-230/mo (recommended) vs full AWS ~R$250-400/mo — decision pending, hybrid keeps both viable |
 | Multi-event | `events` table, `is_current` flag; every content entity has `event_id`; URLs `/:eventSlug/*`, root redirects to current |
@@ -219,6 +219,7 @@ model Event {
   submissions     Submission[]
   certificates    Certificate[]
   committeeMembers CommitteeMember[]
+  members         EventMember[]
   sponsors        Sponsor[]
   pages           StaticPage[]
 
@@ -298,16 +299,35 @@ model StaticPage {
 
 // ───────────────────────────── Users & auth ─────────────────────────────
 
-enum UserRole {
-  ADMIN        // committee: full access (users, roles, registrations, payments)
-  EDITOR       // content only: news/pages/dates, never users or payments
-  AREA_CHAIR   // coordenador de área temática: assigns reviewers within own area(s)
+// Roles are PER EDITION (ADR-002). A person may hold several roles in one
+// edition and none in another. "Participant/author/registered" are STATES
+// derived from registrations/submissions, never roles.
+enum EventRole {
+  ADMIN             // coordenação geral: everything in the edition
+  SCIENTIFIC_CHAIR  // comitê científico: whole submissions/review module
+  AREA_CHAIR        // coordenador de área: assign/recommend within area_ids
   REVIEWER
-  PARTICIPANT  // default for every account: may submit, may register
+  EDITOR            // content only: news, pages, dates, editais, sponsors
+  FINANCE           // empresa júnior: confirm payments/empenho, exemptions, exports
+  STAFF             // check-in and registration lookup during the event
 }
-// NOTE: "inscrito" / "não inscrito" / "autor" are STATES derived from
-// Registration.status and Submission rows, not roles. The admin panel shows
-// them as filters, and role changes (e.g. promote to REVIEWER) are admin actions.
+
+model EventMember {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  eventId   String    @map("event_id")
+  role      EventRole
+  areaIds   String[]  @map("area_ids")   // only meaningful for AREA_CHAIR
+  invitedBy String?   @map("invited_by")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user  User  @relation(fields: [userId], references: [id])
+  event Event @relation(fields: [eventId], references: [id])
+
+  @@unique([userId, eventId, role])
+  @@index([eventId, role])
+  @@map("event_members")
+}
 
 model User {
   id            String    @id @default(uuid())  // == Supabase auth.users.id
@@ -320,10 +340,11 @@ model User {
   lattesUrl     String?   @map("lattes_url")
   orcid         String?
   phone         String?
-  role          UserRole  @default(PARTICIPANT)
+  isPlatformAdmin Boolean @default(false) @map("is_platform_admin")  // Rodrigo, Samuel: creates editions, acts anywhere
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
+  memberships       EventMember[]
   registrations     Registration[]
   submissionsOwned  Submission[]       @relation("submitter")
   authorships       SubmissionAuthor[]
@@ -590,7 +611,8 @@ enum CertificateKind {
 model Certificate {
   id             String          @id @default(uuid())
   eventId        String          @map("event_id")
-  userId         String          @map("user_id")
+  userId         String?         @map("user_id")   // null until a co-author without account claims it
+  email          String                            // certificates are issued to an e-mail (ADR-002)
   kind           CertificateKind
   validationCode String          @unique @map("validation_code")  // short, URL-safe, e.g. "SIEAMB2-K7KQ-9F2M"
   payload        Json                                             // frozen render data: name, hours, title…
@@ -598,10 +620,10 @@ model Certificate {
   issuedAt       DateTime        @default(now()) @map("issued_at")
   revokedAt      DateTime?       @map("revoked_at")
 
-  event Event @relation(fields: [eventId], references: [id])
-  user  User  @relation(fields: [userId], references: [id])
+  event Event  @relation(fields: [eventId], references: [id])
+  user  User?  @relation(fields: [userId], references: [id])
 
-  @@unique([eventId, userId, kind])
+  @@unique([eventId, email, kind])
   @@index([userId])
   @@map("certificates")
 }
@@ -884,7 +906,7 @@ Rules (ENGEMA-derived, confirm with committee):
 ### 6.2 Features
 
 - **Author side:** multi-step form (metadata + authors list + files), draft save, my-submissions dashboard with status, revision upload when requested, withdrawal.
-- **Committee side:** submissions board (filter by area/status), assign 2 reviewers per submission (manual assignment UI with per-reviewer load count; conflict rule: same institution ⇒ warn), decision screen aggregating reviews, bulk decision emails.
+- **Committee side (SCIENTIFIC_CHAIR / AREA_CHAIR within their areas):** submissions board (filter by area/status), assign 2 reviewers per submission (manual assignment UI with per-reviewer load count). **Conflict of interest enforced:** a reviewer can never be assigned a submission where they are submitter or co-author (user id or e-mail match); same institution ⇒ warning. Decision screen aggregating reviews, bulk decision emails.
 - **Reviewer side:** invitations (accept/decline), review form (3 scores 1–5 + comments to authors + confidential comments + recommendation), deadline display.
 - **Notifications (Resend):** submission received (with code), reviewer invited/reminded (T-7, T-2 via `jobs/`), review completed (to admin), decision released, revision requested.
 - Storage buckets: `submissions/` (private, admin+owner), `submissions-anon/` (private, signed URLs for assigned reviewers), `camera-ready/`.
