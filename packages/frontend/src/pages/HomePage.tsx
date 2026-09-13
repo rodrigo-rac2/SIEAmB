@@ -10,6 +10,25 @@ import { getDataProvider } from '../services';
 import { assetUrl } from '../lib/assets';
 import './HomePage.css';
 
+/**
+ * Reproduces the identity lockup typography for the pt-BR full name
+ * ("II Seminário" light · "Internacional de" bold+light · "Estudos Ambientais" bold dark).
+ * Any other string falls back to plain text, so other locales stay correct.
+ */
+function BrandTitle({ text }: { text: string }) {
+  const m = /^(.*?Seminário)\s+(Internacional)\s+(de)\s+(.+)$/u.exec(text);
+  if (!m) return <>{text}</>;
+  return (
+    <>
+      <span className="brand-title__l1">{m[1]}</span>{' '}
+      <span className="brand-title__l2">
+        <strong>{m[2]}</strong> {m[3]}
+      </span>{' '}
+      <span className="brand-title__l3">{m[4]}</span>
+    </>
+  );
+}
+
 export function HomePage() {
   const { t, i18n } = useTranslation();
   const { event } = useEvent();
@@ -48,16 +67,21 @@ export function HomePage() {
       >
         <div className="container hero__inner">
           <p className="hero__edition">{event.name}</p>
-          <h1 className="hero__title">
-            {event.lockupUrl ? (
-              <>
-                <img className="hero__lockup" src={assetUrl(event.lockupUrl)} alt="" />
-                <span className="visually-hidden">{event.fullName}</span>
-              </>
-            ) : (
-              event.fullName
-            )}
-          </h1>
+          {event.lockupUrl ? (
+            <h1 className="hero__title">
+              <img className="hero__lockup" src={assetUrl(event.lockupUrl)} alt="" />
+              <span className="visually-hidden">{event.fullName}</span>
+            </h1>
+          ) : event.heroImageUrl && event.logoUrl ? (
+            <div className="hero__brand">
+              <img className="hero__brand-logo" src={assetUrl(event.logoUrl)} alt="" />
+              <h1 className="hero__title hero__title--brand">
+                <BrandTitle text={event.fullName} />
+              </h1>
+            </div>
+          ) : (
+            <h1 className="hero__title">{event.fullName}</h1>
+          )}
           <p className="hero__tagline">{t('home.heroTagline')}</p>
           <p className="hero__meta">
             {formatDateRange(event.startsAt, event.endsAt, locale)}

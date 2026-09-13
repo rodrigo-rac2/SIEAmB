@@ -118,7 +118,8 @@ test.describe('public site @smoke', () => {
     await page.goto('/2026/');
     const hero = page.locator('.hero');
     await expect(hero).toHaveClass(/hero--light/);
-    await expect(hero.locator('img.hero__lockup')).toBeVisible();
+    await expect(hero.locator('img.hero__brand-logo')).toBeVisible();
+    await expect(hero.locator('.brand-title__l3')).toHaveText('Estudos Ambientais');
     // Accessible title survives the image lockup.
     await expect(page.getByRole('heading', { level: 1 })).toContainText(
       'II Seminário Internacional de Estudos Ambientais',
