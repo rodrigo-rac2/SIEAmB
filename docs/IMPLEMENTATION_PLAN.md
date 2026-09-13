@@ -500,11 +500,13 @@ enum SubmissionType {
 enum SubmissionStatus {
   DRAFT
   SUBMITTED
+  DESK_REJECTED                    // failed template/anonymisation/scope check
   UNDER_REVIEW
-  REVISIONS_REQUESTED
-  RESUBMITTED
-  ACCEPTED
-  ACCEPTED_WITH_CHANGES
+  ACCEPTED_ORAL
+  ACCEPTED_POSTER
+  ACCEPTED_WITH_MANDATORY_REVISIONS
+  ACCEPTED_PENDING_REGISTRATION    // decided; waits for ≥1 registered author
+  CONFIRMED                        // in programme + anais
   REJECTED
   WITHDRAWN
 }
@@ -520,12 +522,14 @@ model Submission {
   abstractText   String           @map("abstract_text")
   keywords       String[]                            // 3-5
   status         SubmissionStatus @default(DRAFT)
-  // Files: anonymized version is the ONLY one reviewers can access
-  fileUrl        String?          @map("file_url")            // identified PDF
-  fileAnonUrl    String?          @map("file_anon_url")       // blinded PDF
-  finalFileUrl   String?          @map("final_file_url")      // camera-ready
+  // ADR-003: ONE anonymised PDF at submission; identified camera-ready after acceptance
+  fileAnonUrl    String?          @map("file_anon_url")       // blinded PDF (reviewers' only artifact)
+  finalFileUrl   String?          @map("final_file_url")      // camera-ready, identified
+  anonChecklistAccepted Boolean   @default(false) @map("anon_checklist_accepted")
+  modalityPreference String?      @map("modality_preference") // author preference only; committee decides
+  presenterAuthorId  String?      @map("presenter_author_id")
   decidedAt      DateTime?        @map("decided_at")
-  decisionNote   String?          @map("decision_note")       // committee note to authors
+  decisionNote   String?          @map("decision_note")       // committee note to authors (justification required when contradicting both reviews)
   createdAt      DateTime         @default(now()) @map("created_at")
   updatedAt      DateTime         @updatedAt @map("updated_at")
 
@@ -570,9 +574,38 @@ enum AssignmentStatus {
 
 enum Recommendation {
   ACCEPT
-  ACCEPT_WITH_CHANGES
+  ACCEPT_WITH_MANDATORY_REVISIONS
+  ACCEPT_AS_EXTENDED_ABSTRACT   // downgrade option for full papers (CBIS pattern)
   REJECT
 }
+
+// Review form is data (ADR-003): criteria per event/track with weights.
+model ReviewCriterion {
+  id        String         @id @default(uuid())
+  eventId   String         @map("event_id")
+  track     SubmissionType                       // ARTIGO_COMPLETO | RESUMO_EXPANDIDO
+  label     String                               // "Metodologia: adequação e rigor"
+  weight    Int            @default(1)
+  sortOrder Int            @default(0) @map("sort_order")
+  scores    ReviewScore[]
+
+  @@index([eventId, track])
+  @@map("review_criteria")
+}
+
+model ReviewScore {
+  assignmentId String @map("assignment_id")
+  criterionId  String @map("criterion_id")
+  score        Int                                // 1-5 (Insuficiente…Excelente)
+
+  assignment ReviewAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  criterion  ReviewCriterion  @relation(fields: [criterionId], references: [id])
+
+  @@id([assignmentId, criterionId])
+  @@map("review_scores")
+}
+
+enum ReviewerConfidence { ALTA MEDIA BAIXA }
 
 model ReviewAssignment {
   id           String           @id @default(uuid())
@@ -580,13 +613,16 @@ model ReviewAssignment {
   reviewerId   String           @map("reviewer_id")
   status       AssignmentStatus @default(INVITED)
   dueAt        DateTime         @map("due_at")
-  // Review content (1 row = 1 review; separate table not needed at this scale)
-  scoreRelevance   Int?         @map("score_relevance")    // 1-5
-  scoreMethod      Int?         @map("score_method")
-  scoreWriting     Int?         @map("score_writing")
-  commentsToAuthors   String?   @map("comments_to_authors")
-  commentsToCommittee String?   @map("comments_to_committee")
-  recommendation  Recommendation?
+  selfDeclaredConflict Boolean  @default(false) @map("self_declared_conflict")
+  // Review content (ADR-003)
+  fitsTheme           Boolean?          @map("fits_theme")            // gate: adequação ao tema
+  scores              ReviewScore[]                                   // weighted 1-5 per criterion
+  confidence          ReviewerConfidence?
+  recommendation      Recommendation?
+  commentsToAuthors   String?   @map("comments_to_authors")           // required on submit, ≥300 chars, shown to authors
+  commentsToCommittee String?   @map("comments_to_committee")         // never shown to authors
+  bestPaperNomination Boolean   @default(false) @map("best_paper_nomination")
+  annotatedFileUrl    String?   @map("annotated_file_url")            // metadata stripped
   completedAt     DateTime?     @map("completed_at")
   createdAt       DateTime      @default(now()) @map("created_at")
 
@@ -886,13 +922,19 @@ Grow `/admin` into a real section (same SPA, role-gated): dashboard (registratio
 
 ## 6. Phase 2 — Paper submission
 
-**Goal:** authors submit resumos expandidos (PDF), double-blind review, decisions, camera-ready. ~4–5 weeks. Open well before the submission deadline; freeze features two weeks before opening.
+> **[UPDATE 2026-09-13] Designed against Brazilian practice — see ADR-003 and `docs/research/peer-review-brazilian-events.md`** (JEMS/SBC, Even3, Doity, Galoá, SIGEventos, ANPAD, real review forms). Key deltas from the original draft: ONE anonymised PDF at submission (identified camera-ready only after acceptance); review form = weighted 1–5 criteria + gate + confidence + 4-option recommendation + comments to authors (required) and to committee; desk check; divergence ⇒ 3rd reviewer; committee (not reviewers) decides with oral/pôster modality; no rebuttal; `ACCEPTED_PENDING_REGISTRATION` state; reviewer certificates.
+
+**Goal:** authors submit resumos expandidos / artigos completos (PDF), double-blind review, decisions, camera-ready. ~4–5 weeks. Open well before the submission deadline; freeze features two weeks before opening.
 
 ### 6.1 Workflow (state machine on `SubmissionStatus`)
 
 ```
-DRAFT → SUBMITTED → UNDER_REVIEW → { ACCEPTED | ACCEPTED_WITH_CHANGES | REJECTED }
-                          ↓ REVISIONS_REQUESTED → RESUBMITTED → UNDER_REVIEW
+DRAFT → SUBMITTED → (desk check) → DESK_REJECTED
+                        ↓
+                   UNDER_REVIEW → (divergence? +3rd reviewer) → DECIDED:
+                        ACCEPTED_ORAL | ACCEPTED_POSTER | ACCEPTED_WITH_MANDATORY_REVISIONS | REJECTED
+                        ↓ (accepted) versão final + ≥1 author registered by deadline
+                   ACCEPTED_PENDING_REGISTRATION → CONFIRMED   (else dropped / waitlist promotion)
 any pre-decision state → WITHDRAWN
 ```
 
@@ -900,14 +942,16 @@ Rules (ENGEMA-derived, confirm with committee):
 - **Open-access authorization clause (required for Phase 4 / Zenodo):** the submission terms MUST include the author's authorization to publish the accepted paper in the anais under **CC BY 4.0** (or the license the committee picks). This has to be in the edital/terms BEFORE submissions open — collecting consent retroactively is painful.
 - Resumo expandido obrigatório; artigo completo opcional later (same record, `type` + `finalFileUrl`).
 - Max **3 submissions per author** (any authorship position) — enforced in service on submit, counting `submission_authors` by email per event.
-- Two PDFs per submission: identified + anonymized. Server-side sanity checks on the anonymized file: size/page limits, MIME; (optional) text scan for author names as a warning.
-- Reviewers see ONLY `fileAnonUrl` + title/abstract/keywords/area. Authors never see reviewer names. Enforced at query level (dedicated reviewer DTO) and Storage path policy (`submissions-anon/` bucket readable via short-lived signed URLs generated per assignment).
+- **One anonymised PDF per submission** (ANPAD model); author data lives in the form. Upload-time checks: PDF `/Author`, `/Creator`, XMP metadata and form surnames/affiliations found in the extracted text of page 1 / acknowledgements ⇒ block with checklist; author ticks "declaro que o arquivo não contém identificação". Files freeze at the deadline. Identified camera-ready only after acceptance.
+- Reviewers see ONLY `fileAnonUrl` + title/abstract/keywords/area, via per-assignment signed URLs (optional "uso exclusivo para avaliação" watermark). Authors never see reviewer names. Enforced at query level (dedicated reviewer DTO) and Storage path policy (`submissions-anon/` bucket readable via short-lived signed URLs generated per assignment).
 
 ### 6.2 Features
 
 - **Author side:** multi-step form (metadata + authors list + files), draft save, my-submissions dashboard with status, revision upload when requested, withdrawal.
 - **Committee side (SCIENTIFIC_CHAIR / AREA_CHAIR within their areas):** submissions board (filter by area/status), assign 2 reviewers per submission (manual assignment UI with per-reviewer load count). **Conflict of interest enforced:** a reviewer can never be assigned a submission where they are submitter or co-author (user id or e-mail match); same institution ⇒ warning. Decision screen aggregating reviews, bulk decision emails.
-- **Reviewer side:** invitations (accept/decline), review form (3 scores 1–5 + comments to authors + confidential comments + recommendation), deadline display.
+- **Reviewer side:** invitations (accept/decline, "fora da minha área", self-declared conflict), review form per ADR-003: gate `adequação ao tema`; weighted criteria scored 1–5 with anchors (relevância 2, originalidade 3, fundamentação 2, metodologia 3, resultados 2, conclusões 1, redação 2, normas 1; resumo expandido uses a subset); `recomendação` (Aceitar / Aceitar com revisões obrigatórias / Rejeitar / Aceitar como resumo expandido); `confiança` (Alta/Média/Baixa); comments to authors (required, ≥300 chars) and confidential to committee; best-paper nomination; optional annotated PDF (metadata stripped). Editable until deadline/round close.
+- **Decision flow:** desk check by AREA_CHAIR before assignment; aggregation view with per-criterion scores, weighted means (1–5 and ×2), recommendations, confidence and spread; **divergence auto-flag** (Aceitar vs Rejeitar or |Δ| ≥ 1.5) ⇒ 3rd reviewer, outlier dropped from the mean but visible; committee decides (Aceito oral / pôster / com revisões obrigatórias / Rejeitado) with mandatory justification when contradicting both reviews; event `nota_de_corte` (default 3.5/5) is a suggestion, room capacity decides oral vs pôster. No rebuttal round. Single revision round checked by the área coordinator.
+- **Author output:** decision, modality, per-criterion scores of each review, comments to authors, deadlines for versão final and registration, optional carta de aceite PDF. Never reviewer identity or committee comments.
 - **Notifications (Resend):** submission received (with code), reviewer invited/reminded (T-7, T-2 via `jobs/`), review completed (to admin), decision released, revision requested.
 - Storage buckets: `submissions/` (private, admin+owner), `submissions-anon/` (private, signed URLs for assigned reviewers), `camera-ready/`.
 
