@@ -37,9 +37,9 @@ All code, comments, identifiers, and docs: **English**. User-facing UI: **4 loca
               ┌────────────────────┼─────────────────────┐
               │                    │                     │
    ┌──────────▼─────────┐ ┌───────▼────────┐  ┌─────────▼─────────┐
-   │ Supabase Auth      │ │ Express API    │  │ Supabase Storage  │
-   │ (email + Google)   │ │ (AWS App      │  │ (PDFs: papers,    │
-   │ JWT issuer         │ │  Runner)       │  │  certificates)    │
+   │ Supabase Auth      │ │ Express API    │  │ Cloudflare R2 +   │
+   │ (email + Google)   │ │ (AWS Lambda,   │  │ Supabase Storage  │
+   │ JWT issuer         │ │  Function URL) │  │ (PDFs, signed URL)│
    └────────────────────┘ └───────┬────────┘  └───────────────────┘
                                   │ Prisma
                         ┌─────────▼─────────┐      ┌──────────────┐
@@ -58,7 +58,7 @@ Key decisions (locked):
 | API hosting | **[UPDATE 2026-09-13 — R$0 constraint]** Express on **AWS Lambda behind a Function URL** (always-free tier: 1M requests + 400k GB-s per month; no API Gateway needed) via the Lambda Web Adapter or `serverless-http`. Keeps the AWS surface (IAM, CloudWatch, IaC with Terraform/CDK) at R$0. Consequence: uploads never transit the API (6 MB payload cap) — files go browser → storage via signed URLs, which was the design anyway. App Runner was dropped: it bills provisioned memory even when idle (~R$50/mo). Cloud Run (GCP) is the equivalent free-tier alternative; Render free (sleeps) the fallback |
 | DB | PostgreSQL on Supabase (sa-east-1), Prisma ORM + migrations |
 | Auth | Supabase Auth (email/password + Google OAuth); Express verifies Supabase JWT; app roles in our own `users` table |
-| Files | **Private** (submissions, camera-ready, certificates): Supabase Storage — private buckets, signed URLs, auth-integrated; Pro plan includes 100 GB (~20 editions at 3-6 GB/edition). **Public archival** (anais downloads): Cloudflare R2 — 10 GB free, zero egress fees — plus permanent deposit on Zenodo (see §8.2). Storage backend is swappable behind the API. **GitHub Pages is prototype-only — nothing is served from it in production** |
+| Files | **Private** (submissions, camera-ready, certificates): Supabase Storage — private buckets, signed URLs, auth-integrated; Pro plan includes 100 GB (~20 editions at 3-6 GB/edition). **Public archival** (anais downloads): Cloudflare R2 — 10 GB free, zero egress fees — plus permanent deposit on Zenodo (see §8.2). **[R$0 path, 2026-09-13]** submission PDFs also live on R2 (Supabase free storage is 1 GB, too tight for ~200 papers × 3 versions); access control stays in the API via signed URLs. Storage backend is swappable behind the API. **GitHub Pages is prototype-only — nothing is served from it in production** |
 | Payment | Mercado Pago Checkout Pro (Pix ~0%, card 3-4%, boleto) + manual empenho flow. Phase-3 hosting budget presented to the committee as: managed ~R$180-230/mo (recommended) vs full AWS ~R$250-400/mo — decision pending, hybrid keeps both viable |
 | Multi-event | `events` table, `is_current` flag; every content entity has `event_id`; URLs `/:eventSlug/*`, root redirects to current |
 | Per-edition themes | **[UPDATE] ADR-001**: site is permanent, palette changes per edition. `EventTheme` + `logoUrl` on the event override CSS tokens per edition (applied in PageLayout); tokens.css is the neutral fallback; archived editions keep their palette forever |
