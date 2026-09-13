@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, NavLink } from 'react-router-dom';
 import { useEvent } from '../../contexts/EventContext';
+import { assetUrl } from '../../lib/assets';
 import './Header.css';
 
 export function Header() {
@@ -45,11 +46,7 @@ export function Header() {
           {event?.logoUrl ? (
             <img
               className="site-header__logo-img"
-              src={
-                /^https?:/.test(event.logoUrl)
-                  ? event.logoUrl
-                  : import.meta.env.BASE_URL + event.logoUrl
-              }
+              src={assetUrl(event.logoUrl)}
               alt=""
             />
           ) : (

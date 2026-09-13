@@ -1,12 +1,13 @@
 import type { ImportantDate, Locale, NewsItem, Sponsor } from '@sieamb/shared';
 import { formatDateRange } from '@sieamb/shared';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { NewsCard } from '../components/news/NewsCard';
 import { ImportantDatesTable } from '../components/shared/ImportantDatesTable';
 import { useEvent } from '../contexts/EventContext';
 import { getDataProvider } from '../services';
+import { assetUrl } from '../lib/assets';
 import './HomePage.css';
 
 export function HomePage() {
@@ -37,10 +38,26 @@ export function HomePage() {
 
   return (
     <>
-      <section className="hero">
+      <section
+        className={`hero ${event.heroImageUrl ? 'hero--light' : ''}`}
+        style={
+          event.heroImageUrl
+            ? ({ '--hero-texture': `url(${assetUrl(event.heroImageUrl)})` } as CSSProperties)
+            : undefined
+        }
+      >
         <div className="container hero__inner">
           <p className="hero__edition">{event.name}</p>
-          <h1 className="hero__title">{event.fullName}</h1>
+          <h1 className="hero__title">
+            {event.lockupUrl ? (
+              <>
+                <img className="hero__lockup" src={assetUrl(event.lockupUrl)} alt="" />
+                <span className="visually-hidden">{event.fullName}</span>
+              </>
+            ) : (
+              event.fullName
+            )}
+          </h1>
           <p className="hero__tagline">{t('home.heroTagline')}</p>
           <p className="hero__meta">
             {formatDateRange(event.startsAt, event.endsAt, locale)}

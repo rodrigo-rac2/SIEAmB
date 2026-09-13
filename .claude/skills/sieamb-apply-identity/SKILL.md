@@ -5,6 +5,8 @@ description: Apply the official visual identity from the design team (colors, fo
 
 # Apply the SIEAmB visual identity
 
+> **2026 identity is APPLIED (2026-09-13).** Assets live in `packages/frontend/public/brand/2026/` (logo.png, lockup.png, crack-*.png textures — from the transparent PNGs Daniela sent; the Canva source is https://canva.link/4111ozj5qtsmtev, view-only without login, premium texture blocks export). Fonts self-hosted in `packages/frontend/src/assets/fonts/` (Garet Book/Heavy free weights + Lora variable) via `src/styles/fonts.css`. The event record wires everything: `theme` (palette + headingFont/bodyFont), `logoUrl`, `lockupUrl`, `heroImageUrl` (hero texture → light hero variant). Optional refinement: SVG exports of logo/lockup need Canva Pro.
+
 The entire placeholder theme is token-driven. The design handoff touches exactly these places, nothing else:
 
 ## 0. Per-edition palettes (confirmed requirement)

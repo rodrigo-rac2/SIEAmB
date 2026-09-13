@@ -114,6 +114,24 @@ test.describe('public site @smoke', () => {
     expect(await topbarColor('/2025/')).toBe('rgb(16, 31, 58)');
   });
 
+  test('2026 renders the official identity: lockup, texture, fonts', async ({ page }) => {
+    await page.goto('/2026/');
+    const hero = page.locator('.hero');
+    await expect(hero).toHaveClass(/hero--light/);
+    await expect(hero.locator('img.hero__lockup')).toBeVisible();
+    // Accessible title survives the image lockup.
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(
+      'II Seminário Internacional de Estudos Ambientais',
+    );
+    const fonts = await page.locator('h1').evaluate((el) => {
+      const cs = getComputedStyle(el);
+      return { heading: cs.fontFamily, body: getComputedStyle(document.querySelector('main')!).fontFamily };
+    });
+    expect(fonts.heading).toContain('Garet');
+    expect(fonts.body).toContain('Lora');
+    await expect(page.locator('.site-header__logo-img')).toHaveAttribute('src', /brand\/2026\/logo\.png/);
+  });
+
   test('unknown route shows the 404 page', async ({ page }) => {
     await page.goto('/2026/nao-existe');
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Página não encontrada');

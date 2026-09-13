@@ -47,6 +47,56 @@
   filter: brightness(1.08);
 }
 
+/* Light variant: edition art (cream field + cracked-earth texture + lockup). */
+.hero--light {
+  position: relative;
+  isolation: isolate;
+  background: var(--color-primary-light);
+  color: var(--color-ink);
+  overflow: hidden;
+}
+
+.hero--light::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: var(--hero-texture);
+  background-size: 640px auto;
+  background-repeat: repeat;
+  opacity: 0.16;
+  pointer-events: none;
+}
+
+.hero--light .hero__edition {
+  color: var(--color-primary);
+}
+
+.hero--light .hero__title {
+  color: var(--color-ink);
+}
+
+.hero--light .hero__tagline {
+  color: var(--color-ink-secondary);
+}
+
+.hero--light .hero__meta {
+  color: var(--color-primary-dark);
+  font-weight: 600;
+}
+
+.hero__lockup {
+  display: block;
+  width: min(100%, 760px);
+  height: auto;
+  margin-inline: auto;
+}
+
+.hero--light .hero__cta {
+  background: var(--color-primary);
+  color: var(--color-primary-light);
+}
+
 .quick-links {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));

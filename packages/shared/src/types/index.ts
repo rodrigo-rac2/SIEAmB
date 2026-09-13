@@ -46,6 +46,8 @@ export interface EventSummary {
   heroImageUrl: string | null;
   /** Event logo. Relative paths resolve against the site base URL; absolute URLs pass through. */
   logoUrl: string | null;
+  /** Horizontal logo + full name lockup, used as the hero title art when present. */
+  lockupUrl: string | null;
   theme: EventTheme | null;
   settings: EventSettings;
 }

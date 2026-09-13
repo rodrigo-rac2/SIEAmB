@@ -26,7 +26,7 @@
 
 ## What is placeholder / fake
 
-- **Visual identity**: placeholder green theme. Official identity from the design team lands ONLY in `packages/frontend/src/styles/tokens.css` + logo assets (currently an emoji 🌿 in Header.tsx)
+- **Visual identity 2026: APPLIED** (palette, Garet/Lora fonts, logo, lockup hero, cracked-earth texture) via the event record + `public/brand/2026/`. tokens.css remains the neutral fallback. Still open: 2026 theme/dates text from the committee (the design mock still shows 2025's), optional SVG exports
 - **All content**: dates, fee amounts, thematic areas, committee names, contact email (sieamb@ufcg.edu.br is a GUESS), about text — all in `packages/frontend/src/data/*.json` fixtures
 - **Registration does NOT persist** — StaticDataProvider simulates success. Real persistence = Supabase (Phase 0.5/1)
 - **zh-CN translations are machine-drafted** — need native-speaker review before the event

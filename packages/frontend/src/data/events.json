@@ -10,20 +10,23 @@
     "venue": "UFCG — Campina Grande, PB",
     "isCurrent": true,
     "isArchived": false,
-    "heroImageUrl": null,
+    "heroImageUrl": "brand/2026/crack-38200f.png",
     "theme": {
       "primary": "#40531B",
       "primaryDark": "#392110",
       "primaryLight": "#FEFAEC",
       "accent": "#593D29",
-      "accentLight": "#D3EC98"
+      "accentLight": "#D3EC98",
+      "headingFont": "'Garet', 'Montserrat', 'Segoe UI', sans-serif",
+      "bodyFont": "'Lora', Georgia, serif"
     },
     "settings": {
       "registrationOpen": true,
       "submissionsOpen": false,
       "showProgram": false
     },
-    "logoUrl": "logos/sieamb-color.png"
+    "logoUrl": "brand/2026/logo.png",
+    "lockupUrl": "brand/2026/lockup.png"
   },
   {
     "id": "evt-2025",
@@ -49,6 +52,7 @@
       "submissionsOpen": false,
       "showProgram": false
     },
-    "logoUrl": "logos/sieamb-color.png"
+    "logoUrl": "logos/sieamb-color.png",
+    "lockupUrl": null
   }
 ]

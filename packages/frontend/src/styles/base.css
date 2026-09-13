@@ -92,3 +92,9 @@ button {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Per-edition font overrides live on the event shell (see eventThemeVars),
+   so the body typeface must be re-applied there, not only on <body>. */
+.event-shell {
+  font-family: var(--font-body);
+}
