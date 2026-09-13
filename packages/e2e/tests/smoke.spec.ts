@@ -109,8 +109,8 @@ test.describe('public site @smoke', () => {
         .locator('.topbar')
         .evaluate((el) => getComputedStyle(el).backgroundColor);
     };
-    // 2026 uses the tokens.css default; 2025 carries its archived blue theme.
-    expect(await topbarColor('/2026/')).toBe('rgb(20, 64, 44)');
+    // 2026 uses the official II SIEAmB dark brown; 2025 keeps its archived first-edition palette.
+    expect(await topbarColor('/2026/')).toBe('rgb(57, 33, 16)');
     expect(await topbarColor('/2025/')).toBe('rgb(16, 31, 58)');
   });
 

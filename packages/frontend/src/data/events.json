@@ -11,7 +11,13 @@
     "isCurrent": true,
     "isArchived": false,
     "heroImageUrl": null,
-    "theme": null,
+    "theme": {
+      "primary": "#40531B",
+      "primaryDark": "#392110",
+      "primaryLight": "#FEFAEC",
+      "accent": "#593D29",
+      "accentLight": "#D3EC98"
+    },
     "settings": {
       "registrationOpen": true,
       "submissionsOpen": false,
