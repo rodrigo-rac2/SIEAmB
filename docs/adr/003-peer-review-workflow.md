@@ -27,3 +27,18 @@ Rodrigo's own reviewer experience (objective scores against criteria + comments 
 - New `ReviewCriterion(eventId, track, label, weight, sortOrder)` and `ReviewScore(assignmentId, criterionId, score)` replace the three fixed score columns on `ReviewAssignment`.
 - `ReviewAssignment` gains `fitsTheme`, `confidence`, `recommendation` (4 values), `bestPaperNomination`, `annotatedFileUrl`, `selfDeclaredConflict`.
 - Event settings: `reviewersPerPaper` (2), `divergenceThreshold` (1.5), `cutoffScore` (3.5), reviewer deadline + reminder offsets (T−7, T−2, T+1).
+
+## Addendum (same day) — second research pass on PKP tooling and 17 real Brazilian rubrics
+
+Evidence: `docs/research/peer-review-pkp-and-brazilian-forms.md`. Additional decisions:
+
+8. **Two Brazilian patterns coexist**: score-and-rank (2 reviewers, weighted scores, mean, cut-off, 3rd on split, capacity ranking → oral/pôster) and gate-and-revise (Aceito / Necessita correção / Não aceito, one revision loop). SIEAmB I promised "duas etapas: revisão de conteúdo e revisão textual e de forma" — our design supports both: scores+recommendation feed the ranking, and the single revision round is the "revisão de forma" pass by the área coordinator.
+9. **Review forms are versioned and frozen once any review uses them** (OJS rule): editing creates a new version; reviews keep pointing at the version they answered. `ReviewCriterion` gets `formVersion`.
+10. **Per-item visibility flag** (`visibleToAuthors`) on criteria/questions, and the **weighted total is hidden from the reviewer** (Unijuí) — reviewers score items, the committee sees totals.
+11. **Gate = Não requires a justification** (Unijuí "eliminatória"); recommendation defaults to Rejeitar.
+12. **Two reviewer deadlines**: `responseDueAt` (accept/decline, e.g. 48h–7d) and `reviewDueAt`; auto-reminders on both; on expiry the assignment is auto-released and the coordinator is prompted to reassign (IFRN pattern). Per-reviewer cap per área (JAI: 7).
+13. **Rejection reason codes** (SBPC-style checklist) on desk-reject and reject: fora do escopo, sem resultados / resultados preliminares, já publicado, revisão bibliográfica sem contribuição, sem autorização ética (CEP/CEUA/SISGEN) quando aplicável, problemas graves de redação, identificação no arquivo. Shown to authors with the decision.
+14. **Author-visible status vocabulary** (IME/Realize): Aguardando análise → Em avaliação → Aguardando correção → Corrigido, aguardando verificação → Aprovado (oral/pôster) / Reprovado.
+15. **Anonymisation checklist text**: reuse the PKP pt-BR boilerplate ("Assegurando a avaliação cega por pares") verbatim in the submission form.
+16. **Qualis reality**: CAPES has no Qualis Eventos for Ciências Ambientais; what counts for authors is anais with ISSN/ISBN and DOI, peer review stated in the call, and full papers ≥5 pages with a stable public URL. This reinforces Phase 4 (Zenodo DOI + ISSN) and a per-paper public page.
+17. UFCG's own CICT&I presentation rubric (domínio do tema, clareza dos objetivos, fluência, tempo; 0–5 / 6–8 / 9–10) is the natural template for the Phase 4 best-paper / presentation evaluation.

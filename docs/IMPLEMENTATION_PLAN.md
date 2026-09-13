@@ -530,6 +530,7 @@ model Submission {
   presenterAuthorId  String?      @map("presenter_author_id")
   decidedAt      DateTime?        @map("decided_at")
   decisionNote   String?          @map("decision_note")       // committee note to authors (justification required when contradicting both reviews)
+  rejectionReasons String[]       @map("rejection_reasons")   // SBPC-style reason codes, shown to authors
   createdAt      DateTime         @default(now()) @map("created_at")
   updatedAt      DateTime         @updatedAt @map("updated_at")
 
@@ -581,13 +582,15 @@ enum Recommendation {
 
 // Review form is data (ADR-003): criteria per event/track with weights.
 model ReviewCriterion {
-  id        String         @id @default(uuid())
-  eventId   String         @map("event_id")
-  track     SubmissionType                       // ARTIGO_COMPLETO | RESUMO_EXPANDIDO
-  label     String                               // "Metodologia: adequação e rigor"
-  weight    Int            @default(1)
-  sortOrder Int            @default(0) @map("sort_order")
-  scores    ReviewScore[]
+  id          String         @id @default(uuid())
+  eventId     String         @map("event_id")
+  track       SubmissionType                       // ARTIGO_COMPLETO | RESUMO_EXPANDIDO
+  formVersion Int            @default(1) @map("form_version") // frozen once any review uses it (OJS rule)
+  label       String                               // "Metodologia: adequação e rigor"
+  weight      Int            @default(1)
+  visibleToAuthors Boolean   @default(true) @map("visible_to_authors")
+  sortOrder   Int            @default(0) @map("sort_order")
+  scores      ReviewScore[]
 
   @@index([eventId, track])
   @@map("review_criteria")
@@ -612,10 +615,12 @@ model ReviewAssignment {
   submissionId String           @map("submission_id")
   reviewerId   String           @map("reviewer_id")
   status       AssignmentStatus @default(INVITED)
-  dueAt        DateTime         @map("due_at")
+  responseDueAt DateTime        @map("response_due_at")   // accept/decline deadline; auto-release + reassign prompt on expiry
+  reviewDueAt   DateTime        @map("review_due_at")     // recommendation deadline; reminders T-7/T-2/T+1
   selfDeclaredConflict Boolean  @default(false) @map("self_declared_conflict")
   // Review content (ADR-003)
-  fitsTheme           Boolean?          @map("fits_theme")            // gate: adequação ao tema
+  fitsTheme           Boolean?          @map("fits_theme")            // gate: adequação ao tema (Não ⇒ justification required)
+  gateJustification   String?           @map("gate_justification")
   scores              ReviewScore[]                                   // weighted 1-5 per criterion
   confidence          ReviewerConfidence?
   recommendation      Recommendation?
