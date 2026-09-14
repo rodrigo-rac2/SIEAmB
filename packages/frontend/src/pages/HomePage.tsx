@@ -84,8 +84,8 @@ export function HomePage() {
           )}
           <p className="hero__tagline">{t('home.heroTagline')}</p>
           <p className="hero__meta">
-            {formatDateRange(event.startsAt, event.endsAt, locale)}
-            {event.venue ? ` · ${event.venue}` : ''}
+            <span>{formatDateRange(event.startsAt, event.endsAt, locale)}</span>
+            {event.venue && <span>{event.venue}</span>}
           </p>
           {event.settings.registrationOpen && (
             <Link className="hero__cta" to={`${base}/inscricoes`}>

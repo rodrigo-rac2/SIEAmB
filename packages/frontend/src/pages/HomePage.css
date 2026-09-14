@@ -31,6 +31,9 @@
   color: #cfe3d7;
   font-size: var(--text-sm);
   margin-bottom: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .hero__cta {
