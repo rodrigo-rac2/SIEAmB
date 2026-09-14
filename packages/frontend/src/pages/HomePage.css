@@ -64,7 +64,7 @@
   background-image: var(--hero-texture);
   background-size: 640px auto;
   background-repeat: repeat;
-  opacity: 0.16;
+  opacity: 0.09;
   pointer-events: none;
 }
 
