@@ -1,7 +1,7 @@
 # SIEAmB — Current Status
 
 > Last updated: 2026-10-10 (update this file whenever meaningful progress happens)
-> Daily log: `.claude/log/<year>-w<week>.md` · Pending items: `.claude/log/PENDING.md` (commands: `/log-daily`, `/pending-items`)
+> Daily log: `.claude/log/<year>-w<week>.md` · Backlog: GitHub Issues by milestone (commands: `/log-daily`, `/pending-items`)
 
 ## Where we are
 
@@ -52,15 +52,14 @@ Professora Viviane (project lead) said there is **no budget for ~R$250/month**. 
 - Trade-offs: weekly instead of point-in-time backups, cold starts on the API, free-tier pausing mitigated by a scheduled ping.
 - Remaining costs: domain ~R$40/yr + Samuel's bolsa (committee's call).
 
-## Next steps (in order)
+## Next steps
 
-1. **Send the hosting recommendation to the group (due 2026-09-01!)** — Supabase sa-east-1 + Vercel + Render/Railway, R$0 until payments phase, then ~US$30-40/mo (plan §10.5)
-2. **Editais page** — add the route/section now with "em breve", fill when the committee sends the content (they don't have the edital yet)
-3. **Collect real content from the committee** (dates, fees, areas, committee, email, about text) → replace fixtures
-4. **Apply official visual identity** when design team delivers → tokens.css + logo (what we need was itemized to the group on 2026-08-31)
-5. **Supabase project** (sa-east-1, free tier): persist registrations + news, admin login for the committee (see docs/IMPLEMENTATION_PLAN.md §4, tasks T0.7–T0.10)
-6. **Phase 1**: Express API, admin panel, emails (Resend), Vercel cutover — plan §5
-7. Later: submissions with logged-in area (§6 — client-confirmed requirement), Mercado Pago payments (§7), certificates/anais (§8)
+The backlog is GitHub Issues, ordered by milestone: https://github.com/rodrigo-rac2/SIEAmB/milestones
+
+1. **Edital (23 Oct 2026)** — #5 dates/venue/schedule, #6 slug 2027, #7 fees, #8 about, #9 idealizadores, #10 team per edition, #11 editais page, #12 committee input
+2. **Registrations + submissions open (10 Nov 2026)** — #13 Supabase, #14 registration persistence + e-mail, #15 admin, #16 payment decision (by 24 Oct), #17 submissions MVP, #18 Resend, #19 Playwright vs previews, #20 retire Pages
+3. **Peer review (Jan-Mar 2027)** — #21
+4. **Event (24-26 Mar 2027)** — #22 certificates/anais; #23 zh-CN review (no milestone)
 
 ## External dependencies to kick off early
 
