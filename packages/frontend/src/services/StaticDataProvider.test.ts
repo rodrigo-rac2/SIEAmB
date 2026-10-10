@@ -67,7 +67,8 @@ describe('StaticDataProvider', () => {
     expect(dates.at(-1)?.date.startsWith('2027-03-24')).toBe(true);
     // The extension (15/02/2027) is internal guidance for now and must not be published.
     expect(dates.some((d) => d.isExtended || /Prorroga/.test(d.label))).toBe(false);
-    expect(dates).toHaveLength(9);
+    expect(dates).toHaveLength(10);
+    expect(dates.find((d) => d.monthOnly)?.label).toBe('Divulgação da programação');
     expect(dates.find((d) => /Início das submissões/.test(d.label))?.date.startsWith('2026-11-15')).toBe(true);
   });
 
