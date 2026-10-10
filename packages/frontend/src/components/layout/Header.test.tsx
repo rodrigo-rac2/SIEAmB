@@ -8,7 +8,7 @@ import { TopBar } from './TopBar';
 describe('Header + TopBar (fixtures)', () => {
   it('current edition: Equipe in the menu, editions link only in the top bar', async () => {
     renderAtEvent(
-      '/2026/',
+      '/2027/',
       <>
         <TopBar />
         <Header />
@@ -42,7 +42,7 @@ describe('Header + TopBar (fixtures)', () => {
   });
 
   it('top bar shows the edition dates and venue', async () => {
-    renderAtEvent('/2026/', <TopBar />);
+    renderAtEvent('/2027/', <TopBar />);
     expect(await screen.findByText(/24\s?[–-]\s?26 de março de 2027/)).toBeInTheDocument();
     expect(screen.getByText('Evento online')).toBeInTheDocument();
   });

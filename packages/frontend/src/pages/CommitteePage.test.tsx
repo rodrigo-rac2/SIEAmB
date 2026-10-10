@@ -6,7 +6,7 @@ import { CommitteePage } from './CommitteePage';
 
 describe('CommitteePage (fixtures)', () => {
   it('2027: founders first, then the three groups in committee order', async () => {
-    renderAtEvent('/2026/organizacao', <CommitteePage />);
+    renderAtEvent('/2027/organizacao', <CommitteePage />);
     await screen.findByRole('heading', { name: 'Equipe de Mídias' });
     const headings = screen.getAllByRole('heading', { level: 2 });
     expect(headings.map((h) => h.textContent)).toEqual([
@@ -18,7 +18,7 @@ describe('CommitteePage (fixtures)', () => {
   });
 
   it('repeats photo and name per group but shows a bio only once per person', async () => {
-    const { container } = renderAtEvent('/2026/organizacao', <CommitteePage />);
+    const { container } = renderAtEvent('/2027/organizacao', <CommitteePage />);
     await screen.findByRole('heading', { name: 'Equipe de Mídias' });
     // Najara: founder + scientific committee + reviewer.
     const najara = screen.getAllByRole('heading', { name: 'Ma. Najara Escarião Agripino' });
@@ -34,7 +34,7 @@ describe('CommitteePage (fixtures)', () => {
   });
 
   it('marks exactly the three coordinators and never a founder', async () => {
-    renderAtEvent('/2026/organizacao', <CommitteePage />);
+    renderAtEvent('/2027/organizacao', <CommitteePage />);
     await screen.findByRole('heading', { name: 'Equipe de Mídias' });
     const badges = screen.getAllByText('Coordenação da equipe');
     expect(badges).toHaveLength(3);
@@ -45,7 +45,7 @@ describe('CommitteePage (fixtures)', () => {
   });
 
   it('has no leftover link to the About page founders', async () => {
-    renderAtEvent('/2026/organizacao', <CommitteePage />);
+    renderAtEvent('/2027/organizacao', <CommitteePage />);
     await screen.findByRole('heading', { name: 'Idealizadores' });
     expect(screen.queryByRole('link', { name: /idealizadores/i })).toBeNull();
   });

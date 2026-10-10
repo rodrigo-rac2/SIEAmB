@@ -35,6 +35,8 @@ export interface EventTheme {
 export interface EventSummary {
   id: string;
   slug: string;
+  /** Old URL slugs of this edition (e.g. before the event year moved); the app redirects them to `slug`. */
+  legacySlugs: string[];
   name: string;
   fullName: string;
   edition: number;

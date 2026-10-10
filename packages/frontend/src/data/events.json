@@ -1,7 +1,10 @@
 [
   {
-    "id": "evt-2026",
-    "slug": "2026",
+    "id": "evt-2027",
+    "slug": "2027",
+    "legacySlugs": [
+      "2026"
+    ],
     "name": "II SIEAmB",
     "fullName": "II Seminário Internacional de Estudos Ambientais",
     "edition": 2,
@@ -13,7 +16,7 @@
     "venueUrl": "https://youtube.com/@sieambufla6013",
     "isCurrent": true,
     "isArchived": false,
-    "heroImageUrl": "brand/2026/crack-83644d.png",
+    "heroImageUrl": "brand/2027/crack-83644d.png",
     "theme": {
       "primary": "#40531B",
       "primaryDark": "#392110",
@@ -28,12 +31,13 @@
       "submissionsOpen": false,
       "showProgram": false
     },
-    "logoUrl": "brand/2026/logo.png",
+    "logoUrl": "brand/2027/logo.png",
     "lockupUrl": null
   },
   {
     "id": "evt-2025",
     "slug": "2025",
+    "legacySlugs": [],
     "name": "SIEAmb 2025",
     "fullName": "1º Seminário Internacional de Estudos Ambientais",
     "edition": 1,

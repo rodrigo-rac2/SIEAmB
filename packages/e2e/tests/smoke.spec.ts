@@ -3,14 +3,14 @@ import { expect, test } from '@playwright/test';
 test.describe('public site @smoke', () => {
   test('root redirects to the current event home', async ({ page }) => {
     await page.goto('/');
-    await expect(page).toHaveURL(/\/2026\/$/);
+    await expect(page).toHaveURL(/\/2027\/$/);
     await expect(page.getByRole('heading', { level: 1 })).toContainText(
       'Seminário Internacional de Estudos Ambientais',
     );
   });
 
   test('home renders hero, quick links, dates and news', async ({ page }) => {
-    await page.goto('/2026/');
+    await page.goto('/2027/');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     await expect(page.getByRole('link', { name: /Datas Importantes/i }).first()).toBeVisible();
     await expect(page.getByText('Últimos Avisos')).toBeVisible();
@@ -18,15 +18,15 @@ test.describe('public site @smoke', () => {
 
   test('navigates to every public page', async ({ page, isMobile }) => {
     const routes = [
-      ['/2026/o-evento', 'O Evento'],
-      ['/2026/organizacao', 'Equipe'],
-      ['/2026/areas-tematicas', 'Áreas Temáticas'],
-      ['/2026/submissoes', 'Submissão de Trabalhos'],
-      ['/2026/inscricoes', 'Inscrições'],
-      ['/2026/datas-importantes', 'Datas Importantes'],
-      ['/2026/avisos', 'Avisos'],
-      ['/2026/local', 'Local'],
-      ['/2026/contato', 'Contato'],
+      ['/2027/o-evento', 'O Evento'],
+      ['/2027/organizacao', 'Equipe'],
+      ['/2027/areas-tematicas', 'Áreas Temáticas'],
+      ['/2027/submissoes', 'Submissão de Trabalhos'],
+      ['/2027/inscricoes', 'Inscrições'],
+      ['/2027/datas-importantes', 'Datas Importantes'],
+      ['/2027/avisos', 'Avisos'],
+      ['/2027/local', 'Local'],
+      ['/2027/contato', 'Contato'],
       ['/edicoes-anteriores', 'Edições Anteriores'],
     ] as const;
 
@@ -39,7 +39,7 @@ test.describe('public site @smoke', () => {
   });
 
   test('news list → detail works', async ({ page }) => {
-    await page.goto('/2026/avisos');
+    await page.goto('/2027/avisos');
     await page
       .getByRole('link', { name: 'Site do II SIEAmB está no ar' })
       .first()
@@ -91,7 +91,7 @@ test.describe('public site @smoke', () => {
     const banner = page.getByRole('note');
     await expect(banner).toContainText('edição anterior');
     await banner.getByRole('link').click();
-    await expect(page).toHaveURL(/\/2026\/$/);
+    await expect(page).toHaveURL(/\/2027\/$/);
 
     // Current edition reaches the editions index from the top bar (visible on every viewport).
     await page.locator('.topbar').getByRole('link', { name: 'Edições Anteriores' }).click();
@@ -107,12 +107,12 @@ test.describe('public site @smoke', () => {
         .evaluate((el) => getComputedStyle(el).backgroundColor);
     };
     // 2026 uses the official II SIEAmB dark brown; 2025 keeps its archived first-edition palette.
-    expect(await topbarColor('/2026/')).toBe('rgb(57, 33, 16)');
+    expect(await topbarColor('/2027/')).toBe('rgb(57, 33, 16)');
     expect(await topbarColor('/2025/')).toBe('rgb(16, 31, 58)');
   });
 
   test('2026 renders the official identity: lockup, texture, fonts', async ({ page }) => {
-    await page.goto('/2026/');
+    await page.goto('/2027/');
     const hero = page.locator('.hero');
     await expect(hero).toHaveClass(/hero--light/);
     await expect(hero.locator('img.hero__brand-logo')).toBeVisible();
@@ -127,18 +127,18 @@ test.describe('public site @smoke', () => {
     });
     expect(fonts.heading).toContain('Garet');
     expect(fonts.body).toContain('Lora');
-    await expect(page.locator('.site-header__logo-img')).toHaveAttribute('src', /brand\/2026\/logo\.png/);
+    await expect(page.locator('.site-header__logo-img')).toHaveAttribute('src', /brand\/2027\/logo\.png/);
   });
 
   test('unknown route shows the 404 page', async ({ page }) => {
-    await page.goto('/2026/nao-existe');
+    await page.goto('/2027/nao-existe');
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Página não encontrada');
   });
 });
 
 test.describe('registration form @smoke', () => {
   test('blocks an invalid CPF and submits with a valid one', async ({ page }) => {
-    await page.goto('/2026/inscricoes/nova');
+    await page.goto('/2027/inscricoes/nova');
 
     await page.getByLabel(/Nome completo/).fill('Maria da Silva Santos');
     await page.getByLabel(/E-mail/).fill('maria@example.com');
@@ -157,13 +157,13 @@ test.describe('i18n @smoke', () => {
   test('defaults to pt-BR regardless of browser language', async ({ browser }) => {
     const context = await browser.newContext({ locale: 'en-US' });
     const page = await context.newPage();
-    await page.goto('/2026/');
+    await page.goto('/2027/');
     await expect(page.getByRole('link', { name: 'Inscrições', exact: true }).first()).toBeVisible();
     await context.close();
   });
 
   test('flag buttons switch the language', async ({ page }) => {
-    await page.goto('/2026/');
+    await page.goto('/2027/');
     await page.getByRole('button', { name: 'English' }).click();
     await expect(page.getByRole('link', { name: 'Registration', exact: true }).first()).toBeVisible();
     await page.getByRole('button', { name: '中文' }).click();
@@ -175,7 +175,7 @@ test.describe('i18n @smoke', () => {
   });
 
   test('about page shows the general text, the edition section and the founders', async ({ page }) => {
-    await page.goto('/2026/o-evento');
+    await page.goto('/2027/o-evento');
     await expect(page.getByText(/Seminário Internacional de Estudos Ambientais do PPGEGRN/)).toBeVisible();
     await expect(page.getByRole('heading', { name: /Esta edição: II SIEAmB/ })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Idealizadores' })).toBeVisible();
@@ -185,11 +185,11 @@ test.describe('i18n @smoke', () => {
   });
 
   test('team page groups the 2027 team with coordination badges and the founders block', async ({ page, isMobile }) => {
-    await page.goto('/2026/');
+    await page.goto('/2027/');
     if (!isMobile) {
       await expect(page.getByRole('navigation').getByRole('link', { name: 'Equipe' })).toBeVisible();
     }
-    await page.goto('/2026/organizacao');
+    await page.goto('/2027/organizacao');
     await expect(page.getByRole('heading', { name: 'Idealizadores' })).toBeVisible();
     for (const group of ['Comitê Científico', 'Equipe de Revisores', 'Equipe de Mídias']) {
       await expect(page.getByRole('heading', { name: group })).toBeVisible();
@@ -208,14 +208,14 @@ test.describe('i18n @smoke', () => {
   test('desktop menu stays on one line at laptop width', async ({ page, isMobile }) => {
     test.skip(isMobile, 'mobile uses the drawer');
     await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto('/2026/');
+    await page.goto('/2027/');
     const items = page.getByRole('navigation').getByRole('link');
     const tops = await items.evaluateAll((els) => els.map((e) => e.getBoundingClientRect().top));
     expect(new Set(tops.map((t) => Math.round(t))).size).toBe(1);
   });
 
   test('registration page shows the fee matrix by lot', async ({ page }) => {
-    await page.goto('/2026/inscricoes');
+    await page.goto('/2027/inscricoes');
     const headers = page.getByRole('columnheader');
     await expect(headers.nth(1)).toContainText('Lote 1');
     await expect(headers.nth(1)).toContainText('10 de novembro de 2026');
@@ -223,5 +223,11 @@ test.describe('i18n @smoke', () => {
     const pros = page.getByRole('row', { name: /Professores e demais profissionais/ });
     await expect(pros).toContainText(/R\$\s?70,00/);
     await expect(pros).toContainText(/R\$\s?90,00/);
+  });
+
+  test('legacy /2026/ links redirect to the 2027 slug, keeping the rest of the path', async ({ page }) => {
+    await page.goto('/2026/organizacao?x=1#equipe');
+    await expect(page).toHaveURL(/\/2027\/organizacao\?x=1#equipe$/);
+    await expect(page.getByRole('heading', { name: 'Comitê Científico' })).toBeVisible();
   });
 });
