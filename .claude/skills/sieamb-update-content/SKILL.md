@@ -11,7 +11,7 @@ Phase 0 content lives in JSON fixtures at `packages/frontend/src/data/`. Once Su
 
 | File | Entity | Notes |
 |---|---|---|
-| `events.json` | Event editions | `isCurrent: true` on exactly ONE event — this controls the root redirect. Dates are ISO with `-03:00` offset |
+| `events.json` | Event editions | `isCurrent: true` on exactly ONE event — this controls the root redirect. Dates are ISO with `-03:00` offset. `isOnline` + `venueUrl` drive the Local page (streaming link for remote editions, map link otherwise) |
 | `importantDates.json` | Deadlines | `sortOrder` controls display order; `isExtended: true` shows the "prorrogado" badge |
 | `thematicAreas.json` | Áreas temáticas | `code` like "AT-01" |
 | `feeTiers.json` | Fee matrix | `amountCents` is integer centavos (R$ 80,00 = 8000). Category × modality; missing combos render as "—" |

@@ -120,6 +120,9 @@
   },
   "venue": {
     "title": "Venue",
+    "onlineText": "The event is held online, streamed live on the SIEAmB YouTube channel. The link for each session will be published with the programme.",
+    "onlineCta": "Open the YouTube channel",
+    "mapCta": "Open in maps",
     "campusTitle": "Getting there",
     "lodgingTitle": "Lodging"
   },

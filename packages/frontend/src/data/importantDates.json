@@ -2,42 +2,74 @@
   {
     "id": "d1",
     "eventId": "evt-2026",
-    "label": "Abertura das submissões de trabalhos",
-    "date": "2026-05-04T00:00:00-03:00",
+    "label": "Lançamento do edital",
+    "date": "2026-10-23T00:00:00-03:00",
     "isExtended": false,
     "sortOrder": 1
   },
   {
     "id": "d2",
     "eventId": "evt-2026",
-    "label": "Prazo final para submissão de resumos",
-    "date": "2026-08-31T23:59:00-03:00",
+    "label": "Início das submissões de trabalhos",
+    "date": "2026-11-09T00:00:00-03:00",
     "isExtended": false,
     "sortOrder": 2
   },
   {
     "id": "d3",
     "eventId": "evt-2026",
-    "label": "Divulgação dos trabalhos aprovados",
-    "date": "2026-09-30T00:00:00-03:00",
+    "label": "Encerramento das submissões",
+    "date": "2027-01-18T23:59:00-03:00",
     "isExtended": false,
     "sortOrder": 3
   },
   {
     "id": "d4",
     "eventId": "evt-2026",
-    "label": "Prazo de inscrição para autores",
-    "date": "2026-10-23T23:59:00-03:00",
-    "isExtended": false,
+    "label": "Prorrogação das submissões (até)",
+    "date": "2027-02-15T23:59:00-03:00",
+    "isExtended": true,
     "sortOrder": 4
   },
   {
     "id": "d5",
     "eventId": "evt-2026",
-    "label": "Realização do evento",
-    "date": "2026-11-25T08:00:00-03:00",
+    "label": "Divulgação preliminar dos resultados",
+    "date": "2027-02-22T00:00:00-03:00",
     "isExtended": false,
     "sortOrder": 5
+  },
+  {
+    "id": "d6",
+    "eventId": "evt-2026",
+    "label": "Divulgação definitiva dos resultados",
+    "date": "2027-03-12T00:00:00-03:00",
+    "isExtended": false,
+    "sortOrder": 6
+  },
+  {
+    "id": "d7",
+    "eventId": "evt-2026",
+    "label": "Prazo final de inscrição para autores",
+    "date": "2027-03-15T23:59:00-03:00",
+    "isExtended": false,
+    "sortOrder": 7
+  },
+  {
+    "id": "d8",
+    "eventId": "evt-2026",
+    "label": "Prazo final de inscrição para ouvintes",
+    "date": "2027-03-20T23:59:00-03:00",
+    "isExtended": false,
+    "sortOrder": 8
+  },
+  {
+    "id": "d9",
+    "eventId": "evt-2026",
+    "label": "Realização do II SIEAmB (online)",
+    "date": "2027-03-24T08:00:00-03:00",
+    "isExtended": false,
+    "sortOrder": 9
   },
   {
     "id": "d25-1",

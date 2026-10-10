@@ -120,6 +120,9 @@
   },
   "venue": {
     "title": "Sede",
+    "onlineText": "El evento se realiza de forma remota, con transmisión en vivo por el canal del SIEAmB en YouTube. El enlace de cada sesión se publicará junto con el programa.",
+    "onlineCta": "Ir al canal de YouTube",
+    "mapCta": "Ver en el mapa",
     "campusTitle": "Cómo llegar",
     "lodgingTitle": "Alojamiento"
   },

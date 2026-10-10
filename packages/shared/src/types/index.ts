@@ -41,6 +41,10 @@ export interface EventSummary {
   startsAt: string; // ISO
   endsAt: string; // ISO
   venue: string | null;
+  /** True for remote editions: the venue page shows the streaming link instead of an address. */
+  isOnline: boolean;
+  /** Where the venue text points: streaming channel for online editions, map link otherwise. */
+  venueUrl: string | null;
   isCurrent: boolean;
   isArchived: boolean;
   heroImageUrl: string | null;
