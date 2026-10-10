@@ -5,39 +5,29 @@
 
 ## Where we are
 
-**Phase 0 (visual prototype) is COMPLETE and live**: https://sieamb.org (Vercel, since 2026-10-10; the old GitHub Pages URL redirects there)
+**Production site live at https://sieamb.org** (Vercel, since 2026-10-10). `develop` → https://dev.sieamb.org, every PR gets a preview URL. The old GitHub Pages URL redirects (branch `gh-pages`).
 
-- CI is green on `main`; Vercel deploys every merge (`main` → sieamb.org, `develop` → dev.sieamb.org, previews per PR) and the Playwright suite runs against each deployment.
-- **First client feedback is in (2026-08-31)**: Thays approved the prototype and asked for (1) an editais page (ANPOCS-style HTML pages) and (2) the logged-in submission area with attachments/status — which is exactly plan §6. Najara and professora Viviane still reviewing.
-- **URGENT: Rodrigo owes the group a hosting-plan recommendation by 2026-09-01** (PENDING R1) — research is done in the plan, needs packaging in non-technical pt-BR with costs in R$.
-- Team: Samuel (@0Samuel09) added as collaborator (invite pending accept); `develop` branch + ruleset protecting main/develop (PR + 1 approval; admin bypass for Rodrigo). Flow: `feature/* → develop → main`.
-- Project WhatsApp group exists (Najara, Thays, Rodrigo, Samuel, 2 design people).
-
-## Client input 2026-10-10 (Najara, WhatsApp) — NOT YET APPLIED
-
-- **Event is now 24–26 March 2027, ONLINE** (YouTube channel https://youtube.com/@sieambufla6013). Fixtures still say 25–27 Nov 2026 at UFCG Campina Grande. Slug `/2026/` probably should become `/2027/`.
-- **Cronograma II SIEAmB**: edital 23/10/2026 · submissions open 09/11/2026 · close 18/01/2027 · extension until 15/02/2027 · preliminary results 22/02/2027 · final results 12/03/2027 · author registration until 15/03/2027 · listener registration until 20/03/2027 · programme "dezembro" (odd, confirm) · event 24–26/03/2027.
-- **Rodrigo committed: registrations open 10/11/2026** (fallback = Even3 like 2025 if the integrated system is not ready). Hard date.
-- **Fees (3 categories × 2 lots)**: graduação R$30 / R$50 · pós R$50 / R$70 · professores e demais profissionais R$70 / R$90. The lot dates on her image (26/05–20/08, 21/08–20/10) predate the new cronograma — need new lot dates.
-- **Sobre o evento**: keep the general institutional text from the Wix "Sobre o SIEAmb" page + keep the 2025 edition description + add this edition's text; every year appends its own presentation text.
-- **Idealizadores are fixed** (Viviane Farias Silva, José Otávio Aguiar, Niklas Werner Weins, Najara Escarião Agripino — bios on the Wix page).
-- **Team per edition**: fixed team (idealizadores) + variable team per edition, each archived edition keeps its own team. Reference layout: chinabrasilunicamp.wixsite.com/2023 and /2024 (one page per year, "Eventos Prévios" + "Equipe" with name + bio). Najara will send the current team names (some left, some joined, Rodrigo included).
+- **Backlog = GitHub Issues by milestone**: https://github.com/rodrigo-rac2/SIEAmB/milestones. Nearest: **Edital (23 Oct 2026)** with #11 editais page, #37 thematic areas, #7 fees, #6 slug year, #12 committee asks. Then **Registrations + submissions open (10 Nov 2026)**: #13 Supabase, #14 registration persistence + e-mail, #15 admin, #16 payment decision by 24/10, #17 submissions MVP, #18 Resend.
+- **Hard date**: registrations open on **2026-11-10** (Rodrigo's commitment to Najara; Even3 fallback for payment like 2025).
+- **Process**: `feature/<issue>-<slug>` → PR to `develop` (`Closes #N`) → release PR `develop → main`. Required checks: `quality`, `e2e-smoke`, `e2e-preview` (Playwright against the Vercel deployment), `branch-policy` (main only from develop/hotfix/*). Rodrigo admin-merges while alone; Samuel's invite still pending.
+- **Applied on 2026-10-10 from Najara's input**: March 2027 dates, online venue (YouTube), committee schedule, About page (general text + 2025 text + idealizadores), team page per edition with photos/bios/groups (Comitê Científico, Revisores, Mídias; 2025 keeps its team + palestrantes), Equipe in the menu, editions link in the top bar.
+- **Waiting on Najara** (message sent 2026-10-10 evening): lot dates (she does them tonight), edital text, II edição thematic areas, edition year 2027 vs 2026 (decides the URL slug, #6), "dezembro" programme date, confirm the unnamed 2025 photo is Laura, Rodrigo's own team entry.
 
 ## What works today
 
 - Monorepo (npm workspaces): `packages/shared`, `packages/frontend`, `packages/e2e`
 - All public pages in 4 languages (pt-BR default forced, en, es, zh-CN) — flag buttons in the topbar, preference in localStorage (`sieamb-locale`)
-- Multi-event routing: `/2026/` (current), `/2025/` (archived stub), root redirects to current event (configured via `isCurrent` in `packages/frontend/src/data/events.json`)
+- Multi-event routing: `/2026/` (current II SIEAmB, 24–26 Mar 2027, slug may become `/2027/` per #6), `/2025/` (archived recap with team, speakers, anais), root redirects to current event (`isCurrent` in `events.json`)
 - **Per-edition themes** (ADR-001): each event's optional `theme` overrides the CSS tokens for that edition only; archived editions keep their palette forever. Current-edition identity goes in the event `theme`, tokens.css is just the neutral fallback. 2025 has a demo blue theme as proof
 - Pre-registration form with CPF/passport validation (zod schemas in `@sieamb/shared`)
 - News (avisos) list + detail with markdown
-- Tests: 22 unit (Vitest) + 17 E2E (Playwright, desktop + mobile projects), all green
+- Tests: 55 unit/integration (Vitest + RTL on the fixtures) + 38 E2E (Playwright, desktop + mobile; `@deployed` spec runs against real deployments), all green
 - SPA routing on Vercel via `rewrites` in `vercel.json`
 
 ## What is placeholder / fake
 
 - **Visual identity 2026: APPLIED** (palette, Garet/Lora fonts, logo, lockup hero, cracked-earth texture) via the event record + `public/brand/2026/`. tokens.css remains the neutral fallback. Still open: 2026 theme/dates text from the committee (the design mock still shows 2025's), optional SVG exports
-- **All content**: dates, fee amounts, thematic areas, committee names, contact email (sieamb@ufcg.edu.br is a GUESS), about text — all in `packages/frontend/src/data/*.json` fixtures
+- **Still placeholder**: fee lot dates and category labels (#7), thematic areas for 2027 (#37), edition presentation text for 2027 (`aboutMd` null → "em breve"), editais (#11), news items, sponsors logos, contact e-mail (fixtures say sieambufcg@gmail.com from the old site). Everything else on the public pages is real committee content
 - **Registration does NOT persist** — StaticDataProvider simulates success. Real persistence = Supabase (Phase 0.5/1)
 - **zh-CN translations are machine-drafted** — need native-speaker review before the event
 
