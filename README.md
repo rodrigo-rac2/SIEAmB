@@ -49,7 +49,7 @@ O projeto evolui em fases (detalhes no [plano](docs/IMPLEMENTATION_PLAN.md)):
 
 | Fase | O quê | Status |
 |---|---|---|
-| **0** | Protótipo visual + pré-inscrição (hoje em https://sieamb.org, na Vercel) | ✅ Concluída |
+| **0** | Protótipo visual + pré-inscrição (hoje em https://sieamb.org, na Vercel; o endereço antigo do GitHub Pages redireciona) | ✅ Concluída |
 | **1** | Supabase (persistência real), painel admin, e-mails, hospedagem definitiva | 🚧 **Em andamento (estamos aqui)** — milestone [Registrations + submissions open](https://github.com/rodrigo-rac2/SIEAmB/milestone/2) |
 | 2 | Submissão de artigos com revisão double-blind | Planejada |
 | 3 | Pagamento (Mercado Pago: Pix, cartão, boleto) | Planejada |
@@ -65,7 +65,7 @@ Na Fase 0 **não existe backend rodando**: o site é 100% estático e os dados v
 
 ```
 SIEAmB/
-├── .github/workflows/       # CI (lint+testes); deploy antigo no GitHub Pages (será aposentado)
+├── .github/workflows/       # CI (lint+testes), E2E contra deploys da Vercel, política de branches
 ├── .claude/                 # Contexto para sessões do Claude Code (status, histórico, skills)
 ├── docs/
 │   └── IMPLEMENTATION_PLAN.md   # Plano completo das 5 fases
@@ -248,7 +248,6 @@ O domínio `sieamb.org` está registrado na Cloudflare (DNS também lá). A conf
 - **`ci.yml`** — roda em todo PR e push em main/develop: job `quality` (ESLint, TypeScript, testes unitários e de integração com Vitest) e job `e2e-smoke` (Playwright contra um build local).
 - **`e2e-preview.yml`** — dispara quando a Vercel termina um deploy (preview do PR, `develop` ou `main`) e roda a suíte Playwright **contra a URL publicada** (`BASE_URL`), inclusive os testes `@deployed` (rewrites de SPA, idioma persistido, fotos servidas, redirecionamento do www). O check `e2e-preview` aparece no PR.
 - **`branch-policy.yml`** — o GitHub não restringe a branch de origem de um PR, então este check falha quando um PR para `main` não vem de `develop` ou `hotfix/*`, e quando alguém tenta mergear `main` em `develop`.
-- **`deploy-pages.yml`** — legado do protótipo (publica também em https://rodrigo-rac2.github.io/SIEAmB/). Será removido (issue #20).
 
 **Checks obrigatórios** (ruleset `protect-main-develop`): `quality`, `e2e-smoke`, `e2e-preview` e `branch-policy` precisam estar verdes para mergear em `develop` ou em `main`. Issues fecham automaticamente só quando o PR de release chega na `main` (o GitHub só processa `Closes #N` na branch padrão).
 
@@ -274,7 +273,7 @@ Para rodar a suíte E2E contra qualquer ambiente publicado: `BASE_URL=https://de
 | Site publicado não mostra minha mudança | Cache do CDN (até 10 min). Confira em aba anônima |
 | Erro de tipo em `@sieamb/shared` | O shared não tem build separado — confira `tsconfig` e reinicie o TS server do editor |
 | Testes E2E passam local e falham na CI | CI usa `locale: 'pt-BR'` e viewport mobile também — rode `npx playwright test` completo, não só um projeto |
-| Rota dá 404 no GitHub Pages mas funciona local | O SPA usa o truque do `404.html` — confira `public/404.html` e o script em `index.html` |
+| Rota dá 404 em um deploy novo mas funciona local | O SPA depende dos `rewrites` em `vercel.json` (tudo cai em `index.html`); confira se o arquivo está no build |
 
 ---
 

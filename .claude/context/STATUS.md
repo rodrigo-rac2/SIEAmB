@@ -5,9 +5,9 @@
 
 ## Where we are
 
-**Phase 0 (visual prototype) is COMPLETE and live**: https://sieamb.org (Vercel, since 2026-10-10; GitHub Pages copy at https://rodrigo-rac2.github.io/SIEAmB/ still deploys as fallback)
+**Phase 0 (visual prototype) is COMPLETE and live**: https://sieamb.org (Vercel, since 2026-10-10; the old GitHub Pages URL redirects there)
 
-- CI and Pages deploy are green on `main`. Every push to `main` auto-deploys.
+- CI is green on `main`; Vercel deploys every merge (`main` → sieamb.org, `develop` → dev.sieamb.org, previews per PR) and the Playwright suite runs against each deployment.
 - **First client feedback is in (2026-08-31)**: Thays approved the prototype and asked for (1) an editais page (ANPOCS-style HTML pages) and (2) the logged-in submission area with attachments/status — which is exactly plan §6. Najara and professora Viviane still reviewing.
 - **URGENT: Rodrigo owes the group a hosting-plan recommendation by 2026-09-01** (PENDING R1) — research is done in the plan, needs packaging in non-technical pt-BR with costs in R$.
 - Team: Samuel (@0Samuel09) added as collaborator (invite pending accept); `develop` branch + ruleset protecting main/develop (PR + 1 approval; admin bypass for Rodrigo). Flow: `feature/* → develop → main`.
@@ -32,7 +32,7 @@
 - Pre-registration form with CPF/passport validation (zod schemas in `@sieamb/shared`)
 - News (avisos) list + detail with markdown
 - Tests: 22 unit (Vitest) + 17 E2E (Playwright, desktop + mobile projects), all green
-- GitHub Pages SPA trick: `public/404.html` + sessionStorage restore in `index.html`
+- SPA routing on Vercel via `rewrites` in `vercel.json`
 
 ## What is placeholder / fake
 
@@ -70,7 +70,7 @@ The backlog is GitHub Issues, ordered by milestone: https://github.com/rodrigo-r
 
 ## Key links
 
-- Live site: https://sieamb.org (Vercel team `sieamb`, project `sieamb`, Git-connected to rodrigo-rac2/SIEAmB; `main` = production, `develop` = https://dev.sieamb.org). Pages fallback: https://rodrigo-rac2.github.io/SIEAmB/
+- Live site: https://sieamb.org (Vercel team `sieamb`, project `sieamb`, Git-connected to rodrigo-rac2/SIEAmB; `main` = production, `develop` = https://dev.sieamb.org). Old Pages URL https://rodrigo-rac2.github.io/SIEAmB/ redirects (branch `gh-pages`)
 - Repo: https://github.com/rodrigo-rac2/SIEAmB
 - Full plan: docs/IMPLEMENTATION_PLAN.md (also published as a Claude artifact: https://claude.ai/code/artifact/6af1a1b5-57dc-4440-abd3-237a6f3ee474)
 - Reference site (inspiration): https://engema.org.br/28/
