@@ -39,7 +39,7 @@ O SIEAmB é um seminário internacional acadêmico. O site precisa de:
 - **Submissão de artigos** científicos com revisão às cegas (fase futura)
 - **Certificados** com código de validação (fase futura)
 
-O site é **multi-edição**: cada ano é uma edição nova (ex.: `/2026/`), e as edições antigas continuam acessíveis como arquivo. O domínio raiz sempre redireciona para a edição atual.
+O site é **multi-edição**: cada edição tem um slug com o ano do evento (ex.: `/2027/`), e as edições antigas continuam acessíveis como arquivo. O domínio raiz sempre redireciona para a edição atual. Slugs antigos de uma edição (`legacySlugs` no evento, ex.: `/2026/` → `/2027/`) redirecionam mantendo o resto do caminho.
 
 Somos os mantenedores deste projeto daqui pra frente — o código precisa ficar sempre num estado que outra pessoa consiga assumir.
 
@@ -125,7 +125,7 @@ Para os testes E2E na primeira vez: `npx playwright install chromium`.
 
 ### 1. Multi-edição (multi-evento)
 
-Todas as rotas do site vivem embaixo de `/:eventSlug/` (ex.: `/2026/inscricoes`). O arquivo `packages/frontend/src/data/events.json` define as edições, e **exatamente uma** tem `isCurrent: true` — é para ela que a raiz `/` redireciona. Edições antigas ficam com `isArchived: true` e continuam navegáveis. O `EventContext` lê o slug da URL e disponibiliza a edição para todas as páginas.
+Todas as rotas do site vivem embaixo de `/:eventSlug/` (ex.: `/2027/inscricoes`). O arquivo `packages/frontend/src/data/events.json` define as edições, e **exatamente uma** tem `isCurrent: true` — é para ela que a raiz `/` redireciona. Edições antigas ficam com `isArchived: true` e continuam navegáveis. O `EventContext` lê o slug da URL e disponibiliza a edição para todas as páginas.
 
 ### 2. DataProvider (abstração de dados)
 
@@ -153,7 +153,7 @@ O tema funciona em **duas camadas** (decisão registrada no [ADR-001](docs/adr/0
 1. **`packages/frontend/src/styles/tokens.css`** — CSS custom properties globais (`var(--color-primary)` etc.). São os padrões neutros e o fallback, não a identidade de nenhuma edição.
 2. **`theme` do evento** — cada edição pode ter um objeto `theme` (tipo `EventTheme` no shared) em `events.json` que sobrescreve os tokens **só para aquela edição**. O `PageLayout` aplica isso no wrapper da edição via `eventThemeVars()` (`src/lib/theme.ts`).
 
-Por que assim? O site é permanente, mas **a paleta muda a cada edição** (requisito da comissão) — e as edições arquivadas ficam com a paleta delas para sempre. Compare `/2026/` com `/2025/` (que tem tema azul) para ver funcionando.
+Por que assim? O site é permanente, mas **a paleta muda a cada edição** (requisito da comissão) — e as edições arquivadas ficam com a paleta delas para sempre. Compare `/2027/` com `/2025/` (que tem tema azul) para ver funcionando.
 
 Regras práticas: a identidade da edição atual entra no `theme` do evento (não no tokens.css); nunca coloque cor/fonte fixa num componente, sempre `var(--...)` — é isso que faz o tema por edição cascatear sem mudança de código.
 

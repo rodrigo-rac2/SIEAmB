@@ -26,7 +26,7 @@ Phase 0 content lives in JSON fixtures at `packages/frontend/src/data/`. Once Su
 
 - All fixture content is **pt-BR** (dynamic content is not translated in Phase 0).
 - UI strings are NOT here — they live in `packages/frontend/src/locales/<locale>.json` (4 files; keep all 4 in sync when adding keys).
-- Every entity needs `eventId` matching the event (`evt-2026` for the current edition).
+- Every entity needs `eventId` matching the event (`evt-2027` for the current edition).
 - After editing: `npm run test && npm run build` — the StaticDataProvider tests assert on fixture invariants (current event exists, news sorted pinned-first, dates sorted).
 - If dates/fees changed, check the E2E smoke assertions in `packages/e2e/tests/smoke.spec.ts` still match (they assert on some fixture text).
 - Commit on a `feature/<issue>-<slug>` branch, push, open a PR to `develop` (`Closes #<issue>`). The Vercel bot comments a preview URL on the PR; merging into `develop` deploys https://dev.sieamb.org, and the `develop → main` release PR deploys https://sieamb.org.
