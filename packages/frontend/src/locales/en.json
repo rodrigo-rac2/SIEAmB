@@ -80,7 +80,7 @@
       "ESTUDANTE_GRADUACAO": "Undergraduate Student",
       "ESTUDANTE_POS": "Graduate Student",
       "PROFESSOR": "Professor / Researcher",
-      "PROFISSIONAL": "Professional",
+      "PROFISSIONAL": "Teachers and other professionals",
       "COMUNIDADE_UFCG": "UFCG Community"
     },
     "modalities": {
@@ -110,7 +110,8 @@
       "email": "Enter a valid email.",
       "password": "Password must be at least 8 characters.",
       "duplicate": "A registration with this email already exists for this event."
-    }
+    },
+    "lotRange": "{{from}} to {{until}}"
   },
   "dates": {
     "title": "Important Dates",

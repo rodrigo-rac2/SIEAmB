@@ -213,4 +213,15 @@ test.describe('i18n @smoke', () => {
     const tops = await items.evaluateAll((els) => els.map((e) => e.getBoundingClientRect().top));
     expect(new Set(tops.map((t) => Math.round(t))).size).toBe(1);
   });
+
+  test('registration page shows the fee matrix by lot', async ({ page }) => {
+    await page.goto('/2026/inscricoes');
+    const headers = page.getByRole('columnheader');
+    await expect(headers.nth(1)).toContainText('Lote 1');
+    await expect(headers.nth(1)).toContainText('10 de novembro de 2026');
+    await expect(headers.nth(2)).toContainText('Lote 2');
+    const pros = page.getByRole('row', { name: /Professores e demais profissionais/ });
+    await expect(pros).toContainText(/R\$\s?70,00/);
+    await expect(pros).toContainText(/R\$\s?90,00/);
+  });
 });

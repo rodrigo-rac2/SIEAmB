@@ -80,7 +80,7 @@
       "ESTUDANTE_GRADUACAO": "Estudiante de Grado",
       "ESTUDANTE_POS": "Estudiante de Posgrado",
       "PROFESSOR": "Profesor / Investigador",
-      "PROFISSIONAL": "Profesional",
+      "PROFISSIONAL": "Profesores y demás profesionales",
       "COMUNIDADE_UFCG": "Comunidad UFCG"
     },
     "modalities": {
@@ -110,7 +110,8 @@
       "email": "Ingrese un correo electrónico válido.",
       "password": "La contraseña debe tener al menos 8 caracteres.",
       "duplicate": "Ya existe una inscripción con este correo para este evento."
-    }
+    },
+    "lotRange": "del {{from}} al {{until}}"
   },
   "dates": {
     "title": "Fechas Importantes",

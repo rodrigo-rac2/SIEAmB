@@ -67,7 +67,8 @@ describe('StaticDataProvider', () => {
     expect(dates.at(-1)?.date.startsWith('2027-03-24')).toBe(true);
     // The extension (15/02/2027) is internal guidance for now and must not be published.
     expect(dates.some((d) => d.isExtended || /Prorroga/.test(d.label))).toBe(false);
-    expect(dates).toHaveLength(8);
+    expect(dates).toHaveLength(9);
+    expect(dates.find((d) => /Início das submissões/.test(d.label))?.date.startsWith('2026-11-15')).toBe(true);
   });
 
   it('serves the general about text, the four founders and the 2025 edition text', async () => {
@@ -109,5 +110,21 @@ describe('StaticDataProvider', () => {
       ...(await provider.getCommittee('evt-2025')),
     ];
     expect([...founders, ...team].every((p) => p.photoUrl?.startsWith('team/'))).toBe(true);
+  });
+
+  it('2027 fees: three categories, two contiguous lots, online only, committee amounts', async () => {
+    const tiers = await provider.getFeeTiers('evt-2026');
+    expect(tiers).toHaveLength(6);
+    expect(new Set(tiers.map((t) => t.modality))).toEqual(new Set(['ONLINE']));
+    const price = (c: string, lot: string) => tiers.find((t) => t.category === c && t.label === lot)?.amountCents;
+    expect([price('ESTUDANTE_GRADUACAO', 'Lote 1'), price('ESTUDANTE_GRADUACAO', 'Lote 2')]).toEqual([3000, 5000]);
+    expect([price('ESTUDANTE_POS', 'Lote 1'), price('ESTUDANTE_POS', 'Lote 2')]).toEqual([5000, 7000]);
+    expect([price('PROFISSIONAL', 'Lote 1'), price('PROFISSIONAL', 'Lote 2')]).toEqual([7000, 9000]);
+    const l1 = tiers.find((t) => t.label === 'Lote 1')!;
+    const l2 = tiers.find((t) => t.label === 'Lote 2')!;
+    expect(l1.validFrom.startsWith('2026-11-10')).toBe(true);
+    expect(l1.validUntil.startsWith('2027-01-01')).toBe(true);
+    expect(l2.validFrom.startsWith('2027-01-02')).toBe(true);
+    expect(l2.validUntil.startsWith('2027-03-20')).toBe(true);
   });
 });
