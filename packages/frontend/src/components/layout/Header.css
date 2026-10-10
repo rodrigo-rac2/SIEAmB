@@ -78,6 +78,22 @@
   font-weight: 600;
 }
 
+/* Laptop widths: tighten the menu so it stays on one line; wrapping is the last resort before the drawer. */
+@media (max-width: 1280px) and (min-width: 901px) {
+  .site-header__nav ul {
+    gap: 0;
+  }
+
+  .site-header__nav a {
+    padding-inline: var(--space-1);
+    font-size: 0.85rem;
+  }
+
+  .site-header__name {
+    font-size: var(--text-base);
+  }
+}
+
 @media (max-width: 900px) {
   .site-header__toggle {
     display: block;

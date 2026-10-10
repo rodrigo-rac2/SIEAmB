@@ -60,8 +60,6 @@
   "committee": {
     "title": "团队",
     "intro": "{{edition}} 的幕后团队。每届会议都有自己的团队，发起人则参与每一届。",
-    "foundersNote": "固定成员，每届会议均参与。",
-    "foundersMore": "了解发起人",
     "coordinator": "团队协调"
   },
   "areas": {
