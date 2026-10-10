@@ -27,3 +27,15 @@
   font-size: var(--text-sm);
   color: var(--color-ink);
 }
+
+.fee-table__range {
+  display: block;
+  font-weight: 400;
+  font-size: 0.8rem;
+  opacity: 0.9;
+}
+
+.fee-table__modality {
+  color: var(--color-ink-muted);
+  font-size: var(--text-sm);
+}
