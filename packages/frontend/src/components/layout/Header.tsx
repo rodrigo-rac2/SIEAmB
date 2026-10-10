@@ -29,6 +29,7 @@ export function Header() {
     : [
         { to: `${base}/`, label: t('nav.home'), end: true },
         { to: `${base}/o-evento`, label: t('nav.about') },
+        { to: `${base}/organizacao`, label: t('nav.committee') },
         { to: `${base}/areas-tematicas`, label: t('nav.areas') },
         { to: `${base}/submissoes`, label: t('nav.submissions') },
         { to: `${base}/inscricoes`, label: t('nav.registration') },

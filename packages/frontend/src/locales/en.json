@@ -18,7 +18,7 @@
   "nav": {
     "home": "Home",
     "about": "The Event",
-    "committee": "Organization",
+    "committee": "Team",
     "areas": "Thematic Areas",
     "submissions": "Submissions",
     "registration": "Registration",
@@ -58,7 +58,7 @@
     "previousEditions": "Previous editions"
   },
   "committee": {
-    "title": "Organization",
+    "title": "Team",
     "intro": "The people behind {{edition}}. Each edition has its own team, and the founders accompany all of them.",
     "foundersNote": "Permanent group, present in every edition.",
     "foundersMore": "Meet the founders",
