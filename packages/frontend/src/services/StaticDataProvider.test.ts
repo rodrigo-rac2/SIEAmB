@@ -80,4 +80,23 @@ describe('StaticDataProvider', () => {
     ]);
     expect((await provider.getEventBySlug('2025'))?.aboutMd).toContain('Governança Ambiental');
   });
+
+  it('2027 team has the three committee groups with coordinators, 2025 keeps its own plus speakers', async () => {
+    const current = await provider.getCurrentEvent();
+    const team = await provider.getCommittee(current.id);
+    const groups = [...new Set(team.map((m) => m.role))];
+    expect(groups).toEqual(['Comitê Científico', 'Equipe de Revisores', 'Equipe de Mídias']);
+    expect(team.filter((m) => m.isCoordinator).map((m) => m.name)).toEqual([
+      'Ma. Thays Alves da Silva',
+      'Lara Maria Almeida Ferreira',
+      'Daniela Torres Teixeira',
+    ]);
+    expect(team.every((m) => m.bioMd && m.bioMd.length > 40)).toBe(true);
+    const first = await provider.getCommittee('evt-2025');
+    expect([...new Set(first.map((m) => m.role))]).toEqual([
+      'Equipe Organizadora',
+      'Equipe de Revisores',
+      'Palestrantes',
+    ]);
+  });
 });

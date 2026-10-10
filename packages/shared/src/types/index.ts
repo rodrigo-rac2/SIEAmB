@@ -101,13 +101,20 @@ export interface Founder {
   sortOrder: number;
 }
 
+/** One person in one group of one edition. The same person can appear in several groups. */
 export interface CommitteeMember {
   id: string;
   eventId: string;
   name: string;
+  /** Group label shown as the section heading (pt-BR content), e.g. "Comitê Científico". */
   role: string;
+  /** Flagged members get the coordination badge inside their group. */
+  isCoordinator: boolean;
   institution: string | null;
+  bioMd: string | null;
   photoUrl: string | null;
+  lattesUrl: string | null;
+  orcidUrl: string | null;
   sortOrder: number;
 }
 

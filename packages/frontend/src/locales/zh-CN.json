@@ -55,13 +55,14 @@
     "organizedBy": "由坎皮纳格兰德联邦大学（UFCG）自然资源工程与管理研究生项目主办",
     "editionTitle": "本届会议",
     "editionPending": "本届会议的介绍文字即将发布。",
-    "foundersTitle": "发起人",
-    "previousEditions": "往届会议",
-    "lattes": "Lattes 简历",
-    "orcid": "ORCID"
+    "previousEditions": "往届会议"
   },
   "committee": {
-    "title": "组织机构"
+    "title": "组织机构",
+    "intro": "{{edition}} 的幕后团队。每届会议都有自己的团队，发起人则参与每一届。",
+    "foundersNote": "固定成员，每届会议均参与。",
+    "foundersMore": "了解发起人",
+    "coordinator": "团队协调"
   },
   "areas": {
     "title": "主题领域"
@@ -181,5 +182,10 @@
   "anais": {
     "title": "论文集",
     "empty": "{{event}} 论文集正在整理中，将在本页面发布。"
+  },
+  "people": {
+    "foundersTitle": "发起人",
+    "lattes": "Lattes 简历",
+    "orcid": "ORCID"
   }
 }

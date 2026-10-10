@@ -55,13 +55,14 @@
     "organizedBy": "Promovido pelo Programa de Pós-Graduação em Engenharia e Gestão de Recursos Naturais da UFCG",
     "editionTitle": "Esta edição",
     "editionPending": "O texto de apresentação desta edição será publicado em breve.",
-    "foundersTitle": "Idealizadores",
-    "previousEditions": "Edições anteriores",
-    "lattes": "Currículo Lattes",
-    "orcid": "ORCID"
+    "previousEditions": "Edições anteriores"
   },
   "committee": {
-    "title": "Organização"
+    "title": "Organização",
+    "intro": "Quem faz o {{edition}} acontecer. Cada edição tem a sua equipe, e os idealizadores acompanham todas.",
+    "foundersNote": "Grupo fixo, presente em todas as edições.",
+    "foundersMore": "Conheça os idealizadores",
+    "coordinator": "Coordenação da equipe"
   },
   "areas": {
     "title": "Áreas Temáticas"
@@ -181,5 +182,10 @@
   "anais": {
     "title": "Anais",
     "empty": "Os anais do {{event}} estão em preparação e serão publicados nesta página."
+  },
+  "people": {
+    "foundersTitle": "Idealizadores",
+    "lattes": "Currículo Lattes",
+    "orcid": "ORCID"
   }
 }
