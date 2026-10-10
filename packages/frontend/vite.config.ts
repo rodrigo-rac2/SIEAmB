@@ -2,11 +2,11 @@
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
-// GitHub Pages serves the site at /SIEAmB/ unless a custom domain is set.
-// Override with VITE_BASE=/ once the custom domain (e.g. sieamb.ufcg.edu.br) is live.
-export default defineConfig(({ mode }) => ({
+// The site is served from the domain root on Vercel. VITE_BASE stays as an escape hatch
+// for a sub-path deployment.
+export default defineConfig(() => ({
   plugins: [react()],
-  base: process.env.VITE_BASE ?? (mode === 'production' ? '/SIEAmB/' : '/'),
+  base: process.env.VITE_BASE ?? '/',
   test: {
     environment: 'jsdom',
     globals: true,

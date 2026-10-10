@@ -23,7 +23,6 @@ export default defineConfig({
   webServer: BASE_URL
     ? undefined
     : {
-    // Base must be '/' locally (production build defaults to /SIEAmB/ for Pages).
     command:
       'npm run build -w @sieamb/frontend && npm run preview -w @sieamb/frontend -- --port 4173 --strictPort',
     cwd: '../..',

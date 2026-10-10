@@ -16,7 +16,7 @@ Academic conference website for UFCG's graduate program in Engineering and Natur
 - **Database**: PostgreSQL
 - **ORM**: Prisma
 - **Testing**: Vitest (unit + component integration with RTL and the static fixtures), Playwright (E2E, local build in CI and against every Vercel deployment; `BASE_URL=<url> npm run test:e2e`)
-- **Deployment**: Vercel (prod https://sieamb.org from `main`, dev https://dev.sieamb.org from `develop`, preview per PR); GitHub Pages workflow is legacy
+- **Deployment**: Vercel (prod https://sieamb.org from `main`, dev https://dev.sieamb.org from `develop`, preview per PR). The old GitHub Pages URL only redirects to sieamb.org
 
 ## Project Structure
 
