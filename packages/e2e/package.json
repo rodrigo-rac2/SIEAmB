@@ -6,6 +6,7 @@
   "scripts": {
     "test": "playwright test",
     "test:smoke": "playwright test --grep @smoke",
+    "test:deployed": "playwright test --grep @deployed",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {

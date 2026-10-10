@@ -201,9 +201,10 @@ Todo o trabalho do site vive em **GitHub Issues**, em inglês. Não existe outra
 ⚠️ **As branches `main` e `develop` são protegidas: ninguém faz push direto nelas, nem o admin.** Todo trabalho entra por Pull Request (desde 2026-10-10 este é o processo para todo mundo, sem exceção).
 
 ```
-main      ← produção. Merge aqui = deploy automático em https://sieamb.org
+main      ← produção. Merge aqui = deploy automático em https://sieamb.org. Só recebe PRs de develop ou hotfix/*
 develop   ← integração. Merge aqui = deploy automático em https://dev.sieamb.org
 feature/* ← seu trabalho do dia a dia. Cada PR ganha uma URL de preview na Vercel
+hotfix/*  ← correção urgente direto em produção: PR para main E depois PR para develop
 ```
 
 Passo a passo para contribuir:
@@ -244,8 +245,14 @@ O domínio `sieamb.org` está registrado na Cloudflare (DNS também lá). A conf
 
 **Workflows em `.github/workflows/`:**
 
-- **`ci.yml`** — roda em todo PR e push em main/develop: ESLint, TypeScript (`tsc`), testes unitários e smoke E2E. Se falhar, o PR não merga.
+- **`ci.yml`** — roda em todo PR e push em main/develop: job `quality` (ESLint, TypeScript, testes unitários e de integração com Vitest) e job `e2e-smoke` (Playwright contra um build local).
+- **`e2e-preview.yml`** — dispara quando a Vercel termina um deploy (preview do PR, `develop` ou `main`) e roda a suíte Playwright **contra a URL publicada** (`BASE_URL`), inclusive os testes `@deployed` (rewrites de SPA, idioma persistido, fotos servidas, redirecionamento do www). O check `e2e-preview` aparece no PR.
+- **`branch-policy.yml`** — o GitHub não restringe a branch de origem de um PR, então este check falha quando um PR para `main` não vem de `develop` ou `hotfix/*`, e quando alguém tenta mergear `main` em `develop`.
 - **`deploy-pages.yml`** — legado do protótipo (publica também em https://rodrigo-rac2.github.io/SIEAmB/). Será removido (issue #20).
+
+**Checks obrigatórios** (ruleset `protect-main-develop`): `quality`, `e2e-smoke`, `e2e-preview` e `branch-policy` precisam estar verdes para mergear em `develop` ou em `main`. Issues fecham automaticamente só quando o PR de release chega na `main` (o GitHub só processa `Closes #N` na branch padrão).
+
+Para rodar a suíte E2E contra qualquer ambiente publicado: `BASE_URL=https://dev.sieamb.org npm run test:e2e`.
 
 ## Convenções do projeto
 

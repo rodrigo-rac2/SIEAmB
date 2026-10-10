@@ -37,4 +37,10 @@ i18n.on('languageChanged', (lng) => {
   document.documentElement.lang = lng;
 });
 
+// Resources are inline, so init resolves before the listener above is attached:
+// a stored locale (e.g. "en") would leave <html lang="pt-BR"> on first load.
+if (typeof document !== 'undefined' && i18n.resolvedLanguage) {
+  document.documentElement.lang = i18n.resolvedLanguage;
+}
+
 export default i18n;
