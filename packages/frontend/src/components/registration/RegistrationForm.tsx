@@ -10,13 +10,8 @@ import { useEvent } from '../../contexts/EventContext';
 import { DuplicateRegistrationError, getDataProvider } from '../../services';
 import './RegistrationForm.css';
 
-const CATEGORIES = [
-  'ESTUDANTE_GRADUACAO',
-  'ESTUDANTE_POS',
-  'PROFESSOR',
-  'PROFISSIONAL',
-  'COMUNIDADE_UFCG',
-] as const;
+// Categories offered to the II SIEAmB (committee fee table, 2026-10-10). The fee tiers decide what is shown.
+const CATEGORIES = ['ESTUDANTE_GRADUACAO', 'ESTUDANTE_POS', 'PROFISSIONAL'] as const;
 
 export function RegistrationForm({ onSuccess }: { onSuccess: () => void }) {
   const { t } = useTranslation();
@@ -29,7 +24,7 @@ export function RegistrationForm({ onSuccess }: { onSuccess: () => void }) {
     formState: { errors, isSubmitting },
   } = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
-    defaultValues: { country: 'BR', category: 'ESTUDANTE_POS', modality: 'PRESENCIAL' },
+    defaultValues: { country: 'BR', category: 'ESTUDANTE_POS', modality: 'ONLINE' },
   });
 
   if (!event) return null;
@@ -118,15 +113,17 @@ export function RegistrationForm({ onSuccess }: { onSuccess: () => void }) {
             ))}
           </select>
         </div>
-        <div className="reg-form__field">
-          <label htmlFor="modality">
-            {t('registration.modality')} <span aria-hidden="true">*</span>
-          </label>
-          <select id="modality" {...register('modality')}>
-            <option value="PRESENCIAL">{t('registration.modalities.PRESENCIAL')}</option>
-            <option value="ONLINE">{t('registration.modalities.ONLINE')}</option>
-          </select>
-        </div>
+        {!event.isOnline && (
+          <div className="reg-form__field">
+            <label htmlFor="modality">
+              {t('registration.modality')} <span aria-hidden="true">*</span>
+            </label>
+            <select id="modality" {...register('modality')}>
+              <option value="PRESENCIAL">{t('registration.modalities.PRESENCIAL')}</option>
+              <option value="ONLINE">{t('registration.modalities.ONLINE')}</option>
+            </select>
+          </div>
+        )}
       </div>
 
       <div className="reg-form__field">

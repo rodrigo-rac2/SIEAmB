@@ -80,7 +80,7 @@
       "ESTUDANTE_GRADUACAO": "本科生",
       "ESTUDANTE_POS": "研究生",
       "PROFESSOR": "教授 / 研究员",
-      "PROFISSIONAL": "专业人士",
+      "PROFISSIONAL": "教师及其他专业人士",
       "COMUNIDADE_UFCG": "UFCG 社区"
     },
     "modalities": {
@@ -110,7 +110,8 @@
       "email": "请输入有效的电子邮箱。",
       "password": "密码至少需要 8 个字符。",
       "duplicate": "该邮箱已在本届会议注册过。"
-    }
+    },
+    "lotRange": "{{from}} 至 {{until}}"
   },
   "dates": {
     "title": "重要日期",
