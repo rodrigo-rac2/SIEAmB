@@ -143,3 +143,7 @@ vite.config.ts.timestamp-*
 .vite/
 test-results/
 playwright-report/
+
+# Vercel CLI link
+.vercel
+.env*

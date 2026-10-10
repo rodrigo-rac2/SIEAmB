@@ -2,6 +2,15 @@
 
 Append a dated entry per working session. Newest first.
 
+## 2026-10-10 — Context regroup + rollout planning
+
+- Najara's WhatsApp batch: event moved to 24–26 March 2027 and is online (YouTube); new cronograma (edital 23/10, submissions 09/11–18/01, results 12/03); fees 30/50, 50/70, 70/90; about-page = general text + per-edition text; idealizadores fixed; team page per edition (fixed + variable). Rodrigo committed to registrations opening 10/11/2026 (Even3 fallback).
+- Captured the Wix "Sobre" and "Equipe" texts (general text, 2025 text, 4 idealizadores with bios, 2025 team bios) and the Unicamp per-year layout reference.
+- Domain check (registro.br whois, 10/10): sieamb.org.br / .com.br / .net.br / .eco.br / .org / .com all free. `.org.br` is a restricted category (CNPJ); `.com.br`/`.eco.br` can go on a CPF.
+- **sieamb.org registered (Cloudflare Registrar) and live on Vercel Hobby** (team `sieamb`, DNS stays on Cloudflare, apex + www via Domain Connect, Git-connected for auto-deploys). `vercel.json` sets `VITE_BASE=/` and SPA rewrites; vercel CLI is a root devDependency.
+- Process decision: from now on `feature/* → develop → main`; next: `dev.sieamb.org` on the `develop` branch, Playwright against Vercel previews via `deployment_status`, disable Vercel Authentication on previews.
+- Rollout plan for the R$0 production stack drafted (see STATUS/PENDING R4, R5). Nothing committed yet.
+
 ## 2026-09-01 — Per-edition themes (ADR-001)
 
 - Design team (Daniela) asked whether the site is per-event or general; Najara confirmed: permanent site, palette changes every edition. Architecture didn't support that (single global tokens.css) — implemented it the same day.
