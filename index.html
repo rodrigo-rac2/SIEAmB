@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>SIEAmB mudou para sieamb.org</title>
+    <meta name="robots" content="noindex" />
+    <script>
+      // The prototype lived here under /SIEAmB/. The site is now at https://sieamb.org:
+      // keep the rest of the path so shared links (e.g. /SIEAmB/2026/inscricoes) still land.
+      var rest = location.pathname.replace(/^\/SIEAmB\/?/, '');
+      location.replace('https://sieamb.org/' + rest + location.search + location.hash);
+    </script>
+    <meta http-equiv="refresh" content="0; url=https://sieamb.org/" />
+  </head>
+  <body>
+    <p>O site do SIEAmB mudou para <a href="https://sieamb.org/">sieamb.org</a>.</p>
+  </body>
+</html>
