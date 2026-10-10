@@ -6,7 +6,7 @@ import { expect, test } from '@playwright/test';
  */
 test.describe('deployed site @deployed', () => {
   test('deep link and reload are served by the SPA (rewrites)', async ({ page }) => {
-    const res = await page.goto('/2026/organizacao');
+    const res = await page.goto('/2027/organizacao');
     expect(res?.status()).toBe(200);
     await expect(page.getByRole('heading', { name: 'Comitê Científico' })).toBeVisible();
     await page.reload();
@@ -14,13 +14,13 @@ test.describe('deployed site @deployed', () => {
   });
 
   test('unknown path under an edition renders the not-found page, not a server error', async ({ page }) => {
-    const res = await page.goto('/2026/pagina-que-nao-existe');
+    const res = await page.goto('/2027/pagina-que-nao-existe');
     expect(res?.status()).toBe(200);
     await expect(page.getByRole('heading', { level: 1 })).toContainText(/não encontrada/i);
   });
 
   test('language choice survives a reload', async ({ page }) => {
-    await page.goto('/2026/');
+    await page.goto('/2027/');
     await expect(page.locator('html')).toHaveAttribute('lang', 'pt-BR');
     await page.getByRole('button', { name: 'English' }).click();
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
@@ -34,10 +34,10 @@ test.describe('deployed site @deployed', () => {
 
   test('mobile drawer lists Equipe and closes after navigating', async ({ page, isMobile }) => {
     test.skip(!isMobile, 'drawer only exists on mobile');
-    await page.goto('/2026/');
+    await page.goto('/2027/');
     await page.getByRole('button', { name: /menu/i }).click();
     await page.getByRole('navigation').getByRole('link', { name: 'Equipe' }).click();
-    await expect(page).toHaveURL(/\/2026\/organizacao$/);
+    await expect(page).toHaveURL(/\/2027\/organizacao$/);
     await expect(page.getByRole('navigation').getByRole('link', { name: 'Equipe' })).toBeHidden();
   });
 
@@ -52,7 +52,7 @@ test.describe('deployed site @deployed', () => {
     const www = await request.get('https://www.sieamb.org/', { maxRedirects: 0 });
     expect(www.status()).toBe(308);
     expect(www.headers().location).toMatch(/^https:\/\/sieamb\.org\//);
-    const dev = await request.get('https://dev.sieamb.org/2026/');
+    const dev = await request.get('https://dev.sieamb.org/2027/');
     expect(dev.status()).toBe(200);
   });
 });

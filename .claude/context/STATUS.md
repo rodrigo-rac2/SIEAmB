@@ -17,7 +17,7 @@
 
 - Monorepo (npm workspaces): `packages/shared`, `packages/frontend`, `packages/e2e`
 - All public pages in 4 languages (pt-BR default forced, en, es, zh-CN) — flag buttons in the topbar, preference in localStorage (`sieamb-locale`)
-- Multi-event routing: `/2026/` (current II SIEAmB, 24–26 Mar 2027, slug may become `/2027/` per #6), `/2025/` (archived recap with team, speakers, anais), root redirects to current event (`isCurrent` in `events.json`)
+- Multi-event routing: `/2027/` (current II SIEAmB, 24–26 Mar 2027, slug may become `/2027/` per #6), `/2025/` (archived recap with team, speakers, anais), root redirects to current event (`isCurrent` in `events.json`)
 - **Per-edition themes** (ADR-001): each event's optional `theme` overrides the CSS tokens for that edition only; archived editions keep their palette forever. Current-edition identity goes in the event `theme`, tokens.css is just the neutral fallback. 2025 has a demo blue theme as proof
 - Pre-registration form with CPF/passport validation (zod schemas in `@sieamb/shared`)
 - News (avisos) list + detail with markdown
@@ -26,7 +26,7 @@
 
 ## What is placeholder / fake
 
-- **Visual identity 2026: APPLIED** (palette, Garet/Lora fonts, logo, lockup hero, cracked-earth texture) via the event record + `public/brand/2026/`. tokens.css remains the neutral fallback. Still open: 2026 theme/dates text from the committee (the design mock still shows 2025's), optional SVG exports
+- **Visual identity 2026: APPLIED** (palette, Garet/Lora fonts, logo, lockup hero, cracked-earth texture) via the event record + `public/brand/2027/`. tokens.css remains the neutral fallback. Still open: 2026 theme/dates text from the committee (the design mock still shows 2025's), optional SVG exports
 - **Still placeholder**: fee lot dates and category labels (#7), thematic areas for 2027 (#37), edition presentation text for 2027 (`aboutMd` null → "em breve"), editais (#11), news items, sponsors logos, contact e-mail (fixtures say sieambufcg@gmail.com from the old site). Everything else on the public pages is real committee content
 - **Registration does NOT persist** — StaticDataProvider simulates success. Real persistence = Supabase (Phase 0.5/1)
 - **zh-CN translations are machine-drafted** — need native-speaker review before the event

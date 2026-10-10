@@ -1,7 +1,7 @@
 [
   {
     "id": "f1",
-    "eventId": "evt-2026",
+    "eventId": "evt-2027",
     "category": "ESTUDANTE_GRADUACAO",
     "modality": "ONLINE",
     "label": "Lote 1",
@@ -11,7 +11,7 @@
   },
   {
     "id": "f2",
-    "eventId": "evt-2026",
+    "eventId": "evt-2027",
     "category": "ESTUDANTE_POS",
     "modality": "ONLINE",
     "label": "Lote 1",
@@ -21,7 +21,7 @@
   },
   {
     "id": "f3",
-    "eventId": "evt-2026",
+    "eventId": "evt-2027",
     "category": "PROFISSIONAL",
     "modality": "ONLINE",
     "label": "Lote 1",
@@ -31,7 +31,7 @@
   },
   {
     "id": "f4",
-    "eventId": "evt-2026",
+    "eventId": "evt-2027",
     "category": "ESTUDANTE_GRADUACAO",
     "modality": "ONLINE",
     "label": "Lote 2",
@@ -41,7 +41,7 @@
   },
   {
     "id": "f5",
-    "eventId": "evt-2026",
+    "eventId": "evt-2027",
     "category": "ESTUDANTE_POS",
     "modality": "ONLINE",
     "label": "Lote 2",
@@ -51,7 +51,7 @@
   },
   {
     "id": "f6",
-    "eventId": "evt-2026",
+    "eventId": "evt-2027",
     "category": "PROFISSIONAL",
     "modality": "ONLINE",
     "label": "Lote 2",

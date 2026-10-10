@@ -15,7 +15,7 @@ The domain always loads the current edition; old ones stay browsable read-only.
    - Exactly ONE event may have `isCurrent: true` (tests enforce this)
 2. Add the new edition's content to every other fixture (`importantDates`, `thematicAreas`, `feeTiers`, `committee`, `sponsors`, `news`) scoped to the new `eventId`. Copy-and-adjust from the previous edition is fine as a starting point.
 3. Old edition keeps its fixtures — do NOT delete them; that's the archive.
-4. Update E2E smoke tests that hardcode the current slug (`/2026/` appears in `packages/e2e/tests/smoke.spec.ts`).
+4. Update E2E smoke tests that hardcode the current slug (`/2027/` appears in `packages/e2e/tests/smoke.spec.ts`).
 5. `npm run test && npm run test:e2e`, commit, push.
 
 ## Once Supabase/backend is live (Phase 1+)

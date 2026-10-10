@@ -1,7 +1,7 @@
 [
   {
     "id": "c27-sci-najara",
-    "eventId": "evt-2026",
+    "eventId": "evt-2027",
     "name": "Ma. Najara Escarião Agripino",
     "role": "Comitê Científico",
     "isCoordinator": false,
@@ -14,7 +14,7 @@
   },
   {
     "id": "c27-sci-niklas",
-    "eventId": "evt-2026",
+    "eventId": "evt-2027",
     "name": "Dr. Niklas Werner Weins",
     "role": "Comitê Científico",
     "isCoordinator": false,
@@ -27,7 +27,7 @@
   },
   {
     "id": "c27-sci-viviane",
-    "eventId": "evt-2026",
+    "eventId": "evt-2027",
     "name": "Dra. Viviane Farias Silva",
     "role": "Comitê Científico",
     "isCoordinator": false,
@@ -40,7 +40,7 @@
   },
   {
     "id": "c27-rev-thays",
-    "eventId": "evt-2026",
+    "eventId": "evt-2027",
     "name": "Ma. Thays Alves da Silva",
     "role": "Equipe de Revisores",
     "isCoordinator": true,
@@ -53,7 +53,7 @@
   },
   {
     "id": "c27-rev-najara",
-    "eventId": "evt-2026",
+    "eventId": "evt-2027",
     "name": "Ma. Najara Escarião Agripino",
     "role": "Equipe de Revisores",
     "isCoordinator": false,
@@ -66,7 +66,7 @@
   },
   {
     "id": "c27-rev-niklas",
-    "eventId": "evt-2026",
+    "eventId": "evt-2027",
     "name": "Dr. Niklas Werner Weins",
     "role": "Equipe de Revisores",
     "isCoordinator": false,
@@ -79,7 +79,7 @@
   },
   {
     "id": "c27-rev-zhoulin",
-    "eventId": "evt-2026",
+    "eventId": "evt-2027",
     "name": "Zhou Lin",
     "role": "Equipe de Revisores",
     "isCoordinator": false,
@@ -92,7 +92,7 @@
   },
   {
     "id": "c27-rev-laura",
-    "eventId": "evt-2026",
+    "eventId": "evt-2027",
     "name": "Dra. Laura Cristina Feindt Urrejola Silveira",
     "role": "Equipe de Revisores",
     "isCoordinator": false,
@@ -105,7 +105,7 @@
   },
   {
     "id": "c27-rev-luana",
-    "eventId": "evt-2026",
+    "eventId": "evt-2027",
     "name": "Luana Bramorski Cerqueira Cesar",
     "role": "Equipe de Revisores",
     "isCoordinator": false,
@@ -118,7 +118,7 @@
   },
   {
     "id": "c27-rev-lourdes",
-    "eventId": "evt-2026",
+    "eventId": "evt-2027",
     "name": "Maria de Lourdes Saturnino Gomes",
     "role": "Equipe de Revisores",
     "isCoordinator": false,
@@ -131,7 +131,7 @@
   },
   {
     "id": "c27-med-lara",
-    "eventId": "evt-2026",
+    "eventId": "evt-2027",
     "name": "Lara Maria Almeida Ferreira",
     "role": "Equipe de Mídias",
     "isCoordinator": true,
@@ -144,7 +144,7 @@
   },
   {
     "id": "c27-med-daniela",
-    "eventId": "evt-2026",
+    "eventId": "evt-2027",
     "name": "Daniela Torres Teixeira",
     "role": "Equipe de Mídias",
     "isCoordinator": true,
@@ -157,7 +157,7 @@
   },
   {
     "id": "c27-med-jasmyne",
-    "eventId": "evt-2026",
+    "eventId": "evt-2027",
     "name": "Ma. Jasmyne Karla Vieira Souza Maciel",
     "role": "Equipe de Mídias",
     "isCoordinator": false,
@@ -170,7 +170,7 @@
   },
   {
     "id": "c27-med-pollyanna",
-    "eventId": "evt-2026",
+    "eventId": "evt-2027",
     "name": "Pollyanna Kécia Cordeiro Grangeiro",
     "role": "Equipe de Mídias",
     "isCoordinator": false,
@@ -183,7 +183,7 @@
   },
   {
     "id": "c27-med-lourdes",
-    "eventId": "evt-2026",
+    "eventId": "evt-2027",
     "name": "Maria de Lourdes Saturnino Gomes",
     "role": "Equipe de Mídias",
     "isCoordinator": false,
@@ -196,7 +196,7 @@
   },
   {
     "id": "c27-med-arthur",
-    "eventId": "evt-2026",
+    "eventId": "evt-2027",
     "name": "Arthur Lobato de Andrade",
     "role": "Equipe de Mídias",
     "isCoordinator": false,

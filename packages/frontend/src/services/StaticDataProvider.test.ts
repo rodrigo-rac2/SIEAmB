@@ -11,11 +11,11 @@ describe('StaticDataProvider', () => {
   it('returns the current event', async () => {
     const event = await provider.getCurrentEvent();
     expect(event.isCurrent).toBe(true);
-    expect(event.slug).toBe('2026');
+    expect(event.slug).toBe('2027');
   });
 
   it('finds events by slug and returns null for unknown slugs', async () => {
-    expect((await provider.getEventBySlug('2026'))?.edition).toBe(2);
+    expect((await provider.getEventBySlug('2027'))?.edition).toBe(2);
     expect((await provider.getEventBySlug('1999'))).toBeNull();
   });
 
@@ -106,14 +106,14 @@ describe('StaticDataProvider', () => {
   it('every team member and founder has a photo under team/', async () => {
     const founders = await provider.getFounders();
     const team = [
-      ...(await provider.getCommittee('evt-2026')),
+      ...(await provider.getCommittee('evt-2027')),
       ...(await provider.getCommittee('evt-2025')),
     ];
     expect([...founders, ...team].every((p) => p.photoUrl?.startsWith('team/'))).toBe(true);
   });
 
   it('2027 fees: three categories, two contiguous lots, online only, committee amounts', async () => {
-    const tiers = await provider.getFeeTiers('evt-2026');
+    const tiers = await provider.getFeeTiers('evt-2027');
     expect(tiers).toHaveLength(6);
     expect(new Set(tiers.map((t) => t.modality))).toEqual(new Set(['ONLINE']));
     const price = (c: string, lot: string) => tiers.find((t) => t.category === c && t.label === lot)?.amountCents;
@@ -126,5 +126,12 @@ describe('StaticDataProvider', () => {
     expect(l1.validUntil.startsWith('2027-01-01')).toBe(true);
     expect(l2.validFrom.startsWith('2027-01-02')).toBe(true);
     expect(l2.validUntil.startsWith('2027-03-20')).toBe(true);
+  });
+
+  it('the 2027 edition keeps 2026 as a legacy slug and no slug is shared', async () => {
+    const events = await provider.getEvents();
+    expect(events.find((e) => e.slug === '2027')?.legacySlugs).toEqual(['2026']);
+    const all = events.flatMap((e) => [e.slug, ...e.legacySlugs]);
+    expect(new Set(all).size).toBe(all.length);
   });
 });

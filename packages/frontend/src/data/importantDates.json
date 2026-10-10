@@ -1,7 +1,7 @@
 [
   {
     "id": "d1",
-    "eventId": "evt-2026",
+    "eventId": "evt-2027",
     "label": "Lançamento do edital",
     "date": "2026-10-23T00:00:00-03:00",
     "isExtended": false,
@@ -9,7 +9,7 @@
   },
   {
     "id": "d2",
-    "eventId": "evt-2026",
+    "eventId": "evt-2027",
     "label": "Abertura das inscrições (1º lote)",
     "date": "2026-11-10T00:00:00-03:00",
     "isExtended": false,
@@ -17,7 +17,7 @@
   },
   {
     "id": "d3",
-    "eventId": "evt-2026",
+    "eventId": "evt-2027",
     "label": "Início das submissões de trabalhos",
     "date": "2026-11-15T00:00:00-03:00",
     "isExtended": false,
@@ -25,7 +25,7 @@
   },
   {
     "id": "d4",
-    "eventId": "evt-2026",
+    "eventId": "evt-2027",
     "label": "Encerramento das submissões",
     "date": "2027-01-18T23:59:00-03:00",
     "isExtended": false,
@@ -33,7 +33,7 @@
   },
   {
     "id": "d5",
-    "eventId": "evt-2026",
+    "eventId": "evt-2027",
     "label": "Divulgação preliminar dos resultados",
     "date": "2027-02-22T00:00:00-03:00",
     "isExtended": false,
@@ -41,7 +41,7 @@
   },
   {
     "id": "d6",
-    "eventId": "evt-2026",
+    "eventId": "evt-2027",
     "label": "Divulgação definitiva dos resultados",
     "date": "2027-03-12T00:00:00-03:00",
     "isExtended": false,
@@ -49,7 +49,7 @@
   },
   {
     "id": "d7",
-    "eventId": "evt-2026",
+    "eventId": "evt-2027",
     "label": "Prazo final de inscrição para autores",
     "date": "2027-03-15T23:59:00-03:00",
     "isExtended": false,
@@ -57,7 +57,7 @@
   },
   {
     "id": "d8",
-    "eventId": "evt-2026",
+    "eventId": "evt-2027",
     "label": "Prazo final de inscrição para ouvintes",
     "date": "2027-03-20T23:59:00-03:00",
     "isExtended": false,
@@ -65,7 +65,7 @@
   },
   {
     "id": "d9",
-    "eventId": "evt-2026",
+    "eventId": "evt-2027",
     "label": "Realização do II SIEAmB (online)",
     "date": "2027-03-24T08:00:00-03:00",
     "isExtended": false,

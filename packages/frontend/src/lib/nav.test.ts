@@ -3,12 +3,12 @@ import { navLinks, showsEditionsLink } from './nav';
 
 describe('navLinks', () => {
   it('current edition: team right after the about page, no editions link in the menu', () => {
-    const links = navLinks({ slug: '2026', isArchived: false });
+    const links = navLinks({ slug: '2027', isArchived: false });
     const keys = links.map((l) => l.labelKey);
     expect(keys.indexOf('nav.committee')).toBe(keys.indexOf('nav.about') + 1);
     expect(keys).not.toContain('nav.editions');
-    expect(links.find((l) => l.labelKey === 'nav.committee')?.to).toBe('/2026/organizacao');
-    expect(links[0]).toMatchObject({ to: '/2026/', end: true });
+    expect(links.find((l) => l.labelKey === 'nav.committee')?.to).toBe('/2027/organizacao');
+    expect(links[0]).toMatchObject({ to: '/2027/', end: true });
   });
 
   it('archived edition: recap only, no registration or submissions', () => {

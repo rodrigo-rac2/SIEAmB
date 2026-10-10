@@ -6,7 +6,7 @@ import { AboutPage } from './AboutPage';
 
 describe('AboutPage (fixtures)', () => {
   it('current edition: general text, pending edition text, founders, link to 2025', async () => {
-    renderAtEvent('/2026/o-evento', <AboutPage />);
+    renderAtEvent('/2027/o-evento', <AboutPage />);
     expect(await screen.findByText(/espaço estratégico voltado para pesquisadores/)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Esta edição: II SIEAmB' })).toBeInTheDocument();
     expect(screen.getByText(/será publicado em breve/)).toBeInTheDocument();
