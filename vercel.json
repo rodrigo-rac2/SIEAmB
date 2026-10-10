@@ -4,6 +4,5 @@
   "buildCommand": "npm run build",
   "outputDirectory": "packages/frontend/dist",
   "framework": null,
-  "build": { "env": { "VITE_BASE": "/" } },
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }
