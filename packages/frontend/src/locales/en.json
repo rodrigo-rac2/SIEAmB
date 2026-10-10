@@ -52,7 +52,13 @@
   },
   "about": {
     "title": "The Event",
-    "organizedBy": "Promoted by the Graduate Program in Engineering and Natural Resource Management at UFCG"
+    "organizedBy": "Promoted by the Graduate Program in Engineering and Natural Resource Management at UFCG",
+    "editionTitle": "This edition",
+    "editionPending": "The presentation text for this edition will be published soon.",
+    "foundersTitle": "Founders",
+    "previousEditions": "Previous editions",
+    "lattes": "Lattes CV",
+    "orcid": "ORCID"
   },
   "committee": {
     "title": "Organization"

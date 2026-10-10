@@ -52,7 +52,13 @@
   },
   "about": {
     "title": "O Evento",
-    "organizedBy": "Promovido pelo Programa de Pós-Graduação em Engenharia e Gestão de Recursos Naturais da UFCG"
+    "organizedBy": "Promovido pelo Programa de Pós-Graduação em Engenharia e Gestão de Recursos Naturais da UFCG",
+    "editionTitle": "Esta edição",
+    "editionPending": "O texto de apresentação desta edição será publicado em breve.",
+    "foundersTitle": "Idealizadores",
+    "previousEditions": "Edições anteriores",
+    "lattes": "Currículo Lattes",
+    "orcid": "ORCID"
   },
   "committee": {
     "title": "Organização"

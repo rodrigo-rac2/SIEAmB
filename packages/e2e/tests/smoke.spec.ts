@@ -176,4 +176,14 @@ test.describe('i18n @smoke', () => {
       page.getByRole('link', { name: 'Inscrições', exact: true }).first(),
     ).toBeVisible();
   });
+
+  test('about page shows the general text, the edition section and the founders', async ({ page }) => {
+    await page.goto('/2026/o-evento');
+    await expect(page.getByText(/Seminário Internacional de Estudos Ambientais do PPGEGRN/)).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Esta edição: II SIEAmB/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Idealizadores' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Ma. Najara Escarião Agripino' })).toBeVisible();
+    await page.goto('/2025/o-evento');
+    await expect(page.getByText(/Governança Ambiental da China e do Brasil/)).toBeVisible();
+  });
 });

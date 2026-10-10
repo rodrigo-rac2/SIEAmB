@@ -16,6 +16,9 @@ Phase 0 content lives in JSON fixtures at `packages/frontend/src/data/`. Once Su
 | `thematicAreas.json` | Áreas temáticas | `code` like "AT-01" |
 | `feeTiers.json` | Fee matrix | `amountCents` is integer centavos (R$ 80,00 = 8000). Category × modality; missing combos render as "—" |
 | `committee.json` | Organização | Grouped by `role` on the page |
+| `site.json` | Site-wide text | `aboutMd`: the general SIEAmB presentation (all editions) |
+| `founders.json` | Idealizadores | Fixed group shown on every edition's About page, `bioMd` markdown, Lattes/ORCID links |
+| `events.json` → `aboutMd` | Per-edition presentation text | Shown under the general text; `null` renders "em breve" |
 | `sponsors.json` | Realização/apoio | `tier`: realizacao, patrocinio, apoio |
 | `news.json` | Avisos | `status: "PUBLISHED"` to show; `isPinned` floats to top; `bodyMd` is markdown |
 
