@@ -18,7 +18,7 @@
   "nav": {
     "home": "Início",
     "about": "O Evento",
-    "committee": "Organização",
+    "committee": "Equipe",
     "areas": "Áreas Temáticas",
     "submissions": "Submissões",
     "registration": "Inscrições",
@@ -58,7 +58,7 @@
     "previousEditions": "Edições anteriores"
   },
   "committee": {
-    "title": "Organização",
+    "title": "Equipe",
     "intro": "Quem faz o {{edition}} acontecer. Cada edição tem a sua equipe, e os idealizadores acompanham todas.",
     "foundersNote": "Grupo fixo, presente em todas as edições.",
     "foundersMore": "Conheça os idealizadores",

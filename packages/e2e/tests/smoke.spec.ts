@@ -19,6 +19,7 @@ test.describe('public site @smoke', () => {
   test('navigates to every public page', async ({ page, isMobile }) => {
     const routes = [
       ['/2026/o-evento', 'O Evento'],
+      ['/2026/organizacao', 'Equipe'],
       ['/2026/areas-tematicas', 'Áreas Temáticas'],
       ['/2026/submissoes', 'Submissão de Trabalhos'],
       ['/2026/inscricoes', 'Inscrições'],
@@ -188,7 +189,11 @@ test.describe('i18n @smoke', () => {
     await expect(page.getByText(/Governança Ambiental da China e do Brasil/)).toBeVisible();
   });
 
-  test('team page groups the 2027 team with coordination badges and the founders block', async ({ page }) => {
+  test('team page groups the 2027 team with coordination badges and the founders block', async ({ page, isMobile }) => {
+    await page.goto('/2026/');
+    if (!isMobile) {
+      await expect(page.getByRole('navigation').getByRole('link', { name: 'Equipe' })).toBeVisible();
+    }
     await page.goto('/2026/organizacao');
     await expect(page.getByRole('heading', { name: 'Idealizadores' })).toBeVisible();
     for (const group of ['Comitê Científico', 'Equipe de Revisores', 'Equipe de Mídias']) {

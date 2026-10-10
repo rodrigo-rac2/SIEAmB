@@ -18,7 +18,7 @@
   "nav": {
     "home": "首页",
     "about": "会议简介",
-    "committee": "组织机构",
+    "committee": "团队",
     "areas": "主题领域",
     "submissions": "论文投稿",
     "registration": "会议注册",
@@ -58,7 +58,7 @@
     "previousEditions": "往届会议"
   },
   "committee": {
-    "title": "组织机构",
+    "title": "团队",
     "intro": "{{edition}} 的幕后团队。每届会议都有自己的团队，发起人则参与每一届。",
     "foundersNote": "固定成员，每届会议均参与。",
     "foundersMore": "了解发起人",
