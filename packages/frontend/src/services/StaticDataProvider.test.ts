@@ -99,4 +99,13 @@ describe('StaticDataProvider', () => {
       'Palestrantes',
     ]);
   });
+
+  it('every team member and founder has a photo under team/', async () => {
+    const founders = await provider.getFounders();
+    const team = [
+      ...(await provider.getCommittee('evt-2026')),
+      ...(await provider.getCommittee('evt-2025')),
+    ];
+    expect([...founders, ...team].every((p) => p.photoUrl?.startsWith('team/'))).toBe(true);
+  });
 });
