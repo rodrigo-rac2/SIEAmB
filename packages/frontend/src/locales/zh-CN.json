@@ -120,6 +120,9 @@
   },
   "venue": {
     "title": "会议地点",
+    "onlineText": "本届研讨会以线上方式举行，通过 SIEAmB 的 YouTube 频道进行直播。各场次的链接将随会议日程一同发布。",
+    "onlineCta": "访问 YouTube 频道",
+    "mapCta": "在地图中查看",
     "campusTitle": "交通指南",
     "lodgingTitle": "住宿"
   },
