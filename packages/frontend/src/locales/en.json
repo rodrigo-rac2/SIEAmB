@@ -55,13 +55,14 @@
     "organizedBy": "Promoted by the Graduate Program in Engineering and Natural Resource Management at UFCG",
     "editionTitle": "This edition",
     "editionPending": "The presentation text for this edition will be published soon.",
-    "foundersTitle": "Founders",
-    "previousEditions": "Previous editions",
-    "lattes": "Lattes CV",
-    "orcid": "ORCID"
+    "previousEditions": "Previous editions"
   },
   "committee": {
-    "title": "Organization"
+    "title": "Organization",
+    "intro": "The people behind {{edition}}. Each edition has its own team, and the founders accompany all of them.",
+    "foundersNote": "Permanent group, present in every edition.",
+    "foundersMore": "Meet the founders",
+    "coordinator": "Team coordination"
   },
   "areas": {
     "title": "Thematic Areas"
@@ -181,5 +182,10 @@
   "anais": {
     "title": "Proceedings",
     "empty": "The {{event}} proceedings are being prepared and will be published on this page."
+  },
+  "people": {
+    "foundersTitle": "Founders",
+    "lattes": "Lattes CV",
+    "orcid": "ORCID"
   }
 }
