@@ -1,17 +1,27 @@
 # SIEAmB — Current Status
 
-> Last updated: 2026-08-31 (update this file whenever meaningful progress happens)
+> Last updated: 2026-10-10 (update this file whenever meaningful progress happens)
 > Daily log: `.claude/log/<year>-w<week>.md` · Pending items: `.claude/log/PENDING.md` (commands: `/log-daily`, `/pending-items`)
 
 ## Where we are
 
-**Phase 0 (visual prototype) is COMPLETE and live**: https://rodrigo-rac2.github.io/SIEAmB/
+**Phase 0 (visual prototype) is COMPLETE and live**: https://sieamb.org (Vercel, since 2026-10-10; GitHub Pages copy at https://rodrigo-rac2.github.io/SIEAmB/ still deploys as fallback)
 
 - CI and Pages deploy are green on `main`. Every push to `main` auto-deploys.
 - **First client feedback is in (2026-08-31)**: Thays approved the prototype and asked for (1) an editais page (ANPOCS-style HTML pages) and (2) the logged-in submission area with attachments/status — which is exactly plan §6. Najara and professora Viviane still reviewing.
 - **URGENT: Rodrigo owes the group a hosting-plan recommendation by 2026-09-01** (PENDING R1) — research is done in the plan, needs packaging in non-technical pt-BR with costs in R$.
 - Team: Samuel (@0Samuel09) added as collaborator (invite pending accept); `develop` branch + ruleset protecting main/develop (PR + 1 approval; admin bypass for Rodrigo). Flow: `feature/* → develop → main`.
 - Project WhatsApp group exists (Najara, Thays, Rodrigo, Samuel, 2 design people).
+
+## Client input 2026-10-10 (Najara, WhatsApp) — NOT YET APPLIED
+
+- **Event is now 24–26 March 2027, ONLINE** (YouTube channel https://youtube.com/@sieambufla6013). Fixtures still say 25–27 Nov 2026 at UFCG Campina Grande. Slug `/2026/` probably should become `/2027/`.
+- **Cronograma II SIEAmB**: edital 23/10/2026 · submissions open 09/11/2026 · close 18/01/2027 · extension until 15/02/2027 · preliminary results 22/02/2027 · final results 12/03/2027 · author registration until 15/03/2027 · listener registration until 20/03/2027 · programme "dezembro" (odd, confirm) · event 24–26/03/2027.
+- **Rodrigo committed: registrations open 10/11/2026** (fallback = Even3 like 2025 if the integrated system is not ready). Hard date.
+- **Fees (3 categories × 2 lots)**: graduação R$30 / R$50 · pós R$50 / R$70 · professores e demais profissionais R$70 / R$90. The lot dates on her image (26/05–20/08, 21/08–20/10) predate the new cronograma — need new lot dates.
+- **Sobre o evento**: keep the general institutional text from the Wix "Sobre o SIEAmb" page + keep the 2025 edition description + add this edition's text; every year appends its own presentation text.
+- **Idealizadores are fixed** (Viviane Farias Silva, José Otávio Aguiar, Niklas Werner Weins, Najara Escarião Agripino — bios on the Wix page).
+- **Team per edition**: fixed team (idealizadores) + variable team per edition, each archived edition keeps its own team. Reference layout: chinabrasilunicamp.wixsite.com/2023 and /2024 (one page per year, "Eventos Prévios" + "Equipe" with name + bio). Najara will send the current team names (some left, some joined, Rodrigo included).
 
 ## What works today
 
@@ -54,14 +64,14 @@ Professora Viviane (project lead) said there is **no budget for ~R$250/month**. 
 
 ## External dependencies to kick off early
 
-- Custom domain `sieamb.ufcg.edu.br` — needs UFCG IT (not started)
+- **Domain decided 2026-10-10: `sieamb.org`** (free as of 10/10; register at Cloudflare Registrar, Rodrigo's account). `sieamb.ufcg.edu.br` stays an optional STI ask
 - Mercado Pago account under the empresa júnior CNPJ (not started; money flows to them)
 - ISSN application via IBICT for the anais (not started, slow process)
 - Design identity (in progress by the event's design team)
 
 ## Key links
 
-- Live site: https://rodrigo-rac2.github.io/SIEAmB/
+- Live site: https://sieamb.org (Vercel team `sieamb`, project `sieamb`, Git-connected to rodrigo-rac2/SIEAmB; `main` = production). Pages fallback: https://rodrigo-rac2.github.io/SIEAmB/
 - Repo: https://github.com/rodrigo-rac2/SIEAmB
 - Full plan: docs/IMPLEMENTATION_PLAN.md (also published as a Claude artifact: https://claude.ai/code/artifact/6af1a1b5-57dc-4440-abd3-237a6f3ee474)
 - Reference site (inspiration): https://engema.org.br/28/
