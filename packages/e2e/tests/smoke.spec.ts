@@ -66,8 +66,9 @@ test.describe('public site @smoke', () => {
     ).toHaveCount(0);
 
     await page.goto('/2025/organizacao');
-    await expect(page.getByText('Ma. Najara Escarião Agripino')).toBeVisible();
-    await expect(page.getByText('Equipe de Revisores')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Equipe Organizadora' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Palestrantes' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Me. Alex Souza Felix' })).toBeVisible();
 
     await page.goto('/2025/anais');
     await expect(
@@ -185,5 +186,18 @@ test.describe('i18n @smoke', () => {
     await expect(page.getByRole('heading', { name: 'Ma. Najara Escarião Agripino' })).toBeVisible();
     await page.goto('/2025/o-evento');
     await expect(page.getByText(/Governança Ambiental da China e do Brasil/)).toBeVisible();
+  });
+
+  test('team page groups the 2027 team with coordination badges and the founders block', async ({ page }) => {
+    await page.goto('/2026/organizacao');
+    await expect(page.getByRole('heading', { name: 'Idealizadores' })).toBeVisible();
+    for (const group of ['Comitê Científico', 'Equipe de Revisores', 'Equipe de Mídias']) {
+      await expect(page.getByRole('heading', { name: group })).toBeVisible();
+    }
+    await expect(page.getByRole('heading', { name: /Thays Alves da Silva/ })).toContainText(
+      'Coordenação da equipe',
+    );
+    await expect(page.getByRole('heading', { name: 'Arthur Lobato de Andrade' })).toBeVisible();
+    await expect(page.locator('img[src*="team/arthur-lobato"]')).toBeVisible();
   });
 });

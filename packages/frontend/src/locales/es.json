@@ -55,13 +55,14 @@
     "organizedBy": "Promovido por el Programa de Posgrado en Ingeniería y Gestión de Recursos Naturales de la UFCG",
     "editionTitle": "Esta edición",
     "editionPending": "El texto de presentación de esta edición se publicará en breve.",
-    "foundersTitle": "Fundadores",
-    "previousEditions": "Ediciones anteriores",
-    "lattes": "Currículo Lattes",
-    "orcid": "ORCID"
+    "previousEditions": "Ediciones anteriores"
   },
   "committee": {
-    "title": "Organización"
+    "title": "Organización",
+    "intro": "Las personas detrás del {{edition}}. Cada edición tiene su propio equipo, y los fundadores acompañan todas.",
+    "foundersNote": "Grupo permanente, presente en todas las ediciones.",
+    "foundersMore": "Conoce a los fundadores",
+    "coordinator": "Coordinación del equipo"
   },
   "areas": {
     "title": "Áreas Temáticas"
@@ -181,5 +182,10 @@
   "anais": {
     "title": "Anales",
     "empty": "Los anales del {{event}} están en preparación y serán publicados en esta página."
+  },
+  "people": {
+    "foundersTitle": "Fundadores",
+    "lattes": "Currículo Lattes",
+    "orcid": "ORCID"
   }
 }

@@ -4,8 +4,8 @@ import { useTranslation } from 'react-i18next';
 import Markdown from 'react-markdown';
 import { Link } from 'react-router-dom';
 import { PageHeader } from '../components/shared/PageHeader';
+import { PersonCard } from '../components/shared/PersonCard';
 import { useEvent } from '../contexts/EventContext';
-import { assetUrl } from '../lib/assets';
 import { getDataProvider } from '../services';
 import './AboutPage.css';
 
@@ -43,39 +43,18 @@ export function AboutPage() {
             <p className="about__pending">{t('about.editionPending')}</p>
           )}
 
-          <h2 id="idealizadores">{t('about.foundersTitle')}</h2>
-          <ul className="founders">
+          <h2 id="idealizadores">{t('people.foundersTitle')}</h2>
+          <ul className="people">
             {founders.map((f) => (
-              <li key={f.id} className="founder">
-                <div className="founder__photo" aria-hidden={!f.photoUrl}>
-                  {f.photoUrl ? (
-                    <img src={assetUrl(f.photoUrl)} alt="" loading="lazy" />
-                  ) : (
-                    <span>{f.name.replace(/^(Dra?\.|Ma?\.|Me\.)\s+/, '').charAt(0)}</span>
-                  )}
-                </div>
-                <div className="founder__body">
-                  <h3>{f.name}</h3>
-                  {f.affiliation && <p className="founder__affiliation">{f.affiliation}</p>}
-                  <div className="founder__bio">
-                    <Markdown>{f.bioMd}</Markdown>
-                  </div>
-                  {(f.lattesUrl || f.orcidUrl) && (
-                    <p className="founder__links">
-                      {f.lattesUrl && (
-                        <a href={f.lattesUrl} target="_blank" rel="noreferrer">
-                          {t('about.lattes')}
-                        </a>
-                      )}
-                      {f.orcidUrl && (
-                        <a href={f.orcidUrl} target="_blank" rel="noreferrer">
-                          {t('about.orcid')}
-                        </a>
-                      )}
-                    </p>
-                  )}
-                </div>
-              </li>
+              <PersonCard
+                key={f.id}
+                name={f.name}
+                subtitle={f.affiliation}
+                bioMd={f.bioMd}
+                photoUrl={f.photoUrl}
+                lattesUrl={f.lattesUrl}
+                orcidUrl={f.orcidUrl}
+              />
             ))}
           </ul>
 
