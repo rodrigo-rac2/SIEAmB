@@ -54,4 +54,30 @@ describe('StaticDataProvider', () => {
     expect(reg.status).toBe('PENDING_PAYMENT');
     expect(reg.eventId).toBe(event.id);
   });
+
+  it('current edition is the online II SIEAmB in March 2027 and its schedule ends on the event day', async () => {
+    const event = await provider.getCurrentEvent();
+    expect(event.startsAt.startsWith('2027-03-24')).toBe(true);
+    expect(event.endsAt.startsWith('2027-03-26')).toBe(true);
+    expect(event.isOnline).toBe(true);
+    expect(event.venueUrl).toMatch(/youtube\.com/);
+    const dates = await provider.getImportantDates(event.id);
+    const times = dates.map((d) => new Date(d.date).getTime());
+    expect([...times].sort((a, b) => a - b)).toEqual(times);
+    expect(dates.at(-1)?.date.startsWith('2027-03-24')).toBe(true);
+    expect(dates.find((d) => d.isExtended)?.label).toMatch(/Prorroga/);
+  });
+
+  it('serves the general about text, the four founders and the 2025 edition text', async () => {
+    const site = await provider.getSiteContent();
+    expect(site.aboutMd).toContain('Seminário Internacional de Estudos Ambientais');
+    const founders = await provider.getFounders();
+    expect(founders.map((f) => f.name)).toEqual([
+      'Dra. Viviane Farias Silva',
+      'Dr. José Otávio Aguiar',
+      'Dr. Niklas Werner Weins',
+      'Ma. Najara Escarião Agripino',
+    ]);
+    expect((await provider.getEventBySlug('2025'))?.aboutMd).toContain('Governança Ambiental');
+  });
 });

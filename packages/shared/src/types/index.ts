@@ -40,7 +40,13 @@ export interface EventSummary {
   edition: number;
   startsAt: string; // ISO
   endsAt: string; // ISO
+  /** Presentation text of this edition (markdown, pt-BR). Shown on the About page under the general text. */
+  aboutMd: string | null;
   venue: string | null;
+  /** True for remote editions: the venue page shows the streaming link instead of an address. */
+  isOnline: boolean;
+  /** Where the venue text points: streaming channel for online editions, map link otherwise. */
+  venueUrl: string | null;
   isCurrent: boolean;
   isArchived: boolean;
   heroImageUrl: string | null;
@@ -73,6 +79,25 @@ export interface ThematicArea {
   code: string;
   name: string;
   description: string | null;
+  sortOrder: number;
+}
+
+/** Site-wide content that does not belong to one edition. */
+export interface SiteContent {
+  /** General presentation of the SIEAmB (markdown, pt-BR). */
+  aboutMd: string;
+}
+
+/** The founders of the seminar: a fixed group shown on every edition. */
+export interface Founder {
+  id: string;
+  name: string;
+  /** Short line under the name, e.g. institution or position. */
+  affiliation: string | null;
+  bioMd: string;
+  photoUrl: string | null;
+  lattesUrl: string | null;
+  orcidUrl: string | null;
   sortOrder: number;
 }
 

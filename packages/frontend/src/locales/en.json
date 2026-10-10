@@ -52,7 +52,13 @@
   },
   "about": {
     "title": "The Event",
-    "organizedBy": "Promoted by the Graduate Program in Engineering and Natural Resource Management at UFCG"
+    "organizedBy": "Promoted by the Graduate Program in Engineering and Natural Resource Management at UFCG",
+    "editionTitle": "This edition",
+    "editionPending": "The presentation text for this edition will be published soon.",
+    "foundersTitle": "Founders",
+    "previousEditions": "Previous editions",
+    "lattes": "Lattes CV",
+    "orcid": "ORCID"
   },
   "committee": {
     "title": "Organization"
@@ -120,6 +126,9 @@
   },
   "venue": {
     "title": "Venue",
+    "onlineText": "The event is held online, streamed live on the SIEAmB YouTube channel. The link for each session will be published with the programme.",
+    "onlineCta": "Open the YouTube channel",
+    "mapCta": "Open in maps",
     "campusTitle": "Getting there",
     "lodgingTitle": "Lodging"
   },

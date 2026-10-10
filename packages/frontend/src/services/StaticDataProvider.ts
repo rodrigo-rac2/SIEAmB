@@ -3,10 +3,12 @@ import type {
   CommitteeMember,
   EventSummary,
   FeeTier,
+  Founder,
   ImportantDate,
   NewsItem,
   Registration,
   RegistrationInput,
+  SiteContent,
   Sponsor,
   ThematicArea,
 } from '@sieamb/shared';
@@ -16,8 +18,10 @@ import anais from '../data/anais.json';
 import committee from '../data/committee.json';
 import events from '../data/events.json';
 import feeTiers from '../data/feeTiers.json';
+import founders from '../data/founders.json';
 import importantDates from '../data/importantDates.json';
 import news from '../data/news.json';
+import site from '../data/site.json';
 import sponsors from '../data/sponsors.json';
 import thematicAreas from '../data/thematicAreas.json';
 
@@ -26,6 +30,14 @@ const NEWS = news as NewsItem[];
 
 /** Fixture-backed provider: powers the pure-static prototype and unit tests. */
 export class StaticDataProvider implements DataProvider {
+  async getSiteContent(): Promise<SiteContent> {
+    return site as SiteContent;
+  }
+
+  async getFounders(): Promise<Founder[]> {
+    return [...(founders as Founder[])].sort((a, b) => a.sortOrder - b.sortOrder);
+  }
+
   async getEvents(): Promise<EventSummary[]> {
     return [...EVENTS].sort((a, b) => b.edition - a.edition);
   }
