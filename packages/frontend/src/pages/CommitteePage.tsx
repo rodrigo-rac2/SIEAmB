@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { PageHeader } from '../components/shared/PageHeader';
 import { PersonCard } from '../components/shared/PersonCard';
 import { useEvent } from '../contexts/EventContext';
+import { firstAppearance, groupByRole } from '../lib/team';
 import { getDataProvider } from '../services';
 
 export function CommitteePage() {
@@ -21,22 +22,9 @@ export function CommitteePage() {
 
   if (!event) return null;
 
-  // Groups appear in fixture order (sortOrder) so each edition controls its own layout.
-  const groups: [string, CommitteeMember[]][] = [];
-  for (const m of members) {
-    const g = groups.find(([role]) => role === m.role);
-    if (g) g[1].push(m);
-    else groups.push([m.role, [m]]);
-  }
-
-  // A person can sit in several groups: photo and name repeat, the bio shows only
-  // the first time they are presented on the page (founders come first).
-  const seen = new Set<string>();
-  const firstTime = (name: string) => {
-    if (seen.has(name)) return false;
-    seen.add(name);
-    return true;
-  };
+  // Groups appear in fixture order; the bio shows only the first time a person is presented.
+  const groups = groupByRole(members);
+  const firstTime = firstAppearance();
 
   return (
     <>

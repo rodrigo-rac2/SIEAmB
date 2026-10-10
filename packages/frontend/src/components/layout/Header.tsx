@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link, NavLink } from 'react-router-dom';
 import { useEvent } from '../../contexts/EventContext';
 import { assetUrl } from '../../lib/assets';
+import { navLinks } from '../../lib/nav';
 import './Header.css';
 
 export function Header() {
@@ -11,28 +12,7 @@ export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const base = event ? `/${event.slug}` : '';
 
-  // Archived editions are a recap: committee + anais + dates, no live actions.
-  // The editions index lives in the top bar (see TopBar) to keep this menu on one line.
-  const links = event?.isArchived
-    ? [
-        { to: `${base}/`, label: t('nav.home'), end: true },
-        { to: `${base}/organizacao`, label: t('nav.committee') },
-        { to: `${base}/anais`, label: t('nav.anais') },
-        { to: `${base}/datas-importantes`, label: t('nav.dates') },
-        { to: `${base}/contato`, label: t('nav.contact') },
-      ]
-    : [
-        { to: `${base}/`, label: t('nav.home'), end: true },
-        { to: `${base}/o-evento`, label: t('nav.about') },
-        { to: `${base}/organizacao`, label: t('nav.committee') },
-        { to: `${base}/areas-tematicas`, label: t('nav.areas') },
-        { to: `${base}/submissoes`, label: t('nav.submissions') },
-        { to: `${base}/inscricoes`, label: t('nav.registration') },
-        { to: `${base}/datas-importantes`, label: t('nav.dates') },
-        { to: `${base}/avisos`, label: t('nav.news') },
-        { to: `${base}/local`, label: t('nav.venue') },
-        { to: `${base}/contato`, label: t('nav.contact') },
-      ];
+  const links = navLinks(event);
 
   return (
     <header className="site-header">
@@ -68,7 +48,7 @@ export function Header() {
             {links.map((link) => (
               <li key={link.to}>
                 <NavLink to={link.to} end={link.end} onClick={() => setMenuOpen(false)}>
-                  {link.label}
+                  {t(link.labelKey)}
                 </NavLink>
               </li>
             ))}

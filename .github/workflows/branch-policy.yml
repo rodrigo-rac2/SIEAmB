@@ -1,0 +1,33 @@
+name: Branch policy
+
+# GitHub rulesets cannot restrict the SOURCE branch of a pull request, so this check does:
+#   - into main:    only from develop (release) or hotfix/* (emergency fix)
+#   - into develop: from any branch except main (releases flow the other way)
+# It is a required status check in the protect-main-develop ruleset.
+on:
+  pull_request:
+    branches: [main, develop]
+    types: [opened, synchronize, reopened, edited]
+
+jobs:
+  branch-policy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check source branch against target
+        env:
+          BASE: ${{ github.base_ref }}
+          HEAD: ${{ github.head_ref }}
+        run: |
+          echo "PR: $HEAD -> $BASE"
+          case "$BASE" in
+            main)
+              case "$HEAD" in
+                develop|hotfix/*) echo "ok: releases come from develop, emergencies from hotfix/*" ;;
+                *) echo "::error::Pull requests into main must come from develop or hotfix/*. Open this PR against develop instead."; exit 1 ;;
+              esac ;;
+            develop)
+              case "$HEAD" in
+                main) echo "::error::main is released FROM develop, never merged into it."; exit 1 ;;
+                *) echo "ok" ;;
+              esac ;;
+          esac
