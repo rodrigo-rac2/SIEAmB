@@ -15,7 +15,7 @@ Academic conference website for UFCG's graduate program in Engineering and Natur
 - **Backend**: Express.js + TypeScript
 - **Database**: PostgreSQL
 - **ORM**: Prisma
-- **Testing**: Vitest (unit), Supertest (integration), Playwright (E2E)
+- **Testing**: Vitest (unit + component integration with RTL and the static fixtures), Playwright (E2E, local build in CI and against every Vercel deployment; `BASE_URL=<url> npm run test:e2e`)
 - **Deployment**: Vercel (prod https://sieamb.org from `main`, dev https://dev.sieamb.org from `develop`, preview per PR); GitHub Pages workflow is legacy
 
 ## Project Structure
@@ -41,7 +41,7 @@ npm run lint          # Lint all packages
 
 ## Branching model
 
-`main` (production → sieamb.org) and `develop` (integration → dev.sieamb.org) are protected by a ruleset: PR + 1 approval required, no force push, no deletion. **Never commit directly to main or develop, even with admin bypass** (process decision 2026-10-10). Day-to-day work: `feature/<issue>-<slug>` branches → PR to `develop` (body `Closes #<issue>`) → PR `develop → main` to release. Rodrigo admin-merges while he is the only active developer. Issues are written in English.
+`main` (production → sieamb.org) and `develop` (integration → dev.sieamb.org) are protected by a ruleset: PR + 1 approval required, no force push, no deletion. **Never commit directly to main or develop, even with admin bypass** (process decision 2026-10-10). Day-to-day work: `feature/<issue>-<slug>` branches → PR to `develop` (body `Closes #<issue>`) → PR `develop → main` to release. Emergencies: `hotfix/<issue>-<slug>` → PR to `main`, then PR to `develop`. The `branch-policy` check rejects any other PR into `main`. Required checks on both branches: `quality`, `e2e-smoke`, `e2e-preview` (Playwright against the Vercel deployment), `branch-policy`. Rodrigo admin-merges while he is the only active developer. Issues are written in English.
 
 ## Conventions
 
