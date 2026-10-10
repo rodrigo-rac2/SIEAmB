@@ -36,4 +36,4 @@ Replace the 🌿 emoji placeholder with an `<img>` pointing to the logo asset in
 - Check contrast (WCAG AA) of topbar/footer text against the new primary-dark
 - `npm run test && npm run test:e2e` — E2E asserts on text, not colors, so should stay green
 - Responsive pass at 360px and 1440px
-- Commit + push; remind Rodrigo the Pages CDN takes up to 10 min
+- Commit on a feature branch and open a PR to `develop`; check the Vercel preview URL the bot posts on the PR

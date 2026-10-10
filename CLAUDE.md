@@ -2,7 +2,7 @@
 
 ## Session start
 
-Read `.claude/context/STATUS.md` first — it has the current state, what's placeholder, and next steps. `.claude/context/HISTORY.md` has the session log. Use `/status` to regroup and `/wrap-up` before ending a session. Project skills live in `.claude/skills/` (update-content, apply-identity, new-edition).
+Read `.claude/context/STATUS.md` first — it has the current state, what's placeholder, and decisions. `.claude/context/HISTORY.md` has the session log. **The backlog is GitHub Issues** (`gh issue list --milestone <name>`), ordered by milestone; `.claude/log/PENDING.md` is retired. Use `/status` to regroup and `/wrap-up` before ending a session. Project skills live in `.claude/skills/` (update-content, apply-identity, new-edition).
 
 ## Project Overview
 
@@ -16,7 +16,7 @@ Academic conference website for UFCG's graduate program in Engineering and Natur
 - **Database**: PostgreSQL
 - **ORM**: Prisma
 - **Testing**: Vitest (unit), Supertest (integration), Playwright (E2E)
-- **Deployment**: GitHub Pages (prototype) → Cloud (production)
+- **Deployment**: Vercel (prod https://sieamb.org from `main`, dev https://dev.sieamb.org from `develop`, preview per PR); GitHub Pages workflow is legacy
 
 ## Project Structure
 
@@ -41,7 +41,7 @@ npm run lint          # Lint all packages
 
 ## Branching model
 
-`main` (production, auto-deploys to Pages) and `develop` (integration) are protected by a ruleset: PR + 1 approval required, no force push, no deletion. Repo admins (Rodrigo) can bypass; collaborators (Samuel/@0Samuel09, write access) cannot. Day-to-day work: `feature/*` branches → PR to `develop` → periodic PR `develop → main` to release.
+`main` (production → sieamb.org) and `develop` (integration → dev.sieamb.org) are protected by a ruleset: PR + 1 approval required, no force push, no deletion. **Never commit directly to main or develop, even with admin bypass** (process decision 2026-10-10). Day-to-day work: `feature/<issue>-<slug>` branches → PR to `develop` (body `Closes #<issue>`) → PR `develop → main` to release. Rodrigo admin-merges while he is the only active developer. Issues are written in English.
 
 ## Conventions
 
