@@ -3,10 +3,12 @@ import type {
   CommitteeMember,
   EventSummary,
   FeeTier,
+  Founder,
   ImportantDate,
   NewsItem,
   Registration,
   RegistrationInput,
+  SiteContent,
   Sponsor,
   ThematicArea,
 } from '@sieamb/shared';
@@ -17,6 +19,9 @@ import type {
  * (direct client, Phase 0), ApiDataProvider (Express, Phase 1+).
  */
 export interface DataProvider {
+  getSiteContent(): Promise<SiteContent>;
+  getFounders(): Promise<Founder[]>;
+
   getEvents(): Promise<EventSummary[]>;
   getEventBySlug(slug: string): Promise<EventSummary | null>;
   getCurrentEvent(): Promise<EventSummary>;
