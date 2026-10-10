@@ -230,4 +230,11 @@ test.describe('i18n @smoke', () => {
     await expect(page).toHaveURL(/\/2027\/organizacao\?x=1#equipe$/);
     await expect(page.getByRole('heading', { name: 'Comitê Científico' })).toBeVisible();
   });
+
+  test('schedule shows the programme release as a month-only date', async ({ page }) => {
+    await page.goto('/2027/datas-importantes');
+    const row = page.getByRole('row', { name: /Divulgação da programação/ });
+    await expect(row).toContainText('dezembro de 2026');
+    await expect(row).not.toContainText('1 de dezembro');
+  });
 });

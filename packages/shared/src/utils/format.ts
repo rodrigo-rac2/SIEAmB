@@ -35,3 +35,12 @@ export function formatDateRange(startIso: string, endIso: string, locale: Locale
   });
   return fmt.formatRange(new Date(startIso), new Date(endIso));
 }
+
+/** Format an ISO date as month + year only, e.g. "dezembro de 2026". */
+export function formatMonth(iso: string, locale: Locale = 'pt-BR'): string {
+  return new Intl.DateTimeFormat(localeMap[locale], {
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'America/Fortaleza',
+  }).format(new Date(iso));
+}

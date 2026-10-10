@@ -72,6 +72,8 @@ export interface ImportantDate {
   label: string;
   date: string; // ISO
   isExtended: boolean;
+  /** The committee only fixed the month: show \"dezembro de 2026\" instead of a day. */
+  monthOnly?: boolean;
   sortOrder: number;
 }
 
