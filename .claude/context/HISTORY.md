@@ -8,7 +8,8 @@ Append a dated entry per working session. Newest first.
 - Captured the Wix "Sobre" and "Equipe" texts (general text, 2025 text, 4 idealizadores with bios, 2025 team bios) and the Unicamp per-year layout reference.
 - Domain check (registro.br whois, 10/10): sieamb.org.br / .com.br / .net.br / .eco.br / .org / .com all free. `.org.br` is a restricted category (CNPJ); `.com.br`/`.eco.br` can go on a CPF.
 - **sieamb.org registered (Cloudflare Registrar) and live on Vercel Hobby** (team `sieamb`, DNS stays on Cloudflare, apex + www via Domain Connect, Git-connected for auto-deploys). `vercel.json` sets `VITE_BASE=/` and SPA rewrites; vercel CLI is a root devDependency.
-- Process decision: from now on `feature/* → develop → main`; next: `dev.sieamb.org` on the `develop` branch, Playwright against Vercel previews via `deployment_status`, disable Vercel Authentication on previews.
+- Process decision: from now on `feature/* → develop → main`, no direct commits (PR #1 → develop, PR #2 → main were the first). Rodrigo admin-merges until Samuel is active.
+- **Dev environment**: `dev.sieamb.org` bound to the `develop` branch (Vercel branch domain), `www` 308-redirects to the apex, Vercel Authentication on previews turned off (needed for Playwright against preview URLs later). All three domains verified and serving.
 - Rollout plan for the R$0 production stack drafted (see STATUS/PENDING R4, R5). Nothing committed yet.
 
 ## 2026-09-01 — Per-edition themes (ADR-001)

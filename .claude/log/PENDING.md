@@ -24,7 +24,7 @@
 |---|---|---|---|
 | R2 | Página de editais (estrutura placeholder "em breve" até o conteúdo chegar) | — | Depende de P3 para o conteúdo final; a página em si pode ser criada antes |
 | R4 | Aplicar o input de 10/10 (datas março/2027, online, taxas, sobre + idealizadores + equipe por edição) | 2026-10-17 | Ver STATUS.md "Client input 2026-10-10" |
-| R7 | `dev.sieamb.org` na branch `develop` + Playwright contra o preview da Vercel (evento `deployment_status`) + desligar Vercel Authentication nos previews | — | Decidido em 10/10 |
+| R7 | Playwright do CI rodando contra o preview da Vercel (evento `deployment_status`) em vez do build local | — | dev.sieamb.org e proteção de preview já resolvidos em 10/10 |
 | R5 | Inscrições abertas no site em produção (domínio + Vercel + Supabase) | **2026-11-10** | Compromisso com a Najara. Plano de rollout na sessão de 10/10 |
 | R3 | Fase 1: Supabase + área logada (submissão com anexos e acompanhamento foi confirmada como desejada pela Thays) | — | Escopo já planejado (plan §5-6). Começar após decisão de hospedagem (R1) |
 
