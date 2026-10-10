@@ -71,7 +71,7 @@ Professora Viviane (project lead) said there is **no budget for ~R$250/month**. 
 
 ## Key links
 
-- Live site: https://sieamb.org (Vercel team `sieamb`, project `sieamb`, Git-connected to rodrigo-rac2/SIEAmB; `main` = production). Pages fallback: https://rodrigo-rac2.github.io/SIEAmB/
+- Live site: https://sieamb.org (Vercel team `sieamb`, project `sieamb`, Git-connected to rodrigo-rac2/SIEAmB; `main` = production, `develop` = https://dev.sieamb.org). Pages fallback: https://rodrigo-rac2.github.io/SIEAmB/
 - Repo: https://github.com/rodrigo-rac2/SIEAmB
 - Full plan: docs/IMPLEMENTATION_PLAN.md (also published as a Claude artifact: https://claude.ai/code/artifact/6af1a1b5-57dc-4440-abd3-237a6f3ee474)
 - Reference site (inspiration): https://engema.org.br/28/
