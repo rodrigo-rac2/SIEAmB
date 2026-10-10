@@ -1,7 +1,6 @@
 import type { CommitteeMember, Founder } from '@sieamb/shared';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
 import { PageHeader } from '../components/shared/PageHeader';
 import { PersonCard } from '../components/shared/PersonCard';
 import { useEvent } from '../contexts/EventContext';
@@ -30,6 +29,15 @@ export function CommitteePage() {
     else groups.push([m.role, [m]]);
   }
 
+  // A person can sit in several groups: photo and name repeat, the bio shows only
+  // the first time they are presented on the page (founders come first).
+  const seen = new Set<string>();
+  const firstTime = (name: string) => {
+    if (seen.has(name)) return false;
+    seen.add(name);
+    return true;
+  };
+
   return (
     <>
       <PageHeader title={t('committee.title')} />
@@ -38,32 +46,39 @@ export function CommitteePage() {
           <p className="committee__intro">{t('committee.intro', { edition: event.name })}</p>
 
           <h2>{t('people.foundersTitle')}</h2>
-          <p className="committee__note">{t('committee.foundersNote')}</p>
           <ul className="people">
             {founders.map((f) => (
-              <PersonCard key={f.id} name={f.name} subtitle={f.affiliation} photoUrl={f.photoUrl} />
+              <PersonCard
+                key={f.id}
+                name={f.name}
+                subtitle={f.affiliation}
+                bioMd={firstTime(f.name) ? f.bioMd : null}
+                photoUrl={f.photoUrl}
+                lattesUrl={f.lattesUrl}
+                orcidUrl={f.orcidUrl}
+              />
             ))}
           </ul>
-          <p>
-            <Link to={`/${event.slug}/o-evento#idealizadores`}>{t('committee.foundersMore')} →</Link>
-          </p>
 
           {groups.map(([role, group]) => (
             <div key={role}>
               <h2>{role}</h2>
               <ul className="people">
-                {group.map((m) => (
-                  <PersonCard
-                    key={m.id}
-                    name={m.name}
-                    subtitle={m.institution}
-                    badge={m.isCoordinator ? t('committee.coordinator') : null}
-                    bioMd={m.bioMd}
-                    photoUrl={m.photoUrl}
-                    lattesUrl={m.lattesUrl}
-                    orcidUrl={m.orcidUrl}
-                  />
-                ))}
+                {group.map((m) => {
+                  const first = firstTime(m.name);
+                  return (
+                    <PersonCard
+                      key={m.id}
+                      name={m.name}
+                      subtitle={m.institution}
+                      badge={m.isCoordinator ? t('committee.coordinator') : null}
+                      bioMd={first ? m.bioMd : null}
+                      photoUrl={m.photoUrl}
+                      lattesUrl={first ? m.lattesUrl : null}
+                      orcidUrl={first ? m.orcidUrl : null}
+                    />
+                  );
+                })}
               </ul>
             </div>
           ))}

@@ -20,6 +20,24 @@
   flex-wrap: wrap;
 }
 
+.topbar__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.topbar__editions {
+  color: inherit;
+  text-decoration: none;
+  opacity: 0.9;
+  white-space: nowrap;
+}
+
+.topbar__editions:hover {
+  text-decoration: underline;
+  opacity: 1;
+}
+
 @media (max-width: 560px) {
   .topbar__venue {
     display: none;

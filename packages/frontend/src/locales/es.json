@@ -60,8 +60,6 @@
   "committee": {
     "title": "Equipo",
     "intro": "Las personas detrás del {{edition}}. Cada edición tiene su propio equipo, y los fundadores acompañan todas.",
-    "foundersNote": "Grupo permanente, presente en todas las ediciones.",
-    "foundersMore": "Conoce a los fundadores",
     "coordinator": "Coordinación del equipo"
   },
   "areas": {

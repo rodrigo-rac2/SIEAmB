@@ -12,11 +12,7 @@ export function Header() {
   const base = event ? `/${event.slug}` : '';
 
   // Archived editions are a recap: committee + anais + dates, no live actions.
-  // Every edition that HAS prior editions links to the editions index; the
-  // first edition has nothing before it, so the link is omitted there.
-  type NavLinkDef = { to: string; label: string; end?: boolean };
-  const editionsLink: NavLinkDef[] =
-    event && event.edition > 1 ? [{ to: '/edicoes-anteriores', label: t('nav.editions') }] : [];
+  // The editions index lives in the top bar (see TopBar) to keep this menu on one line.
   const links = event?.isArchived
     ? [
         { to: `${base}/`, label: t('nav.home'), end: true },
@@ -24,7 +20,6 @@ export function Header() {
         { to: `${base}/anais`, label: t('nav.anais') },
         { to: `${base}/datas-importantes`, label: t('nav.dates') },
         { to: `${base}/contato`, label: t('nav.contact') },
-        ...editionsLink,
       ]
     : [
         { to: `${base}/`, label: t('nav.home'), end: true },
@@ -37,7 +32,6 @@ export function Header() {
         { to: `${base}/avisos`, label: t('nav.news') },
         { to: `${base}/local`, label: t('nav.venue') },
         { to: `${base}/contato`, label: t('nav.contact') },
-        ...editionsLink,
       ];
 
   return (
