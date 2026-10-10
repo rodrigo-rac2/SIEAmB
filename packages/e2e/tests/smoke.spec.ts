@@ -80,13 +80,12 @@ test.describe('public site @smoke', () => {
       /educapes\.capes\.gov\.br/,
     );
 
-    // First edition: nothing before it, so no editions-index link in its nav.
-    await expect(
-      page.getByRole('navigation').getByRole('link', { name: 'Edições Anteriores' }),
-    ).toHaveCount(0);
+    // First edition: nothing before it, so no editions-index link in the header (the footer keeps one).
+    await expect(page.locator('.topbar').getByRole('link', { name: 'Edições Anteriores' })).toHaveCount(0);
+    await expect(page.getByRole('navigation').getByRole('link', { name: 'Edições Anteriores' })).toHaveCount(0);
   });
 
-  test('editions cross-link: archived banner and nav link', async ({ page, isMobile }) => {
+  test('editions cross-link: archived banner and top bar link', async ({ page }) => {
     // Archived edition shows a banner pointing to the current edition.
     await page.goto('/2025/');
     const banner = page.getByRole('note');
@@ -94,12 +93,8 @@ test.describe('public site @smoke', () => {
     await banner.getByRole('link').click();
     await expect(page).toHaveURL(/\/2026\/$/);
 
-    // Current edition reaches the editions index from the nav.
-    test.skip(isMobile, 'nav links are in the drawer on mobile; covered on desktop');
-    await page
-      .getByRole('navigation')
-      .getByRole('link', { name: 'Edições Anteriores' })
-      .click();
+    // Current edition reaches the editions index from the top bar (visible on every viewport).
+    await page.locator('.topbar').getByRole('link', { name: 'Edições Anteriores' }).click();
     await expect(page).toHaveURL(/\/edicoes-anteriores$/);
     await expect(page.getByRole('link', { name: /^1º Seminário Internacional/ })).toBeVisible();
   });
@@ -204,5 +199,18 @@ test.describe('i18n @smoke', () => {
     );
     await expect(page.getByRole('heading', { name: 'Arthur Lobato de Andrade' })).toBeVisible();
     await expect(page.locator('img[src*="team/arthur-lobato"]')).toBeVisible();
+    // Najara is a founder, on the scientific committee and a reviewer: name three times, bio once.
+    await expect(page.getByRole('heading', { name: 'Ma. Najara Escarião Agripino' })).toHaveCount(3);
+    await expect(page.getByText(/Civilização Ecológica/)).toHaveCount(1);
+    await expect(page.getByRole('link', { name: /Conheça os idealizadores/ })).toHaveCount(0);
+  });
+
+  test('desktop menu stays on one line at laptop width', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'mobile uses the drawer');
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/2026/');
+    const items = page.getByRole('navigation').getByRole('link');
+    const tops = await items.evaluateAll((els) => els.map((e) => e.getBoundingClientRect().top));
+    expect(new Set(tops.map((t) => Math.round(t))).size).toBe(1);
   });
 });

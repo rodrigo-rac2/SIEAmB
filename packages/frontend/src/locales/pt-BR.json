@@ -60,8 +60,6 @@
   "committee": {
     "title": "Equipe",
     "intro": "Quem faz o {{edition}} acontecer. Cada edição tem a sua equipe, e os idealizadores acompanham todas.",
-    "foundersNote": "Grupo fixo, presente em todas as edições.",
-    "foundersMore": "Conheça os idealizadores",
     "coordinator": "Coordenação da equipe"
   },
   "areas": {
