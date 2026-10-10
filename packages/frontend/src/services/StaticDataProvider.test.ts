@@ -65,7 +65,9 @@ describe('StaticDataProvider', () => {
     const times = dates.map((d) => new Date(d.date).getTime());
     expect([...times].sort((a, b) => a - b)).toEqual(times);
     expect(dates.at(-1)?.date.startsWith('2027-03-24')).toBe(true);
-    expect(dates.find((d) => d.isExtended)?.label).toMatch(/Prorroga/);
+    // The extension (15/02/2027) is internal guidance for now and must not be published.
+    expect(dates.some((d) => d.isExtended || /Prorroga/.test(d.label))).toBe(false);
+    expect(dates).toHaveLength(8);
   });
 
   it('serves the general about text, the four founders and the 2025 edition text', async () => {
