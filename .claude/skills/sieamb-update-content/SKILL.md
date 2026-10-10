@@ -12,7 +12,7 @@ Phase 0 content lives in JSON fixtures at `packages/frontend/src/data/`. Once Su
 | File | Entity | Notes |
 |---|---|---|
 | `events.json` | Event editions | `isCurrent: true` on exactly ONE event — this controls the root redirect. Dates are ISO with `-03:00` offset. `isOnline` + `venueUrl` drive the Local page (streaming link for remote editions, map link otherwise) |
-| `importantDates.json` | Deadlines | `sortOrder` controls display order; `isExtended: true` shows the "prorrogado" badge |
+| `importantDates.json` | Deadlines | `sortOrder` controls display order; `isExtended: true` shows the "prorrogado" badge; `monthOnly: true` renders month + year when the committee fixed no day |
 | `thematicAreas.json` | Áreas temáticas | `code` like "AT-01" |
 | `feeTiers.json` | Fee matrix | `amountCents` is integer centavos (R$ 80,00 = 8000). Rows = category × lot (`label`, `validFrom`, `validUntil`); the table shows one column per lot with its date range. Modality only shows inside the cell when an edition mixes modalities |
 | `committee.json` | Organização | One row per person per group. `role` is the group heading (fixture order = page order), `isCoordinator` adds the badge, `bioMd`/`lattesUrl`/`orcidUrl` optional, `photoUrl` under `public/team/<slug>.jpg` (480px, jpeg) |

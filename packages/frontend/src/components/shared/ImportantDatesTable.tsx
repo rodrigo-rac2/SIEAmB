@@ -1,4 +1,4 @@
-import { formatDate, type ImportantDate, type Locale } from '@sieamb/shared';
+import { formatDate, formatMonth, type ImportantDate, type Locale } from '@sieamb/shared';
 import { useTranslation } from 'react-i18next';
 import './ImportantDatesTable.css';
 
@@ -14,7 +14,7 @@ export function ImportantDatesTable({ dates }: { dates: ImportantDate[] }) {
         {dates.map((d) => (
           <tr key={d.id}>
             <td className="dates-table__date">
-              {formatDate(d.date, locale)}
+              {d.monthOnly ? formatMonth(d.date, locale) : formatDate(d.date, locale)}
               {d.isExtended && <span className="dates-table__badge">{t('dates.extended')}</span>}
             </td>
             <td>{d.label}</td>

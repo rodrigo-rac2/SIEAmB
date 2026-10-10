@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatDate, formatDateRange, formatMoney } from './format';
+import { formatDate, formatDateRange, formatMonth, formatMoney } from './format';
 
 describe('formatDateRange', () => {
   const start = '2027-03-24T08:00:00-03:00';
@@ -38,5 +38,12 @@ describe('formatMoney', () => {
   it('formats centavos as BRL in the given locale', () => {
     expect(formatMoney(5000)).toMatch(/R\$\s?50,00/);
     expect(formatMoney(9000, 'en')).toMatch(/R\$\s?90\.00/);
+  });
+});
+
+describe('formatMonth', () => {
+  it('shows month and year only, in the given locale', () => {
+    expect(formatMonth('2026-12-01T00:00:00-03:00')).toBe('dezembro de 2026');
+    expect(formatMonth('2026-12-01T00:00:00-03:00', 'en')).toBe('December 2026');
   });
 });
