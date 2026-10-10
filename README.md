@@ -2,7 +2,9 @@
 
 Plataforma web do **SIEAmB**, evento científico promovido pela UFCG (Programa de Pós-Graduação em Engenharia e Gestão de Recursos Naturais). Este repositório contém o site do evento, com suporte a múltiplas edições e múltiplos idiomas.
 
-🌐 **Site no ar:** https://rodrigo-rac2.github.io/SIEAmB/
+🌐 **Site no ar:** https://sieamb.org · ambiente de desenvolvimento: https://dev.sieamb.org
+
+🗂️ **Backlog:** [GitHub Issues](https://github.com/rodrigo-rac2/SIEAmB/issues) organizadas por [milestones](https://github.com/rodrigo-rac2/SIEAmB/milestones) (ver [Backlog e processo](#backlog-e-processo))
 
 📋 **Plano completo do projeto:** [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md)
 
@@ -19,10 +21,11 @@ Plataforma web do **SIEAmB**, evento científico promovido pela UFCG (Programa d
 5. [Como o site funciona (conceitos-chave)](#como-o-site-funciona-conceitos-chave)
 6. [Onde fica cada conteúdo](#onde-fica-cada-conteúdo)
 7. [Testes](#testes)
-8. [Fluxo de trabalho com Git (leia antes de contribuir)](#fluxo-de-trabalho-com-git)
-9. [CI/CD e deploy](#cicd-e-deploy)
-10. [Convenções do projeto](#convenções-do-projeto)
-11. [Problemas comuns (troubleshooting)](#problemas-comuns-troubleshooting)
+8. [Backlog e processo (leia antes de contribuir)](#backlog-e-processo)
+9. [Fluxo de trabalho com Git](#fluxo-de-trabalho-com-git)
+10. [CI/CD, ambientes e deploy](#cicd-ambientes-e-deploy)
+11. [Convenções do projeto](#convenções-do-projeto)
+12. [Problemas comuns (troubleshooting)](#problemas-comuns-troubleshooting)
 
 ---
 
@@ -46,8 +49,8 @@ O projeto evolui em fases (detalhes no [plano](docs/IMPLEMENTATION_PLAN.md)):
 
 | Fase | O quê | Status |
 |---|---|---|
-| **0** | Protótipo visual + pré-inscrição, hospedado no GitHub Pages | ✅ **Concluída (estamos aqui)** |
-| 1 | Backend Express + Supabase (persistência real), painel admin, e-mails | Próxima |
+| **0** | Protótipo visual + pré-inscrição (hoje em https://sieamb.org, na Vercel) | ✅ Concluída |
+| **1** | Supabase (persistência real), painel admin, e-mails, hospedagem definitiva | 🚧 **Em andamento (estamos aqui)** — milestone [Registrations + submissions open](https://github.com/rodrigo-rac2/SIEAmB/milestone/2) |
 | 2 | Submissão de artigos com revisão double-blind | Planejada |
 | 3 | Pagamento (Mercado Pago: Pix, cartão, boleto) | Planejada |
 | 4 | Certificados + anais | Planejada |
@@ -62,7 +65,7 @@ Na Fase 0 **não existe backend rodando**: o site é 100% estático e os dados v
 
 ```
 SIEAmB/
-├── .github/workflows/       # CI (lint+testes) e deploy para o GitHub Pages
+├── .github/workflows/       # CI (lint+testes); deploy antigo no GitHub Pages (será aposentado)
 ├── .claude/                 # Contexto para sessões do Claude Code (status, histórico, skills)
 ├── docs/
 │   └── IMPLEMENTATION_PLAN.md   # Plano completo das 5 fases
@@ -179,14 +182,28 @@ Testes não são opcionais neste projeto — a CI bloqueia PR com teste quebrado
 
 Se você mudar comportamento do site, atualize/adicione testes no mesmo PR.
 
+## Backlog e processo
+
+Todo o trabalho do site vive em **GitHub Issues**, em inglês. Não existe outra lista de tarefas: se não está em uma issue, não está no backlog.
+
+- **[Milestones](https://github.com/rodrigo-rac2/SIEAmB/milestones)** são as datas duras do evento e definem a ordem do backlog. Trabalhe sempre na milestone mais próxima:
+  1. **Edital (23 Oct 2026)** — conteúdo correto no ar: datas, taxas, sobre, equipe, página de editais
+  2. **Registrations + submissions open (10 Nov 2026)** — inscrições reais, caminho de pagamento, submissão mínima, admin
+  3. **Peer review (Jan-Mar 2027)** — fluxo de revisão (ADR-003)
+  4. **Event (24-26 Mar 2027)** — programação, certificados, anais
+- **Labels** (só quatro): `content` (textos, datas, taxas, equipe) · `feature` (funcionalidade nova) · `infra` (hospedagem, CI, DNS, backups) · `waiting-committee` (bloqueada esperando a comissão organizadora).
+- **Como pegar trabalho**: escolha uma issue aberta sem responsável na milestone atual, atribua a si mesmo, crie a branch `feature/<numero>-<slug>` e mencione `Closes #<numero>` no PR. O merge fecha a issue.
+- **Achou um bug ou uma ideia?** Abra uma issue antes de codar. Pedidos da comissão (WhatsApp) viram issues também, com a label `waiting-committee` enquanto faltar informação.
+- `.claude/context/STATUS.md` continua sendo o resumo narrativo (onde estamos, decisões), mas a lista de tarefas é só a das issues.
+
 ## Fluxo de trabalho com Git
 
-⚠️ **As branches `main` e `develop` são protegidas: ninguém faz push direto nelas.** Todo trabalho entra por Pull Request com pelo menos 1 aprovação.
+⚠️ **As branches `main` e `develop` são protegidas: ninguém faz push direto nelas, nem o admin.** Todo trabalho entra por Pull Request (desde 2026-10-10 este é o processo para todo mundo, sem exceção).
 
 ```
-main      ← produção. Push aqui = deploy automático no GitHub Pages
-develop   ← integração. PRs de feature entram aqui primeiro
-feature/* ← seu trabalho do dia a dia
+main      ← produção. Merge aqui = deploy automático em https://sieamb.org
+develop   ← integração. Merge aqui = deploy automático em https://dev.sieamb.org
+feature/* ← seu trabalho do dia a dia. Cada PR ganha uma URL de preview na Vercel
 ```
 
 Passo a passo para contribuir:
@@ -195,31 +212,40 @@ Passo a passo para contribuir:
 # 1. Parta sempre da develop atualizada
 git checkout develop && git pull
 
-# 2. Crie sua branch (nome descritivo, em inglês)
-git checkout -b feature/news-pagination
+# 2. Crie sua branch a partir da issue (número + slug, em inglês)
+git checkout -b feature/11-editais-page
 
 # 3. Trabalhe, rode os testes localmente, commite
 npm run lint && npm run typecheck && npm run test
-git add -A && git commit -m "Add pagination to the news list"
+git add -A && git commit -m "Add the editais page"
 
 # 4. Suba e abra o PR contra a develop
-git push -u origin feature/news-pagination
-gh pr create --base develop
+git push -u origin feature/11-editais-page
+gh pr create --base develop   # no corpo, escreva "Closes #11"
 ```
 
-- O PR precisa da CI verde + 1 aprovação para poder ser mergeado
-- Quando a develop acumula um conjunto estável de mudanças, abre-se um PR `develop → main`; o merge na main publica o site
+- O PR precisa da CI verde + 1 aprovação para poder ser mergeado. Enquanto só houver uma pessoa ativa, o Rodrigo faz o merge com bypass de admin, mas sempre via PR
+- Confira a URL de preview que o bot da Vercel comenta no PR antes de pedir revisão
+- Quando a develop acumula um conjunto estável de mudanças, abre-se um PR `develop → main`; o merge na main publica o site em https://sieamb.org
 - Commits em inglês, mensagem no imperativo ("Add X", "Fix Y"), explicando o *porquê* quando não for óbvio
 - Force push e deleção de main/develop estão bloqueados
 
-## CI/CD e deploy
+## CI/CD, ambientes e deploy
 
-Dois workflows em `.github/workflows/`:
+**Ambientes (Vercel, plano gratuito, projeto `sieamb`):**
+
+| Ambiente | URL | Branch | Quando atualiza |
+|---|---|---|---|
+| Produção | https://sieamb.org (www redireciona) | `main` | a cada merge na `main` |
+| Desenvolvimento | https://dev.sieamb.org | `develop` | a cada merge na `develop` |
+| Preview | `https://sieamb-<hash>-sieamb.vercel.app` | cada PR | a cada push no PR (o bot da Vercel comenta a URL) |
+
+O domínio `sieamb.org` está registrado na Cloudflare (DNS também lá). A configuração de build está em `vercel.json` (build do monorepo, `VITE_BASE=/`, rewrites de SPA). A Vercel está conectada ao GitHub, então não existe passo manual de deploy. Para deploy manual de emergência: `npx vercel --prod`.
+
+**Workflows em `.github/workflows/`:**
 
 - **`ci.yml`** — roda em todo PR e push em main/develop: ESLint, TypeScript (`tsc`), testes unitários e smoke E2E. Se falhar, o PR não merga.
-- **`deploy-pages.yml`** — roda em push na `main`: builda o frontend e publica no GitHub Pages.
-
-⏱️ **O CDN do GitHub Pages tem cache de ~10 minutos.** Depois de um deploy, o site pode demorar até 10 min para atualizar. Aba anônima ajuda a conferir sem cache.
+- **`deploy-pages.yml`** — legado do protótipo (publica também em https://rodrigo-rac2.github.io/SIEAmB/). Será removido (issue #20).
 
 ## Convenções do projeto
 

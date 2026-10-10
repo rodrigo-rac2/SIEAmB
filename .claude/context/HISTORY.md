@@ -10,6 +10,7 @@ Append a dated entry per working session. Newest first.
 - **sieamb.org registered (Cloudflare Registrar) and live on Vercel Hobby** (team `sieamb`, DNS stays on Cloudflare, apex + www via Domain Connect, Git-connected for auto-deploys). `vercel.json` sets `VITE_BASE=/` and SPA rewrites; vercel CLI is a root devDependency.
 - Process decision: from now on `feature/* → develop → main`, no direct commits (PR #1 → develop, PR #2 → main were the first). Rodrigo admin-merges until Samuel is active.
 - **Dev environment**: `dev.sieamb.org` bound to the `develop` branch (Vercel branch domain), `www` 308-redirects to the apex, Vercel Authentication on previews turned off (needed for Playwright against preview URLs later). All three domains verified and serving.
+- **Backlog moved to GitHub Issues** (19 issues, #5–#23, English) under 4 milestones tied to the event dates (Edital 23 Oct · Registrations + submissions 10 Nov · Peer review Jan–Mar 2027 · Event 24–26 Mar 2027) and 4 labels (content, feature, infra, waiting-committee). PENDING.md retired with a mapping table. README got a "Backlog e processo" section and the environments table; CLAUDE.md, /status, /wrap-up, /pending-items, /log-daily and the two content skills now point at issues and the PR flow.
 - Rollout plan for the R$0 production stack drafted (see STATUS/PENDING R4, R5). Nothing committed yet.
 
 ## 2026-09-01 — Per-edition themes (ADR-001)
