@@ -104,6 +104,27 @@ describe('StaticDataProvider', () => {
     ]);
   });
 
+  it('2027 team: every member has a Lattes link, same person keeps the same links and affiliation everywhere', async () => {
+    const team = await provider.getCommittee('evt-2027');
+    const missing = team.filter((m) => !m.lattesUrl).map((m) => m.name);
+    expect(missing).toEqual([]);
+    for (const m of team) {
+      if (m.lattesUrl) expect(m.lattesUrl).toMatch(/^https?:\/\/lattes\.cnpq\.br\/\d{16}$/);
+      if (m.orcidUrl) expect(m.orcidUrl).toMatch(/^https:\/\/orcid\.org\/\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/);
+    }
+    const byName = new Map<string, string>();
+    for (const m of team) {
+      const key = `${m.lattesUrl}|${m.orcidUrl}|${m.institution}`;
+      expect(byName.get(m.name) ?? key).toBe(key);
+      byName.set(m.name, key);
+    }
+    const inst = Object.fromEntries(team.map((m) => [m.name, m.institution]));
+    expect(inst['Ma. Thays Alves da Silva']).toBe('PPGS/UFPel');
+    expect(inst['Ma. Zhou Lin']).toBe('PPGA&S/Unicamp');
+    expect(inst['Luana Bramorski Cerqueira Cesar']).toBe('PPGS/Unicamp');
+    expect(inst['Pollyanna Kécia Cordeiro Grangeiro']).toBe('PPGEGRN/UFCG / PPGA/UFCG');
+  });
+
   it('every team member and founder has a photo under team/', async () => {
     const founders = await provider.getFounders();
     const team = [
