@@ -12,6 +12,9 @@ test.describe('public site @smoke', () => {
   test('home renders hero, quick links, dates and news', async ({ page }) => {
     await page.goto('/2027/');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    // Committee request: days written out on the home page, compact range elsewhere.
+    await expect(page.locator('.hero__meta')).toContainText('24, 25 e 26 de março de 2027');
+    await expect(page.locator('.topbar')).toContainText(/24\s?[–-]\s?26 de março de 2027/);
     await expect(page.getByRole('link', { name: /Datas Importantes/i }).first()).toBeVisible();
     await expect(page.getByText('Últimos Avisos')).toBeVisible();
   });
