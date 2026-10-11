@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatDate, formatDateRange, formatMonth, formatMoney } from './format';
+import { formatDate, formatDateList, formatDateRange, formatMonth, formatMoney } from './format';
 
 describe('formatDateRange', () => {
   const start = '2027-03-24T08:00:00-03:00';
@@ -45,5 +45,35 @@ describe('formatMonth', () => {
   it('shows month and year only, in the given locale', () => {
     expect(formatMonth('2026-12-01T00:00:00-03:00')).toBe('dezembro de 2026');
     expect(formatMonth('2026-12-01T00:00:00-03:00', 'en')).toBe('December 2026');
+  });
+});
+
+describe('formatDateList', () => {
+  const start = '2027-03-24T08:00:00-03:00';
+  const end = '2027-03-26T18:00:00-03:00';
+
+  it('spells the days out the way the committee asked for the home page', () => {
+    expect(formatDateList(start, end)).toBe('24, 25 e 26 de março de 2027');
+  });
+
+  it('renders the list in every supported locale', () => {
+    expect(formatDateList(start, end, 'en')).toBe('March 24, 25 and 26, 2027');
+    expect(formatDateList(start, end, 'es')).toBe('24, 25 y 26 de marzo de 2027');
+    expect(formatDateList(start, end, 'zh-CN')).toBe('2027年3月24日、25日和26日');
+  });
+
+  it('handles a one-day event and a two-day event', () => {
+    expect(formatDateList(start, start)).toBe('24 de março de 2027');
+    expect(formatDateList(start, '2027-03-25T18:00:00-03:00')).toBe('24 e 25 de março de 2027');
+  });
+
+  it('falls back to the range when the days cross a month or the range is long', () => {
+    expect(formatDateList('2026-10-30T08:00:00-03:00', '2026-11-02T18:00:00-03:00')).toMatch(/outubro.*novembro/);
+    expect(formatDateList('2027-03-01T08:00:00-03:00', '2027-03-15T18:00:00-03:00')).toMatch(/^1\s?[–-]\s?15 de março de 2027$/);
+  });
+
+  it('uses the Brazil calendar day, not UTC', () => {
+    // 23:00 in Fortaleza on the 26th is 02:00 UTC on the 27th.
+    expect(formatDateList(start, '2027-03-26T23:00:00-03:00')).toBe('24, 25 e 26 de março de 2027');
   });
 });

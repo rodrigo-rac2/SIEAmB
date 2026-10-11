@@ -1,5 +1,5 @@
 import type { ImportantDate, Locale, NewsItem, Sponsor } from '@sieamb/shared';
-import { formatDateRange } from '@sieamb/shared';
+import { formatDateList } from '@sieamb/shared';
 import { useEffect, useState, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
@@ -84,7 +84,7 @@ export function HomePage() {
           )}
           <p className="hero__tagline">{t('home.heroTagline')}</p>
           <p className="hero__meta">
-            <span>{formatDateRange(event.startsAt, event.endsAt, locale)}</span>
+            <span>{formatDateList(event.startsAt, event.endsAt, locale)}</span>
             {event.venue && <span>{event.venue}</span>}
           </p>
           {event.settings.registrationOpen && (
