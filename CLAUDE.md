@@ -43,6 +43,8 @@ npm run lint          # Lint all packages
 
 `main` (production → sieamb.org) and `develop` (integration → dev.sieamb.org) are protected by a ruleset: PR + 1 approval required, no force push, no deletion. **Never commit directly to main or develop, even with admin bypass** (process decision 2026-10-10). Day-to-day work: `feature/<issue>-<slug>` branches → PR to `develop` (body `Closes #<issue>`) → PR `develop → main` to release. Emergencies: `hotfix/<issue>-<slug>` → PR to `main`, then PR to `develop`. The `branch-policy` check rejects any other PR into `main`. Required checks on both branches: `quality`, `e2e-smoke`, `e2e-preview` (Playwright against the Vercel deployment), `branch-policy`. Rodrigo admin-merges while he is the only active developer. Issues are written in English.
 
+**Every change goes through an issue, no exceptions** (Rodrigo, 2026-10-11): even a one-line fix you will resolve immediately gets an issue first, because closed issues are the project's resolution log. Split a multi-topic request (a WhatsApp message with links, affiliations and a date change) into one issue per topic. Open one PR per issue, or one PR closing several issues only when they touch the same file and would conflict otherwise. Docs and process changes (this file, README) follow the same rule.
+
 ## Conventions
 
 - All code and comments in English

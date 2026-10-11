@@ -193,6 +193,7 @@ Todo o trabalho do site vive em **GitHub Issues**, em inglês. Não existe outra
   4. **Event (24-26 Mar 2027)** — programação, certificados, anais
 - **Labels** (só quatro): `content` (textos, datas, taxas, equipe) · `feature` (funcionalidade nova) · `infra` (hospedagem, CI, DNS, backups) · `waiting-committee` (bloqueada esperando a comissão organizadora).
 - **Como pegar trabalho**: escolha uma issue aberta sem responsável na milestone atual, atribua a si mesmo, crie a branch `feature/<numero>-<slug>` e mencione `Closes #<numero>` no PR. O merge fecha a issue.
+- **Toda mudança passa por uma issue, sem exceção** (decisão de 2026-10-11): mesmo um ajuste de uma linha que vai ser resolvido na hora ganha uma issue antes do PR, porque as issues fechadas são o log de resolução do projeto. Pedidos com mais de um assunto viram issues separadas, e um PR pode fechar várias (`Closes #a`, `Closes #b`) quando mexem no mesmo arquivo.
 - **Achou um bug ou uma ideia?** Abra uma issue antes de codar. Pedidos da comissão (WhatsApp) viram issues também, com a label `waiting-committee` enquanto faltar informação.
 - `.claude/context/STATUS.md` continua sendo o resumo narrativo (onde estamos, decisões), mas a lista de tarefas é só a das issues.
 
