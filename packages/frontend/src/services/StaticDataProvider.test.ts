@@ -125,6 +125,20 @@ describe('StaticDataProvider', () => {
     expect(inst['Pollyanna Kécia Cordeiro Grangeiro']).toBe('PPGEGRN/UFCG / PPGA/UFCG');
   });
 
+  it('founders carry the same Lattes/ORCID as their 2027 team entries, and all of them have both', async () => {
+    const founders = await provider.getFounders();
+    const team = await provider.getCommittee('evt-2027');
+    for (const f of founders) {
+      expect(f.lattesUrl, f.name).toMatch(/^https?:\/\/lattes\.cnpq\.br\//);
+      expect(f.orcidUrl, f.name).toMatch(/^https:\/\/orcid\.org\//);
+      const twin = team.find((m) => m.name === f.name);
+      if (twin) {
+        expect(twin.lattesUrl, f.name).toBe(f.lattesUrl);
+        expect(twin.orcidUrl, f.name).toBe(f.orcidUrl);
+      }
+    }
+  });
+
   it('every team member and founder has a photo under team/', async () => {
     const founders = await provider.getFounders();
     const team = [
