@@ -51,7 +51,7 @@ export function AboutPage() {
               <PersonCard
                 key={f.id}
                 name={f.name}
-                subtitle={f.affiliation}
+                subtitle={l(f.affiliation)}
                 bioMd={f.bioMd}
                 photoUrl={f.photoUrl}
                 lattesUrl={f.lattesUrl}

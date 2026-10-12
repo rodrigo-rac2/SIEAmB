@@ -41,7 +41,7 @@ export function CommitteePage() {
               <PersonCard
                 key={f.id}
                 name={f.name}
-                subtitle={f.affiliation}
+                subtitle={l(f.affiliation)}
                 bioMd={firstTime(f.name) ? f.bioMd : null}
                 photoUrl={f.photoUrl}
                 lattesUrl={f.lattesUrl}

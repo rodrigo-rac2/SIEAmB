@@ -107,7 +107,7 @@ export interface Founder {
   id: string;
   name: string;
   /** Short line under the name, e.g. institution or position. */
-  affiliation: string | null;
+  affiliation: LocalizedText | null;
   bioMd: LocalizedText;
   photoUrl: string | null;
   lattesUrl: string | null;
