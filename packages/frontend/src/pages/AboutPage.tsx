@@ -6,12 +6,14 @@ import { Link } from 'react-router-dom';
 import { PageHeader } from '../components/shared/PageHeader';
 import { PersonCard } from '../components/shared/PersonCard';
 import { useEvent } from '../contexts/EventContext';
+import { useLocalized } from '../hooks/useLocale';
 import { getDataProvider } from '../services';
 import './AboutPage.css';
 
 export function AboutPage() {
   const { t } = useTranslation();
   const { event } = useEvent();
+  const l = useLocalized();
   const [site, setSite] = useState<SiteContent | null>(null);
   const [founders, setFounders] = useState<Founder[]>([]);
   const [editions, setEditions] = useState<EventSummary[]>([]);
@@ -31,14 +33,14 @@ export function AboutPage() {
       <PageHeader title={t('about.title')} />
       <section className="section">
         <div className="container about">
-          {site && <Markdown>{site.aboutMd}</Markdown>}
+          {site && <Markdown>{l(site.aboutMd)}</Markdown>}
           <p>{t('about.organizedBy')}.</p>
 
           <h2 id="edicao">
             {t('about.editionTitle')}: {event.name}
           </h2>
           {event.aboutMd ? (
-            <Markdown>{event.aboutMd}</Markdown>
+            <Markdown>{l(event.aboutMd)}</Markdown>
           ) : (
             <p className="about__pending">{t('about.editionPending')}</p>
           )}
@@ -49,7 +51,7 @@ export function AboutPage() {
               <PersonCard
                 key={f.id}
                 name={f.name}
-                subtitle={f.affiliation}
+                subtitle={l(f.affiliation)}
                 bioMd={f.bioMd}
                 photoUrl={f.photoUrl}
                 lattesUrl={f.lattesUrl}

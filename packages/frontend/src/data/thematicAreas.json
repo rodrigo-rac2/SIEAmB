@@ -3,48 +3,108 @@
     "id": "a1",
     "eventId": "evt-2027",
     "code": "AT-01",
-    "name": "Gestão de Recursos Hídricos",
-    "description": "Planejamento, uso racional e governança da água em regiões semiáridas e além.",
+    "name": {
+      "pt-BR": "Gestão de Recursos Hídricos",
+      "en": "Water Resources Management",
+      "es": "Gestión de Recursos Hídricos",
+      "zh-CN": "水资源管理"
+    },
+    "description": {
+      "pt-BR": "Planejamento, uso racional e governança da água em regiões semiáridas e além.",
+      "en": "Planning, rational use and governance of water in semi-arid regions and beyond.",
+      "es": "Planificación, uso racional y gobernanza del agua en regiones semiáridas y más allá.",
+      "zh-CN": "半干旱地区及其他地区的水资源规划、合理利用与治理。"
+    },
     "sortOrder": 1
   },
   {
     "id": "a2",
     "eventId": "evt-2027",
     "code": "AT-02",
-    "name": "Meio Ambiente e Sustentabilidade",
-    "description": "Estratégias de desenvolvimento sustentável, conservação e educação ambiental.",
+    "name": {
+      "pt-BR": "Meio Ambiente e Sustentabilidade",
+      "en": "Environment and Sustainability",
+      "es": "Medio Ambiente y Sostenibilidad",
+      "zh-CN": "环境与可持续发展"
+    },
+    "description": {
+      "pt-BR": "Estratégias de desenvolvimento sustentável, conservação e educação ambiental.",
+      "en": "Sustainable development strategies, conservation and environmental education.",
+      "es": "Estrategias de desarrollo sostenible, conservación y educación ambiental.",
+      "zh-CN": "可持续发展战略、生态保护与环境教育。"
+    },
     "sortOrder": 2
   },
   {
     "id": "a3",
     "eventId": "evt-2027",
     "code": "AT-03",
-    "name": "Energias Renováveis",
-    "description": "Transição energética, tecnologias limpas e eficiência energética.",
+    "name": {
+      "pt-BR": "Energias Renováveis",
+      "en": "Renewable Energy",
+      "es": "Energías Renovables",
+      "zh-CN": "可再生能源"
+    },
+    "description": {
+      "pt-BR": "Transição energética, tecnologias limpas e eficiência energética.",
+      "en": "Energy transition, clean technologies and energy efficiency.",
+      "es": "Transición energética, tecnologías limpias y eficiencia energética.",
+      "zh-CN": "能源转型、清洁技术与能源效率。"
+    },
     "sortOrder": 3
   },
   {
     "id": "a4",
     "eventId": "evt-2027",
     "code": "AT-04",
-    "name": "Mudanças Climáticas e Semiárido",
-    "description": "Impactos, adaptação e mitigação das mudanças climáticas no semiárido brasileiro.",
+    "name": {
+      "pt-BR": "Mudanças Climáticas e Semiárido",
+      "en": "Climate Change and the Semi-arid Region",
+      "es": "Cambio Climático y Semiárido",
+      "zh-CN": "气候变化与半干旱地区"
+    },
+    "description": {
+      "pt-BR": "Impactos, adaptação e mitigação das mudanças climáticas no semiárido brasileiro.",
+      "en": "Impacts, adaptation and mitigation of climate change in the Brazilian semi-arid region.",
+      "es": "Impactos, adaptación y mitigación del cambio climático en el semiárido brasileño.",
+      "zh-CN": "气候变化对巴西半干旱地区的影响、适应与减缓。"
+    },
     "sortOrder": 4
   },
   {
     "id": "a5",
     "eventId": "evt-2027",
     "code": "AT-05",
-    "name": "Saneamento e Resíduos Sólidos",
-    "description": "Tratamento de água e efluentes, gestão de resíduos e economia circular.",
+    "name": {
+      "pt-BR": "Saneamento e Resíduos Sólidos",
+      "en": "Sanitation and Solid Waste",
+      "es": "Saneamiento y Residuos Sólidos",
+      "zh-CN": "环境卫生与固体废弃物"
+    },
+    "description": {
+      "pt-BR": "Tratamento de água e efluentes, gestão de resíduos e economia circular.",
+      "en": "Water and wastewater treatment, waste management and circular economy.",
+      "es": "Tratamiento de agua y efluentes, gestión de residuos y economía circular.",
+      "zh-CN": "水与污水处理、废弃物管理与循环经济。"
+    },
     "sortOrder": 5
   },
   {
     "id": "a6",
     "eventId": "evt-2027",
     "code": "AT-06",
-    "name": "Tecnologias e Inovação Ambiental",
-    "description": "Geotecnologias, sensoriamento remoto e inovação aplicada aos estudos ambientais.",
+    "name": {
+      "pt-BR": "Tecnologias e Inovação Ambiental",
+      "en": "Environmental Technologies and Innovation",
+      "es": "Tecnologías e Innovación Ambiental",
+      "zh-CN": "环境技术与创新"
+    },
+    "description": {
+      "pt-BR": "Geotecnologias, sensoriamento remoto e inovação aplicada aos estudos ambientais.",
+      "en": "Geotechnologies, remote sensing and innovation applied to environmental studies.",
+      "es": "Geotecnologías, teledetección e innovación aplicada a los estudios ambientales.",
+      "zh-CN": "地理信息技术、遥感及应用于环境研究的创新。"
+    },
     "sortOrder": 6
   }
 ]

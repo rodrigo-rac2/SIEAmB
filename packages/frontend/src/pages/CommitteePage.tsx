@@ -1,15 +1,17 @@
-import type { CommitteeMember, Founder } from '@sieamb/shared';
+import { sourceText, type CommitteeMember, type Founder } from '@sieamb/shared';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PageHeader } from '../components/shared/PageHeader';
 import { PersonCard } from '../components/shared/PersonCard';
 import { useEvent } from '../contexts/EventContext';
+import { useLocalized } from '../hooks/useLocale';
 import { firstAppearance, groupByRole } from '../lib/team';
 import { getDataProvider } from '../services';
 
 export function CommitteePage() {
   const { t } = useTranslation();
   const { event } = useEvent();
+  const l = useLocalized();
   const [members, setMembers] = useState<CommitteeMember[]>([]);
   const [founders, setFounders] = useState<Founder[]>([]);
 
@@ -39,7 +41,7 @@ export function CommitteePage() {
               <PersonCard
                 key={f.id}
                 name={f.name}
-                subtitle={f.affiliation}
+                subtitle={l(f.affiliation)}
                 bioMd={firstTime(f.name) ? f.bioMd : null}
                 photoUrl={f.photoUrl}
                 lattesUrl={f.lattesUrl}
@@ -49,8 +51,8 @@ export function CommitteePage() {
           </ul>
 
           {groups.map(([role, group]) => (
-            <div key={role}>
-              <h2>{role}</h2>
+            <div key={sourceText(role)}>
+              <h2>{l(role)}</h2>
               <ul className="people">
                 {group.map((m) => {
                   const first = firstTime(m.name);

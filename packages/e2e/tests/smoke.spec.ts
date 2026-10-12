@@ -133,6 +133,14 @@ test.describe('public site @smoke', () => {
     await expect(page.locator('.site-header__logo-img')).toHaveAttribute('src', /brand\/2027\/logo\.png/);
   });
 
+  test('build exposes the commit it was made from at /version.json', async ({ request }) => {
+    const res = await request.get('/version.json');
+    expect(res.ok()).toBe(true);
+    const body = (await res.json()) as { sha: string; builtAt: string };
+    expect(body.sha).toMatch(/^[0-9a-f]{40}$|^unknown$/);
+    expect(Date.parse(body.builtAt)).not.toBeNaN();
+  });
+
   test('unknown route shows the 404 page', async ({ page }) => {
     await page.goto('/2027/nao-existe');
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Página não encontrada');
@@ -165,6 +173,25 @@ test.describe('i18n @smoke', () => {
     await context.close();
   });
 
+  test('language buttons are readable on the dark bar: label, contrast and active state', async ({ page }) => {
+    await page.goto('/2027/');
+    const group = page.getByRole('group', { name: 'Idioma' });
+    await expect(group).toContainText('PT');
+    await expect(group).toContainText('EN');
+    await expect(group).toContainText('中文');
+    const active = group.getByRole('button', { pressed: true });
+    await expect(active).toHaveAccessibleName('Português');
+    const styles = await active.evaluate((el) => {
+      const cs = getComputedStyle(el);
+      return { bg: cs.backgroundColor, opacity: cs.opacity, color: cs.color };
+    });
+    expect(styles.opacity).toBe('1');
+    expect(styles.bg).toBe('rgb(255, 255, 255)');
+    expect(styles.color).not.toBe('rgb(255, 255, 255)');
+    const idle = await group.getByRole('button', { name: 'English' }).evaluate((el) => getComputedStyle(el).opacity);
+    expect(idle).toBe('1');
+  });
+
   test('flag buttons switch the language', async ({ page }) => {
     await page.goto('/2027/');
     await page.getByRole('button', { name: 'English' }).click();
@@ -175,6 +202,38 @@ test.describe('i18n @smoke', () => {
     await expect(
       page.getByRole('link', { name: 'Inscrições', exact: true }).first(),
     ).toBeVisible();
+  });
+
+  test('content from the data files follows the language: venue, dates, team, fees, areas, news, bios, about', async ({ browser }) => {
+    const context = await browser.newContext();
+    await context.addInitScript(() => localStorage.setItem('sieamb-locale', 'en'));
+    const page = await context.newPage();
+    await page.goto('/2027/');
+    await expect(page.locator('.hero__meta')).toContainText('Online event');
+    await expect(page.locator('.hero__meta')).not.toContainText('Evento online');
+    await page.goto('/2027/datas-importantes');
+    await expect(page.getByRole('row', { name: /Call for papers released/ })).toBeVisible();
+    await expect(page.getByText('Lançamento do edital')).toHaveCount(0);
+    await page.goto('/2027/organizacao');
+    await expect(page.getByRole('heading', { name: 'Scientific Committee' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Reviewers' })).toBeVisible();
+    await page.goto('/2027/inscricoes');
+    await expect(page.getByRole('columnheader').nth(1)).toContainText('Lot 1');
+    await page.goto('/2027/local');
+    await expect(page.getByRole('heading', { name: 'Online event' })).toBeVisible();
+    await page.goto('/2027/areas-tematicas');
+    await expect(page.getByRole('heading', { name: 'Water Resources Management' })).toBeVisible();
+    await page.goto('/2027/avisos');
+    await page.getByRole('link', { name: 'The II SIEAmB website is live' }).first().click();
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('The II SIEAmB website is live');
+    await expect(page.getByText(/official portal/)).toBeVisible();
+    await page.goto('/2027/o-evento');
+    await expect(page.getByText(/International Seminar on Environmental Studies/).first()).toBeVisible();
+    await expect(page.getByText(/Ecological Civilisation/)).toBeVisible();
+    await expect(page.getByText(/Civilização Ecológica/)).toHaveCount(0);
+    await page.goto('/2025/o-evento');
+    await expect(page.getByText(/Environmental Governance in China and Brazil/)).toBeVisible();
+    await context.close();
   });
 
   test('about page shows the general text, the edition section and the founders', async ({ page }) => {

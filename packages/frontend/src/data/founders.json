@@ -2,8 +2,18 @@
   {
     "id": "fd-viviane",
     "name": "Dra. Viviane Farias Silva",
-    "affiliation": "Coordenadora do PPGEGRN · UFCG",
-    "bioMd": "Doutora em Engenharia Agrícola pela Universidade Federal de Campina Grande (2017) e Pós-Doutora em Recursos Naturais (2017-2019). Professora do Magistério Superior da Unidade Acadêmica de Engenharia Florestal na Universidade Federal de Campina Grande. Coordenadora do Programa de Pós-Graduação em Engenharia e Gestão dos Recursos Naturais do CTRN/UFCG. Pesquisa em irrigação de espécies florestais, uso de resíduos em substratos, manejo de água e solo, impactos ambientais, recuperação de áreas degradadas, resíduos sólidos e outros temas relacionados ao desenvolvimento sustentável rural.",
+    "affiliation": {
+      "pt-BR": "Coordenadora do PPGEGRN · UFCG",
+      "en": "PPGEGRN Coordinator · UFCG",
+      "es": "Coordinadora del PPGEGRN · UFCG",
+      "zh-CN": "PPGEGRN 负责人 · UFCG"
+    },
+    "bioMd": {
+      "pt-BR": "Doutora em Engenharia Agrícola pela Universidade Federal de Campina Grande (2017) e Pós-Doutora em Recursos Naturais (2017-2019). Professora do Magistério Superior da Unidade Acadêmica de Engenharia Florestal na Universidade Federal de Campina Grande. Coordenadora do Programa de Pós-Graduação em Engenharia e Gestão dos Recursos Naturais do CTRN/UFCG. Pesquisa em irrigação de espécies florestais, uso de resíduos em substratos, manejo de água e solo, impactos ambientais, recuperação de áreas degradadas, resíduos sólidos e outros temas relacionados ao desenvolvimento sustentável rural.",
+      "en": "PhD in Agricultural Engineering from the Federal University of Campina Grande (2017) and post-doctorate in Natural Resources (2017-2019). Professor at the Academic Unit of Forest Engineering of the Federal University of Campina Grande. Coordinator of the Graduate Programme in Engineering and Natural Resource Management at CTRN/UFCG. Her research covers irrigation of forest species, use of residues in substrates, water and soil management, environmental impacts, restoration of degraded areas, solid waste and other topics related to sustainable rural development.",
+      "es": "Doctora en Ingeniería Agrícola por la Universidad Federal de Campina Grande (2017) y posdoctora en Recursos Naturales (2017-2019). Profesora de la Unidad Académica de Ingeniería Forestal de la Universidad Federal de Campina Grande. Coordinadora del Programa de Posgrado en Ingeniería y Gestión de Recursos Naturales del CTRN/UFCG. Investiga riego de especies forestales, uso de residuos en sustratos, manejo de agua y suelo, impactos ambientales, recuperación de áreas degradadas, residuos sólidos y otros temas relacionados con el desarrollo rural sostenible.",
+      "zh-CN": "坎皮纳格兰德联邦大学农业工程博士（2017年），自然资源博士后（2017-2019年）。坎皮纳格兰德联邦大学森林工程学术单元教授。CTRN/UFCG 工程与自然资源管理研究生项目负责人。研究方向包括林木灌溉、废弃物在基质中的利用、水土管理、环境影响、退化区域修复、固体废弃物以及与农村可持续发展相关的其他主题。"
+    },
     "photoUrl": "team/viviane-farias.jpg",
     "lattesUrl": "http://lattes.cnpq.br/5011520274887172",
     "orcidUrl": "https://orcid.org/0000-0002-5891-0328",
@@ -12,8 +22,18 @@
   {
     "id": "fd-jose-otavio",
     "name": "Dr. José Otávio Aguiar",
-    "affiliation": "Professor Titular · UFCG",
-    "bioMd": "Professor Titular na Universidade Federal de Campina Grande (UFCG). Doutor em História e Culturas Políticas pela Universidade Federal de Minas Gerais (2003). Realizou pesquisa de Pós-Doutoramento no Programa de Pós-Graduação em História da Universidade Federal de Pernambuco entre 2009 e 2010, estudando a obra botânica do naturalista paraibano Manuel Arruda da Câmara (1752-1811). Acumula experiência de pesquisa e publicação nas áreas de História Ambiental, História da Biologia, Etnobiologia e História Indígena, História do Brasil Império, Colônia e Contemporâneo, e história das recepções culturais religiosas e marciais japonesas e chinesas no Brasil.",
+    "affiliation": {
+      "pt-BR": "Professor Titular · UFCG",
+      "en": "Full Professor · UFCG",
+      "es": "Profesor Titular · UFCG",
+      "zh-CN": "正教授 · UFCG"
+    },
+    "bioMd": {
+      "pt-BR": "Professor Titular na Universidade Federal de Campina Grande (UFCG). Doutor em História e Culturas Políticas pela Universidade Federal de Minas Gerais (2003). Realizou pesquisa de Pós-Doutoramento no Programa de Pós-Graduação em História da Universidade Federal de Pernambuco entre 2009 e 2010, estudando a obra botânica do naturalista paraibano Manuel Arruda da Câmara (1752-1811). Acumula experiência de pesquisa e publicação nas áreas de História Ambiental, História da Biologia, Etnobiologia e História Indígena, História do Brasil Império, Colônia e Contemporâneo, e história das recepções culturais religiosas e marciais japonesas e chinesas no Brasil.",
+      "en": "Full Professor at the Federal University of Campina Grande (UFCG). PhD in History and Political Cultures from the Federal University of Minas Gerais (2003). Post-doctoral research in the Graduate Programme in History at the Federal University of Pernambuco (2009-2010), on the botanical work of the Paraíba naturalist Manuel Arruda da Câmara (1752-1811). Extensive research and publication record in Environmental History, History of Biology, Ethnobiology and Indigenous History, Imperial, Colonial and Contemporary Brazilian History, and the history of the reception of Japanese and Chinese religious and martial cultures in Brazil.",
+      "es": "Profesor Titular de la Universidad Federal de Campina Grande (UFCG). Doctor en Historia y Culturas Políticas por la Universidad Federal de Minas Gerais (2003). Realizó investigación posdoctoral en el Programa de Posgrado en Historia de la Universidad Federal de Pernambuco entre 2009 y 2010, estudiando la obra botánica del naturalista paraibano Manuel Arruda da Câmara (1752-1811). Acumula experiencia de investigación y publicación en Historia Ambiental, Historia de la Biología, Etnobiología e Historia Indígena, Historia del Brasil Imperio, Colonia y Contemporáneo, e historia de las recepciones culturales religiosas y marciales japonesas y chinas en Brasil.",
+      "zh-CN": "坎皮纳格兰德联邦大学（UFCG）正教授。米纳斯吉拉斯联邦大学历史与政治文化博士（2003年）。2009至2010年在伯南布哥联邦大学历史研究生项目从事博士后研究，研究帕拉伊巴博物学家 Manuel Arruda da Câmara（1752-1811）的植物学著作。在环境史、生物学史、民族生物学与原住民史、巴西帝国、殖民地与当代史，以及日本和中国宗教与武术文化在巴西的接受史等领域拥有丰富的研究与发表经验。"
+    },
     "photoUrl": "team/jose-otavio-aguiar.jpg",
     "lattesUrl": "http://lattes.cnpq.br/7106694267459903",
     "orcidUrl": "https://orcid.org/0000-0003-0489-3670",
@@ -22,8 +42,18 @@
   {
     "id": "fd-niklas",
     "name": "Dr. Niklas Werner Weins",
-    "affiliation": "Xi'an Jiaotong-Liverpool University · China",
-    "bioMd": "Professor assistente no Departamento de Estudos Internacionais da Xi'an Jiaotong-Liverpool University, na China. Doutor em Ambiente e Sociedade pela Universidade Estadual de Campinas (UNICAMP), foi bolsista FAPESP no Environmental Policy Group da Universidade de Wageningen, na Holanda. Sua pesquisa concentra-se na economia política das questões ambientais, incluindo biodiversidade, conservação e mudanças climáticas, além das relações da China com o Sul Global em instituições bilaterais e multilaterais.",
+    "affiliation": {
+      "pt-BR": "Xi'an Jiaotong-Liverpool University · China",
+      "en": "Xi'an Jiaotong-Liverpool University · China",
+      "es": "Xi'an Jiaotong-Liverpool University · China",
+      "zh-CN": "西交利物浦大学 · 中国"
+    },
+    "bioMd": {
+      "pt-BR": "Professor assistente no Departamento de Estudos Internacionais da Xi'an Jiaotong-Liverpool University, na China. Doutor em Ambiente e Sociedade pela Universidade Estadual de Campinas (UNICAMP), foi bolsista FAPESP no Environmental Policy Group da Universidade de Wageningen, na Holanda. Sua pesquisa concentra-se na economia política das questões ambientais, incluindo biodiversidade, conservação e mudanças climáticas, além das relações da China com o Sul Global em instituições bilaterais e multilaterais.",
+      "en": "Assistant Professor in the Department of International Studies at Xi'an Jiaotong-Liverpool University, China. PhD in Environment and Society from the University of Campinas (UNICAMP), and former FAPESP fellow in the Environmental Policy Group at Wageningen University, the Netherlands. His research focuses on the political economy of environmental issues, including biodiversity, conservation and climate change, as well as China's relations with the Global South in bilateral and multilateral institutions.",
+      "es": "Profesor asistente en el Departamento de Estudios Internacionales de la Xi'an Jiaotong-Liverpool University, en China. Doctor en Ambiente y Sociedad por la Universidad Estatal de Campinas (UNICAMP), fue becario FAPESP en el Environmental Policy Group de la Universidad de Wageningen, en los Países Bajos. Su investigación se centra en la economía política de las cuestiones ambientales, incluyendo biodiversidad, conservación y cambio climático, además de las relaciones de China con el Sur Global en instituciones bilaterales y multilaterales.",
+      "zh-CN": "西交利物浦大学国际研究系助理教授。坎皮纳斯州立大学（UNICAMP）环境与社会博士，曾获 FAPESP 资助在荷兰瓦赫宁根大学环境政策研究组访学。研究聚焦环境议题的政治经济学，包括生物多样性、生态保护与气候变化，以及中国在双边与多边机制中与全球南方的关系。"
+    },
     "photoUrl": "team/niklas-weins.jpg",
     "lattesUrl": "http://lattes.cnpq.br/6302951700904457",
     "orcidUrl": "https://orcid.org/0000-0003-1345-6720",
@@ -32,8 +62,18 @@
   {
     "id": "fd-najara",
     "name": "Ma. Najara Escarião Agripino",
-    "affiliation": "Doutoranda · PPGEGRN/UFCG",
-    "bioMd": "Doutoranda em Engenharia e Gestão de Recursos Naturais (PPGEGRN/UFCG), Bacharela e Mestra em Administração (UEPB/PPGA UFCG) e Bacharela em Relações Internacionais (UNINTER). Membro do Grupo de Estudos sobre China (GECHINA/UnB). Suas pesquisas envolvem o desenvolvimento rural sustentável na China e no Brasil e a Civilização Ecológica.",
+    "affiliation": {
+      "pt-BR": "Doutoranda · PPGEGRN/UFCG",
+      "en": "PhD candidate · PPGEGRN/UFCG",
+      "es": "Doctoranda · PPGEGRN/UFCG",
+      "zh-CN": "博士研究生 · PPGEGRN/UFCG"
+    },
+    "bioMd": {
+      "pt-BR": "Doutoranda em Engenharia e Gestão de Recursos Naturais (PPGEGRN/UFCG), Bacharela e Mestra em Administração (UEPB/PPGA UFCG) e Bacharela em Relações Internacionais (UNINTER). Membro do Grupo de Estudos sobre China (GECHINA/UnB). Suas pesquisas envolvem o desenvolvimento rural sustentável na China e no Brasil e a Civilização Ecológica.",
+      "en": "PhD candidate in Engineering and Natural Resource Management (PPGEGRN/UFCG), Bachelor's and Master's in Business Administration (UEPB/PPGA UFCG) and Bachelor's in International Relations (UNINTER). Member of the China Studies Group (GECHINA/UnB). Her research covers sustainable rural development in China and Brazil and Ecological Civilisation.",
+      "es": "Doctoranda en Ingeniería y Gestión de Recursos Naturales (PPGEGRN/UFCG), Licenciada y Magíster en Administración (UEPB/PPGA UFCG) y Licenciada en Relaciones Internacionales (UNINTER). Miembro del Grupo de Estudios sobre China (GECHINA/UnB). Sus investigaciones abordan el desarrollo rural sostenible en China y Brasil y la Civilización Ecológica.",
+      "zh-CN": "工程与自然资源管理博士研究生（PPGEGRN/UFCG），工商管理学士与硕士（UEPB/PPGA UFCG），国际关系学士（UNINTER）。中国研究小组（GECHINA/UnB）成员。研究方向为中国与巴西的农村可持续发展以及生态文明。"
+    },
     "photoUrl": "team/najara-agripino.jpg",
     "lattesUrl": "http://lattes.cnpq.br/2521555405067384",
     "orcidUrl": "https://orcid.org/0000-0001-8659-8258",

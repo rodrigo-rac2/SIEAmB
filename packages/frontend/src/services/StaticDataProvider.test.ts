@@ -1,3 +1,4 @@
+import { localize, missingLocales, sourceText, type LocalizedText } from '@sieamb/shared';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { StaticDataProvider } from './StaticDataProvider';
 
@@ -66,15 +67,16 @@ describe('StaticDataProvider', () => {
     expect([...times].sort((a, b) => a - b)).toEqual(times);
     expect(dates.at(-1)?.date.startsWith('2027-03-24')).toBe(true);
     // The extension (15/02/2027) is internal guidance for now and must not be published.
-    expect(dates.some((d) => d.isExtended || /Prorroga/.test(d.label))).toBe(false);
+    expect(dates.some((d) => d.isExtended || /Prorroga/.test(sourceText(d.label)))).toBe(false);
     expect(dates).toHaveLength(10);
-    expect(dates.find((d) => d.monthOnly)?.label).toBe('Divulgação da programação');
-    expect(dates.find((d) => /Início das submissões/.test(d.label))?.date.startsWith('2026-11-15')).toBe(true);
+    expect(sourceText(dates.find((d) => d.monthOnly)!.label)).toBe('Divulgação da programação');
+    expect(dates.find((d) => /Início das submissões/.test(sourceText(d.label)))?.date.startsWith('2026-11-15')).toBe(true);
   });
 
   it('serves the general about text, the four founders and the 2025 edition text', async () => {
     const site = await provider.getSiteContent();
-    expect(site.aboutMd).toContain('Seminário Internacional de Estudos Ambientais');
+    expect(sourceText(site.aboutMd)).toContain('Seminário Internacional de Estudos Ambientais');
+    expect(localize(site.aboutMd, 'en')).toContain('International Seminar on Environmental Studies');
     const founders = await provider.getFounders();
     expect(founders.map((f) => f.name)).toEqual([
       'Dra. Viviane Farias Silva',
@@ -82,22 +84,22 @@ describe('StaticDataProvider', () => {
       'Dr. Niklas Werner Weins',
       'Ma. Najara Escarião Agripino',
     ]);
-    expect((await provider.getEventBySlug('2025'))?.aboutMd).toContain('Governança Ambiental');
+    expect(sourceText((await provider.getEventBySlug('2025'))!.aboutMd!)).toContain('Governança Ambiental');
   });
 
   it('2027 team has the three committee groups with coordinators, 2025 keeps its own plus speakers', async () => {
     const current = await provider.getCurrentEvent();
     const team = await provider.getCommittee(current.id);
-    const groups = [...new Set(team.map((m) => m.role))];
+    const groups = [...new Set(team.map((m) => sourceText(m.role)))];
     expect(groups).toEqual(['Comitê Científico', 'Equipe de Revisores', 'Equipe de Mídias']);
     expect(team.filter((m) => m.isCoordinator).map((m) => m.name)).toEqual([
       'Ma. Thays Alves da Silva',
       'Lara Maria Almeida Ferreira',
       'Daniela Torres Teixeira',
     ]);
-    expect(team.every((m) => m.bioMd && m.bioMd.length > 40)).toBe(true);
+    expect(team.every((m) => m.bioMd && sourceText(m.bioMd).length > 40)).toBe(true);
     const first = await provider.getCommittee('evt-2025');
-    expect([...new Set(first.map((m) => m.role))]).toEqual([
+    expect([...new Set(first.map((m) => sourceText(m.role)))]).toEqual([
       'Equipe Organizadora',
       'Equipe de Revisores',
       'Palestrantes',
@@ -139,6 +141,42 @@ describe('StaticDataProvider', () => {
     }
   });
 
+  it('content strings carry every locale: venue, dates, groups, lots, areas, news, bios, about', async () => {
+    const locales = ['pt-BR', 'en', 'es', 'zh-CN'] as const;
+    const gaps: string[] = [];
+    const check = (what: string, v: LocalizedText | null) => {
+      if (v === null) return;
+      const m = missingLocales(v, locales);
+      if (m.length) gaps.push(`${what}: ${m.join(',')}`);
+    };
+    for (const e of await provider.getEvents()) {
+      check(`venue ${e.slug}`, e.venue);
+      for (const d of await provider.getImportantDates(e.id)) check(`date ${d.id}`, d.label);
+      for (const m of await provider.getCommittee(e.id)) check(`role ${m.id}`, m.role);
+      for (const f of await provider.getFeeTiers(e.id)) check(`lot ${f.id}`, f.label);
+      for (const a of await provider.getThematicAreas(e.id)) {
+        check(`area ${a.id} name`, a.name);
+        check(`area ${a.id} description`, a.description);
+      }
+      check(`about ${e.slug}`, e.aboutMd);
+      for (const m of await provider.getCommittee(e.id)) check(`bio ${m.id}`, m.bioMd);
+      for (const n of await provider.getPublishedNews(e.id)) {
+        check(`news ${n.slug} title`, n.title);
+        check(`news ${n.slug} excerpt`, n.excerpt);
+        check(`news ${n.slug} body`, n.bodyMd);
+      }
+    }
+    check('site about', (await provider.getSiteContent()).aboutMd);
+    for (const f of await provider.getFounders()) {
+      check(`founder ${f.id} bio`, f.bioMd);
+      check(`founder ${f.id} affiliation`, f.affiliation);
+    }
+    expect(gaps).toEqual([]);
+    const current = await provider.getCurrentEvent();
+    expect(localize(current.venue, 'en')).toBe('Online event');
+    expect(localize(current.venue, 'zh-CN')).toBe('线上活动');
+  });
+
   it('every team member and founder has a photo under team/', async () => {
     const founders = await provider.getFounders();
     const team = [
@@ -152,12 +190,13 @@ describe('StaticDataProvider', () => {
     const tiers = await provider.getFeeTiers('evt-2027');
     expect(tiers).toHaveLength(6);
     expect(new Set(tiers.map((t) => t.modality))).toEqual(new Set(['ONLINE']));
-    const price = (c: string, lot: string) => tiers.find((t) => t.category === c && t.label === lot)?.amountCents;
+    const price = (c: string, lot: string) =>
+      tiers.find((t) => t.category === c && sourceText(t.label) === lot)?.amountCents;
     expect([price('ESTUDANTE_GRADUACAO', 'Lote 1'), price('ESTUDANTE_GRADUACAO', 'Lote 2')]).toEqual([3000, 5000]);
     expect([price('ESTUDANTE_POS', 'Lote 1'), price('ESTUDANTE_POS', 'Lote 2')]).toEqual([5000, 7000]);
     expect([price('PROFISSIONAL', 'Lote 1'), price('PROFISSIONAL', 'Lote 2')]).toEqual([7000, 9000]);
-    const l1 = tiers.find((t) => t.label === 'Lote 1')!;
-    const l2 = tiers.find((t) => t.label === 'Lote 2')!;
+    const l1 = tiers.find((t) => sourceText(t.label) === 'Lote 1')!;
+    const l2 = tiers.find((t) => sourceText(t.label) === 'Lote 2')!;
     expect(l1.validFrom.startsWith('2026-11-10')).toBe(true);
     expect(l1.validUntil.startsWith('2027-01-01')).toBe(true);
     expect(l2.validFrom.startsWith('2027-01-02')).toBe(true);

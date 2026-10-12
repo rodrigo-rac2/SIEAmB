@@ -11,7 +11,12 @@
     "aboutMd": null,
     "startsAt": "2027-03-24T08:00:00-03:00",
     "endsAt": "2027-03-26T18:00:00-03:00",
-    "venue": "Evento online",
+    "venue": {
+      "pt-BR": "Evento online",
+      "en": "Online event",
+      "es": "Evento en línea",
+      "zh-CN": "线上活动"
+    },
     "isOnline": true,
     "venueUrl": "https://youtube.com/@sieambufla6013",
     "isCurrent": true,
@@ -41,10 +46,20 @@
     "name": "SIEAmb 2025",
     "fullName": "1º Seminário Internacional de Estudos Ambientais",
     "edition": 1,
-    "aboutMd": "**1º Seminário Internacional de Estudos Ambientais: A Governança Ambiental da China e do Brasil frente à crise climática.**\n\nOs estudos submetidos ao evento foram avaliados em duas etapas, sendo a primeira revisão de conteúdo e a segunda revisão textual e de forma. O evento aceitou trabalhos na íntegra em formato de artigo e resultados iniciais de pesquisas em desenvolvimento no formato de resumos expandidos, nos idiomas português, inglês e espanhol. Os trabalhos aprovados foram publicados nos anais do evento e os melhores artigos indicados para publicação como capítulo de livro.\n\nO ano de 2025 marcou o primeiro ano de realização do seminário, em formato remoto, com participação de pesquisadores vinculados à Xi'an Jiaotong-Liverpool University, da província de Jiangsu, China, à UFPB e à Unicamp.",
+    "aboutMd": {
+      "pt-BR": "**1º Seminário Internacional de Estudos Ambientais: A Governança Ambiental da China e do Brasil frente à crise climática.**\n\nOs estudos submetidos ao evento foram avaliados em duas etapas, sendo a primeira revisão de conteúdo e a segunda revisão textual e de forma. O evento aceitou trabalhos na íntegra em formato de artigo e resultados iniciais de pesquisas em desenvolvimento no formato de resumos expandidos, nos idiomas português, inglês e espanhol. Os trabalhos aprovados foram publicados nos anais do evento e os melhores artigos indicados para publicação como capítulo de livro.\n\nO ano de 2025 marcou o primeiro ano de realização do seminário, em formato remoto, com participação de pesquisadores vinculados à Xi'an Jiaotong-Liverpool University, da província de Jiangsu, China, à UFPB e à Unicamp.",
+      "en": "**1st International Seminar on Environmental Studies: Environmental Governance in China and Brazil in the face of the climate crisis.**\n\nThe studies submitted to the event were assessed in two stages: a first review of content and a second review of text and form. The event accepted full papers in article format and early results of ongoing research as extended abstracts, in Portuguese, English and Spanish. Approved papers were published in the event proceedings and the best articles were recommended for publication as book chapters.\n\n2025 marked the first year of the seminar, held remotely, with researchers from Xi'an Jiaotong-Liverpool University, in Jiangsu province, China, from UFPB and from Unicamp.",
+      "es": "**1º Seminario Internacional de Estudios Ambientales: La Gobernanza Ambiental de China y Brasil frente a la crisis climática.**\n\nLos estudios enviados al evento fueron evaluados en dos etapas: una primera revisión de contenido y una segunda revisión textual y de forma. El evento aceptó trabajos completos en formato de artículo y resultados iniciales de investigaciones en curso en formato de resúmenes ampliados, en portugués, inglés y español. Los trabajos aprobados se publicaron en las actas del evento y los mejores artículos fueron indicados para su publicación como capítulo de libro.\n\nEl año 2025 marcó la primera edición del seminario, en formato remoto, con la participación de investigadores vinculados a la Xi'an Jiaotong-Liverpool University, de la provincia de Jiangsu, China, a la UFPB y a la Unicamp.",
+      "zh-CN": "**第一届国际环境研究研讨会：气候危机下的中国与巴西环境治理。**\n\n提交至本次会议的研究经过两轮评审：第一轮为内容评审，第二轮为文本与格式评审。会议接受以论文格式提交的完整研究，以及以扩展摘要格式提交的在研项目初步成果，语言为葡萄牙语、英语和西班牙语。通过评审的论文发表于会议论文集，优秀论文推荐以专著章节形式出版。\n\n2025年是研讨会举办的第一年，以线上形式进行，来自中国江苏省西交利物浦大学、UFPB 和 Unicamp 的研究者参与其中。"
+    },
     "startsAt": "2025-10-22T08:00:00-03:00",
     "endsAt": "2025-10-24T18:00:00-03:00",
-    "venue": "Evento online",
+    "venue": {
+      "pt-BR": "Evento online",
+      "en": "Online event",
+      "es": "Evento en línea",
+      "zh-CN": "线上活动"
+    },
     "isOnline": true,
     "venueUrl": "https://youtube.com/@sieambufla6013",
     "isCurrent": false,

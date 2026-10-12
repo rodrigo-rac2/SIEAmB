@@ -1,5 +1,15 @@
 export type Locale = 'pt-BR' | 'en' | 'es' | 'zh-CN';
 
+/** Translations of one piece of content. pt-BR is the source language and is always present. */
+export type LocalizedMap = { 'pt-BR': string } & Partial<Record<Locale, string>>;
+
+/**
+ * Content text that may carry translations. A plain string is pt-BR only (legacy data);
+ * a map gives one string per locale. Resolve with `localize()` from utils.
+ * Stored as a jsonb column once content moves to the database.
+ */
+export type LocalizedText = string | LocalizedMap;
+
 export type ParticipantCategory =
   | 'ESTUDANTE_GRADUACAO'
   | 'ESTUDANTE_POS'
@@ -42,9 +52,9 @@ export interface EventSummary {
   edition: number;
   startsAt: string; // ISO
   endsAt: string; // ISO
-  /** Presentation text of this edition (markdown, pt-BR). Shown on the About page under the general text. */
-  aboutMd: string | null;
-  venue: string | null;
+  /** Presentation text of this edition (markdown). Shown on the About page under the general text. */
+  aboutMd: LocalizedText | null;
+  venue: LocalizedText | null;
   /** True for remote editions: the venue page shows the streaming link instead of an address. */
   isOnline: boolean;
   /** Where the venue text points: streaming channel for online editions, map link otherwise. */
@@ -69,7 +79,7 @@ export interface EventSettings {
 export interface ImportantDate {
   id: string;
   eventId: string;
-  label: string;
+  label: LocalizedText;
   date: string; // ISO
   isExtended: boolean;
   /** The committee only fixed the month: show \"dezembro de 2026\" instead of a day. */
@@ -81,15 +91,15 @@ export interface ThematicArea {
   id: string;
   eventId: string;
   code: string;
-  name: string;
-  description: string | null;
+  name: LocalizedText;
+  description: LocalizedText | null;
   sortOrder: number;
 }
 
 /** Site-wide content that does not belong to one edition. */
 export interface SiteContent {
   /** General presentation of the SIEAmB (markdown, pt-BR). */
-  aboutMd: string;
+  aboutMd: LocalizedText;
 }
 
 /** The founders of the seminar: a fixed group shown on every edition. */
@@ -97,8 +107,8 @@ export interface Founder {
   id: string;
   name: string;
   /** Short line under the name, e.g. institution or position. */
-  affiliation: string | null;
-  bioMd: string;
+  affiliation: LocalizedText | null;
+  bioMd: LocalizedText;
   photoUrl: string | null;
   lattesUrl: string | null;
   orcidUrl: string | null;
@@ -110,12 +120,12 @@ export interface CommitteeMember {
   id: string;
   eventId: string;
   name: string;
-  /** Group label shown as the section heading (pt-BR content), e.g. "Comitê Científico". */
-  role: string;
+  /** Group label shown as the section heading, e.g. "Comitê Científico". Grouping keys on the pt-BR text. */
+  role: LocalizedText;
   /** Flagged members get the coordination badge inside their group. */
   isCoordinator: boolean;
   institution: string | null;
-  bioMd: string | null;
+  bioMd: LocalizedText | null;
   photoUrl: string | null;
   lattesUrl: string | null;
   orcidUrl: string | null;
@@ -136,9 +146,9 @@ export interface NewsItem {
   id: string;
   eventId: string;
   slug: string;
-  title: string;
-  excerpt: string | null;
-  bodyMd: string;
+  title: LocalizedText;
+  excerpt: LocalizedText | null;
+  bodyMd: LocalizedText;
   coverImageUrl: string | null;
   status: NewsStatus;
   isPinned: boolean;
@@ -150,7 +160,7 @@ export interface FeeTier {
   eventId: string;
   category: ParticipantCategory;
   modality: Modality;
-  label: string;
+  label: LocalizedText;
   amountCents: number;
   validFrom: string; // ISO
   validUntil: string; // ISO
