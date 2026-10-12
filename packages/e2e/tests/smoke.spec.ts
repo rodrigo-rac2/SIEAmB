@@ -173,6 +173,25 @@ test.describe('i18n @smoke', () => {
     await context.close();
   });
 
+  test('language buttons are readable on the dark bar: label, contrast and active state', async ({ page }) => {
+    await page.goto('/2027/');
+    const group = page.getByRole('group', { name: 'Idioma' });
+    await expect(group).toContainText('PT');
+    await expect(group).toContainText('EN');
+    await expect(group).toContainText('中文');
+    const active = group.getByRole('button', { pressed: true });
+    await expect(active).toHaveAccessibleName('Português');
+    const styles = await active.evaluate((el) => {
+      const cs = getComputedStyle(el);
+      return { bg: cs.backgroundColor, opacity: cs.opacity, color: cs.color };
+    });
+    expect(styles.opacity).toBe('1');
+    expect(styles.bg).toBe('rgb(255, 255, 255)');
+    expect(styles.color).not.toBe('rgb(255, 255, 255)');
+    const idle = await group.getByRole('button', { name: 'English' }).evaluate((el) => getComputedStyle(el).opacity);
+    expect(idle).toBe('1');
+  });
+
   test('flag buttons switch the language', async ({ page }) => {
     await page.goto('/2027/');
     await page.getByRole('button', { name: 'English' }).click();
