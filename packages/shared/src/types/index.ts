@@ -1,5 +1,15 @@
 export type Locale = 'pt-BR' | 'en' | 'es' | 'zh-CN';
 
+/** Translations of one piece of content. pt-BR is the source language and is always present. */
+export type LocalizedMap = { 'pt-BR': string } & Partial<Record<Locale, string>>;
+
+/**
+ * Content text that may carry translations. A plain string is pt-BR only (legacy data);
+ * a map gives one string per locale. Resolve with `localize()` from utils.
+ * Stored as a jsonb column once content moves to the database.
+ */
+export type LocalizedText = string | LocalizedMap;
+
 export type ParticipantCategory =
   | 'ESTUDANTE_GRADUACAO'
   | 'ESTUDANTE_POS'
