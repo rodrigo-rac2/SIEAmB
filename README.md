@@ -250,7 +250,7 @@ O domínio `sieamb.org` está registrado na Cloudflare (DNS também lá). A conf
 - **`e2e-preview.yml`** — dispara quando a Vercel termina um deploy (preview do PR, `develop` ou `main`) e roda a suíte Playwright **contra a URL publicada** (`BASE_URL`), inclusive os testes `@deployed` (rewrites de SPA, idioma persistido, fotos servidas, redirecionamento do www). O check `e2e-preview` aparece no PR.
 - **`branch-policy.yml`** — o GitHub não restringe a branch de origem de um PR, então este check falha quando um PR para `main` não vem de `develop` ou `hotfix/*`, e quando alguém tenta mergear `main` em `develop`.
 
-**Checks obrigatórios** (ruleset `protect-main-develop`): `quality`, `e2e-smoke`, `e2e-preview` e `branch-policy` precisam estar verdes para mergear em `develop` ou em `main`. Issues fecham automaticamente só quando o PR de release chega na `main` (o GitHub só processa `Closes #N` na branch padrão).
+**Checks obrigatórios** (ruleset `protect-main-develop`): `quality`, `e2e-smoke`, `e2e-preview` e `branch-policy` precisam estar verdes para mergear em `develop` ou em `main`. O `e2e-preview` deduz a URL do deploy a partir da branch (`sieamb-git-<branch>-sieamb.vercel.app`, `dev.sieamb.org`, `sieamb.org`), espera o `/version.json` servir o commit em teste e só então roda o Playwright, sem depender do app do Vercel no GitHub. Issues fecham automaticamente só quando o PR de release chega na `main` (o GitHub só processa `Closes #N` na branch padrão).
 
 Para rodar a suíte E2E contra qualquer ambiente publicado: `BASE_URL=https://dev.sieamb.org npm run test:e2e`.
 

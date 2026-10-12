@@ -1,33 +1,67 @@
 name: E2E on Vercel deployment
 
-# Vercel reports every deployment (preview per PR, develop → dev.sieamb.org, main → sieamb.org)
-# through GitHub's deployment API. When one succeeds, run the full Playwright suite against it.
-# The check lands on the deployed commit, so it shows up on the PR and can be made required.
+# Runs the full Playwright suite against the Vercel deployment of the commit being checked.
+# It does not depend on the Vercel GitHub app (which stopped posting deployments on 2026-10-12, #89):
+# the deployment URL follows from the branch, and /version.json (emitted by the frontend build)
+# tells us when that URL serves the commit under test.
 on:
-  deployment_status:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [develop, main]
+
+concurrency:
+  group: e2e-preview-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   e2e-preview:
-    # The legacy GitHub Pages deploy (under /SIEAmB/) also reports here; skip it until #20 retires it.
-    if: github.event.deployment_status.state == 'success' && github.event.deployment.environment != 'github-pages'
     runs-on: ubuntu-latest
-    env:
-      BASE_URL: ${{ github.event.deployment_status.environment_url || github.event.deployment_status.target_url }}
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.deployment.sha }}
+      - name: Resolve the deployment URL for this ref
+        id: target
+        env:
+          BRANCH: ${{ github.event.pull_request.head.ref || github.ref_name }}
+          SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          case "$BRANCH" in
+            main) url="https://sieamb.org" ;;
+            develop) url="https://dev.sieamb.org" ;;
+            *)
+              slug=$(printf '%s' "$BRANCH" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//')
+              url="https://sieamb-git-${slug}-sieamb.vercel.app" ;;
+          esac
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "Waiting for $url to serve $SHA"
+      - name: Wait for Vercel to serve this commit
+        env:
+          URL: ${{ steps.target.outputs.url }}
+          SHA: ${{ steps.target.outputs.sha }}
+        run: |
+          for i in $(seq 1 90); do
+            served=$(curl -fsS --max-time 15 "$URL/version.json?nocache=$i" 2>/dev/null | sed -nE 's/.*"sha":"([0-9a-f]+)".*/\1/p' || true)
+            if [ "$served" = "$SHA" ]; then echo "Deployment serves $SHA"; exit 0; fi
+            echo "attempt $i: serving '${served:-nothing}'"
+            sleep 20
+          done
+          echo "::error::$URL never served $SHA (30 min). Check the Vercel build for this commit."
+          exit 1
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - name: Playwright against ${{ env.BASE_URL }}
+      - name: Playwright against ${{ steps.target.outputs.url }}
+        env:
+          BASE_URL: ${{ steps.target.outputs.url }}
         run: npm run test -w @sieamb/e2e
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: playwright-report-deployed-${{ github.event.deployment.id }}
+          name: playwright-report-deployed-${{ steps.target.outputs.sha }}
           path: packages/e2e/playwright-report/
           retention-days: 7
