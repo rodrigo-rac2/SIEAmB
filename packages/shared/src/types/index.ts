@@ -91,8 +91,8 @@ export interface ThematicArea {
   id: string;
   eventId: string;
   code: string;
-  name: string;
-  description: string | null;
+  name: LocalizedText;
+  description: LocalizedText | null;
   sortOrder: number;
 }
 
@@ -146,9 +146,9 @@ export interface NewsItem {
   id: string;
   eventId: string;
   slug: string;
-  title: string;
-  excerpt: string | null;
-  bodyMd: string;
+  title: LocalizedText;
+  excerpt: LocalizedText | null;
+  bodyMd: LocalizedText;
   coverImageUrl: string | null;
   status: NewsStatus;
   isPinned: boolean;
