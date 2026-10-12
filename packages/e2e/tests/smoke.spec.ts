@@ -141,7 +141,7 @@ test.describe('public site @smoke', () => {
     expect(Date.parse(body.builtAt)).not.toBeNaN();
   });
 
-
+  test('unknown route shows the 404 page', async ({ page }) => {
     await page.goto('/2027/nao-existe');
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Página não encontrada');
   });
