@@ -133,6 +133,14 @@ test.describe('public site @smoke', () => {
     await expect(page.locator('.site-header__logo-img')).toHaveAttribute('src', /brand\/2027\/logo\.png/);
   });
 
+  test('build exposes the commit it was made from at /version.json', async ({ request }) => {
+    const res = await request.get('/version.json');
+    expect(res.ok()).toBe(true);
+    const body = (await res.json()) as { sha: string; builtAt: string };
+    expect(body.sha).toMatch(/^[0-9a-f]{40}$|^unknown$/);
+    expect(Date.parse(body.builtAt)).not.toBeNaN();
+  });
+
   test('unknown route shows the 404 page', async ({ page }) => {
     await page.goto('/2027/nao-existe');
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Página não encontrada');
