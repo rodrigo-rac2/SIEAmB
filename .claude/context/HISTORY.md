@@ -2,6 +2,19 @@
 
 Append a dated entry per working session. Newest first.
 
+## 2026-10-12 — Translations end to end, CI off the Vercel app
+
+- Two asks: the language switcher was nearly invisible, and "some stuff does not get translated". Audit with Playwright: all 142 UI keys exist in every locale; every leak was fixture content (venue, dates, areas, news, team groups, bios, about). Plan approved: machine-draft everything, flag zh-CN under #23.
+- Shipped (one issue per PR, #78–#83, #89, #93 → PRs #84–#88, #90, #91, #94, releases #92 and the follow-up): switcher with flag + text code and solid active state; `LocalizedText` + `localize()` + `useLocalized()` in shared/frontend; translated venue, 14 date labels, 5 team groups, 2 lots, 6 areas, 2 news items, 22 bios, 4 founder affiliations, 2 about texts; Playwright guard over 19 routes × 3 locales; locale-completeness unit test.
+- Vercel's GitHub app stopped posting deployments/checks (one build `git_info_fail`), blocking the required `e2e-preview`. Rewrote it: build emits `/version.json` with the SHA, workflow derives the URL from the branch and polls until it serves the head commit. Merges no longer depend on the app.
+- Vercel's automatic DDoS mitigation challenged sieamb.org for ~20 min right after release #92 (6k requests in minutes from our own deployed test run + audits). #93 made the guard render pt-BR once per route and drop image/font/media requests.
+
+## 2026-10-11 — Najara's links batch, issue-per-change rule
+
+- Najara sent Lattes/ORCID (Viviane, Thays, Laura, Luana, Lourdes), affiliations (Pollyanna, Luana, Zhou Lin, Thays) and asked for the home date written out. Applied via #67–#69 (PRs #71, #72), released in #74. Viviane's founder card was missed (separate `founders.json`), fixed in #75/#76/#77 with a cross-file consistency test.
+- Rodrigo: "make sure all changes go through an issue even if you're creating and resolving the issue immediately… we need a resolution log." Recorded in CLAUDE.md, README and memory (#70, PR #73).
+- Issue review: #12 stays open only for the presentation text (now with Prof. Viviane for approval) and Rodrigo's entry; #16 no longer waits on the committee; #11/#37 have buildable parts.
+
 ## 2026-10-10 — Context regroup + rollout planning
 
 - Najara's WhatsApp batch: event moved to 24–26 March 2027 and is online (YouTube); new cronograma (edital 23/10, submissions 09/11–18/01, results 12/03); fees 30/50, 50/70, 70/90; about-page = general text + per-edition text; idealizadores fixed; team page per edition (fixed + variable). Rodrigo committed to registrations opening 10/11/2026 (Even3 fallback).
