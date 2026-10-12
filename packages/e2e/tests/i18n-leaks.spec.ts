@@ -48,7 +48,11 @@ const ALLOWED = [
   /^Evento online$/, // venue text comes from data on the 404 page before the event loads
 ];
 
+/** Only the document, scripts, styles and data are needed to read the text: images, fonts and media would just add load on the deployment (#93). */
+const TEXT_ONLY = new Set(['document', 'script', 'stylesheet', 'fetch', 'xhr', 'other']);
+
 async function visibleTexts(page: Page, locale: string, route: string): Promise<string[]> {
+  await page.route('**/*', (r) => (TEXT_ONLY.has(r.request().resourceType()) ? r.continue() : r.abort()));
   await page.addInitScript((l) => localStorage.setItem('sieamb-locale', l), locale);
   await page.goto(route, { waitUntil: 'networkidle' });
   return page.evaluate(() => {
@@ -69,30 +73,27 @@ async function visibleTexts(page: Page, locale: string, route: string): Promise<
 }
 
 test.describe('no Portuguese leaks in the other languages @smoke', () => {
-  for (const locale of LOCALES) {
-    test(`every public page in ${locale}`, async ({ browser, isMobile }) => {
-      test.skip(isMobile, 'text content is viewport-independent; desktop run covers it');
-      test.setTimeout(180_000);
-      const leaks: string[] = [];
-      for (const route of ROUTES) {
-        const ptCtx = await browser.newContext();
-        const ptPage = await ptCtx.newPage();
-        const pt = new Set(await visibleTexts(ptPage, 'pt-BR', route));
-        await ptCtx.close();
-
+  test('every public page in en, es and zh-CN', async ({ browser, isMobile }) => {
+    test.skip(isMobile, 'text content is viewport-independent; desktop run covers it');
+    test.setTimeout(240_000);
+    const leaks: string[] = [];
+    for (const route of ROUTES) {
+      // One pt-BR reference render per route, shared by the three locales.
+      const ptCtx = await browser.newContext();
+      const pt = new Set(await visibleTexts(await ptCtx.newPage(), 'pt-BR', route));
+      await ptCtx.close();
+      for (const locale of LOCALES) {
         const ctx = await browser.newContext();
-        const page = await ctx.newPage();
-        const texts = await visibleTexts(page, locale, route);
+        const texts = await visibleTexts(await ctx.newPage(), locale, route);
         await ctx.close();
-
         for (const text of new Set(texts)) {
           if (!pt.has(text) || text.length < 4) continue;
           if (!LOOKS_PORTUGUESE.test(text)) continue;
           if (ALLOWED.some((re) => re.test(text))) continue;
-          leaks.push(`${route}: "${text.slice(0, 100)}"`);
+          leaks.push(`${locale} ${route}: "${text.slice(0, 100)}"`);
         }
       }
-      expect(leaks, `Portuguese text shown in ${locale}:\n${leaks.join('\n')}`).toEqual([]);
-    });
-  }
+    }
+    expect(leaks, `Portuguese text shown in another language:\n${leaks.join('\n')}`).toEqual([]);
+  });
 });
