@@ -52,8 +52,8 @@ export interface EventSummary {
   edition: number;
   startsAt: string; // ISO
   endsAt: string; // ISO
-  /** Presentation text of this edition (markdown, pt-BR). Shown on the About page under the general text. */
-  aboutMd: string | null;
+  /** Presentation text of this edition (markdown). Shown on the About page under the general text. */
+  aboutMd: LocalizedText | null;
   venue: LocalizedText | null;
   /** True for remote editions: the venue page shows the streaming link instead of an address. */
   isOnline: boolean;
@@ -99,7 +99,7 @@ export interface ThematicArea {
 /** Site-wide content that does not belong to one edition. */
 export interface SiteContent {
   /** General presentation of the SIEAmB (markdown, pt-BR). */
-  aboutMd: string;
+  aboutMd: LocalizedText;
 }
 
 /** The founders of the seminar: a fixed group shown on every edition. */
@@ -108,7 +108,7 @@ export interface Founder {
   name: string;
   /** Short line under the name, e.g. institution or position. */
   affiliation: string | null;
-  bioMd: string;
+  bioMd: LocalizedText;
   photoUrl: string | null;
   lattesUrl: string | null;
   orcidUrl: string | null;
@@ -125,7 +125,7 @@ export interface CommitteeMember {
   /** Flagged members get the coordination badge inside their group. */
   isCoordinator: boolean;
   institution: string | null;
-  bioMd: string | null;
+  bioMd: LocalizedText | null;
   photoUrl: string | null;
   lattesUrl: string | null;
   orcidUrl: string | null;
