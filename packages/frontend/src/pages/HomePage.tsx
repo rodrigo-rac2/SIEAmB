@@ -1,4 +1,4 @@
-import type { ImportantDate, Locale, NewsItem, Sponsor } from '@sieamb/shared';
+import type { ImportantDate, NewsItem, Sponsor } from '@sieamb/shared';
 import { formatDateList } from '@sieamb/shared';
 import { useEffect, useState, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import { NewsCard } from '../components/news/NewsCard';
 import { ImportantDatesTable } from '../components/shared/ImportantDatesTable';
 import { useEvent } from '../contexts/EventContext';
+import { useLocale, useLocalized } from '../hooks/useLocale';
 import { getDataProvider } from '../services';
 import { assetUrl } from '../lib/assets';
 import './HomePage.css';
@@ -30,7 +31,9 @@ function BrandTitle({ text }: { text: string }) {
 }
 
 export function HomePage() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
+  const l = useLocalized();
+  const locale = useLocale();
   const { event } = useEvent();
   const [dates, setDates] = useState<ImportantDate[]>([]);
   const [news, setNews] = useState<NewsItem[]>([]);
@@ -46,7 +49,6 @@ export function HomePage() {
 
   if (!event) return null;
   const base = `/${event.slug}`;
-  const locale = (i18n.resolvedLanguage ?? 'pt-BR') as Locale;
 
   const quickLinks = [
     { to: `${base}/inscricoes`, title: t('home.quickRegistration'), desc: t('home.quickRegistrationDesc') },
@@ -85,7 +87,7 @@ export function HomePage() {
           <p className="hero__tagline">{t('home.heroTagline')}</p>
           <p className="hero__meta">
             <span>{formatDateList(event.startsAt, event.endsAt, locale)}</span>
-            {event.venue && <span>{event.venue}</span>}
+            {event.venue && <span>{l(event.venue)}</span>}
           </p>
           {event.settings.registrationOpen && (
             <Link className="hero__cta" to={`${base}/inscricoes`}>

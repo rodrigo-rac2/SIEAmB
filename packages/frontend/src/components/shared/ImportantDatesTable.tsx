@@ -1,10 +1,12 @@
-import { formatDate, formatMonth, type ImportantDate, type Locale } from '@sieamb/shared';
+import { formatDate, formatMonth, type ImportantDate } from '@sieamb/shared';
 import { useTranslation } from 'react-i18next';
+import { useLocale, useLocalized } from '../../hooks/useLocale';
 import './ImportantDatesTable.css';
 
 export function ImportantDatesTable({ dates }: { dates: ImportantDate[] }) {
-  const { t, i18n } = useTranslation();
-  const locale = (i18n.resolvedLanguage ?? 'pt-BR') as Locale;
+  const { t } = useTranslation();
+  const locale = useLocale();
+  const l = useLocalized();
 
   if (dates.length === 0) return null;
 
@@ -17,7 +19,7 @@ export function ImportantDatesTable({ dates }: { dates: ImportantDate[] }) {
               {d.monthOnly ? formatMonth(d.date, locale) : formatDate(d.date, locale)}
               {d.isExtended && <span className="dates-table__badge">{t('dates.extended')}</span>}
             </td>
-            <td>{d.label}</td>
+            <td>{l(d.label)}</td>
           </tr>
         ))}
       </tbody>

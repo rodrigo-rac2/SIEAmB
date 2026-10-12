@@ -1,10 +1,10 @@
-import type { CommitteeMember } from '@sieamb/shared';
+import { sourceText, type CommitteeMember, type LocalizedText } from '@sieamb/shared';
 
-/** Groups members by role, keeping the order in which roles first appear (fixture order). */
-export function groupByRole(members: CommitteeMember[]): [string, CommitteeMember[]][] {
-  const groups: [string, CommitteeMember[]][] = [];
+/** Groups members by role (keyed on the pt-BR text), keeping the order in which roles first appear (fixture order). */
+export function groupByRole(members: CommitteeMember[]): [LocalizedText, CommitteeMember[]][] {
+  const groups: [LocalizedText, CommitteeMember[]][] = [];
   for (const m of members) {
-    const g = groups.find(([role]) => role === m.role);
+    const g = groups.find(([role]) => sourceText(role) === sourceText(m.role));
     if (g) g[1].push(m);
     else groups.push([m.role, [m]]);
   }

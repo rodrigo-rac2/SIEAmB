@@ -4,7 +4,12 @@
     "eventId": "evt-2027",
     "category": "ESTUDANTE_GRADUACAO",
     "modality": "ONLINE",
-    "label": "Lote 1",
+    "label": {
+      "pt-BR": "Lote 1",
+      "en": "Lot 1",
+      "es": "Lote 1",
+      "zh-CN": "第一批"
+    },
     "amountCents": 3000,
     "validFrom": "2026-11-10T00:00:00-03:00",
     "validUntil": "2027-01-01T23:59:00-03:00"
@@ -14,7 +19,12 @@
     "eventId": "evt-2027",
     "category": "ESTUDANTE_POS",
     "modality": "ONLINE",
-    "label": "Lote 1",
+    "label": {
+      "pt-BR": "Lote 1",
+      "en": "Lot 1",
+      "es": "Lote 1",
+      "zh-CN": "第一批"
+    },
     "amountCents": 5000,
     "validFrom": "2026-11-10T00:00:00-03:00",
     "validUntil": "2027-01-01T23:59:00-03:00"
@@ -24,7 +34,12 @@
     "eventId": "evt-2027",
     "category": "PROFISSIONAL",
     "modality": "ONLINE",
-    "label": "Lote 1",
+    "label": {
+      "pt-BR": "Lote 1",
+      "en": "Lot 1",
+      "es": "Lote 1",
+      "zh-CN": "第一批"
+    },
     "amountCents": 7000,
     "validFrom": "2026-11-10T00:00:00-03:00",
     "validUntil": "2027-01-01T23:59:00-03:00"
@@ -34,7 +49,12 @@
     "eventId": "evt-2027",
     "category": "ESTUDANTE_GRADUACAO",
     "modality": "ONLINE",
-    "label": "Lote 2",
+    "label": {
+      "pt-BR": "Lote 2",
+      "en": "Lot 2",
+      "es": "Lote 2",
+      "zh-CN": "第二批"
+    },
     "amountCents": 5000,
     "validFrom": "2027-01-02T00:00:00-03:00",
     "validUntil": "2027-03-20T23:59:00-03:00"
@@ -44,7 +64,12 @@
     "eventId": "evt-2027",
     "category": "ESTUDANTE_POS",
     "modality": "ONLINE",
-    "label": "Lote 2",
+    "label": {
+      "pt-BR": "Lote 2",
+      "en": "Lot 2",
+      "es": "Lote 2",
+      "zh-CN": "第二批"
+    },
     "amountCents": 7000,
     "validFrom": "2027-01-02T00:00:00-03:00",
     "validUntil": "2027-03-20T23:59:00-03:00"
@@ -54,7 +79,12 @@
     "eventId": "evt-2027",
     "category": "PROFISSIONAL",
     "modality": "ONLINE",
-    "label": "Lote 2",
+    "label": {
+      "pt-BR": "Lote 2",
+      "en": "Lot 2",
+      "es": "Lote 2",
+      "zh-CN": "第二批"
+    },
     "amountCents": 9000,
     "validFrom": "2027-01-02T00:00:00-03:00",
     "validUntil": "2027-03-20T23:59:00-03:00"

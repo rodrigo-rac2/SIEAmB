@@ -25,3 +25,8 @@ export function missingLocales(value: LocalizedText, locales: readonly Locale[])
   if (typeof value === 'string') return locales.filter((l) => l !== SOURCE_LOCALE);
   return locales.filter((l) => !(typeof value[l] === 'string' && value[l]!.trim() !== ''));
 }
+
+/** The pt-BR source string: stable key for grouping and lookups that must not change with the UI language. */
+export function sourceText(value: LocalizedText): string {
+  return typeof value === 'string' ? value : value['pt-BR'];
+}

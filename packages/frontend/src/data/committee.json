@@ -3,7 +3,12 @@
     "id": "c27-sci-najara",
     "eventId": "evt-2027",
     "name": "Ma. Najara Escarião Agripino",
-    "role": "Comitê Científico",
+    "role": {
+      "pt-BR": "Comitê Científico",
+      "en": "Scientific Committee",
+      "es": "Comité Científico",
+      "zh-CN": "科学委员会"
+    },
     "isCoordinator": false,
     "institution": "PPGEGRN/UFCG",
     "bioMd": "Doutoranda em Engenharia e Gestão de Recursos Naturais (PPGEGRN/UFCG), Bacharela e Mestra em Administração (UEPB/PPGA UFCG) e Bacharela em Relações Internacionais (UNINTER). Membro do Grupo de Estudos sobre China (GECHINA/UnB). Suas pesquisas envolvem o desenvolvimento rural sustentável na China e no Brasil e a Civilização Ecológica.",
@@ -16,7 +21,12 @@
     "id": "c27-sci-niklas",
     "eventId": "evt-2027",
     "name": "Dr. Niklas Werner Weins",
-    "role": "Comitê Científico",
+    "role": {
+      "pt-BR": "Comitê Científico",
+      "en": "Scientific Committee",
+      "es": "Comité Científico",
+      "zh-CN": "科学委员会"
+    },
     "isCoordinator": false,
     "institution": "Xi'an Jiaotong-Liverpool University",
     "bioMd": "Professor assistente no Departamento de Estudos Internacionais da Xi'an Jiaotong-Liverpool University, na China. Doutor em Ambiente e Sociedade pela Universidade Estadual de Campinas (UNICAMP), foi bolsista FAPESP no Environmental Policy Group da Universidade de Wageningen, na Holanda. Sua pesquisa concentra-se na economia política das questões ambientais, incluindo biodiversidade, conservação e mudanças climáticas, além das relações da China com o Sul Global em instituições bilaterais e multilaterais.",
@@ -29,7 +39,12 @@
     "id": "c27-sci-viviane",
     "eventId": "evt-2027",
     "name": "Dra. Viviane Farias Silva",
-    "role": "Comitê Científico",
+    "role": {
+      "pt-BR": "Comitê Científico",
+      "en": "Scientific Committee",
+      "es": "Comité Científico",
+      "zh-CN": "科学委员会"
+    },
     "isCoordinator": false,
     "institution": "PPGEGRN/UFCG",
     "bioMd": "Doutora em Engenharia Agrícola pela Universidade Federal de Campina Grande (2017) e Pós-Doutora em Recursos Naturais (2017-2019). Professora da Unidade Acadêmica de Engenharia Florestal da UFCG e Coordenadora do Programa de Pós-Graduação em Engenharia e Gestão dos Recursos Naturais do CTRN/UFCG. Pesquisa em irrigação de espécies florestais, uso de resíduos em substratos, manejo de água e solo, impactos ambientais, recuperação de áreas degradadas e resíduos sólidos.",
@@ -42,7 +57,12 @@
     "id": "c27-rev-thays",
     "eventId": "evt-2027",
     "name": "Ma. Thays Alves da Silva",
-    "role": "Equipe de Revisores",
+    "role": {
+      "pt-BR": "Equipe de Revisores",
+      "en": "Reviewers",
+      "es": "Equipo de Revisores",
+      "zh-CN": "审稿团队"
+    },
     "isCoordinator": true,
     "institution": "PPGS/UFPel",
     "bioMd": "Doutoranda em Sociologia (UFPel), Mestra em Estudos Estratégicos Internacionais (UFRGS) e Bacharela em Ciências Sociais (UFPel). Membro do Grupo de Estudos sobre China (GECHINA/UnB). Pesquisa sociologia chinesa, sociologia militar e as forças armadas chinesas, em especial o Exército Popular de Libertação.",
@@ -55,7 +75,12 @@
     "id": "c27-rev-najara",
     "eventId": "evt-2027",
     "name": "Ma. Najara Escarião Agripino",
-    "role": "Equipe de Revisores",
+    "role": {
+      "pt-BR": "Equipe de Revisores",
+      "en": "Reviewers",
+      "es": "Equipo de Revisores",
+      "zh-CN": "审稿团队"
+    },
     "isCoordinator": false,
     "institution": "PPGEGRN/UFCG",
     "bioMd": "Doutoranda em Engenharia e Gestão de Recursos Naturais (PPGEGRN/UFCG), Bacharela e Mestra em Administração (UEPB/PPGA UFCG) e Bacharela em Relações Internacionais (UNINTER). Membro do Grupo de Estudos sobre China (GECHINA/UnB). Suas pesquisas envolvem o desenvolvimento rural sustentável na China e no Brasil e a Civilização Ecológica.",
@@ -68,7 +93,12 @@
     "id": "c27-rev-niklas",
     "eventId": "evt-2027",
     "name": "Dr. Niklas Werner Weins",
-    "role": "Equipe de Revisores",
+    "role": {
+      "pt-BR": "Equipe de Revisores",
+      "en": "Reviewers",
+      "es": "Equipo de Revisores",
+      "zh-CN": "审稿团队"
+    },
     "isCoordinator": false,
     "institution": "Xi'an Jiaotong-Liverpool University",
     "bioMd": "Professor assistente no Departamento de Estudos Internacionais da Xi'an Jiaotong-Liverpool University, na China. Doutor em Ambiente e Sociedade pela Universidade Estadual de Campinas (UNICAMP), foi bolsista FAPESP no Environmental Policy Group da Universidade de Wageningen, na Holanda. Sua pesquisa concentra-se na economia política das questões ambientais, incluindo biodiversidade, conservação e mudanças climáticas, além das relações da China com o Sul Global em instituições bilaterais e multilaterais.",
@@ -81,7 +111,12 @@
     "id": "c27-rev-zhoulin",
     "eventId": "evt-2027",
     "name": "Ma. Zhou Lin",
-    "role": "Equipe de Revisores",
+    "role": {
+      "pt-BR": "Equipe de Revisores",
+      "en": "Reviewers",
+      "es": "Equipo de Revisores",
+      "zh-CN": "审稿团队"
+    },
     "isCoordinator": false,
     "institution": "PPGA&S/Unicamp",
     "bioMd": "Doutoranda em Ambiente e Sociedade pela Universidade Estadual de Campinas (UNICAMP). Mestra em Relações Internacionais pela University of Chinese Academy of Social Sciences. Pesquisadora do CECLA (Comunidad de Estudios Chinos y Latinoamericanos). Tem como principais interesses de pesquisa as relações sino-brasileiras, a governança climática global e a diplomacia ambiental no Brasil.",
@@ -94,7 +129,12 @@
     "id": "c27-rev-laura",
     "eventId": "evt-2027",
     "name": "Dra. Laura Cristina Feindt Urrejola Silveira",
-    "role": "Equipe de Revisores",
+    "role": {
+      "pt-BR": "Equipe de Revisores",
+      "en": "Reviewers",
+      "es": "Equipo de Revisores",
+      "zh-CN": "审稿团队"
+    },
     "isCoordinator": false,
     "institution": "IREL/UnB",
     "bioMd": "Doutora em Relações Internacionais pelo IREL/UnB e pesquisadora de pós-doutorado em geopolítica e geoeconomia polar, espacial e oceânica. Possui mais de 25 anos de experiência na Amazônia, onde coordenou Estudos de Impacto Ambiental em grandes projetos de energia, transporte, mineração e espacial, incluindo trabalhos com comunidades tradicionais e povos indígenas. Lidera o grupo binacional \"Infraestruturas Críticas no Atlântico Sul e Antártica\" (GEPSI/UnB) e integra o projeto \"Defesa e Mudanças Climáticas\" (IREL/ESD) no PRODEFESA V.",
@@ -107,7 +147,12 @@
     "id": "c27-rev-luana",
     "eventId": "evt-2027",
     "name": "Luana Bramorski Cerqueira Cesar",
-    "role": "Equipe de Revisores",
+    "role": {
+      "pt-BR": "Equipe de Revisores",
+      "en": "Reviewers",
+      "es": "Equipo de Revisores",
+      "zh-CN": "审稿团队"
+    },
     "isCoordinator": false,
     "institution": "PPGS/Unicamp",
     "bioMd": "Mestranda em Sociologia (Unicamp), Pedagoga (USP) e especialista em Gestão Escolar (ESALQ/USP). Membro do Grupo de Estudos sobre China (GECHINA/UnB) e vinculada ao CASS/Unicamp. Pesquisa em sociologia chinesa, política pública, desenvolvimento social e economia da educação, com foco na comparação de políticas educacionais e seus impactos sociais em populações rurais no Brasil e na China.",
@@ -120,7 +165,12 @@
     "id": "c27-rev-lourdes",
     "eventId": "evt-2027",
     "name": "Ma. Maria de Lourdes Saturnino Gomes",
-    "role": "Equipe de Revisores",
+    "role": {
+      "pt-BR": "Equipe de Revisores",
+      "en": "Reviewers",
+      "es": "Equipo de Revisores",
+      "zh-CN": "审稿团队"
+    },
     "isCoordinator": false,
     "institution": "PPGEGRN/UFCG",
     "bioMd": "Graduada em Agroecologia (IFPB) e Mestra em Ciências Agrárias – Agroecologia (UFPB). Doutoranda em Engenharia e Gestão de Recursos Naturais (UFCG). Temas: governança da água, segurança hídrica e mudanças climáticas.",
@@ -133,7 +183,12 @@
     "id": "c27-med-lara",
     "eventId": "evt-2027",
     "name": "Lara Maria Almeida Ferreira",
-    "role": "Equipe de Mídias",
+    "role": {
+      "pt-BR": "Equipe de Mídias",
+      "en": "Media Team",
+      "es": "Equipo de Medios",
+      "zh-CN": "媒体团队"
+    },
     "isCoordinator": true,
     "institution": "PPGH/UFRGS",
     "bioMd": "Mestranda no Programa de Pós-Graduação em História (PPGH/UFRGS). Bacharela em Direito (UNDB/MA). Participante do Grupo de Estudos Asiáticos (GEA/UFMG). Tem interesse nos temas História da Ásia, História do Japão e Cultura Pop Japonesa.",
@@ -146,7 +201,12 @@
     "id": "c27-med-daniela",
     "eventId": "evt-2027",
     "name": "Daniela Torres Teixeira",
-    "role": "Equipe de Mídias",
+    "role": {
+      "pt-BR": "Equipe de Mídias",
+      "en": "Media Team",
+      "es": "Equipo de Medios",
+      "zh-CN": "媒体团队"
+    },
     "isCoordinator": true,
     "institution": "UFF / CEHAM-UERJ",
     "bioMd": "Bacharela em Ciências Sociais (UFF). Cursa Especialização em História Antiga e Medieval (CEHAM/UERJ). Integrante da equipe acadêmica do Grupo de Estudos Asiáticos (GEA/UFMG) e do grupo Amanhã Brasil-China. Tem interesse nos temas História Antiga, História da China e Rota da Seda.",
@@ -159,7 +219,12 @@
     "id": "c27-med-jasmyne",
     "eventId": "evt-2027",
     "name": "Ma. Jasmyne Karla Vieira Souza Maciel",
-    "role": "Equipe de Mídias",
+    "role": {
+      "pt-BR": "Equipe de Mídias",
+      "en": "Media Team",
+      "es": "Equipo de Medios",
+      "zh-CN": "媒体团队"
+    },
     "isCoordinator": false,
     "institution": "PPGEGRN/UFCG",
     "bioMd": "Bacharela em Engenharia Civil (UFCG) e Mestra em Engenharia e Gestão de Recursos Naturais (UFCG), Doutoranda em Engenharia e Gestão de Recursos Naturais (PPGEGRN/UFCG). Tem interesse nos temas Ensino e Pesquisa em Engenharia, Saneamento básico sustentável e Desenvolvimento econômico sustentável.",
@@ -172,7 +237,12 @@
     "id": "c27-med-pollyanna",
     "eventId": "evt-2027",
     "name": "Pollyanna Kécia Cordeiro Grangeiro",
-    "role": "Equipe de Mídias",
+    "role": {
+      "pt-BR": "Equipe de Mídias",
+      "en": "Media Team",
+      "es": "Equipo de Medios",
+      "zh-CN": "媒体团队"
+    },
     "isCoordinator": false,
     "institution": "PPGEGRN/UFCG / PPGA/UFCG",
     "bioMd": "Mestranda em Administração e em Engenharia e Gestão de Recursos Naturais (UFCG). Administradora (UFCG) e empreendedora, especialista em Gestão de Recursos Humanos, Empreendedorismo e Docência do Ensino Superior, com MBA em Qualidade, Segurança, Meio Ambiente e Saúde (QSMS). Docente no ensino superior e na educação profissional e tecnológica. Áreas de pesquisa: Empreendedorismo, Administração Estratégica, Gestão de Pessoas, Sustentabilidade e Mudanças Climáticas.",
@@ -185,7 +255,12 @@
     "id": "c27-med-lourdes",
     "eventId": "evt-2027",
     "name": "Ma. Maria de Lourdes Saturnino Gomes",
-    "role": "Equipe de Mídias",
+    "role": {
+      "pt-BR": "Equipe de Mídias",
+      "en": "Media Team",
+      "es": "Equipo de Medios",
+      "zh-CN": "媒体团队"
+    },
     "isCoordinator": false,
     "institution": "PPGEGRN/UFCG",
     "bioMd": "Graduada em Agroecologia (IFPB) e Mestra em Ciências Agrárias – Agroecologia (UFPB). Doutoranda em Engenharia e Gestão de Recursos Naturais (UFCG). Temas: governança da água, segurança hídrica e mudanças climáticas.",
@@ -198,7 +273,12 @@
     "id": "c27-med-arthur",
     "eventId": "evt-2027",
     "name": "Arthur Lobato de Andrade",
-    "role": "Equipe de Mídias",
+    "role": {
+      "pt-BR": "Equipe de Mídias",
+      "en": "Media Team",
+      "es": "Equipo de Medios",
+      "zh-CN": "媒体团队"
+    },
     "isCoordinator": false,
     "institution": "UFRGS",
     "bioMd": "Estudante de Licenciatura em História na Universidade Federal do Rio Grande do Sul (UFRGS). Bolsista de Iniciação Científica CNPq no projeto de pesquisa \"Jacopo Gaetano Stefaneschi: um cardeal historiador do século XIV\", sob orientação do Prof. Dr. Igor Salomão Teixeira. Participa do grupo de extensão Ásia dos Impérios à Sociedade, construindo eventos, palestras e estudos sobre História Moderna da Ásia.",
@@ -211,7 +291,12 @@
     "id": "c25-org-najara",
     "eventId": "evt-2025",
     "name": "Ma. Najara Escarião Agripino",
-    "role": "Equipe Organizadora",
+    "role": {
+      "pt-BR": "Equipe Organizadora",
+      "en": "Organising Committee",
+      "es": "Equipo Organizador",
+      "zh-CN": "组织团队"
+    },
     "isCoordinator": false,
     "institution": "PPGEGRN/UFCG",
     "bioMd": "Doutoranda em Engenharia e Gestão de Recursos Naturais (PPGEGRN/UFCG), Bacharela e Mestra em Administração (UEPB/PPGA UFCG), Bacharelanda em Relações Internacionais (UNINTER). Membro do Grupo de Estudos sobre China (GECHINA/UnB).",
@@ -224,7 +309,12 @@
     "id": "c25-org-alex",
     "eventId": "evt-2025",
     "name": "Me. Alex Souza Felix",
-    "role": "Equipe Organizadora",
+    "role": {
+      "pt-BR": "Equipe Organizadora",
+      "en": "Organising Committee",
+      "es": "Equipo Organizador",
+      "zh-CN": "组织团队"
+    },
     "isCoordinator": false,
     "institution": "PPGH/UFCG",
     "bioMd": "Graduado em História (Licenciatura) e Mestre em História pelo PPGH da Universidade Federal de Campina Grande. Pesquisa História do Leste Asiático, jogos eletrônicos e História Ambiental.",
@@ -237,7 +327,12 @@
     "id": "c25-org-daniela",
     "eventId": "evt-2025",
     "name": "Daniela Torres Teixeira",
-    "role": "Equipe Organizadora",
+    "role": {
+      "pt-BR": "Equipe Organizadora",
+      "en": "Organising Committee",
+      "es": "Equipo Organizador",
+      "zh-CN": "组织团队"
+    },
     "isCoordinator": false,
     "institution": "UFF / CEHAM-UERJ",
     "bioMd": "Bacharela em Ciências Sociais (UFF). Cursa Especialização em História Antiga e Medieval (CEHAM/UERJ). Integrante da equipe acadêmica do Grupo de Estudos Asiáticos (GEA/UFMG) e do grupo Amanhã Brasil-China. Tem interesse nos temas História Antiga, História da China e Rota da Seda.",
@@ -250,7 +345,12 @@
     "id": "c25-org-flavia",
     "eventId": "evt-2025",
     "name": "Flávia Romeiro Costa",
-    "role": "Equipe Organizadora",
+    "role": {
+      "pt-BR": "Equipe Organizadora",
+      "en": "Organising Committee",
+      "es": "Equipo Organizador",
+      "zh-CN": "组织团队"
+    },
     "isCoordinator": false,
     "institution": "UFMG",
     "bioMd": "Licenciada em Letras – Português (UFMG), Bacharelanda em Relações Econômicas Internacionais (UFMG). Tem interesse nos temas Ensino, Demografia, Geopolítica e Meio Ambiente.",
@@ -263,7 +363,12 @@
     "id": "c25-org-lara",
     "eventId": "evt-2025",
     "name": "Lara Maria Almeida Ferreira",
-    "role": "Equipe Organizadora",
+    "role": {
+      "pt-BR": "Equipe Organizadora",
+      "en": "Organising Committee",
+      "es": "Equipo Organizador",
+      "zh-CN": "组织团队"
+    },
     "isCoordinator": false,
     "institution": "PPGH/UFRGS",
     "bioMd": "Mestranda no Programa de Pós-Graduação em História (PPGH/UFRGS). Bacharela em Direito (UNDB/MA). Participante do Grupo de Estudos Asiáticos (GEA/UFMG). Tem interesse nos temas História da Ásia, História do Japão e Cultura Pop Japonesa.",
@@ -276,7 +381,12 @@
     "id": "c25-org-jasmyne",
     "eventId": "evt-2025",
     "name": "Ma. Jasmyne Karla Vieira Souza Maciel",
-    "role": "Equipe Organizadora",
+    "role": {
+      "pt-BR": "Equipe Organizadora",
+      "en": "Organising Committee",
+      "es": "Equipo Organizador",
+      "zh-CN": "组织团队"
+    },
     "isCoordinator": false,
     "institution": "PPGEGRN/UFCG",
     "bioMd": "Bacharela em Engenharia Civil (UFCG) e Mestra em Engenharia e Gestão de Recursos Naturais (UFCG), Doutoranda em Engenharia e Gestão de Recursos Naturais (PPGEGRN/UFCG). Tem interesse nos temas Ensino e Pesquisa em Engenharia, Saneamento básico sustentável e Desenvolvimento econômico sustentável.",
@@ -289,7 +399,12 @@
     "id": "c25-rev-thays",
     "eventId": "evt-2025",
     "name": "Ma. Thays Alves da Silva",
-    "role": "Equipe de Revisores",
+    "role": {
+      "pt-BR": "Equipe de Revisores",
+      "en": "Reviewers",
+      "es": "Equipo de Revisores",
+      "zh-CN": "审稿团队"
+    },
     "isCoordinator": false,
     "institution": "UFPel",
     "bioMd": "Doutoranda em Sociologia (UFPel), Mestra em Estudos Estratégicos Internacionais (UFRGS) e Bacharela em Ciências Sociais (UFPel). Membro do Grupo de Estudos sobre China (GECHINA/UnB). Pesquisa sociologia chinesa, sociologia militar e as forças armadas chinesas, em especial o Exército Popular de Libertação.",
@@ -302,7 +417,12 @@
     "id": "c25-rev-laura",
     "eventId": "evt-2025",
     "name": "Dra. Laura Cristina Feindt Urrejola Silveira",
-    "role": "Equipe de Revisores",
+    "role": {
+      "pt-BR": "Equipe de Revisores",
+      "en": "Reviewers",
+      "es": "Equipo de Revisores",
+      "zh-CN": "审稿团队"
+    },
     "isCoordinator": false,
     "institution": "IREL/UnB",
     "bioMd": "Doutora em Relações Internacionais pelo IREL/UnB e pesquisadora de pós-doutorado em geopolítica e geoeconomia polar, espacial e oceânica. Possui mais de 25 anos de experiência na Amazônia, onde coordenou Estudos de Impacto Ambiental em grandes projetos de energia, transporte, mineração e espacial, incluindo trabalhos com comunidades tradicionais e povos indígenas. Lidera o grupo binacional \"Infraestruturas Críticas no Atlântico Sul e Antártica\" (GEPSI/UnB) e integra o projeto \"Defesa e Mudanças Climáticas\" (IREL/ESD) no PRODEFESA V.",
@@ -315,7 +435,12 @@
     "id": "c25-rev-luana",
     "eventId": "evt-2025",
     "name": "Luana Bramorski Cerqueira Cesar",
-    "role": "Equipe de Revisores",
+    "role": {
+      "pt-BR": "Equipe de Revisores",
+      "en": "Reviewers",
+      "es": "Equipo de Revisores",
+      "zh-CN": "审稿团队"
+    },
     "isCoordinator": false,
     "institution": "Unicamp",
     "bioMd": "Mestranda em Sociologia (Unicamp), Pedagoga (USP) e especialista em Gestão Escolar (ESALQ/USP). Membro do Grupo de Estudos sobre China (GECHINA/UnB) e vinculada ao CASS/Unicamp. Pesquisa em sociologia chinesa, política pública, desenvolvimento social e economia da educação, com foco na comparação de políticas educacionais e seus impactos sociais em populações rurais no Brasil e na China.",
@@ -328,7 +453,12 @@
     "id": "c25-rev-niklas",
     "eventId": "evt-2025",
     "name": "Dr. Niklas Werner Weins",
-    "role": "Equipe de Revisores",
+    "role": {
+      "pt-BR": "Equipe de Revisores",
+      "en": "Reviewers",
+      "es": "Equipo de Revisores",
+      "zh-CN": "审稿团队"
+    },
     "isCoordinator": false,
     "institution": "Xi'an Jiaotong-Liverpool University",
     "bioMd": "Professor assistente no Departamento de Estudos Internacionais da Xi'an Jiaotong-Liverpool University, na China. Doutor em Ambiente e Sociedade pela Universidade Estadual de Campinas (UNICAMP), foi bolsista FAPESP no Environmental Policy Group da Universidade de Wageningen, na Holanda. Sua pesquisa concentra-se na economia política das questões ambientais, incluindo biodiversidade, conservação e mudanças climáticas, além das relações da China com o Sul Global em instituições bilaterais e multilaterais.",
@@ -341,7 +471,12 @@
     "id": "c25-spk-fernando",
     "eventId": "evt-2025",
     "name": "Dr. Fernando Joaquim Ferreira Maia",
-    "role": "Palestrantes",
+    "role": {
+      "pt-BR": "Palestrantes",
+      "en": "Speakers",
+      "es": "Ponentes",
+      "zh-CN": "演讲嘉宾"
+    },
     "isCoordinator": false,
     "institution": "PPGCJ/UFPB",
     "bioMd": "Vice-Coordenador do PPGCJ/UFPB, professor do CCJ e do PPGCJ/UFPB, Professor Visitante na Universidade de Liaoning (China) e membro do Grupo de Pesquisa Dom Quixote (CNPq/UFPB/IFSP/UFRPE). Doutor (2012) e Mestre (2008) em Direito pela Universidade Federal de Pernambuco. Atua em direito da energia e, de forma vinculada às energias renováveis, em direito ambiental, agrário, econômico, direitos reais e direito à cidade.",
@@ -354,7 +489,12 @@
     "id": "c25-spk-anapaula",
     "eventId": "evt-2025",
     "name": "Dra. Ana Paula Basso",
-    "role": "Palestrantes",
+    "role": {
+      "pt-BR": "Palestrantes",
+      "en": "Speakers",
+      "es": "Ponentes",
+      "zh-CN": "演讲嘉宾"
+    },
     "isCoordinator": false,
     "institution": "PPGCJ/UFPB",
     "bioMd": "Professora do CCJ e do PPGCJ/UFPB, Professora Visitante na Universidade de Liaoning (China) e membro do GPEDTRS (CNPq/UFPB). Doutora em Diritto Tributario Europeo (Alma Mater Studiorum – Università di Bologna) e em Derecho Tributario Europeo (Universidad de Castilla-La Mancha). Atua em direito tributário, desenvolvimento econômico, tributação ambiental, competência tributária e extrafiscalidade.",
@@ -367,7 +507,12 @@
     "id": "c25-spk-hirdan",
     "eventId": "evt-2025",
     "name": "Dra. Hirdan Katarina de Medeiros Costa",
-    "role": "Palestrantes",
+    "role": {
+      "pt-BR": "Palestrantes",
+      "en": "Speakers",
+      "es": "Ponentes",
+      "zh-CN": "演讲嘉宾"
+    },
     "isCoordinator": false,
     "institution": "PPGCJ/UFPB",
     "bioMd": "Professora do PPGCJ/UFPB e membro do Grupo de Pesquisa Dom Quixote (CNPq/UFPB). Pós-Doutora, Doutora e Mestra em Energia pelo PPGE/USP, Mestra em Direito de Energia e de Recursos Naturais pela Universidade de Oklahoma (EUA), Mestra e Doutora em Direito (PUC/SP). Experiência em petróleo, gás, energias renováveis, mudanças climáticas, captura e armazenamento de carbono, governança de recursos naturais e direito da energia.",
@@ -380,7 +525,12 @@
     "id": "c25-spk-niklas",
     "eventId": "evt-2025",
     "name": "Dr. Niklas Werner Weins",
-    "role": "Palestrantes",
+    "role": {
+      "pt-BR": "Palestrantes",
+      "en": "Speakers",
+      "es": "Ponentes",
+      "zh-CN": "演讲嘉宾"
+    },
     "isCoordinator": false,
     "institution": "Xi'an Jiaotong-Liverpool University",
     "bioMd": "Professor assistente no Departamento de Estudos Internacionais da Xi'an Jiaotong-Liverpool University, na China. Doutor em Ambiente e Sociedade pela Universidade Estadual de Campinas (UNICAMP), foi bolsista FAPESP no Environmental Policy Group da Universidade de Wageningen, na Holanda. Sua pesquisa concentra-se na economia política das questões ambientais, incluindo biodiversidade, conservação e mudanças climáticas, além das relações da China com o Sul Global em instituições bilaterais e multilaterais.",
@@ -393,7 +543,12 @@
     "id": "c25-spk-dou",
     "eventId": "evt-2025",
     "name": "Dra. Dou Yuehan (窦月含)",
-    "role": "Palestrantes",
+    "role": {
+      "pt-BR": "Palestrantes",
+      "en": "Speakers",
+      "es": "Ponentes",
+      "zh-CN": "演讲嘉宾"
+    },
     "isCoordinator": false,
     "institution": "Xi'an Jiaotong-Liverpool University",
     "bioMd": "Professora assistente no Departamento de Ciências da Saúde e Ambientais da Xi'an Jiaotong-Liverpool University. Doutora em Ciências Ambientais pela Universidade de Wageningen, na Holanda. Sua pesquisa está na intersecção entre restauração ecológica, conservação da biodiversidade e serviços ecossistêmicos culturais, com extensos estudos de campo em pastagens, zonas úmidas costeiras, terras áridas e florestas da China.",
@@ -406,7 +561,12 @@
     "id": "c25-spk-zhoulin",
     "eventId": "evt-2025",
     "name": "Ma. Zhou Lin",
-    "role": "Palestrantes",
+    "role": {
+      "pt-BR": "Palestrantes",
+      "en": "Speakers",
+      "es": "Ponentes",
+      "zh-CN": "演讲嘉宾"
+    },
     "isCoordinator": false,
     "institution": "UNICAMP",
     "bioMd": "Doutoranda em Ambiente e Sociedade pela Universidade Estadual de Campinas (UNICAMP). Mestra em Relações Internacionais pela University of Chinese Academy of Social Sciences. Pesquisadora do CECLA (Comunidad de Estudios Chinos y Latinoamericanos). Tem como principais interesses de pesquisa as relações sino-brasileiras, a governança climática global e a diplomacia ambiental no Brasil.",

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isLocalizedMap, localize, missingLocales } from './localize';
+import { isLocalizedMap, localize, missingLocales, sourceText } from './localize';
 
 const full = { 'pt-BR': 'Evento online', en: 'Online event', es: 'Evento en línea', 'zh-CN': '线上活动' };
 
@@ -42,5 +42,12 @@ describe('missingLocales', () => {
   it('reports only the gaps, counting empty strings as gaps', () => {
     expect(missingLocales({ 'pt-BR': 'a', en: 'b', es: '' }, all)).toEqual(['es', 'zh-CN']);
     expect(missingLocales(full, all)).toEqual([]);
+  });
+});
+
+describe('sourceText', () => {
+  it('returns pt-BR for maps and the string itself for legacy values', () => {
+    expect(sourceText(full)).toBe('Evento online');
+    expect(sourceText('Lote 1')).toBe('Lote 1');
   });
 });
