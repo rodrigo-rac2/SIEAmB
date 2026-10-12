@@ -40,9 +40,10 @@ jobs:
         env:
           URL: ${{ steps.target.outputs.url }}
           SHA: ${{ steps.target.outputs.sha }}
+          E2E_BYPASS_TOKEN: ${{ secrets.E2E_BYPASS_TOKEN }}
         run: |
           for i in $(seq 1 90); do
-            served=$(curl -fsS --max-time 15 "$URL/version.json?nocache=$i" 2>/dev/null | sed -nE 's/.*"sha":"([0-9a-f]+)".*/\1/p' || true)
+            served=$(curl -fsS --max-time 15 -H "x-sieamb-e2e: $E2E_BYPASS_TOKEN" "$URL/version.json?nocache=$i" 2>/dev/null | sed -nE 's/.*"sha":"([0-9a-f]+)".*/\1/p' || true)
             if [ "$served" = "$SHA" ]; then echo "Deployment serves $SHA"; exit 0; fi
             echo "attempt $i: serving '${served:-nothing}'"
             sleep 20
@@ -58,6 +59,7 @@ jobs:
       - name: Playwright against ${{ steps.target.outputs.url }}
         env:
           BASE_URL: ${{ steps.target.outputs.url }}
+          E2E_BYPASS_TOKEN: ${{ secrets.E2E_BYPASS_TOKEN }}
         run: npm run test -w @sieamb/e2e
       - uses: actions/upload-artifact@v4
         if: failure()
