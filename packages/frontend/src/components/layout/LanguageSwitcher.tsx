@@ -10,6 +10,14 @@ const FLAGS: Record<Locale, string> = {
   'zh-CN': '🇨🇳',
 };
 
+/** Short label shown next to the flag: readable where flag emojis render as letter pairs (Windows). */
+const SHORT: Record<Locale, string> = {
+  'pt-BR': 'PT',
+  en: 'EN',
+  es: 'ES',
+  'zh-CN': '中文',
+};
+
 export function LanguageSwitcher() {
   const { t, i18n } = useTranslation();
   const current = i18n.resolvedLanguage ?? 'pt-BR';
@@ -20,13 +28,17 @@ export function LanguageSwitcher() {
         <button
           key={locale}
           type="button"
-          className={`lang-switcher__flag ${current === locale ? 'is-active' : ''}`}
+          className={`lang-switcher__btn ${current === locale ? 'is-active' : ''}`}
           aria-label={t(`language.${locale}`)}
           aria-pressed={current === locale}
           title={t(`language.${locale}`)}
+          lang={locale}
           onClick={() => void i18n.changeLanguage(locale)}
         >
-          {FLAGS[locale]}
+          <span className="lang-switcher__flag" aria-hidden="true">
+            {FLAGS[locale]}
+          </span>
+          <span className="lang-switcher__code">{SHORT[locale]}</span>
         </button>
       ))}
     </div>
