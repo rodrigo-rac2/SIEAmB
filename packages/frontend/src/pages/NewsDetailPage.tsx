@@ -1,14 +1,17 @@
-import { formatDate, type Locale, type NewsItem } from '@sieamb/shared';
+import { formatDate, type NewsItem } from '@sieamb/shared';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Markdown from 'react-markdown';
 import { Link, useParams } from 'react-router-dom';
 import { PageHeader } from '../components/shared/PageHeader';
 import { useEvent } from '../contexts/EventContext';
+import { useLocale, useLocalized } from '../hooks/useLocale';
 import { getDataProvider } from '../services';
 
 export function NewsDetailPage() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
+  const l = useLocalized();
+  const locale = useLocale();
   const { event } = useEvent();
   const { newsSlug } = useParams<{ newsSlug: string }>();
   const [item, setItem] = useState<NewsItem | null | undefined>(undefined);
@@ -19,7 +22,6 @@ export function NewsDetailPage() {
   }, [event, newsSlug]);
 
   if (!event) return null;
-  const locale = (i18n.resolvedLanguage ?? 'pt-BR') as Locale;
 
   if (item === undefined) {
     return (
@@ -45,7 +47,7 @@ export function NewsDetailPage() {
 
   return (
     <>
-      <PageHeader title={item.title}>
+      <PageHeader title={l(item.title)}>
         {item.publishedAt && (
           <p style={{ margin: 0, color: 'var(--color-ink-muted)', fontSize: 'var(--text-sm)' }}>
             {t('news.publishedAt', { date: formatDate(item.publishedAt, locale) })}
@@ -54,7 +56,7 @@ export function NewsDetailPage() {
       </PageHeader>
       <section className="section">
         <div className="container" style={{ maxWidth: '72ch' }}>
-          <Markdown>{item.bodyMd}</Markdown>
+          <Markdown>{l(item.bodyMd)}</Markdown>
           <p style={{ marginTop: 'var(--space-6)' }}>
             <Link to={`/${event.slug}/avisos`}>← {t('news.title')}</Link>
           </p>

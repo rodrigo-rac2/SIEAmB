@@ -177,7 +177,7 @@ test.describe('i18n @smoke', () => {
     ).toBeVisible();
   });
 
-  test('content from the data files follows the language: venue, dates, team groups, fee lots', async ({ browser }) => {
+  test('content from the data files follows the language: venue, dates, team, fees, areas, news', async ({ browser }) => {
     const context = await browser.newContext();
     await context.addInitScript(() => localStorage.setItem('sieamb-locale', 'en'));
     const page = await context.newPage();
@@ -194,6 +194,12 @@ test.describe('i18n @smoke', () => {
     await expect(page.getByRole('columnheader').nth(1)).toContainText('Lot 1');
     await page.goto('/2027/local');
     await expect(page.getByRole('heading', { name: 'Online event' })).toBeVisible();
+    await page.goto('/2027/areas-tematicas');
+    await expect(page.getByRole('heading', { name: 'Water Resources Management' })).toBeVisible();
+    await page.goto('/2027/avisos');
+    await page.getByRole('link', { name: 'The II SIEAmB website is live' }).first().click();
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('The II SIEAmB website is live');
+    await expect(page.getByText(/official portal/)).toBeVisible();
     await context.close();
   });
 

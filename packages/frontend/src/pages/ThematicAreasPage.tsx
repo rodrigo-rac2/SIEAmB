@@ -3,12 +3,14 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PageHeader } from '../components/shared/PageHeader';
 import { useEvent } from '../contexts/EventContext';
+import { useLocalized } from '../hooks/useLocale';
 import { getDataProvider } from '../services';
 import './ThematicAreasPage.css';
 
 export function ThematicAreasPage() {
   const { t } = useTranslation();
   const { event } = useEvent();
+  const l = useLocalized();
   const [areas, setAreas] = useState<ThematicArea[]>([]);
 
   useEffect(() => {
@@ -26,8 +28,8 @@ export function ThematicAreasPage() {
               <li key={area.id} className="areas-list__item">
                 <span className="areas-list__code">{area.code}</span>
                 <div>
-                  <h2>{area.name}</h2>
-                  {area.description && <p>{area.description}</p>}
+                  <h2>{l(area.name)}</h2>
+                  {area.description && <p>{l(area.description)}</p>}
                 </div>
               </li>
             ))}

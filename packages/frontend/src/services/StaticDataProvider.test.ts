@@ -140,7 +140,7 @@ describe('StaticDataProvider', () => {
     }
   });
 
-  it('short content strings carry every locale: venue, date labels, team groups, fee lots', async () => {
+  it('content strings carry every locale: venue, dates, team groups, fee lots, areas, news', async () => {
     const locales = ['pt-BR', 'en', 'es', 'zh-CN'] as const;
     const gaps: string[] = [];
     const check = (what: string, v: LocalizedText | null) => {
@@ -153,6 +153,15 @@ describe('StaticDataProvider', () => {
       for (const d of await provider.getImportantDates(e.id)) check(`date ${d.id}`, d.label);
       for (const m of await provider.getCommittee(e.id)) check(`role ${m.id}`, m.role);
       for (const f of await provider.getFeeTiers(e.id)) check(`lot ${f.id}`, f.label);
+      for (const a of await provider.getThematicAreas(e.id)) {
+        check(`area ${a.id} name`, a.name);
+        check(`area ${a.id} description`, a.description);
+      }
+      for (const n of await provider.getPublishedNews(e.id)) {
+        check(`news ${n.slug} title`, n.title);
+        check(`news ${n.slug} excerpt`, n.excerpt);
+        check(`news ${n.slug} body`, n.bodyMd);
+      }
     }
     expect(gaps).toEqual([]);
     const current = await provider.getCurrentEvent();

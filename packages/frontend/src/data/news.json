@@ -3,9 +3,24 @@
     "id": "n1",
     "eventId": "evt-2027",
     "slug": "site-do-ii-sieamb-no-ar",
-    "title": "Site do II SIEAmB está no ar",
-    "excerpt": "Bem-vindos ao portal oficial do II Seminário Internacional de Estudos Ambientais.",
-    "bodyMd": "É com grande satisfação que lançamos o portal oficial do **II Seminário Internacional de Estudos Ambientais (SIEAmB)**.\n\nAqui você encontrará todas as informações sobre o evento: datas importantes, áreas temáticas, regras de submissão e inscrições.\n\nAcompanhe os avisos para não perder nenhum prazo!",
+    "title": {
+      "pt-BR": "Site do II SIEAmB está no ar",
+      "en": "The II SIEAmB website is live",
+      "es": "El sitio del II SIEAmB ya está en línea",
+      "zh-CN": "第二届 SIEAmB 网站上线"
+    },
+    "excerpt": {
+      "pt-BR": "Bem-vindos ao portal oficial do II Seminário Internacional de Estudos Ambientais.",
+      "en": "Welcome to the official portal of the II International Seminar on Environmental Studies.",
+      "es": "Bienvenidos al portal oficial del II Seminario Internacional de Estudios Ambientales.",
+      "zh-CN": "欢迎访问第二届国际环境研究研讨会官方网站。"
+    },
+    "bodyMd": {
+      "pt-BR": "É com grande satisfação que lançamos o portal oficial do **II Seminário Internacional de Estudos Ambientais (SIEAmB)**.\n\nAqui você encontrará todas as informações sobre o evento: datas importantes, áreas temáticas, regras de submissão e inscrições.\n\nAcompanhe os avisos para não perder nenhum prazo!",
+      "en": "We are delighted to launch the official portal of the **II International Seminar on Environmental Studies (SIEAmB)**.\n\nHere you will find everything about the event: important dates, thematic areas, submission rules and registration.\n\nFollow the news so you do not miss any deadline!",
+      "es": "Con gran satisfacción lanzamos el portal oficial del **II Seminario Internacional de Estudios Ambientales (SIEAmB)**.\n\nAquí encontrará toda la información sobre el evento: fechas importantes, áreas temáticas, normas de envío e inscripciones.\n\n¡Siga los avisos para no perder ningún plazo!",
+      "zh-CN": "我们很高兴地推出**第二届国际环境研究研讨会（SIEAmB）**官方网站。\n\n在这里您可以找到有关会议的全部信息：重要日期、主题领域、投稿规则和报名。\n\n请关注通知，以免错过任何截止日期！"
+    },
     "coverImageUrl": null,
     "status": "PUBLISHED",
     "isPinned": true,
@@ -15,9 +30,24 @@
     "id": "n2",
     "eventId": "evt-2027",
     "slug": "pre-inscricoes-abertas",
-    "title": "Pré-inscrições abertas",
-    "excerpt": "Garanta sua participação no II SIEAmB fazendo sua pré-inscrição.",
-    "bodyMd": "As **pré-inscrições** para o II SIEAmB já estão abertas!\n\nAo se pré-inscrever, você garante prioridade nas comunicações do evento e será avisado assim que o pagamento for disponibilizado.\n\n[Faça sua pré-inscrição](../inscricoes/nova)",
+    "title": {
+      "pt-BR": "Pré-inscrições abertas",
+      "en": "Pre-registration is open",
+      "es": "Preinscripciones abiertas",
+      "zh-CN": "预报名开放"
+    },
+    "excerpt": {
+      "pt-BR": "Garanta sua participação no II SIEAmB fazendo sua pré-inscrição.",
+      "en": "Secure your place at the II SIEAmB by pre-registering.",
+      "es": "Asegure su participación en el II SIEAmB con su preinscripción.",
+      "zh-CN": "通过预报名确保您参加第二届 SIEAmB。"
+    },
+    "bodyMd": {
+      "pt-BR": "As **pré-inscrições** para o II SIEAmB já estão abertas!\n\nAo se pré-inscrever, você garante prioridade nas comunicações do evento e será avisado assim que o pagamento for disponibilizado.\n\n[Faça sua pré-inscrição](../inscricoes/nova)",
+      "en": "**Pre-registration** for the II SIEAmB is now open!\n\nBy pre-registering you get priority in the event communications and will be notified as soon as payment becomes available.\n\n[Pre-register now](../inscricoes/nova)",
+      "es": "¡Las **preinscripciones** para el II SIEAmB ya están abiertas!\n\nAl preinscribirse, usted tiene prioridad en las comunicaciones del evento y será avisado en cuanto el pago esté disponible.\n\n[Haga su preinscripción](../inscricoes/nova)",
+      "zh-CN": "第二届 SIEAmB 的**预报名**现已开放！\n\n预报名后，您将优先收到会议通知，并在开放缴费后第一时间获得提醒。\n\n[立即预报名](../inscricoes/nova)"
+    },
     "coverImageUrl": null,
     "status": "PUBLISHED",
     "isPinned": false,
