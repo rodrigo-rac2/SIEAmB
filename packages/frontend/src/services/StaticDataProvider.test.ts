@@ -75,7 +75,8 @@ describe('StaticDataProvider', () => {
 
   it('serves the general about text, the four founders and the 2025 edition text', async () => {
     const site = await provider.getSiteContent();
-    expect(site.aboutMd).toContain('Seminário Internacional de Estudos Ambientais');
+    expect(sourceText(site.aboutMd)).toContain('Seminário Internacional de Estudos Ambientais');
+    expect(localize(site.aboutMd, 'en')).toContain('International Seminar on Environmental Studies');
     const founders = await provider.getFounders();
     expect(founders.map((f) => f.name)).toEqual([
       'Dra. Viviane Farias Silva',
@@ -83,7 +84,7 @@ describe('StaticDataProvider', () => {
       'Dr. Niklas Werner Weins',
       'Ma. Najara Escarião Agripino',
     ]);
-    expect((await provider.getEventBySlug('2025'))?.aboutMd).toContain('Governança Ambiental');
+    expect(sourceText((await provider.getEventBySlug('2025'))!.aboutMd!)).toContain('Governança Ambiental');
   });
 
   it('2027 team has the three committee groups with coordinators, 2025 keeps its own plus speakers', async () => {
@@ -96,7 +97,7 @@ describe('StaticDataProvider', () => {
       'Lara Maria Almeida Ferreira',
       'Daniela Torres Teixeira',
     ]);
-    expect(team.every((m) => m.bioMd && m.bioMd.length > 40)).toBe(true);
+    expect(team.every((m) => m.bioMd && sourceText(m.bioMd).length > 40)).toBe(true);
     const first = await provider.getCommittee('evt-2025');
     expect([...new Set(first.map((m) => sourceText(m.role)))]).toEqual([
       'Equipe Organizadora',
@@ -140,7 +141,7 @@ describe('StaticDataProvider', () => {
     }
   });
 
-  it('content strings carry every locale: venue, dates, team groups, fee lots, areas, news', async () => {
+  it('content strings carry every locale: venue, dates, groups, lots, areas, news, bios, about', async () => {
     const locales = ['pt-BR', 'en', 'es', 'zh-CN'] as const;
     const gaps: string[] = [];
     const check = (what: string, v: LocalizedText | null) => {
@@ -157,12 +158,16 @@ describe('StaticDataProvider', () => {
         check(`area ${a.id} name`, a.name);
         check(`area ${a.id} description`, a.description);
       }
+      check(`about ${e.slug}`, e.aboutMd);
+      for (const m of await provider.getCommittee(e.id)) check(`bio ${m.id}`, m.bioMd);
       for (const n of await provider.getPublishedNews(e.id)) {
         check(`news ${n.slug} title`, n.title);
         check(`news ${n.slug} excerpt`, n.excerpt);
         check(`news ${n.slug} body`, n.bodyMd);
       }
     }
+    check('site about', (await provider.getSiteContent()).aboutMd);
+    for (const f of await provider.getFounders()) check(`founder ${f.id}`, f.bioMd);
     expect(gaps).toEqual([]);
     const current = await provider.getCurrentEvent();
     expect(localize(current.venue, 'en')).toBe('Online event');
