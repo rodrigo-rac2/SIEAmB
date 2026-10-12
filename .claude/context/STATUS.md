@@ -1,6 +1,6 @@
 # SIEAmB — Current Status
 
-> Last updated: 2026-10-10 (update this file whenever meaningful progress happens)
+> Last updated: 2026-10-12 (update this file whenever meaningful progress happens)
 > Daily log: `.claude/log/<year>-w<week>.md` · Backlog: GitHub Issues by milestone (commands: `/log-daily`, `/pending-items`)
 
 ## Where we are
@@ -10,18 +10,22 @@
 - **Backlog = GitHub Issues by milestone**: https://github.com/rodrigo-rac2/SIEAmB/milestones. Nearest: **Edital (23 Oct 2026)** with #11 editais page, #37 thematic areas, #7 fees, #6 slug year, #12 committee asks. Then **Registrations + submissions open (10 Nov 2026)**: #13 Supabase, #14 registration persistence + e-mail, #15 admin, #16 payment decision by 24/10, #17 submissions MVP, #18 Resend.
 - **Hard date**: registrations open on **2026-11-10** (Rodrigo's commitment to Najara; Even3 fallback for payment like 2025).
 - **Process**: `feature/<issue>-<slug>` → PR to `develop` (`Closes #N`) → release PR `develop → main`. Required checks: `quality`, `e2e-smoke`, `e2e-preview` (Playwright against the Vercel deployment), `branch-policy` (main only from develop/hotfix/*). Rodrigo admin-merges while alone; Samuel's invite still pending.
+- **Every change goes through an issue (rule since 2026-10-11)**, even one opened and closed in the same sitting; multi-topic requests are split. Closed issues are the resolution log.
+- **Translations (2026-10-12)**: UI strings were already complete; fixture content is now `LocalizedText` (`string | {pt-BR, en?, es?, zh-CN?}`, resolved by `localize()` / `useLocalized()` with pt-BR fallback). Venue, important dates, team groups, fee lots, areas, news, bios, founder affiliations and about texts carry en/es/zh-CN (machine-drafted, zh-CN under #23). A Playwright guard (`i18n-leaks.spec.ts`) fails on Portuguese showing up in the other languages. Language switcher shows flag + PT/EN/ES/中文 with full contrast.
+- **CI (2026-10-12)**: `e2e-preview` no longer depends on the Vercel GitHub app. The build emits `/version.json` with the commit SHA; the workflow runs on `pull_request` and pushes to develop/main, derives the URL from the branch, waits until it serves the head SHA, then runs Playwright. The Vercel app stopped posting deployments/checks on 12 Oct (and one build died with `git_info_fail`); builds still need it. Vercel's automatic DDoS mitigation challenged sieamb.org for ~20 min after release #92 because of our own test traffic (#93 lightened the guard).
 - **Applied on 2026-10-10 from Najara's input**: March 2027 dates, online venue (YouTube), committee schedule, About page (general text + 2025 text + idealizadores), team page per edition with photos/bios/groups (Comitê Científico, Revisores, Mídias; 2025 keeps its team + palestrantes), Equipe in the menu, editions link in the top bar.
-- **Waiting on Najara** (message sent 2026-10-10 evening): lot dates (she does them tonight), edital text, II edição thematic areas, edition year 2027 vs 2026 (decides the URL slug, #6), "dezembro" programme date, confirm the unnamed 2025 photo is Laura, Rodrigo's own team entry.
+- **Najara's 11 Oct batch applied**: Lattes/ORCID for Viviane, Thays, Laura, Luana, Lourdes; affiliations for Pollyanna, Luana, Zhou Lin, Thays; hero reads "24, 25 e 26 de março de 2027" (`formatDateList`). Slug is `/2027/` with `/2026/` redirecting; lots 10/11→01/01 and 02/01→20/03; programme "dezembro de 2026"; Laura's photo confirmed.
+- **Still waiting on the committee**: II SIEAmB presentation text (with Prof. Viviane for approval, #12), edital text (#11), 2027 thematic areas (#37), Rodrigo's own team entry (#12). **Waiting on Rodrigo**: Supabase/Resend/Mercado Pago accounts (#13, #14, #15, #16, #18), `.env.local` template ready.
 
 ## What works today
 
 - Monorepo (npm workspaces): `packages/shared`, `packages/frontend`, `packages/e2e`
-- All public pages in 4 languages (pt-BR default forced, en, es, zh-CN) — flag buttons in the topbar, preference in localStorage (`sieamb-locale`)
+- All public pages in 4 languages (pt-BR default forced, en, es, zh-CN), UI strings and fixture content alike — flag + code buttons in the topbar, preference in localStorage (`sieamb-locale`)
 - Multi-event routing: `/2027/` (current II SIEAmB, 24–26 Mar 2027, slug may become `/2027/` per #6), `/2025/` (archived recap with team, speakers, anais), root redirects to current event (`isCurrent` in `events.json`)
 - **Per-edition themes** (ADR-001): each event's optional `theme` overrides the CSS tokens for that edition only; archived editions keep their palette forever. Current-edition identity goes in the event `theme`, tokens.css is just the neutral fallback. 2025 has a demo blue theme as proof
 - Pre-registration form with CPF/passport validation (zod schemas in `@sieamb/shared`)
 - News (avisos) list + detail with markdown
-- Tests: 55 unit/integration (Vitest + RTL on the fixtures) + 38 E2E (Playwright, desktop + mobile; `@deployed` spec runs against real deployments), all green
+- Tests: Vitest + RTL on the fixtures (shared + frontend, incl. a locale-completeness test over every content string) + Playwright (desktop + mobile; smoke, `@deployed`, Portuguese-leak guard) run locally in CI and against every Vercel deployment, all green
 - SPA routing on Vercel via `rewrites` in `vercel.json`
 
 ## What is placeholder / fake
@@ -46,8 +50,8 @@ Professora Viviane (project lead) said there is **no budget for ~R$250/month**. 
 
 The backlog is GitHub Issues, ordered by milestone: https://github.com/rodrigo-rac2/SIEAmB/milestones
 
-1. **Edital (23 Oct 2026)** — #5 dates/venue/schedule, #6 slug 2027, #7 fees, #8 about, #9 idealizadores, #10 team per edition, #11 editais page, #12 committee input
-2. **Registrations + submissions open (10 Nov 2026)** — #13 Supabase, #14 registration persistence + e-mail, #15 admin, #16 payment decision (by 24 Oct), #17 submissions MVP, #18 Resend, #19 Playwright vs previews, #20 retire Pages
+1. **Edital (23 Oct 2026)** — #11 editais page (scaffold buildable now), #12 presentation text + Rodrigo's entry, #37 areas (2025 list buildable now), #58 not-found for unknown slug
+2. **Registrations + submissions open (10 Nov 2026)** — #13 Supabase, #14 registration persistence + e-mail, #15 admin, #16 payment decision (by 24 Oct), #17 submissions MVP, #18 Resend
 3. **Peer review (Jan-Mar 2027)** — #21
 4. **Event (24-26 Mar 2027)** — #22 certificates/anais; #23 zh-CN review (no milestone)
 
