@@ -204,6 +204,26 @@ test.describe('i18n @smoke', () => {
     ).toBeVisible();
   });
 
+  test('content from the data files follows the language: venue, dates, team groups, fee lots', async ({ browser }) => {
+    const context = await browser.newContext();
+    await context.addInitScript(() => localStorage.setItem('sieamb-locale', 'en'));
+    const page = await context.newPage();
+    await page.goto('/2027/');
+    await expect(page.locator('.hero__meta')).toContainText('Online event');
+    await expect(page.locator('.hero__meta')).not.toContainText('Evento online');
+    await page.goto('/2027/datas-importantes');
+    await expect(page.getByRole('row', { name: /Call for papers released/ })).toBeVisible();
+    await expect(page.getByText('Lançamento do edital')).toHaveCount(0);
+    await page.goto('/2027/organizacao');
+    await expect(page.getByRole('heading', { name: 'Scientific Committee' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Reviewers' })).toBeVisible();
+    await page.goto('/2027/inscricoes');
+    await expect(page.getByRole('columnheader').nth(1)).toContainText('Lot 1');
+    await page.goto('/2027/local');
+    await expect(page.getByRole('heading', { name: 'Online event' })).toBeVisible();
+    await context.close();
+  });
+
   test('about page shows the general text, the edition section and the founders', async ({ page }) => {
     await page.goto('/2027/o-evento');
     await expect(page.getByText(/Seminário Internacional de Estudos Ambientais do PPGEGRN/)).toBeVisible();

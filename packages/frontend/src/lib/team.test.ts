@@ -29,6 +29,14 @@ describe('groupByRole', () => {
     expect(groups[1]?.[1].map((m) => m.name)).toEqual(['B', 'A']);
   });
 
+  it('groups a translated role with its plain pt-BR twin, keeping the map as the group label', () => {
+    const mapped = { ...member('3', 'C', 'Comitê Científico', 3), role: { 'pt-BR': 'Comitê Científico', en: 'Scientific Committee' } };
+    const groups = groupByRole([mapped, member('1', 'A', 'Comitê Científico', 1)]);
+    expect(groups).toHaveLength(1);
+    expect(groups[0]?.[0]).toEqual({ 'pt-BR': 'Comitê Científico', en: 'Scientific Committee' });
+    expect(groups[0]?.[1].map((m) => m.name)).toEqual(['C', 'A']);
+  });
+
   it('returns no groups for an empty list', () => {
     expect(groupByRole([])).toEqual([]);
   });

@@ -2,7 +2,12 @@
   {
     "id": "d1",
     "eventId": "evt-2027",
-    "label": "Lançamento do edital",
+    "label": {
+      "pt-BR": "Lançamento do edital",
+      "en": "Call for papers released",
+      "es": "Publicación de la convocatoria",
+      "zh-CN": "征稿通知发布"
+    },
     "date": "2026-10-23T00:00:00-03:00",
     "isExtended": false,
     "sortOrder": 1
@@ -10,7 +15,12 @@
   {
     "id": "d2",
     "eventId": "evt-2027",
-    "label": "Abertura das inscrições (1º lote)",
+    "label": {
+      "pt-BR": "Abertura das inscrições (1º lote)",
+      "en": "Registration opens (lot 1)",
+      "es": "Apertura de inscripciones (1er lote)",
+      "zh-CN": "报名开始（第一批）"
+    },
     "date": "2026-11-10T00:00:00-03:00",
     "isExtended": false,
     "sortOrder": 2
@@ -18,7 +28,12 @@
   {
     "id": "d3",
     "eventId": "evt-2027",
-    "label": "Início das submissões de trabalhos",
+    "label": {
+      "pt-BR": "Início das submissões de trabalhos",
+      "en": "Paper submissions open",
+      "es": "Inicio de la recepción de trabajos",
+      "zh-CN": "论文提交开始"
+    },
     "date": "2026-11-15T00:00:00-03:00",
     "isExtended": false,
     "sortOrder": 3
@@ -26,7 +41,12 @@
   {
     "id": "d4",
     "eventId": "evt-2027",
-    "label": "Divulgação da programação",
+    "label": {
+      "pt-BR": "Divulgação da programação",
+      "en": "Programme announced",
+      "es": "Publicación del programa",
+      "zh-CN": "会议日程公布"
+    },
     "date": "2026-12-01T00:00:00-03:00",
     "isExtended": false,
     "monthOnly": true,
@@ -35,7 +55,12 @@
   {
     "id": "d5",
     "eventId": "evt-2027",
-    "label": "Encerramento das submissões",
+    "label": {
+      "pt-BR": "Encerramento das submissões",
+      "en": "Submission deadline",
+      "es": "Cierre de la recepción de trabajos",
+      "zh-CN": "论文提交截止"
+    },
     "date": "2027-01-18T23:59:00-03:00",
     "isExtended": false,
     "sortOrder": 5
@@ -43,7 +68,12 @@
   {
     "id": "d6",
     "eventId": "evt-2027",
-    "label": "Divulgação preliminar dos resultados",
+    "label": {
+      "pt-BR": "Divulgação preliminar dos resultados",
+      "en": "Preliminary results announced",
+      "es": "Publicación preliminar de resultados",
+      "zh-CN": "初步评审结果公布"
+    },
     "date": "2027-02-22T00:00:00-03:00",
     "isExtended": false,
     "sortOrder": 6
@@ -51,7 +81,12 @@
   {
     "id": "d7",
     "eventId": "evt-2027",
-    "label": "Divulgação definitiva dos resultados",
+    "label": {
+      "pt-BR": "Divulgação definitiva dos resultados",
+      "en": "Final results announced",
+      "es": "Publicación definitiva de resultados",
+      "zh-CN": "最终评审结果公布"
+    },
     "date": "2027-03-12T00:00:00-03:00",
     "isExtended": false,
     "sortOrder": 7
@@ -59,7 +94,12 @@
   {
     "id": "d8",
     "eventId": "evt-2027",
-    "label": "Prazo final de inscrição para autores",
+    "label": {
+      "pt-BR": "Prazo final de inscrição para autores",
+      "en": "Registration deadline for authors",
+      "es": "Plazo final de inscripción para autores",
+      "zh-CN": "作者报名截止"
+    },
     "date": "2027-03-15T23:59:00-03:00",
     "isExtended": false,
     "sortOrder": 8
@@ -67,7 +107,12 @@
   {
     "id": "d9",
     "eventId": "evt-2027",
-    "label": "Prazo final de inscrição para ouvintes",
+    "label": {
+      "pt-BR": "Prazo final de inscrição para ouvintes",
+      "en": "Registration deadline for attendees",
+      "es": "Plazo final de inscripción para oyentes",
+      "zh-CN": "听众报名截止"
+    },
     "date": "2027-03-20T23:59:00-03:00",
     "isExtended": false,
     "sortOrder": 9
@@ -75,7 +120,12 @@
   {
     "id": "d10",
     "eventId": "evt-2027",
-    "label": "Realização do II SIEAmB (online)",
+    "label": {
+      "pt-BR": "Realização do II SIEAmB (online)",
+      "en": "II SIEAmB takes place (online)",
+      "es": "Realización del II SIEAmB (en línea)",
+      "zh-CN": "第二届 SIEAmB 举办（线上）"
+    },
     "date": "2027-03-24T08:00:00-03:00",
     "isExtended": false,
     "sortOrder": 10
@@ -83,7 +133,12 @@
   {
     "id": "d25-1",
     "eventId": "evt-2025",
-    "label": "Período de submissão de trabalhos",
+    "label": {
+      "pt-BR": "Período de submissão de trabalhos",
+      "en": "Paper submission period",
+      "es": "Período de recepción de trabajos",
+      "zh-CN": "论文提交期"
+    },
     "date": "2025-09-26T23:59:00-03:00",
     "isExtended": false,
     "sortOrder": 1
@@ -91,7 +146,12 @@
   {
     "id": "d25-2",
     "eventId": "evt-2025",
-    "label": "Divulgação dos resultados",
+    "label": {
+      "pt-BR": "Divulgação dos resultados",
+      "en": "Results announced",
+      "es": "Publicación de resultados",
+      "zh-CN": "评审结果公布"
+    },
     "date": "2025-10-13T00:00:00-03:00",
     "isExtended": false,
     "sortOrder": 2
@@ -99,7 +159,12 @@
   {
     "id": "d25-3",
     "eventId": "evt-2025",
-    "label": "Prazo de inscrição",
+    "label": {
+      "pt-BR": "Prazo de inscrição",
+      "en": "Registration deadline",
+      "es": "Plazo de inscripción",
+      "zh-CN": "报名截止"
+    },
     "date": "2025-10-20T23:59:00-03:00",
     "isExtended": false,
     "sortOrder": 3
@@ -107,7 +172,12 @@
   {
     "id": "d25-4",
     "eventId": "evt-2025",
-    "label": "Realização do evento (online)",
+    "label": {
+      "pt-BR": "Realização do evento (online)",
+      "en": "Event takes place (online)",
+      "es": "Realización del evento (en línea)",
+      "zh-CN": "活动举办（线上）"
+    },
     "date": "2025-10-22T08:00:00-03:00",
     "isExtended": false,
     "sortOrder": 4

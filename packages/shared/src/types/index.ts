@@ -54,7 +54,7 @@ export interface EventSummary {
   endsAt: string; // ISO
   /** Presentation text of this edition (markdown, pt-BR). Shown on the About page under the general text. */
   aboutMd: string | null;
-  venue: string | null;
+  venue: LocalizedText | null;
   /** True for remote editions: the venue page shows the streaming link instead of an address. */
   isOnline: boolean;
   /** Where the venue text points: streaming channel for online editions, map link otherwise. */
@@ -79,7 +79,7 @@ export interface EventSettings {
 export interface ImportantDate {
   id: string;
   eventId: string;
-  label: string;
+  label: LocalizedText;
   date: string; // ISO
   isExtended: boolean;
   /** The committee only fixed the month: show \"dezembro de 2026\" instead of a day. */
@@ -120,8 +120,8 @@ export interface CommitteeMember {
   id: string;
   eventId: string;
   name: string;
-  /** Group label shown as the section heading (pt-BR content), e.g. "Comitê Científico". */
-  role: string;
+  /** Group label shown as the section heading, e.g. "Comitê Científico". Grouping keys on the pt-BR text. */
+  role: LocalizedText;
   /** Flagged members get the coordination badge inside their group. */
   isCoordinator: boolean;
   institution: string | null;
@@ -160,7 +160,7 @@ export interface FeeTier {
   eventId: string;
   category: ParticipantCategory;
   modality: Modality;
-  label: string;
+  label: LocalizedText;
   amountCents: number;
   validFrom: string; // ISO
   validUntil: string; // ISO
