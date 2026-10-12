@@ -167,7 +167,10 @@ describe('StaticDataProvider', () => {
       }
     }
     check('site about', (await provider.getSiteContent()).aboutMd);
-    for (const f of await provider.getFounders()) check(`founder ${f.id}`, f.bioMd);
+    for (const f of await provider.getFounders()) {
+      check(`founder ${f.id} bio`, f.bioMd);
+      check(`founder ${f.id} affiliation`, f.affiliation);
+    }
     expect(gaps).toEqual([]);
     const current = await provider.getCurrentEvent();
     expect(localize(current.venue, 'en')).toBe('Online event');
