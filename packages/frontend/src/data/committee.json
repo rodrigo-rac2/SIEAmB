@@ -115,29 +115,6 @@
     "sortOrder": 5
   },
   {
-    "id": "c27-rev-niklas",
-    "eventId": "evt-2027",
-    "name": "Dr. Niklas Werner Weins",
-    "role": {
-      "pt-BR": "Equipe de Revisores",
-      "en": "Reviewers",
-      "es": "Equipo de Revisores",
-      "zh-CN": "审稿团队"
-    },
-    "isCoordinator": false,
-    "institution": "Xi'an Jiaotong-Liverpool University",
-    "bioMd": {
-      "pt-BR": "Professor assistente no Departamento de Estudos Internacionais da Xi'an Jiaotong-Liverpool University, na China. Doutor em Ambiente e Sociedade pela Universidade Estadual de Campinas (UNICAMP), foi bolsista FAPESP no Environmental Policy Group da Universidade de Wageningen, na Holanda. Sua pesquisa concentra-se na economia política das questões ambientais, incluindo biodiversidade, conservação e mudanças climáticas, além das relações da China com o Sul Global em instituições bilaterais e multilaterais.",
-      "en": "Assistant Professor in the Department of International Studies at Xi'an Jiaotong-Liverpool University, China. PhD in Environment and Society from the University of Campinas (UNICAMP), and former FAPESP fellow in the Environmental Policy Group at Wageningen University, the Netherlands. His research focuses on the political economy of environmental issues, including biodiversity, conservation and climate change, as well as China's relations with the Global South in bilateral and multilateral institutions.",
-      "es": "Profesor asistente en el Departamento de Estudios Internacionales de la Xi'an Jiaotong-Liverpool University, en China. Doctor en Ambiente y Sociedad por la Universidad Estatal de Campinas (UNICAMP), fue becario FAPESP en el Environmental Policy Group de la Universidad de Wageningen, en los Países Bajos. Su investigación se centra en la economía política de las cuestiones ambientales, incluyendo biodiversidad, conservación y cambio climático, además de las relaciones de China con el Sur Global en instituciones bilaterales y multilaterales.",
-      "zh-CN": "西交利物浦大学国际研究系助理教授。坎皮纳斯州立大学（UNICAMP）环境与社会博士，曾获 FAPESP 资助在荷兰瓦赫宁根大学环境政策研究组访学。研究聚焦环境议题的政治经济学，包括生物多样性、生态保护与气候变化，以及中国在双边与多边机制中与全球南方的关系。"
-    },
-    "photoUrl": "team/niklas-weins.jpg",
-    "lattesUrl": "http://lattes.cnpq.br/6302951700904457",
-    "orcidUrl": "https://orcid.org/0000-0003-1345-6720",
-    "sortOrder": 6
-  },
-  {
     "id": "c27-rev-zhoulin",
     "eventId": "evt-2027",
     "name": "Ma. Zhou Lin",
