@@ -1,0 +1,31 @@
+name: DB keep-alive
+
+# Supabase pauses free projects after a week without activity. A query every
+# three days on both projects keeps prod and dev awake (#13).
+on:
+  schedule:
+    - cron: '30 6 */3 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: prod
+            secret: SUPABASE_PROD_DIRECT_URL
+          - name: dev
+            secret: SUPABASE_DEV_DIRECT_URL
+    steps:
+      - name: Query ${{ matrix.name }}
+        env:
+          DB_URL: ${{ secrets[matrix.secret] }}
+        run: |
+          sudo apt-get install -y -qq postgresql-client >/dev/null
+          psql "$DB_URL" -At -c "select 'awake ' || now()"

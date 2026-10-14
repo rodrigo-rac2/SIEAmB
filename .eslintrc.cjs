@@ -21,5 +21,5 @@ module.exports = {
     'react/prop-types': 'off',
     '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
   },
-  ignorePatterns: ['dist', 'node_modules', 'coverage', 'playwright-report'],
+  ignorePatterns: ['dist', 'node_modules', 'coverage', 'playwright-report', 'packages/db/src/generated'],
 };
