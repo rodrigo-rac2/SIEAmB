@@ -106,5 +106,148 @@
       "zh-CN": "地理信息技术、遥感及应用于环境研究的创新。"
     },
     "sortOrder": 6
+  },
+  {
+    "id": "a2025-01",
+    "eventId": "evt-2025",
+    "code": "AT-01",
+    "name": {
+      "pt-BR": "Governança e Políticas Públicas",
+      "en": "Governance and Public Policy",
+      "es": "Gobernanza y Políticas Públicas",
+      "zh-CN": "治理与公共政策"
+    },
+    "description": null,
+    "sortOrder": 1
+  },
+  {
+    "id": "a2025-02",
+    "eventId": "evt-2025",
+    "code": "AT-02",
+    "name": {
+      "pt-BR": "Diplomacia e Meio Ambiente",
+      "en": "Diplomacy and the Environment",
+      "es": "Diplomacia y Medio Ambiente",
+      "zh-CN": "外交与环境"
+    },
+    "description": null,
+    "sortOrder": 2
+  },
+  {
+    "id": "a2025-03",
+    "eventId": "evt-2025",
+    "code": "AT-03",
+    "name": {
+      "pt-BR": "Filosofia Ambiental",
+      "en": "Environmental Philosophy",
+      "es": "Filosofía Ambiental",
+      "zh-CN": "环境哲学"
+    },
+    "description": null,
+    "sortOrder": 3
+  },
+  {
+    "id": "a2025-04",
+    "eventId": "evt-2025",
+    "code": "AT-04",
+    "name": {
+      "pt-BR": "Educação Ambiental",
+      "en": "Environmental Education",
+      "es": "Educación Ambiental",
+      "zh-CN": "环境教育"
+    },
+    "description": null,
+    "sortOrder": 4
+  },
+  {
+    "id": "a2025-05",
+    "eventId": "evt-2025",
+    "code": "AT-05",
+    "name": {
+      "pt-BR": "Economia e Desenvolvimento Sustentável",
+      "en": "Economics and Sustainable Development",
+      "es": "Economía y Desarrollo Sostenible",
+      "zh-CN": "经济与可持续发展"
+    },
+    "description": null,
+    "sortOrder": 5
+  },
+  {
+    "id": "a2025-06",
+    "eventId": "evt-2025",
+    "code": "AT-06",
+    "name": {
+      "pt-BR": "Agricultura e Desenvolvimento Rural",
+      "en": "Agriculture and Rural Development",
+      "es": "Agricultura y Desarrollo Rural",
+      "zh-CN": "农业与农村发展"
+    },
+    "description": null,
+    "sortOrder": 6
+  },
+  {
+    "id": "a2025-07",
+    "eventId": "evt-2025",
+    "code": "AT-07",
+    "name": {
+      "pt-BR": "História Ambiental",
+      "en": "Environmental History",
+      "es": "Historia Ambiental",
+      "zh-CN": "环境史"
+    },
+    "description": null,
+    "sortOrder": 7
+  },
+  {
+    "id": "a2025-08",
+    "eventId": "evt-2025",
+    "code": "AT-08",
+    "name": {
+      "pt-BR": "Desigualdades Sociais e Emergência Climática",
+      "en": "Social Inequalities and the Climate Emergency",
+      "es": "Desigualdades Sociales y Emergencia Climática",
+      "zh-CN": "社会不平等与气候紧急状态"
+    },
+    "description": null,
+    "sortOrder": 8
+  },
+  {
+    "id": "a2025-09",
+    "eventId": "evt-2025",
+    "code": "AT-09",
+    "name": {
+      "pt-BR": "Tecnologia e Inteligência Artificial Aplicadas ao Meio Ambiente",
+      "en": "Technology and Artificial Intelligence Applied to the Environment",
+      "es": "Tecnología e Inteligencia Artificial Aplicadas al Medio Ambiente",
+      "zh-CN": "应用于环境的技术与人工智能"
+    },
+    "description": null,
+    "sortOrder": 9
+  },
+  {
+    "id": "a2025-10",
+    "eventId": "evt-2025",
+    "code": "AT-10",
+    "name": {
+      "pt-BR": "Direito Ambiental e Climático",
+      "en": "Environmental and Climate Law",
+      "es": "Derecho Ambiental y Climático",
+      "zh-CN": "环境与气候法"
+    },
+    "description": null,
+    "sortOrder": 10
+  },
+  {
+    "id": "a2025-11",
+    "eventId": "evt-2025",
+    "code": "AT-11",
+    "name": {
+      "pt-BR": "Saúde e Meio Ambiente",
+      "en": "Health and the Environment",
+      "es": "Salud y Medio Ambiente",
+      "zh-CN": "健康与环境"
+    },
+    "description": null,
+    "sortOrder": 11
   }
 ]
