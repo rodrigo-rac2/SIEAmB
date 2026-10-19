@@ -1,10 +1,13 @@
 name: DB keep-alive
 
-# Supabase pauses free projects after a week without activity. A query every
-# three days on both projects keeps prod and dev awake (#13).
+# Supabase pauses free projects after a week without activity. A plain SQL
+# query through the pooler does not count (sieamb-dev was paused on 18 Oct
+# while the pings were green), so this hits the REST API with the anon key
+# once a day on both projects (#13, #112). A paused project answers with
+# something other than 200 and turns the run red.
 on:
   schedule:
-    - cron: '30 6 */3 * *'
+    - cron: '30 6 * * *'
   workflow_dispatch:
 
 permissions:
@@ -19,13 +22,22 @@ jobs:
       matrix:
         include:
           - name: prod
-            secret: SUPABASE_PROD_DIRECT_URL
+            url: SUPABASE_PROD_URL
+            key: SUPABASE_PROD_ANON_KEY
           - name: dev
-            secret: SUPABASE_DEV_DIRECT_URL
+            url: SUPABASE_DEV_URL
+            key: SUPABASE_DEV_ANON_KEY
     steps:
       - name: Query ${{ matrix.name }}
         env:
-          DB_URL: ${{ secrets[matrix.secret] }}
+          SUPABASE_URL: ${{ secrets[matrix.url] }}
+          ANON_KEY: ${{ secrets[matrix.key] }}
         run: |
-          sudo apt-get install -y -qq postgresql-client >/dev/null
-          psql "$DB_URL" -At -c "select 'awake ' || now()"
+          status=$(curl -sS -o body.json -w '%{http_code}' \
+            "$SUPABASE_URL/rest/v1/events?select=id&limit=1" \
+            -H "apikey: $ANON_KEY" -H "Authorization: Bearer $ANON_KEY")
+          echo "${{ matrix.name }} answered HTTP $status"
+          if [ "$status" != "200" ]; then
+            cat body.json
+            exit 1
+          fi
