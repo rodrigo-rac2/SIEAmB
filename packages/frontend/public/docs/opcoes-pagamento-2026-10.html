@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Opções de pagamento para o II SIEAmB</title>
+<style>
+  :root { --ink:#1f2a24; --muted:#5c6b63; --line:#d9e2dc; --soft:#f3f7f4; --accent:#2f6b4f; --warn:#8a5a00; --warn-bg:#fff7e6; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color:var(--ink); background:#fff; }
+  main { max-width:900px; margin:0 auto; padding:32px 16px 64px; }
+  h1 { font-size:1.9rem; line-height:1.2; margin:0 0 4px; color:var(--accent); }
+  h2 { font-size:1.25rem; margin:36px 0 10px; }
+  .meta { color:var(--muted); margin:0 0 24px; font-size:.95rem; }
+  .box { background:var(--soft); border-left:4px solid var(--accent); padding:14px 16px; border-radius:4px; margin:16px 0; }
+  .warn { background:var(--warn-bg); border-left-color:var(--warn); }
+  table { width:100%; border-collapse:collapse; font-size:.92rem; margin:12px 0; }
+  th, td { border:1px solid var(--line); padding:8px 10px; text-align:left; vertical-align:top; }
+  th { background:var(--soft); }
+  tbody tr:first-child td { font-weight:600; }
+  .wrap { overflow-x:auto; }
+  ul { padding-left:22px; } li { margin:6px 0; }
+  a { color:var(--accent); }
+  .sources { font-size:.9rem; color:var(--muted); }
+  @media print { main { padding:0; } .wrap { overflow:visible; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Opções de pagamento para as inscrições do II SIEAmB</h1>
+  <p class="meta">Levantamento feito em 20 de outubro de 2026, em resposta à pergunta da Profa. Viviane sobre alternativas ao Mercado Pago. Preparado por Rodrigo Alves Costa.</p>
+
+  <div class="box">
+    <strong>Resumo.</strong> A recomendação é manter o Mercado Pago como meio principal. O Asaas é a única alternativa que vale uma segunda análise, por ser mais barato no cartão e no boleto. O Even3 fica como plano B caso a conta da Empresa Júnior não esteja utilizável até 24/10, mas custa cerca de dez vezes mais por inscrição do que o Pix do Mercado Pago.
+  </div>
+
+  <h2>Premissas</h2>
+  <ul>
+    <li>A conta recebedora é da Empresa Júnior de Engenharia Florestal da UFCG (decisão do comitê em 19/10/2026). O dinheiro das inscrições entra direto na conta dela.</li>
+    <li>Não há orçamento para mensalidade. Só entram opções que cobram por transação.</li>
+    <li>O público paga majoritariamente com Pix. Cartão e boleto são secundários.</li>
+    <li>O site sieamb.org continua sendo a porta de entrada da inscrição. O meio de pagamento precisa conversar com ele (checkout hospedado e aviso automático de pagamento confirmado).</li>
+  </ul>
+
+  <h2>Comparativo de custos</h2>
+  <p>Valores aproximados para uma inscrição de R$ 100, sem mensalidade em nenhuma opção. As taxas vêm de comparativos publicados em outubro de 2026 e precisam ser confirmadas no site de cada empresa antes de qualquer contratação.</p>
+  <div class="wrap">
+  <table>
+    <thead>
+      <tr><th>Opção</th><th>Pix</th><th>Boleto</th><th>Cartão à vista</th><th>Prazo de repasse</th><th>Encaixe com o site</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Mercado Pago (Checkout Pro / link)</td><td>0,99%</td><td>R$ 3,49</td><td>3,99% (30 dias) a 4,98% (na hora)</td><td>Pix na hora</td><td>Já previsto no projeto, checkout hospedado e avisos automáticos</td></tr>
+      <tr><td>Asaas</td><td>R$ 1,99 fixo</td><td>R$ 1,99</td><td>2,99% + R$ 0,49</td><td>Cartão em 32 dias</td><td>Boa integração, mais barato no cartão e no boleto</td></tr>
+      <tr><td>PagBank</td><td>0,99%</td><td>R$ 3,99</td><td>3,19% (30 dias) a 4,99%</td><td>Semelhante ao Mercado Pago</td><td>Mesmo formato do Mercado Pago, sem vantagem</td></tr>
+      <tr><td>Stripe</td><td>1,19%, liberado só por convite para contas novas no Brasil</td><td>R$ 3,45</td><td>3,99% + R$ 0,39</td><td>2 dias</td><td>Pix não garantido, o que elimina a opção</td></tr>
+      <tr><td>Efí (antiga Gerencianet)</td><td>1,19% via API</td><td>cerca de R$ 1,99</td><td>cerca de 2,99%</td><td>Variável</td><td>Exige certificado digital e mais trabalho técnico, sem ganho</td></tr>
+      <tr><td>InfinitePay</td><td>0%</td><td>Não oferece</td><td>4,20% (1 dia) a 5,49%</td><td>1 dia</td><td>Só link de pagamento, sem boleto, fraco para inscrição integrada</td></tr>
+      <tr><td>Even3 / Doity (plataformas de evento)</td><td colspan="3">10% sobre cada inscrição paga, todos os meios incluídos</td><td>10 a 14 dias</td><td>Nenhum trabalho técnico, mas a inscrição sai do nosso site</td></tr>
+      <tr><td>Sympla</td><td colspan="3">10%, mínimo de R$ 3,99 por ingresso</td><td>Após o evento</td><td>Voltada a ingressos de consumo, não a eventos acadêmicos</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2>Por que manter o Mercado Pago</h2>
+  <ul>
+    <li><strong>Pix é como este público paga</strong>, e o Pix do Mercado Pago é a opção percentual mais barata, com o dinheiro caindo na hora na conta da Empresa Júnior.</li>
+    <li><strong>A integração já está desenhada</strong> em torno do Checkout Pro. Trocar agora consome tempo que não temos antes da abertura das inscrições em 10/11.</li>
+    <li><strong>O Asaas só ganha no cartão e no boleto</strong>, por volta de R$ 1,00 a R$ 1,50 por pagamento, e segura o dinheiro do cartão por um mês.</li>
+    <li><strong>O Even3 é a única alternativa real</strong> se a conta da Empresa Júnior não estiver utilizável até 24/10. Custa ao evento cerca de R$ 10 por inscrição de R$ 100, contra cerca de R$ 1 no Mercado Pago.</li>
+  </ul>
+
+  <h2>Pontos de atenção</h2>
+  <div class="box warn">
+    <ul style="margin:0">
+      <li>As páginas oficiais de tarifas não permitem consulta automatizada, então os números acima vêm de comparativos de terceiros de outubro de 2026. Antes de fechar, confirmar a tabela vigente no site da empresa escolhida.</li>
+      <li>Parcelamento no cartão tem custo adicional em todas as opções. Se o comitê quiser oferecer parcelamento, vale decidir se o custo fica com o evento ou com o participante.</li>
+      <li>Caso a dúvida seja sobre a Empresa Júnior ser a titular da conta, isso é uma decisão de governança do comitê, independente do meio de pagamento escolhido.</li>
+    </ul>
+  </div>
+
+  <h2>Próximos passos</h2>
+  <ul>
+    <li>Confirmar com o comitê se a recomendação (Mercado Pago, Asaas como alternativa, Even3 como plano B) está aprovada.</li>
+    <li>Abrir a conta empresarial do Mercado Pago em nome da Empresa Júnior e ligar ao site.</li>
+    <li>Registrar a decisão no acompanhamento do projeto (issue #16 do repositório).</li>
+  </ul>
+
+  <h2>Fontes consultadas</h2>
+  <ul class="sources">
+    <li><a href="https://sellsync.ai/pt/blog/taxa-mercado-pago-2026-guia-completo/">Taxas Mercado Pago 2026 (SellSync)</a></li>
+    <li><a href="https://www.mercadopago.com.br/blog/links-pagamento-o-que-sao-vantagens">Mercado Pago, links de pagamento</a></li>
+    <li><a href="https://pagbank.com.br/para-seu-negocio/online/link-de-pagamento">PagBank, link de pagamento</a></li>
+    <li><a href="https://www.asaas.com/link-pagamento">Asaas, link de pagamento</a></li>
+    <li><a href="https://quasa.io/pt/media/asaas-ou-iugu-tarifa-publicada-vence-ate-o-volume-pedir-proposta">Asaas e iugu, tarifas públicas (QUASA, out/2026)</a></li>
+    <li><a href="https://stripe.com/en-br/pricing">Stripe Brasil, preços</a></li>
+    <li><a href="https://quasa.io/pt/media/stripe-ou-mercado-pago-o-prazo-de-recebimento-vira-parte-da-taxa">Stripe ou Mercado Pago (QUASA, out/2026)</a></li>
+    <li><a href="https://sejaefi.com.br/central-de-ajuda/tarifas-e-prazos">Efí, tarifas e prazos</a></li>
+    <li><a href="https://www.infinitepay.io/link-de-pagamento">InfinitePay, link de pagamento</a></li>
+    <li><a href="https://plataforma.even3.com.br/como-funciona/pagamentos/">Even3, pagamentos</a></li>
+    <li><a href="https://ajuda.doity.com.br/pt-br/article/usar-a-doity-custa-quanto-x7jqwv/">Doity, quanto custa</a></li>
+    <li><a href="https://produtores.sympla.com.br/quanto-custa/">Sympla, quanto custa</a></li>
+    <li><a href="https://heropay.ai/guias/taxas-de-pagamento">Tabela de taxas de gateways no Brasil 2026 (HeroPay)</a></li>
+  </ul>
+</main>
+</body>
+</html>
