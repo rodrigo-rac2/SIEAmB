@@ -207,6 +207,121 @@
     "sortOrder": 10
   },
   {
+    "id": "c27-rev-marconi",
+    "eventId": "evt-2027",
+    "name": "Dr. Marconi Vieira da Silva",
+    "role": {
+      "pt-BR": "Equipe de Revisores",
+      "en": "Reviewers",
+      "es": "Equipo de Revisores",
+      "zh-CN": "审稿团队"
+    },
+    "isCoordinator": false,
+    "institution": "TRF1 / SEMMA Eunápolis",
+    "bioMd": {
+      "pt-BR": "Doutor em Engenharia e Gestão de Recursos Naturais (PPGEGRN/UFCG, 2026), Mestre em Ciências e Tecnologias Ambientais (UFSB, 2021), especialista em Engenharia Sanitária e Ambiental (UFMG, 2005), Engenheiro Ambiental e Engenheiro de Segurança do Trabalho. Sua pesquisa concentra-se na gestão de resíduos sólidos urbanos, com ênfase em caracterização gravimétrica e análise de dados composicionais. É professor da Faculdade Pitágoras de Medicina de Eunápolis e Subsecretário Municipal de Meio Ambiente de Eunápolis (BA). Atua ainda como perito judicial em matéria ambiental no TRF1 desde 2013 e como perito trabalhista no TRT-5.",
+      "en": "PhD in Engineering and Natural Resource Management (PPGEGRN/UFCG, 2026), Master's in Environmental Sciences and Technologies (UFSB, 2021), specialist in Sanitary and Environmental Engineering (UFMG, 2005), Environmental Engineer and Occupational Safety Engineer. His research focuses on municipal solid waste management, with emphasis on gravimetric characterisation and compositional data analysis. He teaches at the Pitágoras Medical School in Eunápolis and is Deputy Municipal Secretary for the Environment of Eunápolis (Bahia). He has also served as a court-appointed environmental expert at the TRF1 since 2013 and as a labour expert at the TRT-5.",
+      "es": "Doctor en Ingeniería y Gestión de Recursos Naturales (PPGEGRN/UFCG, 2026), Magíster en Ciencias y Tecnologías Ambientales (UFSB, 2021), especialista en Ingeniería Sanitaria y Ambiental (UFMG, 2005), Ingeniero Ambiental e Ingeniero de Seguridad del Trabajo. Su investigación se centra en la gestión de residuos sólidos urbanos, con énfasis en caracterización gravimétrica y análisis de datos composicionales. Es profesor de la Facultad Pitágoras de Medicina de Eunápolis y Subsecretario Municipal de Medio Ambiente de Eunápolis (Bahía). Actúa además como perito judicial en materia ambiental en el TRF1 desde 2013 y como perito laboral en el TRT-5.",
+      "zh-CN": "工程与自然资源管理博士（PPGEGRN/UFCG，2026），环境科学与技术硕士（UFSB，2021），卫生与环境工程专科（UFMG，2005），环境工程师及职业安全工程师。研究方向为城市固体废弃物管理，侧重于重量法表征与成分数据分析。现任埃乌纳波利斯皮塔哥拉斯医学院教师，并担任埃乌纳波利斯市（巴伊亚州）环境副秘书。自2013年起担任TRF1环境事务司法鉴定专家，并担任TRT-5劳动鉴定专家。"
+    },
+    "photoUrl": "team/marconi-silva.jpg",
+    "lattesUrl": "http://lattes.cnpq.br/4057183852375642",
+    "orcidUrl": null,
+    "sortOrder": 11
+  },
+  {
+    "id": "c27-rev-alyne",
+    "eventId": "evt-2027",
+    "name": "Alyne de Lucena Santos",
+    "role": {
+      "pt-BR": "Equipe de Revisores",
+      "en": "Reviewers",
+      "es": "Equipo de Revisores",
+      "zh-CN": "审稿团队"
+    },
+    "isCoordinator": false,
+    "institution": "PPGCF/UFCG",
+    "bioMd": {
+      "pt-BR": "Engenheira Florestal pela Universidade Federal de Campina Grande (UFCG) e mestranda no Programa de Pós-Graduação em Ciências Florestais (PPGCF/UFCG). Desenvolve pesquisas nas áreas de restauração ecológica, manejo florestal sustentável, fitossociologia, arborização urbana e indicadores de qualidade ambiental e socioambiental.",
+      "en": "Forest Engineer from the Federal University of Campina Grande (UFCG) and Master's student in the Graduate Programme in Forest Sciences (PPGCF/UFCG). Her research covers ecological restoration, sustainable forest management, phytosociology, urban forestry and environmental and socio-environmental quality indicators.",
+      "es": "Ingeniera Forestal por la Universidad Federal de Campina Grande (UFCG) y estudiante de maestría en el Programa de Posgrado en Ciencias Forestales (PPGCF/UFCG). Desarrolla investigaciones en restauración ecológica, manejo forestal sostenible, fitosociología, arborización urbana e indicadores de calidad ambiental y socioambiental.",
+      "zh-CN": "坎皮纳格兰德联邦大学（UFCG）森林工程师，森林科学研究生项目（PPGCF/UFCG）硕士研究生。研究方向包括生态修复、可持续森林经营、植物社会学、城市绿化以及环境与社会环境质量指标。"
+    },
+    "photoUrl": "team/alyne-santos.jpg",
+    "lattesUrl": "http://lattes.cnpq.br/2453055435787158",
+    "orcidUrl": "https://orcid.org/0009-0009-0002-9288",
+    "sortOrder": 12
+  },
+  {
+    "id": "c27-rev-ellora",
+    "eventId": "evt-2027",
+    "name": "Ellora Pietra de Sousa Silva",
+    "role": {
+      "pt-BR": "Equipe de Revisores",
+      "en": "Reviewers",
+      "es": "Equipo de Revisores",
+      "zh-CN": "审稿团队"
+    },
+    "isCoordinator": false,
+    "institution": "PPGCF/UFCG",
+    "bioMd": {
+      "pt-BR": "Engenheira Florestal pela Universidade Federal de Campina Grande (UFCG) e mestranda no Programa de Pós-Graduação em Ciências Florestais (PPGCF/UFCG). Pesquisa em manejo florestal sustentável, fitossociologia e arborização urbana.",
+      "en": "Forest Engineer from the Federal University of Campina Grande (UFCG) and Master's student in the Graduate Programme in Forest Sciences (PPGCF/UFCG). Research in sustainable forest management, phytosociology and urban forestry.",
+      "es": "Ingeniera Forestal por la Universidad Federal de Campina Grande (UFCG) y estudiante de maestría en el Programa de Posgrado en Ciencias Forestales (PPGCF/UFCG). Investiga en manejo forestal sostenible, fitosociología y arborización urbana.",
+      "zh-CN": "坎皮纳格兰德联邦大学（UFCG）森林工程师，森林科学研究生项目（PPGCF/UFCG）硕士研究生。研究方向为可持续森林经营、植物社会学与城市绿化。"
+    },
+    "photoUrl": "team/ellora-silva.jpg",
+    "lattesUrl": "http://lattes.cnpq.br/3593383486848318",
+    "orcidUrl": "https://orcid.org/0009-0002-9453-3475",
+    "sortOrder": 13
+  },
+  {
+    "id": "c27-rev-mayra",
+    "eventId": "evt-2027",
+    "name": "Dra. Mayra Gislayne Melo de Lima",
+    "role": {
+      "pt-BR": "Equipe de Revisores",
+      "en": "Reviewers",
+      "es": "Equipo de Revisores",
+      "zh-CN": "审稿团队"
+    },
+    "isCoordinator": false,
+    "institution": "LEID/UFCG",
+    "bioMd": {
+      "pt-BR": "Engenheira Agrícola pela Universidade Federal de Campina Grande (2014) e Engenheira de Segurança do Trabalho pela Faculdade Iguaçu (2026). Mestra (2017) e Doutora (2022) em Engenharia Agrícola pela UFCG. Atualmente é Técnica de Laboratório na área agrícola do Laboratório de Engenharia de Irrigação e Drenagem (LEID) da UFCG, no Campus I, em Campina Grande (PB).",
+      "en": "Agricultural Engineer from the Federal University of Campina Grande (2014) and Occupational Safety Engineer from Faculdade Iguaçu (2026). Master's (2017) and PhD (2022) in Agricultural Engineering from UFCG. She is currently a laboratory technician in the agricultural area of the Irrigation and Drainage Engineering Laboratory (LEID) at UFCG, Campus I, in Campina Grande (Paraíba).",
+      "es": "Ingeniera Agrícola por la Universidad Federal de Campina Grande (2014) e Ingeniera de Seguridad del Trabajo por la Faculdade Iguaçu (2026). Magíster (2017) y Doctora (2022) en Ingeniería Agrícola por la UFCG. Actualmente es Técnica de Laboratorio en el área agrícola del Laboratorio de Ingeniería de Riego y Drenaje (LEID) de la UFCG, en el Campus I, en Campina Grande (PB).",
+      "zh-CN": "坎皮纳格兰德联邦大学农业工程师（2014），伊瓜苏学院职业安全工程师（2026）。UFCG农业工程硕士（2017）与博士（2022）。现任UFCG灌溉与排水工程实验室（LEID）农业领域实验技术员，工作于坎皮纳格兰德（帕拉伊巴州）第一校区。"
+    },
+    "photoUrl": null,
+    "lattesUrl": "http://lattes.cnpq.br/2274877058545190",
+    "orcidUrl": "https://orcid.org/0000-0002-0247-3827",
+    "sortOrder": 14
+  },
+  {
+    "id": "c27-rev-annarebeca",
+    "eventId": "evt-2027",
+    "name": "Ma. Anna Rebeca Silva Nóbrega Montenegro",
+    "role": {
+      "pt-BR": "Equipe de Revisores",
+      "en": "Reviewers",
+      "es": "Equipo de Revisores",
+      "zh-CN": "审稿团队"
+    },
+    "isCoordinator": false,
+    "institution": "PPGEA/UFCG",
+    "bioMd": {
+      "pt-BR": "Doutoranda em Engenharia Agrícola (PPGEA/UFCG), Bacharela e Mestra em Engenharia Agrícola (PPGEA/UFCG). Suas pesquisas se relacionam com estresses abióticos em culturas agrícolas, manejo de solo e água, recuperação de áreas degradadas, irrigação e qualidade de água.",
+      "en": "PhD candidate in Agricultural Engineering (PPGEA/UFCG), with a Bachelor's and a Master's in Agricultural Engineering (PPGEA/UFCG). Her research deals with abiotic stresses in agricultural crops, soil and water management, recovery of degraded areas, irrigation and water quality.",
+      "es": "Doctoranda en Ingeniería Agrícola (PPGEA/UFCG), Licenciada y Magíster en Ingeniería Agrícola (PPGEA/UFCG). Sus investigaciones se relacionan con estreses abióticos en cultivos agrícolas, manejo de suelo y agua, recuperación de áreas degradadas, riego y calidad del agua.",
+      "zh-CN": "农业工程博士研究生（PPGEA/UFCG），农业工程学士与硕士（PPGEA/UFCG）。研究方向涉及农作物非生物胁迫、土壤与水资源管理、退化区域恢复、灌溉与水质。"
+    },
+    "photoUrl": "team/anna-rebeca-montenegro.jpg",
+    "lattesUrl": "https://lattes.cnpq.br/1014478761274105",
+    "orcidUrl": "https://orcid.org/0000-0002-6059-8804",
+    "sortOrder": 15
+  },
+  {
     "id": "c27-med-lara",
     "eventId": "evt-2027",
     "name": "Lara Maria Almeida Ferreira",
@@ -227,7 +342,7 @@
     "photoUrl": "team/lara-ferreira.jpg",
     "lattesUrl": "http://lattes.cnpq.br/7562830250184649",
     "orcidUrl": "https://orcid.org/0000-0001-5578-4197",
-    "sortOrder": 11
+    "sortOrder": 16
   },
   {
     "id": "c27-med-daniela",
@@ -250,7 +365,7 @@
     "photoUrl": "team/daniela-torres.jpg",
     "lattesUrl": "http://lattes.cnpq.br/0589394654720240",
     "orcidUrl": null,
-    "sortOrder": 12
+    "sortOrder": 17
   },
   {
     "id": "c27-med-jasmyne",
@@ -273,7 +388,7 @@
     "photoUrl": "team/jasmyne-maciel.jpg",
     "lattesUrl": "http://lattes.cnpq.br/1494013442317058",
     "orcidUrl": "https://orcid.org/0000-0001-9522-2607",
-    "sortOrder": 13
+    "sortOrder": 18
   },
   {
     "id": "c27-med-pollyanna",
@@ -296,7 +411,7 @@
     "photoUrl": "team/pollyanna-grangeiro.jpg",
     "lattesUrl": "https://lattes.cnpq.br/3292905375426809",
     "orcidUrl": "https://orcid.org/0009-0004-1680-7930",
-    "sortOrder": 14
+    "sortOrder": 19
   },
   {
     "id": "c27-med-lourdes",
@@ -319,7 +434,7 @@
     "photoUrl": "team/lourdes-gomes.jpg",
     "lattesUrl": "http://lattes.cnpq.br/6975542958222228",
     "orcidUrl": "https://orcid.org/0000-0002-4790-7190",
-    "sortOrder": 15
+    "sortOrder": 20
   },
   {
     "id": "c27-med-arthur",
@@ -342,7 +457,7 @@
     "photoUrl": "team/arthur-lobato.jpg",
     "lattesUrl": "http://lattes.cnpq.br/6263703658435277",
     "orcidUrl": null,
-    "sortOrder": 16
+    "sortOrder": 21
   },
   {
     "id": "c25-org-najara",
@@ -365,7 +480,7 @@
     "photoUrl": "team/najara-agripino.jpg",
     "lattesUrl": "http://lattes.cnpq.br/2521555405067384",
     "orcidUrl": "https://orcid.org/0000-0001-8659-8258",
-    "sortOrder": 17
+    "sortOrder": 22
   },
   {
     "id": "c25-org-alex",
@@ -388,7 +503,7 @@
     "photoUrl": "team/alex-felix.jpg",
     "lattesUrl": "https://lattes.cnpq.br/3222336215306172",
     "orcidUrl": null,
-    "sortOrder": 18
+    "sortOrder": 23
   },
   {
     "id": "c25-org-daniela",
@@ -411,7 +526,7 @@
     "photoUrl": "team/daniela-torres.jpg",
     "lattesUrl": "http://lattes.cnpq.br/0589394654720240",
     "orcidUrl": null,
-    "sortOrder": 19
+    "sortOrder": 24
   },
   {
     "id": "c25-org-flavia",
@@ -434,7 +549,7 @@
     "photoUrl": "team/flavia-costa.jpg",
     "lattesUrl": null,
     "orcidUrl": null,
-    "sortOrder": 20
+    "sortOrder": 25
   },
   {
     "id": "c25-org-lara",
@@ -457,7 +572,7 @@
     "photoUrl": "team/lara-ferreira.jpg",
     "lattesUrl": "http://lattes.cnpq.br/7562830250184649",
     "orcidUrl": "https://orcid.org/0000-0001-5578-4197",
-    "sortOrder": 21
+    "sortOrder": 26
   },
   {
     "id": "c25-org-jasmyne",
@@ -480,7 +595,7 @@
     "photoUrl": "team/jasmyne-maciel.jpg",
     "lattesUrl": "http://lattes.cnpq.br/1494013442317058",
     "orcidUrl": "https://orcid.org/0000-0001-9522-2607",
-    "sortOrder": 22
+    "sortOrder": 27
   },
   {
     "id": "c25-rev-thays",
@@ -503,7 +618,7 @@
     "photoUrl": "team/thays-silva.jpg",
     "lattesUrl": null,
     "orcidUrl": null,
-    "sortOrder": 23
+    "sortOrder": 28
   },
   {
     "id": "c25-rev-laura",
@@ -526,7 +641,7 @@
     "photoUrl": "team/laura-silveira.jpg",
     "lattesUrl": null,
     "orcidUrl": null,
-    "sortOrder": 24
+    "sortOrder": 29
   },
   {
     "id": "c25-rev-luana",
@@ -549,7 +664,7 @@
     "photoUrl": "team/luana-cesar.jpg",
     "lattesUrl": null,
     "orcidUrl": null,
-    "sortOrder": 25
+    "sortOrder": 30
   },
   {
     "id": "c25-rev-niklas",
@@ -572,7 +687,7 @@
     "photoUrl": "team/niklas-weins.jpg",
     "lattesUrl": "http://lattes.cnpq.br/6302951700904457",
     "orcidUrl": "https://orcid.org/0000-0003-1345-6720",
-    "sortOrder": 26
+    "sortOrder": 31
   },
   {
     "id": "c25-spk-fernando",
@@ -595,7 +710,7 @@
     "photoUrl": "team/fernando-maia.jpg",
     "lattesUrl": "http://lattes.cnpq.br/8339138648737936",
     "orcidUrl": "https://orcid.org/0000-0002-5419-2031",
-    "sortOrder": 27
+    "sortOrder": 32
   },
   {
     "id": "c25-spk-anapaula",
@@ -618,7 +733,7 @@
     "photoUrl": "team/ana-paula-basso.jpg",
     "lattesUrl": "http://lattes.cnpq.br/2714446136245777",
     "orcidUrl": "https://orcid.org/0000-0001-9119-5832",
-    "sortOrder": 28
+    "sortOrder": 33
   },
   {
     "id": "c25-spk-hirdan",
@@ -641,7 +756,7 @@
     "photoUrl": "team/hirdan-costa.jpg",
     "lattesUrl": "http://lattes.cnpq.br/2035937453943199",
     "orcidUrl": "https://orcid.org/0000-0002-0114-9224",
-    "sortOrder": 29
+    "sortOrder": 34
   },
   {
     "id": "c25-spk-niklas",
@@ -664,7 +779,7 @@
     "photoUrl": "team/niklas-weins.jpg",
     "lattesUrl": "http://lattes.cnpq.br/6302951700904457",
     "orcidUrl": "https://orcid.org/0000-0003-1345-6720",
-    "sortOrder": 30
+    "sortOrder": 35
   },
   {
     "id": "c25-spk-dou",
@@ -687,7 +802,7 @@
     "photoUrl": "team/dou-yuehan.jpg",
     "lattesUrl": null,
     "orcidUrl": null,
-    "sortOrder": 31
+    "sortOrder": 36
   },
   {
     "id": "c25-spk-zhoulin",
@@ -710,6 +825,6 @@
     "photoUrl": "team/zhou-lin.jpg",
     "lattesUrl": "http://lattes.cnpq.br/7345648016399337",
     "orcidUrl": null,
-    "sortOrder": 32
+    "sortOrder": 37
   }
 ]
