@@ -192,10 +192,7 @@ describe('StaticDataProvider', () => {
       ...(await provider.getCommittee('evt-2027')),
       ...(await provider.getCommittee('evt-2025')),
     ];
-    // Photo still to come from the committee (#118): the card shows the initial meanwhile.
-    const awaitingPhoto = new Set(['c27-rev-mayra']);
-    const people = [...founders, ...team].filter((p) => !awaitingPhoto.has(p.id));
-    expect(people.every((p) => p.photoUrl?.startsWith('team/'))).toBe(true);
+    expect([...founders, ...team].every((p) => p.photoUrl?.startsWith('team/'))).toBe(true);
   });
 
   it('2027 fees: three categories, two contiguous lots, online only, committee amounts', async () => {

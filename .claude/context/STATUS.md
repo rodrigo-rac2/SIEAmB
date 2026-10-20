@@ -1,6 +1,6 @@
 # SIEAmB — Current Status
 
-> Last updated: 2026-10-14 (update this file whenever meaningful progress happens)
+> Last updated: 2026-10-20 (update this file whenever meaningful progress happens)
 > Daily log: `.claude/log/<year>-w<week>.md` · Backlog: GitHub Issues by milestone (commands: `/log-daily`, `/pending-items`)
 
 ## Where we are
@@ -16,7 +16,8 @@
 - **Applied on 2026-10-10 from Najara's input**: March 2027 dates, online venue (YouTube), committee schedule, About page (general text + 2025 text + idealizadores), team page per edition with photos/bios/groups (Comitê Científico, Revisores, Mídias; 2025 keeps its team + palestrantes), Equipe in the menu, editions link in the top bar.
 - **Najara's 11 Oct batch applied**: Lattes/ORCID for Viviane, Thays, Laura, Luana, Lourdes; affiliations for Pollyanna, Luana, Zhou Lin, Thays; hero reads "24, 25 e 26 de março de 2027" (`formatDateList`). Slug is `/2027/` with `/2026/` redirecting; lots 10/11→01/01 and 02/01→20/03; programme "dezembro de 2026"; Laura's photo confirmed.
 - **Database (2026-10-14, #13)**: two free Supabase projects in sa-east-1, `sieamb-prod` (ref lmqprlysncmnozjrmrsb, Vercel Production) and `sieamb-dev` (ref tasvpjomfncmrpdosqwm, Vercel Preview + Development, local, CI). `packages/db` holds the Prisma 7 schema (Phase 1 tables: events, content tables, users, event_members, news, fee_tiers, registrations, audit_logs), the init migration with the hand-written companions (one-current-event index, `auth.users → public.users` trigger, RLS with public-read and own-row policies, grants) and a seed that upserts the two events from the frontend fixtures. Migration applied and seeded on both projects. Runtime uses the transaction pooler (`DATABASE_URL`), migrations the session pooler (`DIRECT_URL`); the direct `db.<ref>` host is IPv6-only so CI can't use it. Secrets: `.env.local` is Rodrigo's vault (prefixed names), `.env` the generated local copy, Vercel env vars per environment, GitHub secrets `SUPABASE_{PROD,DEV}_*`. Workflows: `db-backup.yml` (weekly pg_dump of prod to a 90-day artifact, R2 later) and `db-keepalive.yml` (daily REST API call with the anon key on both projects; SQL pings through the pooler do not count as activity, see #112). Projects were created with "automatically expose new tables" OFF, so every new table needs explicit grants in its migration.
-- **Still waiting on the committee**: II SIEAmB presentation text (with Prof. Viviane for approval, #12), edital text (#11), 2027 thematic areas (#37), Rodrigo's own team entry (#12). **Waiting on Rodrigo**: Supabase/Resend/Mercado Pago accounts (#13, #14, #15, #16, #18), `.env.local` template ready.
+- **Team page (2026-10-20, #118)**: five new reviewers from Najara's Drive batch (Marconi, Alyne, Ellora, Mayra, Anna Rebeca) live on sieamb.org; Mayra's photo still pending (card shows her initial, named exception in the fixture test). Niklas left the reviewers (#102) and stays in the Comitê Científico.
+- **Still waiting on the committee**: II SIEAmB presentation text (with Prof. Viviane for approval, #12), edital text (#11), 2027 thematic areas (#37), Rodrigo's own team entry (#12), Mayra's photo (#12), payment account holder by 24 Oct (#16). **Waiting on Rodrigo**: Supabase/Resend/Mercado Pago accounts (#13, #14, #15, #16, #18), `.env.local` template ready.
 
 ## What works today
 
