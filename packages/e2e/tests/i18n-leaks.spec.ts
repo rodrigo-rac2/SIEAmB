@@ -43,7 +43,7 @@ const ALLOWED = [
   /^(SIEAmB|UFCG|UFPB|UnB|USP|UFF|UFMG|UFRGS|UFPel|UEPB|UNICAMP|Unicamp|IFPB|IREL|PPG[A-Z&/ ]*|CTRN|CEHAM|UERJ|UNDB|CECLA|GECHINA|GEA|ESALQ|CNPq|CAPES|CASS|AT-\d+)/,
   /Seminário Internacional de Estudos Ambientais/, // official event names stay in Portuguese
   /^(Dra?\.|Ma?\.|Me\.|Prof\.)\s/, // person names with honorifics
-  /^(Lara|Daniela|Luana|Pollyanna|Arthur|Flávia|Najara|Thays|Zhou|Laura|Viviane|José|Niklas|Alex|Fernando|Ana|Hirdan|Dou|Rodrigo)\b/, // names without honorific
+  /^(Lara|Daniela|Luana|Pollyanna|Arthur|Flávia|Najara|Thays|Zhou|Laura|Viviane|José|Niklas|Alex|Fernando|Ana|Hirdan|Dou|Rodrigo|Alyne|Ellora)\b/, // names without honorific
   /^[A-Z][a-z]+ [A-Z][a-z]+( [A-Z][a-z]+)*$/, // two or more capitalised words: names, places
   /^Evento online$/, // venue text comes from data on the 404 page before the event loads
 ];
