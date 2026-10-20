@@ -24,6 +24,7 @@ test.describe('public site @smoke', () => {
       ['/2027/o-evento', 'O Evento'],
       ['/2027/organizacao', 'Equipe'],
       ['/2027/areas-tematicas', 'Áreas Temáticas'],
+      ['/2027/programacao', 'Programação'],
       ['/2027/submissoes', 'Submissão de Trabalhos'],
       ['/2027/inscricoes', 'Inscrições'],
       ['/2027/datas-importantes', 'Datas Importantes'],

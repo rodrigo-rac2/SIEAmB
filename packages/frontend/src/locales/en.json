@@ -20,6 +20,7 @@
     "about": "The Event",
     "committee": "Team",
     "areas": "Thematic Areas",
+    "programme": "Programme",
     "submissions": "Submissions",
     "registration": "Registration",
     "dates": "Important Dates",
@@ -43,6 +44,8 @@
     "quickDatesDesc": "Stay on top of every deadline of the event.",
     "quickAreas": "Thematic Areas",
     "quickAreasDesc": "Get to know the thematic tracks that structure the seminar.",
+    "quickProgramme": "Programme",
+    "quickProgrammeDesc": "Coming soon. The programme will be published in December 2026.",
     "aboutTitle": "About SIEAmB",
     "aboutTeaser": "The International Seminar on Environmental Studies brings together researchers, students and professionals to discuss the challenges of natural resource management and sustainable development.",
     "datesTitle": "Important Dates",
@@ -64,6 +67,11 @@
   },
   "areas": {
     "title": "Thematic Areas"
+  },
+  "programme": {
+    "title": "Programme",
+    "comingSoon": "Programme coming soon",
+    "comingSoonBody": "The programme of the II SIEAmB will be published in December 2026. Follow the news."
   },
   "submissions": {
     "title": "Paper Submission",
