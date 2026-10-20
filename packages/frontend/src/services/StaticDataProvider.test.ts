@@ -17,7 +17,7 @@ describe('StaticDataProvider', () => {
 
   it('finds events by slug and returns null for unknown slugs', async () => {
     expect((await provider.getEventBySlug('2027'))?.edition).toBe(2);
-    expect((await provider.getEventBySlug('1999'))).toBeNull();
+    expect(await provider.getEventBySlug('1999')).toBeNull();
   });
 
   it('lists events newest first', async () => {
@@ -70,13 +70,19 @@ describe('StaticDataProvider', () => {
     expect(dates.some((d) => d.isExtended || /Prorroga/.test(sourceText(d.label)))).toBe(false);
     expect(dates).toHaveLength(10);
     expect(sourceText(dates.find((d) => d.monthOnly)!.label)).toBe('Divulgação da programação');
-    expect(dates.find((d) => /Início das submissões/.test(sourceText(d.label)))?.date.startsWith('2026-11-15')).toBe(true);
+    expect(
+      dates
+        .find((d) => /Início das submissões/.test(sourceText(d.label)))
+        ?.date.startsWith('2026-11-15'),
+    ).toBe(true);
   });
 
   it('serves the general about text, the four founders and the 2025 edition text', async () => {
     const site = await provider.getSiteContent();
     expect(sourceText(site.aboutMd)).toContain('Seminário Internacional de Estudos Ambientais');
-    expect(localize(site.aboutMd, 'en')).toContain('International Seminar on Environmental Studies');
+    expect(localize(site.aboutMd, 'en')).toContain(
+      'International Seminar on Environmental Studies',
+    );
     const founders = await provider.getFounders();
     expect(founders.map((f) => f.name)).toEqual([
       'Dra. Viviane Farias Silva',
@@ -84,7 +90,9 @@ describe('StaticDataProvider', () => {
       'Dr. Niklas Werner Weins',
       'Ma. Najara Escarião Agripino',
     ]);
-    expect(sourceText((await provider.getEventBySlug('2025'))!.aboutMd!)).toContain('Governança Ambiental');
+    expect(sourceText((await provider.getEventBySlug('2025'))!.aboutMd!)).toContain(
+      'Governança Ambiental',
+    );
   });
 
   it('2027 team has the three committee groups with coordinators, 2025 keeps its own plus speakers', async () => {
@@ -112,7 +120,8 @@ describe('StaticDataProvider', () => {
     expect(missing).toEqual([]);
     for (const m of team) {
       if (m.lattesUrl) expect(m.lattesUrl).toMatch(/^https?:\/\/lattes\.cnpq\.br\/\d{16}$/);
-      if (m.orcidUrl) expect(m.orcidUrl).toMatch(/^https:\/\/orcid\.org\/\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/);
+      if (m.orcidUrl)
+        expect(m.orcidUrl).toMatch(/^https:\/\/orcid\.org\/\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/);
     }
     const byName = new Map<string, string>();
     for (const m of team) {
@@ -183,7 +192,10 @@ describe('StaticDataProvider', () => {
       ...(await provider.getCommittee('evt-2027')),
       ...(await provider.getCommittee('evt-2025')),
     ];
-    expect([...founders, ...team].every((p) => p.photoUrl?.startsWith('team/'))).toBe(true);
+    // Photo still to come from the committee (#118): the card shows the initial meanwhile.
+    const awaitingPhoto = new Set(['c27-rev-mayra']);
+    const people = [...founders, ...team].filter((p) => !awaitingPhoto.has(p.id));
+    expect(people.every((p) => p.photoUrl?.startsWith('team/'))).toBe(true);
   });
 
   it('2027 fees: three categories, two contiguous lots, online only, committee amounts', async () => {
@@ -192,9 +204,16 @@ describe('StaticDataProvider', () => {
     expect(new Set(tiers.map((t) => t.modality))).toEqual(new Set(['ONLINE']));
     const price = (c: string, lot: string) =>
       tiers.find((t) => t.category === c && sourceText(t.label) === lot)?.amountCents;
-    expect([price('ESTUDANTE_GRADUACAO', 'Lote 1'), price('ESTUDANTE_GRADUACAO', 'Lote 2')]).toEqual([3000, 5000]);
-    expect([price('ESTUDANTE_POS', 'Lote 1'), price('ESTUDANTE_POS', 'Lote 2')]).toEqual([5000, 7000]);
-    expect([price('PROFISSIONAL', 'Lote 1'), price('PROFISSIONAL', 'Lote 2')]).toEqual([7000, 9000]);
+    expect([
+      price('ESTUDANTE_GRADUACAO', 'Lote 1'),
+      price('ESTUDANTE_GRADUACAO', 'Lote 2'),
+    ]).toEqual([3000, 5000]);
+    expect([price('ESTUDANTE_POS', 'Lote 1'), price('ESTUDANTE_POS', 'Lote 2')]).toEqual([
+      5000, 7000,
+    ]);
+    expect([price('PROFISSIONAL', 'Lote 1'), price('PROFISSIONAL', 'Lote 2')]).toEqual([
+      7000, 9000,
+    ]);
     const l1 = tiers.find((t) => sourceText(t.label) === 'Lote 1')!;
     const l2 = tiers.find((t) => sourceText(t.label) === 'Lote 2')!;
     expect(l1.validFrom.startsWith('2026-11-10')).toBe(true);
