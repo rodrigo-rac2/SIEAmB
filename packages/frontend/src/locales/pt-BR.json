@@ -20,6 +20,7 @@
     "about": "O Evento",
     "committee": "Equipe",
     "areas": "Áreas Temáticas",
+    "programme": "Programação",
     "submissions": "Submissões",
     "registration": "Inscrições",
     "dates": "Datas Importantes",
@@ -43,6 +44,8 @@
     "quickDatesDesc": "Fique por dentro de todos os prazos do evento.",
     "quickAreas": "Áreas Temáticas",
     "quickAreasDesc": "Conheça as linhas temáticas que estruturam o seminário.",
+    "quickProgramme": "Programação",
+    "quickProgrammeDesc": "Em breve. A programação será divulgada em dezembro de 2026.",
     "aboutTitle": "Sobre o SIEAmB",
     "aboutTeaser": "O Seminário Internacional de Estudos Ambientais reúne pesquisadores, estudantes e profissionais para discutir os desafios da gestão de recursos naturais e do desenvolvimento sustentável.",
     "datesTitle": "Datas Importantes",
@@ -64,6 +67,11 @@
   },
   "areas": {
     "title": "Áreas Temáticas"
+  },
+  "programme": {
+    "title": "Programação",
+    "comingSoon": "Programação em breve",
+    "comingSoonBody": "A programação do II SIEAmB será divulgada em dezembro de 2026. Acompanhe os avisos."
   },
   "submissions": {
     "title": "Submissão de Trabalhos",
