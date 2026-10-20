@@ -51,10 +51,27 @@ export function HomePage() {
   const base = `/${event.slug}`;
 
   const quickLinks = [
-    { to: `${base}/inscricoes`, title: t('home.quickRegistration'), desc: t('home.quickRegistrationDesc') },
-    { to: `${base}/submissoes`, title: t('home.quickSubmissions'), desc: t('home.quickSubmissionsDesc') },
-    { to: `${base}/datas-importantes`, title: t('home.quickDates'), desc: t('home.quickDatesDesc') },
+    {
+      to: `${base}/inscricoes`,
+      title: t('home.quickRegistration'),
+      desc: t('home.quickRegistrationDesc'),
+    },
+    {
+      to: `${base}/submissoes`,
+      title: t('home.quickSubmissions'),
+      desc: t('home.quickSubmissionsDesc'),
+    },
+    {
+      to: `${base}/datas-importantes`,
+      title: t('home.quickDates'),
+      desc: t('home.quickDatesDesc'),
+    },
     { to: `${base}/areas-tematicas`, title: t('home.quickAreas'), desc: t('home.quickAreasDesc') },
+    {
+      to: `${base}/programacao`,
+      title: t('home.quickProgramme'),
+      desc: t('home.quickProgrammeDesc'),
+    },
   ];
 
   return (

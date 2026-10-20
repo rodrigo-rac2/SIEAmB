@@ -12,6 +12,7 @@ const ROUTES = [
   '/2027/o-evento',
   '/2027/organizacao',
   '/2027/areas-tematicas',
+  '/2027/programacao',
   '/2027/submissoes',
   '/2027/inscricoes',
   '/2027/inscricoes/nova',

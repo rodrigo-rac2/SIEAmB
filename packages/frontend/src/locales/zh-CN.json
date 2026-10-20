@@ -20,6 +20,7 @@
     "about": "会议简介",
     "committee": "团队",
     "areas": "主题领域",
+    "programme": "会议日程",
     "submissions": "论文投稿",
     "registration": "会议注册",
     "dates": "重要日期",
@@ -43,6 +44,8 @@
     "quickDatesDesc": "掌握会议的所有重要时间节点。",
     "quickAreas": "主题领域",
     "quickAreasDesc": "了解构成研讨会的各个主题方向。",
+    "quickProgramme": "会议日程",
+    "quickProgrammeDesc": "即将公布。会议日程将于2026年12月发布。",
     "aboutTitle": "关于 SIEAmB",
     "aboutTeaser": "国际环境研究研讨会汇聚研究人员、学生和专业人士，共同探讨自然资源管理与可持续发展的挑战。",
     "datesTitle": "重要日期",
@@ -64,6 +67,11 @@
   },
   "areas": {
     "title": "主题领域"
+  },
+  "programme": {
+    "title": "会议日程",
+    "comingSoon": "日程即将公布",
+    "comingSoonBody": "第二届SIEAmB会议日程将于2026年12月公布。请关注公告。"
   },
   "submissions": {
     "title": "论文投稿",

@@ -156,7 +156,8 @@
 
 .quick-links {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  /* Five cards since Programação (#126): 200px keeps them on one row inside the 1120px container. */
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: var(--space-4);
 }
 

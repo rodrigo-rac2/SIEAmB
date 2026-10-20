@@ -13,6 +13,7 @@ import { NewsListPage } from './pages/NewsListPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { RegistrationFormPage } from './pages/RegistrationFormPage';
 import { RegistrationInfoPage } from './pages/RegistrationInfoPage';
+import { ProgrammePage } from './pages/ProgrammePage';
 import { SubmissionsPage } from './pages/SubmissionsPage';
 import { ThematicAreasPage } from './pages/ThematicAreasPage';
 import { VenuePage } from './pages/VenuePage';
@@ -43,6 +44,7 @@ export function App() {
           <Route path="o-evento" element={<AboutPage />} />
           <Route path="organizacao" element={<CommitteePage />} />
           <Route path="areas-tematicas" element={<ThematicAreasPage />} />
+          <Route path="programacao" element={<ProgrammePage />} />
           <Route path="submissoes" element={<SubmissionsPage />} />
           <Route path="inscricoes" element={<RegistrationInfoPage />} />
           <Route path="inscricoes/nova" element={<RegistrationFormPage />} />
