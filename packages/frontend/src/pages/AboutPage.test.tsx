@@ -5,11 +5,12 @@ import { renderAtEvent } from '../test/render';
 import { AboutPage } from './AboutPage';
 
 describe('AboutPage (fixtures)', () => {
-  it('current edition: general text, pending edition text, founders, link to 2025', async () => {
+  it('current edition: general text, edition presentation text, founders, link to 2025', async () => {
     renderAtEvent('/2027/o-evento', <AboutPage />);
     expect(await screen.findByText(/espaço estratégico voltado para pesquisadores/)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Esta edição: II SIEAmB' })).toBeInTheDocument();
-    expect(screen.getByText(/será publicado em breve/)).toBeInTheDocument();
+    expect(screen.getByText(/desafios na gestão de desastres naturais/)).toBeInTheDocument();
+    expect(screen.queryByText(/será publicado em breve/)).toBeNull();
     expect(screen.getByRole('heading', { name: 'Idealizadores' })).toBeInTheDocument();
     expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(4);
     expect(screen.getByRole('link', { name: /1º Seminário Internacional/ })).toHaveAttribute('href', '/2025/o-evento');
