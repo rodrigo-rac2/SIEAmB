@@ -4,16 +4,16 @@
     "eventId": "evt-2027",
     "code": "AT-01",
     "name": {
-      "pt-BR": "Gestão de Recursos Hídricos",
-      "en": "Water Resources Management",
-      "es": "Gestión de Recursos Hídricos",
-      "zh-CN": "水资源管理"
+      "pt-BR": "Governança, Políticas Públicas e Direito Ambiental",
+      "en": "Governance, Public Policy and Environmental Law",
+      "es": "Gobernanza, Políticas Públicas y Derecho Ambiental",
+      "zh-CN": "治理、公共政策与环境法"
     },
     "description": {
-      "pt-BR": "Planejamento, uso racional e governança da água em regiões semiáridas e além.",
-      "en": "Planning, rational use and governance of water in semi-arid regions and beyond.",
-      "es": "Planificación, uso racional y gobernanza del agua en regiones semiáridas y más allá.",
-      "zh-CN": "半干旱地区及其他地区的水资源规划、合理利用与治理。"
+      "pt-BR": "Processos institucionais, políticos e jurídicos da gestão ambiental: políticas ambientais e climáticas, participação social, conflitos socioambientais, licenciamento e Direito Ambiental.",
+      "en": "Institutional, political and legal processes of environmental management: environmental and climate policy, social participation, socio-environmental conflicts, licensing and environmental law.",
+      "es": "Procesos institucionales, políticos y jurídicos de la gestión ambiental: políticas ambientales y climáticas, participación social, conflictos socioambientales, licenciamiento y derecho ambiental.",
+      "zh-CN": "环境管理中的制度、政治与法律进程：环境与气候政策、社会参与、社会环境冲突、环境许可及环境法。"
     },
     "sortOrder": 1
   },
@@ -22,16 +22,16 @@
     "eventId": "evt-2027",
     "code": "AT-02",
     "name": {
-      "pt-BR": "Meio Ambiente e Sustentabilidade",
-      "en": "Environment and Sustainability",
-      "es": "Medio Ambiente y Sostenibilidad",
-      "zh-CN": "环境与可持续发展"
+      "pt-BR": "Governança Global, Diplomacia e Justiça Climática",
+      "en": "Global Governance, Diplomacy and Climate Justice",
+      "es": "Gobernanza Global, Diplomacia y Justicia Climática",
+      "zh-CN": "全球治理、外交与气候正义"
     },
     "description": {
-      "pt-BR": "Estratégias de desenvolvimento sustentável, conservação e educação ambiental.",
-      "en": "Sustainable development strategies, conservation and environmental education.",
-      "es": "Estrategias de desarrollo sostenible, conservación y educación ambiental.",
-      "zh-CN": "可持续发展战略、生态保护与环境教育。"
+      "pt-BR": "Dimensões internacionais e geopolíticas da questão ambiental: governança global do clima, diplomacia ambiental, acordos multilaterais, financiamento climático e transição justa.",
+      "en": "International and geopolitical dimensions of the environmental question: global climate governance, environmental diplomacy, multilateral agreements, climate finance and a just transition.",
+      "es": "Dimensiones internacionales y geopolíticas de la cuestión ambiental: gobernanza global del clima, diplomacia ambiental, acuerdos multilaterales, financiamiento climático y transición justa.",
+      "zh-CN": "环境问题的国际与地缘政治维度：全球气候治理、环境外交、多边协定、气候融资与公正转型。"
     },
     "sortOrder": 2
   },
@@ -40,16 +40,16 @@
     "eventId": "evt-2027",
     "code": "AT-03",
     "name": {
-      "pt-BR": "Energias Renováveis",
-      "en": "Renewable Energy",
-      "es": "Energías Renovables",
-      "zh-CN": "可再生能源"
+      "pt-BR": "Economia e Desenvolvimento Sustentável",
+      "en": "Economics and Sustainable Development",
+      "es": "Economía y Desarrollo Sostenible",
+      "zh-CN": "经济与可持续发展"
     },
     "description": {
-      "pt-BR": "Transição energética, tecnologias limpas e eficiência energética.",
-      "en": "Energy transition, clean technologies and energy efficiency.",
-      "es": "Transición energética, tecnologías limpias y eficiencia energética.",
-      "zh-CN": "能源转型、清洁技术与能源效率。"
+      "pt-BR": "Produção, consumo e desenvolvimento diante dos limites ambientais: economia circular e verde, finanças sustentáveis, transição energética, indicadores e ODS.",
+      "en": "Production, consumption and development within environmental limits: circular and green economy, sustainable finance, energy transition, indicators and the SDGs.",
+      "es": "Producción, consumo y desarrollo frente a los límites ambientales: economía circular y verde, finanzas sostenibles, transición energética, indicadores y ODS.",
+      "zh-CN": "在环境极限内的生产、消费与发展：循环与绿色经济、可持续金融、能源转型、指标体系及可持续发展目标。"
     },
     "sortOrder": 3
   },
@@ -58,16 +58,16 @@
     "eventId": "evt-2027",
     "code": "AT-04",
     "name": {
-      "pt-BR": "Mudanças Climáticas e Semiárido",
-      "en": "Climate Change and the Semi-arid Region",
-      "es": "Cambio Climático y Semiárido",
-      "zh-CN": "气候变化与半干旱地区"
+      "pt-BR": "Sistemas Socioambientais, Agricultura e Desenvolvimento Rural",
+      "en": "Socio-environmental Systems, Agriculture and Rural Development",
+      "es": "Sistemas Socioambientales, Agricultura y Desarrollo Rural",
+      "zh-CN": "社会生态系统、农业与农村发展"
     },
     "description": {
-      "pt-BR": "Impactos, adaptação e mitigação das mudanças climáticas no semiárido brasileiro.",
-      "en": "Impacts, adaptation and mitigation of climate change in the Brazilian semi-arid region.",
-      "es": "Impactos, adaptación y mitigación del cambio climático en el semiárido brasileño.",
-      "zh-CN": "气候变化对巴西半干旱地区的影响、适应与减缓。"
+      "pt-BR": "Agricultura, território e sistemas alimentares: agroecologia, segurança e soberania alimentar, conservação do solo e da água, comunidades tradicionais e adaptação climática no campo.",
+      "en": "Agriculture, territory and food systems: agroecology, food security and sovereignty, soil and water conservation, traditional communities and climate adaptation in rural areas.",
+      "es": "Agricultura, territorio y sistemas alimentarios: agroecología, seguridad y soberanía alimentaria, conservación del suelo y del agua, comunidades tradicionales y adaptación climática en el campo.",
+      "zh-CN": "农业、地域与粮食系统：生态农业、粮食安全与粮食主权、水土保持、传统社区及农村气候适应。"
     },
     "sortOrder": 4
   },
@@ -76,16 +76,16 @@
     "eventId": "evt-2027",
     "code": "AT-05",
     "name": {
-      "pt-BR": "Saneamento e Resíduos Sólidos",
-      "en": "Sanitation and Solid Waste",
-      "es": "Saneamiento y Residuos Sólidos",
-      "zh-CN": "环境卫生与固体废弃物"
+      "pt-BR": "Tecnologia e Inteligência Artificial Aplicadas ao Meio Ambiente",
+      "en": "Technology and Artificial Intelligence Applied to the Environment",
+      "es": "Tecnología e Inteligencia Artificial Aplicadas al Medio Ambiente",
+      "zh-CN": "应用于环境的技术与人工智能"
     },
     "description": {
-      "pt-BR": "Tratamento de água e efluentes, gestão de resíduos e economia circular.",
-      "en": "Water and wastewater treatment, waste management and circular economy.",
-      "es": "Tratamiento de agua y efluentes, gestión de residuos y economía circular.",
-      "zh-CN": "水与污水处理、废弃物管理与循环经济。"
+      "pt-BR": "Ciência, inovação e transformação digital para os desafios ambientais: IA, sensoriamento remoto, geotecnologias, energias renováveis, resíduos e abordagens críticas da inovação.",
+      "en": "Science, innovation and digital transformation for environmental challenges: AI, remote sensing, geotechnologies, renewable energy, waste and critical views of innovation.",
+      "es": "Ciencia, innovación y transformación digital para los desafíos ambientales: IA, teledetección, geotecnologías, energías renovables, residuos y enfoques críticos de la innovación.",
+      "zh-CN": "以科学、创新与数字化转型应对环境挑战：人工智能、遥感、地理信息技术、可再生能源、废弃物管理及对创新的批判性视角。"
     },
     "sortOrder": 5
   },
@@ -94,18 +94,54 @@
     "eventId": "evt-2027",
     "code": "AT-06",
     "name": {
-      "pt-BR": "Tecnologias e Inovação Ambiental",
-      "en": "Environmental Technologies and Innovation",
-      "es": "Tecnologías e Innovación Ambiental",
-      "zh-CN": "环境技术与创新"
+      "pt-BR": "Saúde e Meio Ambiente",
+      "en": "Health and the Environment",
+      "es": "Salud y Medio Ambiente",
+      "zh-CN": "健康与环境"
     },
     "description": {
-      "pt-BR": "Geotecnologias, sensoriamento remoto e inovação aplicada aos estudos ambientais.",
-      "en": "Geotechnologies, remote sensing and innovation applied to environmental studies.",
-      "es": "Geotecnologías, teledetección e innovación aplicada a los estudios ambientales.",
-      "zh-CN": "地理信息技术、遥感及应用于环境研究的创新。"
+      "pt-BR": "Relações entre ambiente e saúde: saúde ambiental e coletiva, clima e saúde, saneamento, qualidade da água e do ar, resíduos de serviços de saúde e vulnerabilidade socioambiental.",
+      "en": "Links between environment and health: environmental and public health, climate and health, sanitation, water and air quality, healthcare waste and socio-environmental vulnerability.",
+      "es": "Relaciones entre ambiente y salud: salud ambiental y colectiva, clima y salud, saneamiento, calidad del agua y del aire, residuos sanitarios y vulnerabilidad socioambiental.",
+      "zh-CN": "环境与健康的关系：环境与公共卫生、气候与健康、卫生设施、水和空气质量、医疗废物及社会环境脆弱性。"
     },
     "sortOrder": 6
+  },
+  {
+    "id": "a7",
+    "eventId": "evt-2027",
+    "code": "AT-07",
+    "name": {
+      "pt-BR": "Educação, Cultura e Relações Sociedade-Natureza",
+      "en": "Education, Culture and Society-Nature Relations",
+      "es": "Educación, Cultura y Relaciones Sociedad-Naturaleza",
+      "zh-CN": "教育、文化与社会—自然关系"
+    },
+    "description": {
+      "pt-BR": "Perspectivas educacionais e culturais sobre o ambiente: Educação Ambiental formal e não formal, percepção ambiental, práticas pedagógicas, comunicação e participação social.",
+      "en": "Educational and cultural perspectives on the environment: formal and non-formal environmental education, environmental perception, teaching practices, communication and social participation.",
+      "es": "Perspectivas educativas y culturales sobre el ambiente: educación ambiental formal y no formal, percepción ambiental, prácticas pedagógicas, comunicación y participación social.",
+      "zh-CN": "关于环境的教育与文化视角：正规与非正规环境教育、环境认知、教学实践、传播与社会参与。"
+    },
+    "sortOrder": 7
+  },
+  {
+    "id": "a8",
+    "eventId": "evt-2027",
+    "code": "AT-08",
+    "name": {
+      "pt-BR": "Filosofia e História Ambiental",
+      "en": "Environmental Philosophy and History",
+      "es": "Filosofía e Historia Ambiental",
+      "zh-CN": "环境哲学与环境史"
+    },
+    "description": {
+      "pt-BR": "Relações entre seres humanos e natureza ao longo do tempo: história do ambientalismo, ética e justiça ambiental, paisagem, libertação animal e correntes filosóficas.",
+      "en": "Human-nature relations over time: history of environmentalism, environmental ethics and justice, landscape, animal liberation and philosophical traditions.",
+      "es": "Relaciones entre los seres humanos y la naturaleza a lo largo del tiempo: historia del ambientalismo, ética y justicia ambiental, paisaje, liberación animal y corrientes filosóficas.",
+      "zh-CN": "人与自然关系的历史演变：环境主义史、环境伦理与环境正义、景观、动物解放及哲学流派。"
+    },
+    "sortOrder": 8
   },
   {
     "id": "a2025-01",
