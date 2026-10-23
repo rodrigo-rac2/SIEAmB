@@ -32,7 +32,8 @@
     "myRegistration": "Mi Inscripción",
     "logout": "Salir",
     "menu": "Menú",
-    "anais": "Anales"
+    "anais": "Anales",
+    "editais": "Convocatorias"
   },
   "home": {
     "heroTagline": "Ciencia, gestión y sostenibilidad de los recursos naturales",
@@ -77,7 +78,21 @@
     "title": "Envío de Trabajos",
     "comingSoon": "Los envíos abren pronto",
     "comingSoonBody": "El sistema de envío de trabajos está en preparación. Siga los avisos para saber cuándo se abrirán los envíos.",
-    "rulesTitle": "Reglas de Envío"
+    "rulesTitle": "Reglas de Envío",
+    "rulesBody": "Las normas de envío, las áreas temáticas y el cronograma están en la convocatoria.",
+    "rulesCta": "Leer la convocatoria",
+    "templatesTitle": "Plantillas para descargar"
+  },
+  "editais": {
+    "title": "Convocatorias",
+    "intro": "Convocatorias, normas y plantillas oficiales del {{edition}}.",
+    "empty": "Las convocatorias del {{edition}} se publicarán pronto.",
+    "files": "Documentos y plantillas",
+    "officialTextNotice": "El texto oficial de esta convocatoria está en portugués. Los archivos y plantillas a continuación son las versiones oficiales.",
+    "publishedAt": "Publicado el {{date}}",
+    "read": "Leer la convocatoria",
+    "backToList": "Todas las convocatorias",
+    "formatLink": "enlace"
   },
   "registration": {
     "title": "Inscripciones",

@@ -14,3 +14,13 @@
 .submissions-soon p {
   margin: 0;
 }
+
+.submissions-rules {
+  margin-top: var(--space-8);
+  max-width: 640px;
+}
+
+.submissions-rules h3 {
+  margin-top: var(--space-5);
+  margin-bottom: var(--space-3);
+}

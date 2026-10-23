@@ -32,7 +32,8 @@
     "myRegistration": "Minha Inscrição",
     "logout": "Sair",
     "menu": "Menu",
-    "anais": "Anais"
+    "anais": "Anais",
+    "editais": "Editais"
   },
   "home": {
     "heroTagline": "Ciência, gestão e sustentabilidade dos recursos naturais",
@@ -77,7 +78,21 @@
     "title": "Submissão de Trabalhos",
     "comingSoon": "As submissões abrem em breve",
     "comingSoonBody": "O sistema de submissão de trabalhos está em preparação. Acompanhe os avisos para saber quando as submissões serão abertas.",
-    "rulesTitle": "Regras de Submissão"
+    "rulesTitle": "Regras de Submissão",
+    "rulesBody": "As regras de submissão, as áreas temáticas e o cronograma estão no edital.",
+    "rulesCta": "Ler o edital de submissão",
+    "templatesTitle": "Modelos para download"
+  },
+  "editais": {
+    "title": "Editais",
+    "intro": "Editais, normas e modelos oficiais do {{edition}}.",
+    "empty": "Os editais do {{edition}} serão publicados em breve.",
+    "files": "Documentos e modelos",
+    "officialTextNotice": "",
+    "publishedAt": "Publicado em {{date}}",
+    "read": "Ler o edital",
+    "backToList": "Todos os editais",
+    "formatLink": "link"
   },
   "registration": {
     "title": "Inscrições",
