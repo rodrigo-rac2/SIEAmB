@@ -19,6 +19,7 @@ describe('Header + TopBar (fixtures)', () => {
     expect(labels).toContain('Equipe');
     expect(labels).not.toContain('Edições Anteriores');
     expect(labels.indexOf('Equipe')).toBe(labels.indexOf('O Evento') + 1);
+    expect(labels.indexOf('Editais')).toBe(labels.indexOf('Submissões') - 1);
     expect(screen.getByRole('link', { name: 'Edições Anteriores' })).toHaveAttribute('href', '/edicoes-anteriores');
   });
 

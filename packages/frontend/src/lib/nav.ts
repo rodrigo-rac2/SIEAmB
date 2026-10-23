@@ -26,6 +26,7 @@ export function navLinks(event: Pick<EventSummary, 'slug' | 'isArchived'> | null
     { to: `${base}/o-evento`, labelKey: 'nav.about' },
     { to: `${base}/organizacao`, labelKey: 'nav.committee' },
     { to: `${base}/areas-tematicas`, labelKey: 'nav.areas' },
+    { to: `${base}/editais`, labelKey: 'nav.editais' },
     { to: `${base}/submissoes`, labelKey: 'nav.submissions' },
     { to: `${base}/inscricoes`, labelKey: 'nav.registration' },
     { to: `${base}/datas-importantes`, labelKey: 'nav.dates' },

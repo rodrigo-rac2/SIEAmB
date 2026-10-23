@@ -174,6 +174,11 @@ describe('StaticDataProvider', () => {
         check(`news ${n.slug} excerpt`, n.excerpt);
         check(`news ${n.slug} body`, n.bodyMd);
       }
+      for (const ed of await provider.getEditais(e.id)) {
+        check(`edital ${ed.slug} title`, ed.title);
+        check(`edital ${ed.slug} summary`, ed.summary);
+        for (const f of ed.attachments) check(`edital ${ed.slug} file ${f.url}`, f.label);
+      }
     }
     check('site about', (await provider.getSiteContent()).aboutMd);
     for (const f of await provider.getFounders()) {

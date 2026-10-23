@@ -26,6 +26,8 @@ test.describe('public site @smoke', () => {
       ['/2027/areas-tematicas', 'Áreas Temáticas'],
       ['/2027/programacao', 'Programação'],
       ['/2027/submissoes', 'Submissão de Trabalhos'],
+      ['/2027/editais', 'Editais'],
+      ['/2027/editais/submissao-e-apresentacao-de-trabalhos', 'Edital de submissão'],
       ['/2027/inscricoes', 'Inscrições'],
       ['/2027/datas-importantes', 'Datas Importantes'],
       ['/2027/avisos', 'Avisos'],

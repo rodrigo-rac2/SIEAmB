@@ -175,6 +175,27 @@ export interface AnaisEntry {
   sortOrder: number;
 }
 
+/** A downloadable file attached to an edital: the official PDF, a paper template, a slide template or an external link. */
+export interface EditalAttachment {
+  label: LocalizedText;
+  url: string;
+  format: 'pdf' | 'docx' | 'pptx' | 'link';
+}
+
+/** A call (edital) of an edition, published as an HTML page with its official files. */
+export interface Edital {
+  id: string;
+  eventId: string;
+  slug: string;
+  title: LocalizedText;
+  summary: LocalizedText | null;
+  /** Official text. Editais are legal documents, so the body is usually pt-BR only. */
+  bodyMd: LocalizedText;
+  attachments: EditalAttachment[];
+  publishedAt: string; // ISO
+  sortOrder: number;
+}
+
 export interface RegistrationInput {
   fullName: string;
   email: string;

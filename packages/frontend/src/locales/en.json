@@ -32,7 +32,8 @@
     "myRegistration": "My Registration",
     "logout": "Sign out",
     "menu": "Menu",
-    "anais": "Proceedings"
+    "anais": "Proceedings",
+    "editais": "Calls"
   },
   "home": {
     "heroTagline": "Science, management and sustainability of natural resources",
@@ -77,7 +78,21 @@
     "title": "Paper Submission",
     "comingSoon": "Submissions open soon",
     "comingSoonBody": "The submission system is being prepared. Follow the news to know when submissions open.",
-    "rulesTitle": "Submission Rules"
+    "rulesTitle": "Submission Rules",
+    "rulesBody": "The submission rules, thematic areas and schedule are in the call for papers.",
+    "rulesCta": "Read the call for papers",
+    "templatesTitle": "Templates to download"
+  },
+  "editais": {
+    "title": "Calls for papers",
+    "intro": "Calls, rules and official templates of the {{edition}}.",
+    "empty": "The calls of the {{edition}} will be published soon.",
+    "files": "Documents and templates",
+    "officialTextNotice": "The official text of this call is in Portuguese. The files and templates below are the official versions.",
+    "publishedAt": "Published on {{date}}",
+    "read": "Read the call",
+    "backToList": "All calls",
+    "formatLink": "link"
   },
   "registration": {
     "title": "Registration",
