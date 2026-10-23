@@ -1,4 +1,4 @@
-import type { ImportantDate, NewsItem, Sponsor } from '@sieamb/shared';
+import type { Edital, ImportantDate, NewsItem, Sponsor } from '@sieamb/shared';
 import { formatDateList } from '@sieamb/shared';
 import { useEffect, useState, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -38,6 +38,7 @@ export function HomePage() {
   const [dates, setDates] = useState<ImportantDate[]>([]);
   const [news, setNews] = useState<NewsItem[]>([]);
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
+  const [edital, setEdital] = useState<Edital | null>(null);
 
   useEffect(() => {
     if (!event) return;
@@ -45,12 +46,21 @@ export function HomePage() {
     void provider.getImportantDates(event.id).then(setDates);
     void provider.getPublishedNews(event.id).then((items) => setNews(items.slice(0, 3)));
     void provider.getSponsors(event.id).then(setSponsors);
+    // Newest call of the edition drives the strip under the hero.
+    void provider
+      .getEditais(event.id)
+      .then((list) => setEdital([...list].sort((a, b) => b.publishedAt.localeCompare(a.publishedAt))[0] ?? null));
   }, [event]);
 
   if (!event) return null;
   const base = `/${event.slug}`;
 
+  const pdf = edital?.attachments.find((f) => f.format === 'pdf');
+
   const quickLinks = [
+    ...(edital
+      ? [{ to: `${base}/editais`, title: t('home.quickEditais'), desc: t('home.quickEditaisDesc') }]
+      : []),
     {
       to: `${base}/inscricoes`,
       title: t('home.quickRegistration'),
@@ -113,6 +123,30 @@ export function HomePage() {
           )}
         </div>
       </section>
+
+      {edital && (
+        <section className="edital-strip" aria-labelledby="edital-strip-title">
+          <div className="container edital-strip__inner">
+            <div className="edital-strip__text">
+              <span className="edital-strip__badge">{t('home.editalBadge')}</span>
+              <h2 id="edital-strip-title" className="edital-strip__title">
+                {l(edital.title)}
+              </h2>
+              {edital.summary && <p>{l(edital.summary)}</p>}
+            </div>
+            <div className="edital-strip__actions">
+              <Link className="edital-strip__primary" to={`${base}/editais/${edital.slug}`}>
+                {t('home.editalRead')} →
+              </Link>
+              {pdf && (
+                <a href={assetUrl(pdf.url)} target="_blank" rel="noreferrer">
+                  {t('home.editalPdf')}
+                </a>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="section">
         <div className="container quick-links">

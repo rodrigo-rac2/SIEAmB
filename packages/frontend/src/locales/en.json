@@ -52,7 +52,12 @@
     "datesTitle": "Important Dates",
     "newsTitle": "Latest News",
     "allNews": "See all news",
-    "sponsorsTitle": "Organization and Support"
+    "sponsorsTitle": "Organization and Support",
+    "editalBadge": "Call for papers published",
+    "editalRead": "Read the call",
+    "quickEditais": "Calls for papers",
+    "quickEditaisDesc": "The call, rules and submission templates.",
+    "editalPdf": "Call in PDF"
   },
   "about": {
     "title": "The Event",
