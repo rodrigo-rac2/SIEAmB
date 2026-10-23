@@ -52,7 +52,12 @@
     "datesTitle": "Datas Importantes",
     "newsTitle": "Últimos Avisos",
     "allNews": "Ver todos os avisos",
-    "sponsorsTitle": "Realização e Apoio"
+    "sponsorsTitle": "Realização e Apoio",
+    "editalBadge": "Edital publicado",
+    "editalRead": "Ler o edital",
+    "quickEditais": "Editais",
+    "quickEditaisDesc": "Edital, normas e modelos para submissão.",
+    "editalPdf": "Edital em PDF"
   },
   "about": {
     "title": "O Evento",
