@@ -1,5 +1,32 @@
 [
   {
+    "id": "n3",
+    "eventId": "evt-2027",
+    "slug": "edital-do-ii-sieamb-publicado",
+    "title": {
+      "pt-BR": "Edital do II SIEAmB publicado",
+      "en": "II SIEAmB call for papers published",
+      "es": "Publicada la convocatoria del II SIEAmB",
+      "zh-CN": "第二届 SIEAmB 征稿通知发布"
+    },
+    "excerpt": {
+      "pt-BR": "Já estão disponíveis o edital de submissão e apresentação de trabalhos e os modelos de artigo, resumo expandido e apresentação.",
+      "en": "The call for submission and presentation of works is out, along with the article, expanded abstract and presentation templates.",
+      "es": "Ya están disponibles la convocatoria de envío y presentación de trabajos y las plantillas de artículo, resumen expandido y presentación.",
+      "zh-CN": "论文提交与报告征稿通知已发布，论文、扩展摘要和报告模板同步提供下载。"
+    },
+    "bodyMd": {
+      "pt-BR": "O **edital de submissão e apresentação de trabalhos** do II Seminário Internacional de Estudos Ambientais (SIEAmB) está publicado.\n\nO tema desta edição é **“Diálogos globais sobre governança climática: Desafios na gestão de desastres naturais”**. Os trabalhos podem ser submetidos como **Artigo Científico** (12 a 15 páginas) ou **Resumo Expandido** (4 a 6 páginas), em português, inglês ou espanhol, em uma das [oito áreas temáticas](/2027/areas-tematicas).\n\n- **Inscrições:** a partir de 10/11/2026\n- **Submissões:** de 15/11/2026 a 18/01/2027\n- **Evento:** 24, 25 e 26 de março de 2027, online\n\nOs trabalhos devem seguir os modelos oficiais, disponíveis junto com o edital.\n\n[Leia o edital completo e baixe os modelos](/2027/editais/submissao-e-apresentacao-de-trabalhos)",
+      "en": "The **call for submission and presentation of works** of the II International Seminar on Environmental Studies (SIEAmB) is published.\n\nThis edition's theme is **“Global dialogues on climate governance: challenges in natural disaster management”**. Works can be submitted as a **Scientific Article** (12 to 15 pages) or an **Expanded Abstract** (4 to 6 pages), in Portuguese, English or Spanish, in one of the [eight thematic areas](/2027/areas-tematicas).\n\n- **Registration:** from 10/11/2026\n- **Submissions:** 15/11/2026 to 18/01/2027\n- **Event:** 24, 25 and 26 March 2027, online\n\nWorks must follow the official templates, available with the call. The official text of the call is in Portuguese.\n\n[Read the full call and download the templates](/2027/editais/submissao-e-apresentacao-de-trabalhos)",
+      "es": "La **convocatoria de envío y presentación de trabajos** del II Seminario Internacional de Estudios Ambientales (SIEAmB) está publicada.\n\nEl tema de esta edición es **“Diálogos globales sobre gobernanza climática: desafíos en la gestión de desastres naturales”**. Los trabajos pueden enviarse como **Artículo Científico** (12 a 15 páginas) o **Resumen Expandido** (4 a 6 páginas), en portugués, inglés o español, en una de las [ocho áreas temáticas](/2027/areas-tematicas).\n\n- **Inscripciones:** a partir del 10/11/2026\n- **Envíos:** del 15/11/2026 al 18/01/2027\n- **Fecha del evento:** 24, 25 y 26 de marzo de 2027, en línea\n\nLos trabajos deben seguir las plantillas oficiales, disponibles junto con la convocatoria. El texto oficial de la convocatoria está en portugués.\n\n[Lea la convocatoria completa y descargue las plantillas](/2027/editais/submissao-e-apresentacao-de-trabalhos)",
+      "zh-CN": "第二届国际环境研究研讨会（SIEAmB）**论文提交与报告征稿通知**现已发布。\n\n本届主题为 **“全球气候治理对话：自然灾害管理的挑战”**。论文可以**科学论文**（12 至 15 页）或**扩展摘要**（4 至 6 页）形式提交，语言为葡萄牙语、英语或西班牙语，并须归属[八个主题领域](/2027/areas-tematicas)之一。\n\n- **报名：** 2026年11月10日起\n- **投稿：** 2026年11月15日至2027年1月18日\n- **会议：** 2027年3月24、25、26日，线上举行\n\n论文须使用官方模板，模板随征稿通知一同提供。征稿通知正式文本为葡萄牙语。\n\n[阅读完整征稿通知并下载模板](/2027/editais/submissao-e-apresentacao-de-trabalhos)"
+    },
+    "coverImageUrl": null,
+    "status": "PUBLISHED",
+    "isPinned": true,
+    "publishedAt": "2026-10-23T12:00:00-03:00"
+  },
+  {
     "id": "n1",
     "eventId": "evt-2027",
     "slug": "site-do-ii-sieamb-no-ar",
@@ -23,7 +50,7 @@
     },
     "coverImageUrl": null,
     "status": "PUBLISHED",
-    "isPinned": true,
+    "isPinned": false,
     "publishedAt": "2026-08-30T10:00:00-03:00"
   },
   {

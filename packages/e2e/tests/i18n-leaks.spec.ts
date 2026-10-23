@@ -21,6 +21,7 @@ const ROUTES = [
   '/2027/datas-importantes',
   '/2027/avisos',
   '/2027/avisos/site-do-ii-sieamb-no-ar',
+  '/2027/avisos/edital-do-ii-sieamb-publicado',
   '/2027/local',
   '/2027/contato',
   '/2027/nao-existe',
