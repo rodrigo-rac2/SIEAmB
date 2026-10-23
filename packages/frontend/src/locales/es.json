@@ -52,7 +52,12 @@
     "datesTitle": "Fechas Importantes",
     "newsTitle": "Últimos Avisos",
     "allNews": "Ver todos los avisos",
-    "sponsorsTitle": "Organización y Apoyo"
+    "sponsorsTitle": "Organización y Apoyo",
+    "editalBadge": "Convocatoria publicada",
+    "editalRead": "Leer la convocatoria",
+    "quickEditais": "Convocatorias",
+    "quickEditaisDesc": "Convocatoria, normas y plantillas de envío.",
+    "editalPdf": "Convocatoria en PDF"
   },
   "about": {
     "title": "El Evento",

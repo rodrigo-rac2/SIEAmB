@@ -52,7 +52,12 @@
     "datesTitle": "重要日期",
     "newsTitle": "最新公告",
     "allNews": "查看全部公告",
-    "sponsorsTitle": "主办与支持单位"
+    "sponsorsTitle": "主办与支持单位",
+    "editalBadge": "征稿通知已发布",
+    "editalRead": "阅读征稿通知",
+    "quickEditais": "征稿通知",
+    "quickEditaisDesc": "征稿通知、规则与投稿模板。",
+    "editalPdf": "征稿通知 PDF"
   },
   "about": {
     "title": "会议简介",
