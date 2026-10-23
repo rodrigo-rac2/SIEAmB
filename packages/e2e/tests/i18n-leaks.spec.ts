@@ -14,6 +14,8 @@ const ROUTES = [
   '/2027/areas-tematicas',
   '/2027/programacao',
   '/2027/submissoes',
+  '/2027/editais',
+  '/2027/editais/submissao-e-apresentacao-de-trabalhos',
   '/2027/inscricoes',
   '/2027/inscricoes/nova',
   '/2027/datas-importantes',
@@ -65,6 +67,9 @@ async function visibleTexts(page: Page, locale: string, route: string): Promise<
       const el = node.parentElement;
       if (!text || !el) continue;
       if (['SCRIPT', 'STYLE', 'NOSCRIPT', 'TITLE'].includes(el.tagName)) continue;
+      // Official texts marked as Portuguese on purpose (the edital body) are not leaks.
+      const official = el.closest('[lang="pt-BR"]');
+      if (official && official !== document.documentElement) continue;
       const cs = getComputedStyle(el);
       if (cs.display === 'none' || cs.visibility === 'hidden') continue;
       out.push(text);

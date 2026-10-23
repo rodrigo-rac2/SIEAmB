@@ -26,6 +26,8 @@ test.describe('public site @smoke', () => {
       ['/2027/areas-tematicas', 'Áreas Temáticas'],
       ['/2027/programacao', 'Programação'],
       ['/2027/submissoes', 'Submissão de Trabalhos'],
+      ['/2027/editais', 'Editais'],
+      ['/2027/editais/submissao-e-apresentacao-de-trabalhos', 'Edital de submissão'],
       ['/2027/inscricoes', 'Inscrições'],
       ['/2027/datas-importantes', 'Datas Importantes'],
       ['/2027/avisos', 'Avisos'],
@@ -223,7 +225,7 @@ test.describe('i18n @smoke', () => {
     await page.goto('/2027/local');
     await expect(page.getByRole('heading', { name: 'Online event' })).toBeVisible();
     await page.goto('/2027/areas-tematicas');
-    await expect(page.getByRole('heading', { name: 'Water Resources Management' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Environmental Philosophy and History' })).toBeVisible();
     await page.goto('/2027/avisos');
     await page.getByRole('link', { name: 'The II SIEAmB website is live' }).first().click();
     await expect(page.getByRole('heading', { level: 1 })).toContainText('The II SIEAmB website is live');

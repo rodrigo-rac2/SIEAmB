@@ -5,6 +5,8 @@ import { AboutPage } from './pages/AboutPage';
 import { AnaisPage } from './pages/AnaisPage';
 import { CommitteePage } from './pages/CommitteePage';
 import { ContactPage } from './pages/ContactPage';
+import { EditaisPage } from './pages/EditaisPage';
+import { EditalPage } from './pages/EditalPage';
 import { EditionsPage } from './pages/EditionsPage';
 import { HomePage } from './pages/HomePage';
 import { ImportantDatesPage } from './pages/ImportantDatesPage';
@@ -45,6 +47,8 @@ export function App() {
           <Route path="organizacao" element={<CommitteePage />} />
           <Route path="areas-tematicas" element={<ThematicAreasPage />} />
           <Route path="programacao" element={<ProgrammePage />} />
+          <Route path="editais" element={<EditaisPage />} />
+          <Route path="editais/:editalSlug" element={<EditalPage />} />
           <Route path="submissoes" element={<SubmissionsPage />} />
           <Route path="inscricoes" element={<RegistrationInfoPage />} />
           <Route path="inscricoes/nova" element={<RegistrationFormPage />} />

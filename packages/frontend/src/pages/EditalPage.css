@@ -1,0 +1,52 @@
+.container.edital {
+  max-width: 80ch;
+}
+
+.edital__files {
+  background: var(--color-accent-light);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
+  margin-bottom: var(--space-6);
+}
+
+.edital__files h2 {
+  font-size: var(--text-lg);
+  margin: 0 0 var(--space-3);
+}
+
+.edital__notice {
+  font-size: var(--text-sm);
+  color: var(--color-ink-muted);
+  border-left: 3px solid var(--color-accent);
+  padding-left: var(--space-3);
+}
+
+.edital__body h2 {
+  margin-top: var(--space-8);
+}
+
+.edital__body h3,
+.edital__body h4 {
+  margin-top: var(--space-5);
+}
+
+.edital__body p {
+  hyphens: auto;
+}
+
+@media (min-width: 640px) {
+  .edital__body p {
+    text-align: justify;
+  }
+}
+
+/* Items carry their own markers (I., a), I – APROVADO) as written in the edital. */
+.edital__body ul {
+  list-style: none;
+  padding-left: var(--space-4);
+}
+
+.edital__body li + li {
+  margin-top: var(--space-1);
+}

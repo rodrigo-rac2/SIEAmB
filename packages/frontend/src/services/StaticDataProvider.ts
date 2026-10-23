@@ -1,6 +1,7 @@
 import type {
   AnaisEntry,
   CommitteeMember,
+  Edital,
   EventSummary,
   FeeTier,
   Founder,
@@ -16,6 +17,7 @@ import type { DataProvider } from './DataProvider';
 
 import anais from '../data/anais.json';
 import committee from '../data/committee.json';
+import editais from '../data/editais.json';
 import events from '../data/events.json';
 import feeTiers from '../data/feeTiers.json';
 import founders from '../data/founders.json';
@@ -27,6 +29,7 @@ import thematicAreas from '../data/thematicAreas.json';
 
 const EVENTS = events as EventSummary[];
 const NEWS = news as NewsItem[];
+const EDITAIS = editais as Edital[];
 
 /** Fixture-backed provider: powers the pure-static prototype and unit tests. */
 export class StaticDataProvider implements DataProvider {
@@ -84,6 +87,14 @@ export class StaticDataProvider implements DataProvider {
     return (anais as AnaisEntry[])
       .filter((a) => a.eventId === eventId)
       .sort((a, b) => a.sortOrder - b.sortOrder);
+  }
+
+  async getEditais(eventId: string): Promise<Edital[]> {
+    return EDITAIS.filter((e) => e.eventId === eventId).sort((a, b) => a.sortOrder - b.sortOrder);
+  }
+
+  async getEditalBySlug(eventId: string, slug: string): Promise<Edital | null> {
+    return EDITAIS.find((e) => e.eventId === eventId && e.slug === slug) ?? null;
   }
 
   async getPublishedNews(eventId: string): Promise<NewsItem[]> {
