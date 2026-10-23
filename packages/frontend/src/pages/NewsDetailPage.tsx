@@ -56,7 +56,21 @@ export function NewsDetailPage() {
       </PageHeader>
       <section className="section">
         <div className="container" style={{ maxWidth: '72ch' }}>
-          <Markdown>{l(item.bodyMd)}</Markdown>
+          <Markdown
+            components={{
+              // Internal paths stay in the SPA; everything else opens in a new tab.
+              a: ({ href = '', children }) =>
+                href.startsWith('/') ? (
+                  <Link to={href}>{children}</Link>
+                ) : (
+                  <a href={href} target="_blank" rel="noreferrer">
+                    {children}
+                  </a>
+                ),
+            }}
+          >
+            {l(item.bodyMd)}
+          </Markdown>
           <p style={{ marginTop: 'var(--space-6)' }}>
             <Link to={`/${event.slug}/avisos`}>← {t('news.title')}</Link>
           </p>
