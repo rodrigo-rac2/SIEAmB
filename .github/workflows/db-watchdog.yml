@@ -1,0 +1,101 @@
+name: DB watchdog
+
+# Supabase pauses free projects after a week without "sufficient user database
+# activity" and never defines the threshold, so the keep-alive alone cannot be
+# trusted: both projects paused on 23 Oct while it was green. A paused project
+# can only be unpaused for 90 days, so this checks both projects through the
+# Management API every 6 hours, restores a paused one and opens an issue so the
+# pause never goes unnoticed (#144).
+on:
+  schedule:
+    - cron: '41 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: prod
+            url: SUPABASE_PROD_URL
+          - name: dev
+            url: SUPABASE_DEV_URL
+    steps:
+      - name: Check ${{ matrix.name }}
+        env:
+          NAME: sieamb-${{ matrix.name }}
+          SUPABASE_URL: ${{ secrets[matrix.url] }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
+            echo "SUPABASE_ACCESS_TOKEN secret is missing"
+            exit 1
+          fi
+          ref=$(printf '%s' "$SUPABASE_URL" | sed -E 's#^https://([a-z0-9]+)\.supabase\.co.*#\1#')
+          api="https://api.supabase.com/v1/projects/$ref"
+          auth="Authorization: Bearer $SUPABASE_ACCESS_TOKEN"
+
+          project_status() {
+            curl -sS --fail --max-time 30 -H "$auth" "$api" | jq -r '.status // "UNKNOWN"'
+          }
+
+          # One open issue per problem, a stuck project must not open one every 6 hours.
+          report() {
+            if gh issue list --state open --label infra --json title \
+              | jq -e --arg t "$1" 'any(.[]; .title == $t)' >/dev/null; then
+              echo "an open issue already says: $1"
+              return 0
+            fi
+            gh issue create --label infra --title "$1" --body "$2
+
+          Run: $RUN_URL" || echo "could not open the issue"
+          }
+
+          status=$(project_status) || { echo "$NAME: could not read the project status"; exit 1; }
+          echo "$NAME is $status"
+
+          case "$status" in
+            ACTIVE_HEALTHY)
+              exit 0 ;;
+            COMING_UP|RESTORING|RESTARTING|PAUSING|UPGRADING|RESIZING|GOING_DOWN)
+              echo "$NAME is changing state, the next run checks it again"
+              exit 0 ;;
+            INACTIVE)
+              ;;
+            *)
+              report "DB watchdog: $NAME is $status" "The watchdog found $NAME in state \`$status\` and did not touch it. Check the Supabase dashboard."
+              exit 1 ;;
+          esac
+
+          code=$(curl -sS -o restore.json -w '%{http_code}' --max-time 30 -X POST -H "$auth" "$api/restore") || code=000
+          echo "restore answered HTTP $code"
+          if [ "${code:0:1}" != "2" ]; then
+            cat restore.json 2>/dev/null || true
+            report "DB watchdog: restoring $NAME failed" "$NAME was paused and the restore call answered HTTP $code. Supabase only allows unpausing for 90 days after the pause, restore it from the dashboard now."
+            exit 1
+          fi
+
+          # A restore takes a few minutes; give it up to 20.
+          for _ in $(seq 1 40); do
+            sleep 30
+            status=$(project_status || echo UNKNOWN)
+            echo "$NAME is $status"
+            if [ "$status" = "ACTIVE_HEALTHY" ]; then
+              report "DB watchdog restored $NAME" "Supabase paused $NAME for inactivity and the watchdog restored it on $(date -u +%Y-%m-%d), the project is healthy again."
+              exit 0
+            fi
+          done
+
+          report "DB watchdog: $NAME did not come back" "The watchdog asked Supabase to restore $NAME but it was still \`$status\` after 20 minutes. Check the Supabase dashboard."
+          exit 1
