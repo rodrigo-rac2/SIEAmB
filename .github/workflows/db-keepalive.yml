@@ -1,13 +1,15 @@
 name: DB keep-alive
 
-# Supabase pauses free projects after a week without activity. A plain SQL
-# query through the pooler does not count (sieamb-dev was paused on 18 Oct
-# while the pings were green), so this hits the REST API with the anon key
-# once a day on both projects (#13, #112). A paused project answers with
-# something other than 200 and turns the run red.
+# Supabase pauses free projects after a week without "sufficient user database
+# activity" ("typically a few user requests to the database each day"). A plain
+# SQL query through the pooler does not count (sieamb-dev paused on 18 Oct), and
+# one REST read a day was not enough either: both projects paused on 23 Oct with
+# every daily run green (#112). So this reads four public tables through the
+# REST API with the anon key every 4 hours, 24 requests a day per project.
+# A paused project answers with something other than 200 and turns the run red.
 on:
   schedule:
-    - cron: '30 6 * * *'
+    - cron: '17 */4 * * *'
   workflow_dispatch:
 
 permissions:
@@ -33,11 +35,13 @@ jobs:
           SUPABASE_URL: ${{ secrets[matrix.url] }}
           ANON_KEY: ${{ secrets[matrix.key] }}
         run: |
-          status=$(curl -sS -o body.json -w '%{http_code}' \
-            "$SUPABASE_URL/rest/v1/events?select=id&limit=1" \
-            -H "apikey: $ANON_KEY" -H "Authorization: Bearer $ANON_KEY")
-          echo "${{ matrix.name }} answered HTTP $status"
-          if [ "$status" != "200" ]; then
-            cat body.json
-            exit 1
-          fi
+          for table in events important_dates thematic_areas fee_tiers; do
+            status=$(curl -sS -o body.json -w '%{http_code}' --max-time 20 \
+              "$SUPABASE_URL/rest/v1/$table?select=id&limit=1" \
+              -H "apikey: $ANON_KEY" -H "Authorization: Bearer $ANON_KEY") || status=000
+            echo "${{ matrix.name }} $table answered HTTP $status"
+            if [ "$status" != "200" ]; then
+              cat body.json 2>/dev/null
+              exit 1
+            fi
+          done
