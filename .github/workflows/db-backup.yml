@@ -1,15 +1,22 @@
 name: DB backup
 
 # Weekly logical backup of the production Supabase database. The free tier has
-# no point-in-time recovery, so this is the recovery path (#13). Dumps are kept
-# as workflow artifacts for 90 days; moving them to R2 is a follow-up.
+# no point-in-time recovery, so this is the recovery path (#13). The repo is
+# public and artifacts expire after 90 days, so each dump is encrypted with
+# BACKUP_PASSPHRASE and kept as an asset of the `db-backups` release, which
+# never expires (#145). Restore steps: docs/db-backups.md.
 on:
   schedule:
     - cron: '0 6 * * 0' # Sundays 06:00 UTC (03:00 Brasília)
   workflow_dispatch:
+    inputs:
+      label:
+        description: 'Optional archive label added to the file names, e.g. final-2027'
+        required: false
+        default: ''
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   backup:
@@ -31,9 +38,12 @@ jobs:
       - name: Dump public schema and auth users
         env:
           DB_URL: ${{ secrets.SUPABASE_PROD_DIRECT_URL }}
+          LABEL: ${{ inputs.label }}
         run: |
           set -euo pipefail
           STAMP=$(date -u +%Y%m%dT%H%M%SZ)
+          SAFE_LABEL=$(printf '%s' "${LABEL:-}" | tr -c 'a-zA-Z0-9-' '-' | tr '[:upper:]' '[:lower:]' | sed -E 's/-+/-/g; s/^-|-$//g')
+          [ -n "$SAFE_LABEL" ] && STAMP="$STAMP-$SAFE_LABEL"
           mkdir -p dump
           pg_dump "$DB_URL" --schema=public --no-owner --no-privileges --format=custom \
             --file "dump/sieamb-prod-public-$STAMP.dump"
@@ -43,9 +53,38 @@ jobs:
           ls -la dump
           pg_restore --list "dump/sieamb-prod-public-$STAMP.dump" | grep -c "TABLE DATA" | xargs -I{} echo "{} tables with data"
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: sieamb-prod-backup-${{ github.run_id }}
-          path: dump/
-          retention-days: 90
-          if-no-files-found: error
+      - name: Encrypt the dumps
+        env:
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          if [ -z "$BACKUP_PASSPHRASE" ]; then
+            echo "BACKUP_PASSPHRASE secret is missing, refusing to publish plain dumps"
+            exit 1
+          fi
+          for f in dump/*.dump; do
+            printf '%s' "$BACKUP_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback \
+              --passphrase-fd 0 --symmetric --cipher-algo AES256 --output "$f.gpg" "$f"
+            rm -f "$f"
+          done
+          ls -la dump
+          # Prove the passphrase opens what is about to be published.
+          for f in dump/*.gpg; do
+            printf '%s' "$BACKUP_PASSPHRASE" | gpg --batch --quiet --pinentry-mode loopback \
+              --passphrase-fd 0 --decrypt "$f" | pg_restore --list >/dev/null
+          done
+          echo "all dumps decrypt and read back"
+
+      - name: Upload to the db-backups release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if ! gh release view db-backups >/dev/null 2>&1; then
+            gh release create db-backups --target "$GITHUB_SHA" --prerelease \
+              --title "Database backups (encrypted)" \
+              --notes "Weekly encrypted pg_dump files of sieamb-prod. Only the BACKUP_PASSPHRASE opens them, see docs/db-backups.md."
+          fi
+          gh release upload db-backups dump/*.gpg
+          gh release view db-backups --json assets --jq '.assets | length' | xargs -I{} echo "{} backup files in the release"
