@@ -205,7 +205,8 @@ export interface RegistrationInput {
   institution?: string;
   category: ParticipantCategory;
   modality: Modality;
-  password: string;
+  /** UI language at submission (BCP 47), so the follow-up e-mail speaks it. */
+  locale: string;
 }
 
 export interface Registration {

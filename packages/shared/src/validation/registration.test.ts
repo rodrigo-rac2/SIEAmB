@@ -10,7 +10,7 @@ const base = {
   institution: 'UFCG',
   category: 'ESTUDANTE_POS' as const,
   modality: 'PRESENCIAL' as const,
-  password: 'secret123',
+  consent: true,
 };
 
 describe('registrationSchema', () => {
@@ -39,9 +39,18 @@ describe('registrationSchema', () => {
     expect(result.success).toBe(false);
   });
 
-  it('rejects a short password', () => {
-    const result = registrationSchema.safeParse({ ...base, password: '1234' });
+  it('rejects a missing LGPD consent', () => {
+    const result = registrationSchema.safeParse({ ...base, consent: false });
     expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0]?.path).toEqual(['consent']);
+      expect(result.error.issues[0]?.message).toBe('consent_required');
+    }
+  });
+
+  it('lower-cases the e-mail so the per-event unique index catches case variants', () => {
+    const parsed = registrationSchema.parse({ ...base, email: ' Maria@Example.COM ' });
+    expect(parsed.email).toBe('maria@example.com');
   });
 
   it('rejects an invalid category', () => {

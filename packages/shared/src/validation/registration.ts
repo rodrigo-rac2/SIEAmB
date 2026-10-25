@@ -11,10 +11,12 @@ export const participantCategorySchema = z.enum([
 
 export const modalitySchema = z.enum(['PRESENCIAL', 'ONLINE']);
 
+// Pre-registration (#149): no password until accounts exist (#14). The LGPD
+// consent is required because the row holds a CPF and is kept until the event.
 export const registrationSchema = z
   .object({
     fullName: z.string().trim().min(5).max(150),
-    email: z.string().trim().email().max(200),
+    email: z.string().trim().toLowerCase().email().max(200),
     cpf: z
       .string()
       .trim()
@@ -27,7 +29,7 @@ export const registrationSchema = z
     institution: z.string().trim().max(200).optional().or(z.literal('')),
     category: participantCategorySchema,
     modality: modalitySchema,
-    password: z.string().min(8).max(72),
+    consent: z.boolean().refine((v) => v, { message: 'consent_required' }),
   })
   .refine((data) => Boolean(data.cpf) || Boolean(data.passport), {
     message: 'cpf_or_passport_required',

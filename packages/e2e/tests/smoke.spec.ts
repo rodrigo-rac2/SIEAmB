@@ -46,10 +46,7 @@ test.describe('public site @smoke', () => {
 
   test('news list → detail works', async ({ page }) => {
     await page.goto('/2027/avisos');
-    await page
-      .getByRole('link', { name: 'Site do II SIEAmB está no ar' })
-      .first()
-      .click();
+    await page.getByRole('link', { name: 'Site do II SIEAmB está no ar' }).first().click();
     await expect(page.getByRole('heading', { level: 1 })).toContainText(
       'Site do II SIEAmB está no ar',
     );
@@ -78,17 +75,22 @@ test.describe('public site @smoke', () => {
     await expect(page.getByRole('heading', { name: 'Me. Alex Souza Felix' })).toBeVisible();
 
     await page.goto('/2025/anais');
-    await expect(
-      page.getByRole('link', { name: /Journal of Ecoinnovation/ }),
-    ).toHaveAttribute('href', /editoraverde\.org/);
+    await expect(page.getByRole('link', { name: /Journal of Ecoinnovation/ })).toHaveAttribute(
+      'href',
+      /editoraverde\.org/,
+    );
     await expect(page.getByRole('link', { name: /eduCAPES/ })).toHaveAttribute(
       'href',
       /educapes\.capes\.gov\.br/,
     );
 
     // First edition: nothing before it, so no editions-index link in the header (the footer keeps one).
-    await expect(page.locator('.topbar').getByRole('link', { name: 'Edições Anteriores' })).toHaveCount(0);
-    await expect(page.getByRole('navigation').getByRole('link', { name: 'Edições Anteriores' })).toHaveCount(0);
+    await expect(
+      page.locator('.topbar').getByRole('link', { name: 'Edições Anteriores' }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole('navigation').getByRole('link', { name: 'Edições Anteriores' }),
+    ).toHaveCount(0);
   });
 
   test('editions cross-link: archived banner and top bar link', async ({ page }) => {
@@ -108,9 +110,7 @@ test.describe('public site @smoke', () => {
   test('each edition renders its own palette', async ({ page }) => {
     const topbarColor = async (path: string) => {
       await page.goto(path);
-      return page
-        .locator('.topbar')
-        .evaluate((el) => getComputedStyle(el).backgroundColor);
+      return page.locator('.topbar').evaluate((el) => getComputedStyle(el).backgroundColor);
     };
     // 2026 uses the official II SIEAmB dark brown; 2025 keeps its archived first-edition palette.
     expect(await topbarColor('/2027/')).toBe('rgb(57, 33, 16)');
@@ -129,11 +129,17 @@ test.describe('public site @smoke', () => {
     );
     const fonts = await page.locator('h1').evaluate((el) => {
       const cs = getComputedStyle(el);
-      return { heading: cs.fontFamily, body: getComputedStyle(document.querySelector('main')!).fontFamily };
+      return {
+        heading: cs.fontFamily,
+        body: getComputedStyle(document.querySelector('main')!).fontFamily,
+      };
     });
     expect(fonts.heading).toContain('Garet');
     expect(fonts.body).toContain('Lora');
-    await expect(page.locator('.site-header__logo-img')).toHaveAttribute('src', /brand\/2027\/logo\.png/);
+    await expect(page.locator('.site-header__logo-img')).toHaveAttribute(
+      'src',
+      /brand\/2027\/logo\.png/,
+    );
   });
 
   test('build exposes the commit it was made from at /version.json', async ({ request }) => {
@@ -151,17 +157,31 @@ test.describe('public site @smoke', () => {
 });
 
 test.describe('registration form @smoke', () => {
-  test('blocks an invalid CPF and submits with a valid one', async ({ page }) => {
+  // Submissions persist since #149. Production is the real table, so the submit
+  // step only runs locally and on previews/dev (sieamb-dev project), with a
+  // unique e-mail per run because the table is unique per event + e-mail.
+  const isProduction = (baseURL?: string) =>
+    Boolean(baseURL) && new URL(baseURL!).hostname === 'sieamb.org';
+
+  test('blocks an invalid CPF, requires consent, then submits with a valid one', async ({
+    page,
+    baseURL,
+  }) => {
     await page.goto('/2027/inscricoes/nova');
 
     await page.getByLabel(/Nome completo/).fill('Maria da Silva Santos');
-    await page.getByLabel(/E-mail/).fill('maria@example.com');
-    await page.getByLabel('CPF').fill('111.111.111-11');
-    await page.getByLabel(/^Senha/).fill('senha-segura-123');
+    await page.getByLabel(/E-mail/).fill(`e2e+${Date.now()}@sieamb.org`);
+    await page.getByLabel('CPF', { exact: true }).fill('111.111.111-11');
     await page.getByRole('button', { name: /Enviar pré-inscrição/ }).click();
     await expect(page.getByText('CPF inválido. Confira os dígitos.')).toBeVisible();
+    await expect(
+      page.getByText('É preciso autorizar o uso dos dados para enviar a pré-inscrição.'),
+    ).toBeVisible();
 
-    await page.getByLabel('CPF').fill('529.982.247-25');
+    await page.getByLabel('CPF', { exact: true }).fill('529.982.247-25');
+    await page.getByLabel(/Autorizo o uso dos meus dados/).check();
+    if (isProduction(baseURL)) return; // never write a test row into the production table
+
     await page.getByRole('button', { name: /Enviar pré-inscrição/ }).click();
     await expect(page.getByText('Pré-inscrição recebida!')).toBeVisible();
   });
@@ -176,7 +196,9 @@ test.describe('i18n @smoke', () => {
     await context.close();
   });
 
-  test('language buttons are readable on the dark bar: label, contrast and active state', async ({ page }) => {
+  test('language buttons are readable on the dark bar: label, contrast and active state', async ({
+    page,
+  }) => {
     await page.goto('/2027/');
     const group = page.getByRole('group', { name: 'Idioma' });
     await expect(group).toContainText('PT');
@@ -191,23 +213,27 @@ test.describe('i18n @smoke', () => {
     expect(styles.opacity).toBe('1');
     expect(styles.bg).toBe('rgb(255, 255, 255)');
     expect(styles.color).not.toBe('rgb(255, 255, 255)');
-    const idle = await group.getByRole('button', { name: 'English' }).evaluate((el) => getComputedStyle(el).opacity);
+    const idle = await group
+      .getByRole('button', { name: 'English' })
+      .evaluate((el) => getComputedStyle(el).opacity);
     expect(idle).toBe('1');
   });
 
   test('flag buttons switch the language', async ({ page }) => {
     await page.goto('/2027/');
     await page.getByRole('button', { name: 'English' }).click();
-    await expect(page.getByRole('link', { name: 'Registration', exact: true }).first()).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'Registration', exact: true }).first(),
+    ).toBeVisible();
     await page.getByRole('button', { name: '中文' }).click();
     await expect(page.getByRole('link', { name: '会议注册' }).first()).toBeVisible();
     await page.getByRole('button', { name: 'Português' }).click();
-    await expect(
-      page.getByRole('link', { name: 'Inscrições', exact: true }).first(),
-    ).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Inscrições', exact: true }).first()).toBeVisible();
   });
 
-  test('content from the data files follows the language: venue, dates, team, fees, areas, news, bios, about', async ({ browser }) => {
+  test('content from the data files follows the language: venue, dates, team, fees, areas, news, bios, about', async ({
+    browser,
+  }) => {
     const context = await browser.newContext();
     await context.addInitScript(() => localStorage.setItem('sieamb-locale', 'en'));
     const page = await context.newPage();
@@ -225,13 +251,19 @@ test.describe('i18n @smoke', () => {
     await page.goto('/2027/local');
     await expect(page.getByRole('heading', { name: 'Online event' })).toBeVisible();
     await page.goto('/2027/areas-tematicas');
-    await expect(page.getByRole('heading', { name: 'Environmental Philosophy and History' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Environmental Philosophy and History' }),
+    ).toBeVisible();
     await page.goto('/2027/avisos');
     await page.getByRole('link', { name: 'The II SIEAmB website is live' }).first().click();
-    await expect(page.getByRole('heading', { level: 1 })).toContainText('The II SIEAmB website is live');
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(
+      'The II SIEAmB website is live',
+    );
     await expect(page.getByText(/official portal/)).toBeVisible();
     await page.goto('/2027/o-evento');
-    await expect(page.getByText(/International Seminar on Environmental Studies/).first()).toBeVisible();
+    await expect(
+      page.getByText(/International Seminar on Environmental Studies/).first(),
+    ).toBeVisible();
     await expect(page.getByText(/Ecological Civilisation/)).toBeVisible();
     await expect(page.getByText(/Civilização Ecológica/)).toHaveCount(0);
     await page.goto('/2025/o-evento');
@@ -239,9 +271,13 @@ test.describe('i18n @smoke', () => {
     await context.close();
   });
 
-  test('about page shows the general text, the edition section and the founders', async ({ page }) => {
+  test('about page shows the general text, the edition section and the founders', async ({
+    page,
+  }) => {
     await page.goto('/2027/o-evento');
-    await expect(page.getByText(/Seminário Internacional de Estudos Ambientais do PPGEGRN/)).toBeVisible();
+    await expect(
+      page.getByText(/Seminário Internacional de Estudos Ambientais do PPGEGRN/),
+    ).toBeVisible();
     await expect(page.getByRole('heading', { name: /Esta edição: II SIEAmB/ })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Idealizadores' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Ma. Najara Escarião Agripino' })).toBeVisible();
@@ -249,10 +285,15 @@ test.describe('i18n @smoke', () => {
     await expect(page.getByText(/Governança Ambiental da China e do Brasil/)).toBeVisible();
   });
 
-  test('team page groups the 2027 team with coordination badges and the founders block', async ({ page, isMobile }) => {
+  test('team page groups the 2027 team with coordination badges and the founders block', async ({
+    page,
+    isMobile,
+  }) => {
     await page.goto('/2027/');
     if (!isMobile) {
-      await expect(page.getByRole('navigation').getByRole('link', { name: 'Equipe' })).toBeVisible();
+      await expect(
+        page.getByRole('navigation').getByRole('link', { name: 'Equipe' }),
+      ).toBeVisible();
     }
     await page.goto('/2027/organizacao');
     await expect(page.getByRole('heading', { name: 'Idealizadores' })).toBeVisible();
@@ -265,7 +306,9 @@ test.describe('i18n @smoke', () => {
     await expect(page.getByRole('heading', { name: 'Arthur Lobato de Andrade' })).toBeVisible();
     await expect(page.locator('img[src*="team/arthur-lobato"]')).toBeVisible();
     // Najara is a founder, on the scientific committee and a reviewer: name three times, bio once.
-    await expect(page.getByRole('heading', { name: 'Ma. Najara Escarião Agripino' })).toHaveCount(3);
+    await expect(page.getByRole('heading', { name: 'Ma. Najara Escarião Agripino' })).toHaveCount(
+      3,
+    );
     await expect(page.getByText(/Civilização Ecológica/)).toHaveCount(1);
     await expect(page.getByRole('link', { name: /Conheça os idealizadores/ })).toHaveCount(0);
   });
@@ -290,7 +333,9 @@ test.describe('i18n @smoke', () => {
     await expect(pros).toContainText(/R\$\s?90,00/);
   });
 
-  test('legacy /2026/ links redirect to the 2027 slug, keeping the rest of the path', async ({ page }) => {
+  test('legacy /2026/ links redirect to the 2027 slug, keeping the rest of the path', async ({
+    page,
+  }) => {
     await page.goto('/2026/organizacao?x=1#equipe');
     await expect(page).toHaveURL(/\/2027\/organizacao\?x=1#equipe$/);
     await expect(page.getByRole('heading', { name: 'Comitê Científico' })).toBeVisible();

@@ -1,20 +1,21 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  registrationSchema,
-  type RegistrationFormData,
-} from '@sieamb/shared';
+import { registrationSchema, type RegistrationFormData } from '@sieamb/shared';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useEvent } from '../../contexts/EventContext';
-import { DuplicateRegistrationError, getDataProvider } from '../../services';
+import {
+  DuplicateRegistrationError,
+  RegistrationClosedError,
+  getDataProvider,
+} from '../../services';
 import './RegistrationForm.css';
 
 // Categories offered to the II SIEAmB (committee fee table, 2026-10-10). The fee tiers decide what is shown.
 const CATEGORIES = ['ESTUDANTE_GRADUACAO', 'ESTUDANTE_POS', 'PROFISSIONAL'] as const;
 
 export function RegistrationForm({ onSuccess }: { onSuccess: () => void }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { event } = useEvent();
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -24,7 +25,7 @@ export function RegistrationForm({ onSuccess }: { onSuccess: () => void }) {
     formState: { errors, isSubmitting },
   } = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
-    defaultValues: { country: 'BR', category: 'ESTUDANTE_POS', modality: 'ONLINE' },
+    defaultValues: { country: 'BR', category: 'ESTUDANTE_POS', modality: 'ONLINE', consent: false },
   });
 
   if (!event) return null;
@@ -42,12 +43,14 @@ export function RegistrationForm({ onSuccess }: { onSuccess: () => void }) {
         institution: parsed.institution || undefined,
         category: parsed.category,
         modality: parsed.modality,
-        password: parsed.password,
+        locale: i18n.language,
       });
       onSuccess();
     } catch (err) {
       if (err instanceof DuplicateRegistrationError) {
         setSubmitError(t('registration.errors.duplicate'));
+      } else if (err instanceof RegistrationClosedError) {
+        setSubmitError(t('registration.errors.closed'));
       } else {
         setSubmitError(t('common.error'));
       }
@@ -58,7 +61,7 @@ export function RegistrationForm({ onSuccess }: { onSuccess: () => void }) {
     const err = errors[field];
     if (!err) return null;
     const msg = err.message ?? '';
-    if (msg === 'invalid_cpf' || msg === 'cpf_or_passport_required') {
+    if (msg === 'invalid_cpf' || msg === 'cpf_or_passport_required' || msg === 'consent_required') {
       return t(`registration.errors.${msg}`);
     }
     return t(`registration.errors.${String(field)}`, { defaultValue: t('common.error') });
@@ -85,7 +88,13 @@ export function RegistrationForm({ onSuccess }: { onSuccess: () => void }) {
       <div className="reg-form__row">
         <div className="reg-form__field">
           <label htmlFor="cpf">{t('registration.cpf')}</label>
-          <input id="cpf" type="text" inputMode="numeric" placeholder="000.000.000-00" {...register('cpf')} />
+          <input
+            id="cpf"
+            type="text"
+            inputMode="numeric"
+            placeholder="000.000.000-00"
+            {...register('cpf')}
+          />
           {errKey('cpf') && <p className="reg-form__error">{errKey('cpf')}</p>}
         </div>
         <div className="reg-form__field">
@@ -97,7 +106,12 @@ export function RegistrationForm({ onSuccess }: { onSuccess: () => void }) {
 
       <div className="reg-form__field">
         <label htmlFor="institution">{t('registration.institution')}</label>
-        <input id="institution" type="text" autoComplete="organization" {...register('institution')} />
+        <input
+          id="institution"
+          type="text"
+          autoComplete="organization"
+          {...register('institution')}
+        />
       </div>
 
       <div className="reg-form__row">
@@ -126,13 +140,14 @@ export function RegistrationForm({ onSuccess }: { onSuccess: () => void }) {
         )}
       </div>
 
-      <div className="reg-form__field">
-        <label htmlFor="password">
-          {t('registration.password')} <span aria-hidden="true">*</span>
+      <div className="reg-form__field reg-form__field--check">
+        <label className="reg-form__check" htmlFor="consent">
+          <input id="consent" type="checkbox" {...register('consent')} />
+          <span>
+            {t('registration.consent')} <span aria-hidden="true">*</span>
+          </span>
         </label>
-        <input id="password" type="password" autoComplete="new-password" {...register('password')} />
-        <p className="reg-form__hint">{t('registration.passwordHint')}</p>
-        {errKey('password') && <p className="reg-form__error">{errKey('password')}</p>}
+        {errKey('consent') && <p className="reg-form__error">{errKey('consent')}</p>}
       </div>
 
       {submitError && (

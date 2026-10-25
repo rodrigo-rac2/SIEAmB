@@ -124,8 +124,7 @@
     "cpfOrPassportHint": "Informe CPF (brasileiros) ou passaporte (estrangeiros).",
     "country": "País",
     "institution": "Instituição",
-    "password": "Senha",
-    "passwordHint": "Mínimo de 8 caracteres. Você usará essa senha para acessar sua inscrição.",
+    "consent": "Autorizo o uso dos meus dados (nome, e-mail, CPF ou passaporte) para a organização do evento e para o envio de informações sobre as inscrições, conforme a LGPD.",
     "submit": "Enviar pré-inscrição",
     "submitting": "Enviando…",
     "successTitle": "Pré-inscrição recebida!",
@@ -136,8 +135,9 @@
       "cpf_or_passport_required": "Informe CPF ou passaporte.",
       "fullName": "Informe seu nome completo.",
       "email": "Informe um e-mail válido.",
-      "password": "A senha deve ter no mínimo 8 caracteres.",
-      "duplicate": "Já existe uma inscrição com este e-mail para este evento."
+      "duplicate": "Já existe uma inscrição com este e-mail para este evento.",
+      "consent_required": "É preciso autorizar o uso dos dados para enviar a pré-inscrição.",
+      "closed": "As pré-inscrições deste evento não estão abertas."
     },
     "lotRange": "de {{from}} a {{until}}"
   },
