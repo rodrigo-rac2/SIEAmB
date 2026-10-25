@@ -124,8 +124,7 @@
     "cpfOrPassportHint": "Provide CPF (Brazilians) or passport (foreigners).",
     "country": "Country",
     "institution": "Institution",
-    "password": "Password",
-    "passwordHint": "Minimum 8 characters. You will use this password to access your registration.",
+    "consent": "I authorise the use of my data (name, e-mail, CPF or passport) to organise the event and to send me information about registrations, under the Brazilian data protection law (LGPD).",
     "submit": "Submit pre-registration",
     "submitting": "Submitting…",
     "successTitle": "Pre-registration received!",
@@ -136,8 +135,9 @@
       "cpf_or_passport_required": "Provide CPF or passport.",
       "fullName": "Enter your full name.",
       "email": "Enter a valid email.",
-      "password": "Password must be at least 8 characters.",
-      "duplicate": "A registration with this email already exists for this event."
+      "duplicate": "A registration with this email already exists for this event.",
+      "consent_required": "You need to authorise the use of your data to send the pre-registration.",
+      "closed": "Pre-registration for this event is not open."
     },
     "lotRange": "{{from}} to {{until}}"
   },

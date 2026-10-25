@@ -47,6 +47,7 @@ model Event {
   news             News[]
   feeTiers         FeeTier[]
   registrations    Registration[]
+  preRegistrations PreRegistration[]
 
   @@map("events")
 }
@@ -279,6 +280,32 @@ model Registration {
   @@unique([eventId, userId]) // one registration per user per event
   @@index([eventId, status])
   @@map("registrations")
+}
+
+// Pre-registration (#149): the public form before accounts exist. Anonymous
+// insert-only through RLS; nobody but service_role reads it. Rows migrate into
+// registrations once accounts and payment exist (#14).
+model PreRegistration {
+  // DB-side default: the browser inserts through PostgREST, so Prisma's client-side uuid() never runs.
+  id          String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  eventId     String              @map("event_id") @db.Uuid
+  fullName    String              @map("full_name")
+  email       String // lower-cased by the frontend; unique per event
+  cpf         String? // digits only; null for foreigners
+  passport    String?
+  country     String              @default("BR")
+  institution String?
+  category    ParticipantCategory
+  modality    Modality
+  locale      String              @default("pt-BR") // UI language at submission, for the e-mail later
+  consentAt   DateTime            @map("consent_at") // LGPD consent given on the form
+  createdAt   DateTime            @default(now()) @map("created_at")
+
+  event Event @relation(fields: [eventId], references: [id])
+
+  @@unique([eventId, email])
+  @@index([eventId, createdAt])
+  @@map("pre_registrations")
 }
 
 // ───────────────────────────── Audit ─────────────────────────────

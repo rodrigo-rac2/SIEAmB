@@ -50,7 +50,7 @@ describe('StaticDataProvider', () => {
       country: 'BR',
       category: 'ESTUDANTE_POS',
       modality: 'PRESENCIAL',
-      password: 'secret123',
+      locale: 'pt-BR',
     });
     expect(reg.status).toBe('PENDING_PAYMENT');
     expect(reg.eventId).toBe(event.id);
