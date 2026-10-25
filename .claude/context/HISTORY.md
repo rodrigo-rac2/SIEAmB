@@ -2,6 +2,14 @@
 
 Append a dated entry per working session. Newest first.
 
+## 2026-10-25 — Pre-registrations persist (#149)
+
+- Rodrigo: "this site is open for business... the pre-inscricao... is still just a template". Confirmed: the live form showed "Pré-inscrição recebida!" and `StaticDataProvider` faked success; every submission since 10 Oct was lost. The `registrations` table from #13 needs an auth user, so it could not take anonymous rows.
+- Shipped #149 (PR #150 → develop, release #151 → main): `pre_registrations` table (anon INSERT-only RLS gated on `settings.registrationOpen`, no browser reads, service role exports), `SupabaseDataProvider` extending the static one with a single remote call, LGPD consent checkbox in place of the password field, `VITE_DATA_PROVIDER=supabase` on Vercel for all environments. Migrations applied on `sieamb-dev` and `sieamb-prod`.
+- Found while probing: Prisma's `@default(uuid())` is client-side, so PostgREST inserts failed on `id`; a second migration adds `DEFAULT gen_random_uuid()`. The `schema.test.ts` guard now reads every migration and allows exactly one browser write grant.
+- Verified end to end: REST probes on both projects (201 / 409 duplicate / 42501 closed event, select, update, delete), Playwright against a local build wired to dev, and a real browser submit on sieamb.org after the release (row landed, upper-cased duplicate rejected, probe deleted). The e2e form test skips the submit on production and uses a unique e-mail per run.
+- Decisions: duplicates are blocked by e-mail per event only; CPF/passport duplicates accepted for now ("niche, no need to overengineer"). Najara told the data is being saved and the list will be used when registrations open. Docs follow-up is #152.
+
 ## 2026-10-12 — Translations end to end, CI off the Vercel app
 
 - Two asks: the language switcher was nearly invisible, and "some stuff does not get translated". Audit with Playwright: all 142 UI keys exist in every locale; every leak was fixture content (venue, dates, areas, news, team groups, bios, about). Plan approved: machine-draft everything, flag zh-CN under #23.

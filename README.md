@@ -131,11 +131,11 @@ Todas as rotas do site vivem embaixo de `/:eventSlug/` (ex.: `/2027/inscricoes`)
 
 Nenhuma tela chama `fetch` direto. Tudo passa pela interface `DataProvider` (`packages/frontend/src/services/`):
 
-- `StaticDataProvider` — lê os JSONs de `src/data/` (modo atual, Fase 0)
-- `SupabaseDataProvider` — lerá do Supabase (Fase 0.5/1)
+- `StaticDataProvider` — lê os JSONs de `src/data/`; a pré-inscrição apenas simula sucesso (uso local e testes)
+- `SupabaseDataProvider` — **modo atual em todos os ambientes da Vercel** (desde 2026-10-25, #149). Conteúdo público continua vindo dos JSONs; a pré-inscrição é gravada na tabela `pre_registrations` do Supabase com a chave anônima (RLS só permite INSERT, nunca leitura; a leitura é pelo painel do Supabase ou pela service role)
 - `ApiDataProvider` — lerá da API Express (Fase 1+)
 
-A variável `VITE_DATA_PROVIDER` (`static` | `supabase` | `api`) escolhe a implementação. Isso significa que quando o backend chegar, **as telas não mudam** — só a implementação do provider.
+A variável `VITE_DATA_PROVIDER` (`static` | `supabase` | `api`) escolhe a implementação. Isso significa que quando o backend chegar, **as telas não mudam** — só a implementação do provider. Atenção: um build sem `VITE_DATA_PROVIDER=supabase` volta a simular sucesso na pré-inscrição sem gravar nada.
 
 ### 3. Internacionalização (i18n)
 
