@@ -124,8 +124,7 @@
     "cpfOrPassportHint": "请填写 CPF（巴西人）或护照号（外国人）。",
     "country": "国家",
     "institution": "所属机构",
-    "password": "密码",
-    "passwordHint": "至少 8 个字符。您将使用此密码查看您的注册信息。",
+    "consent": "我同意主办方使用我的数据（姓名、电子邮箱、CPF或护照号）用于会议组织及发送注册相关信息，依据巴西《通用数据保护法》（LGPD）。",
     "submit": "提交预注册",
     "submitting": "提交中…",
     "successTitle": "预注册成功！",
@@ -136,8 +135,9 @@
       "cpf_or_passport_required": "请填写 CPF 或护照号。",
       "fullName": "请输入您的全名。",
       "email": "请输入有效的电子邮箱。",
-      "password": "密码至少需要 8 个字符。",
-      "duplicate": "该邮箱已在本届会议注册过。"
+      "duplicate": "该邮箱已在本届会议注册过。",
+      "consent_required": "需要同意数据使用后才能提交预注册。",
+      "closed": "本届会议的预注册尚未开放。"
     },
     "lotRange": "{{from}} 至 {{until}}"
   },

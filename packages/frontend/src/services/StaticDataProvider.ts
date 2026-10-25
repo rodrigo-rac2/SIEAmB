@@ -33,6 +33,8 @@ const EDITAIS = editais as Edital[];
 
 /** Fixture-backed provider: powers the pure-static prototype and unit tests. */
 export class StaticDataProvider implements DataProvider {
+  constructor(private readonly options: { failRegistrations?: boolean } = {}) {}
+
   async getSiteContent(): Promise<SiteContent> {
     return site as SiteContent;
   }
@@ -111,7 +113,9 @@ export class StaticDataProvider implements DataProvider {
   }
 
   async createRegistration(eventId: string, input: RegistrationInput): Promise<Registration> {
-    // Static mode has no persistence; simulate success so the flow is demoable.
+    // Static mode has no persistence; simulate success so the flow is demoable,
+    // unless the factory asked for honest failures (misconfigured persistence).
+    if (this.options.failRegistrations) throw new Error('registration_persistence_unavailable');
     return {
       id: `local-${Date.now()}`,
       eventId,

@@ -1,9 +1,16 @@
 // Guards the conventions in docs/IMPLEMENTATION_PLAN.md §3 so a future model
 // doesn't silently ship camelCase columns or an unmapped table name.
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 const schema = readFileSync(new URL('../prisma/schema.prisma', import.meta.url), 'utf8');
+
+const migrationsDir = new URL('../prisma/migrations/', import.meta.url);
+const allMigrationsSql = readdirSync(migrationsDir)
+  .filter((d) => /^\d{14}_/.test(d))
+  .sort()
+  .map((d) => readFileSync(new URL(`${d}/migration.sql`, migrationsDir), 'utf8'))
+  .join('\n');
 
 interface Model {
   name: string;
@@ -45,7 +52,9 @@ describe('schema.prisma conventions', () => {
         if (isRelation) continue;
         if (/[A-Z]/.test(name)) {
           const expected = name.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
-          expect(line, `${m.name}.${name} should map to ${expected}`).toContain(`@map("${expected}")`);
+          expect(line, `${m.name}.${name} should map to ${expected}`).toContain(
+            `@map("${expected}")`,
+          );
         }
       }
     }
@@ -74,12 +83,37 @@ describe('schema.prisma conventions', () => {
     );
     expect(sql).toContain('CREATE UNIQUE INDEX "one_current_event"');
     expect(sql).toContain('AFTER INSERT ON auth.users');
+    expect(sql).toMatch(
+      /GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO service_role/,
+    );
+  });
+
+  it('enables RLS on every table across all migrations', () => {
     for (const m of models) {
       const table = m.body.match(/@@map\("([^"]+)"\)/)![1];
-      expect(sql, `RLS on ${table}`).toMatch(new RegExp(`ALTER TABLE "${table}"\\s+ENABLE ROW LEVEL SECURITY`));
+      expect(allMigrationsSql, `RLS on ${table}`).toMatch(
+        new RegExp(`ALTER TABLE "${table}"\\s+ENABLE ROW LEVEL SECURITY`),
+      );
     }
-    // Browser roles never get write access; only the server-side service role does.
-    expect(sql).not.toMatch(/GRANT [^;]*(INSERT|UPDATE|DELETE|ALL)[^;]*TO [^;]*(anon|authenticated)/);
-    expect(sql).toMatch(/GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO service_role/);
+  });
+
+  it('browser roles only ever write to pre_registrations, and only INSERT (#149)', () => {
+    const browserWriteGrants = [
+      ...allMigrationsSql.matchAll(/GRANT ([^;]*?) ON ([^;]*?) TO ([^;]*?);/g),
+    ].filter(
+      ([, privileges = '', , roles = '']) =>
+        /anon|authenticated/.test(roles) && /INSERT|UPDATE|DELETE|ALL/.test(privileges),
+    );
+    expect(browserWriteGrants.map(([stmt]) => stmt)).toEqual([
+      'GRANT INSERT ON "pre_registrations" TO anon, authenticated;',
+    ]);
+    // The anon key ships in the bundle and pre_registrations holds CPFs: no reads.
+    expect(allMigrationsSql).not.toMatch(
+      /GRANT [^;]*SELECT[^;]*"pre_registrations"[^;]*TO [^;]*(anon|authenticated)/,
+    );
+    // Tables with a browser-side default id must generate it in the database (PostgREST skips Prisma defaults).
+    expect(allMigrationsSql).toMatch(
+      /ALTER TABLE "pre_registrations" ALTER COLUMN "id" SET DEFAULT gen_random_uuid\(\)/,
+    );
   });
 });
