@@ -146,6 +146,21 @@ describe('handleCreateOrder: creating the order', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it('keeps reusing a fresh order when the fee clock is moved days ahead for testing', async () => {
+    const { deps, store, fetchMock } = setup();
+    // Real time is 5 Nov, before lot 1; the override picks the lot as if it were 12 Nov.
+    const env = { accessToken: TOKEN, now: new Date('2026-11-05T20:00:00-03:00'), feeNow: NOW };
+    const first = await handleCreateOrder(post({ token: PAY_TOKEN }), env, deps);
+    expect(first.status).toBe(201);
+    store.payments[0]!.createdAt = env.now.toISOString();
+    const second = await handleCreateOrder(post({ token: PAY_TOKEN }), env, deps);
+    expect(second.status).toBe(200);
+    expect(store.payments).toHaveLength(1);
+    expect(store.payments[0]!.status).toBe('CREATED');
+    // One call to create the order, none to look it up or cancel it.
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it('answers 409 when the registration is already paid', async () => {
     const { deps, store, fetchMock } = setup();
     store.seed({ status: 'APPROVED', mpOrderId: ORDER_ID, paidAt: NOW.toISOString() });

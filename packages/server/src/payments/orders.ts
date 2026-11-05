@@ -7,7 +7,10 @@ import { applyOrderToPayment } from './sync';
 
 export interface OrdersEnv {
   accessToken?: string;
+  /** The real time: order age, payment dates. */
   now: Date;
+  /** The time used to pick the lot. Differs from `now` only under the non-production override. */
+  feeNow?: Date;
 }
 
 export interface OrdersDeps {
@@ -89,7 +92,7 @@ export async function handleCreateOrder(
     eventSlug: registration.eventSlug,
     category: registration.category,
     modality: registration.modality,
-    now: env.now,
+    now: env.feeNow ?? env.now,
   });
   if (!tier) {
     deps.log('mp_order_no_fee', {

@@ -4,26 +4,27 @@ import type { PaymentStore } from './store';
 
 /** What the Vercel entry points read from the environment, in one place. */
 export interface PaymentsRuntime {
-  env: { accessToken?: string; webhookSecret?: string; now: Date };
+  env: { accessToken?: string; webhookSecret?: string; now: Date; feeNow: Date };
   deps: { fetch: typeof fetch; store?: PaymentStore; log: Log };
 }
 
 type Env = Record<string, string | undefined>;
 
 /**
- * `PAYMENTS_NOW` moves the clock for the fee lookup so a lot can be tried before
- * it starts. It is ignored in production, where the real time always applies.
+ * `PAYMENTS_NOW` moves the clock of the fee lookup, and only that clock, so a
+ * lot can be tried before it starts. It is ignored in production, where the
+ * real time always applies. Order ages and payment dates always use real time.
  */
-function clock(env: Env): Date {
+export function feeClock(env: Env, now: Date): Date {
   const override = env.VERCEL_ENV === 'production' ? undefined : env.PAYMENTS_NOW;
   if (override) {
     const date = new Date(override);
     if (!Number.isNaN(date.getTime())) return date;
   }
-  return new Date();
+  return now;
 }
 
-export function paymentsRuntime(env: Env = process.env): PaymentsRuntime {
+export function paymentsRuntime(env: Env = process.env, now: Date = new Date()): PaymentsRuntime {
   const store =
     env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY
       ? new SupabasePaymentStore(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY)
@@ -32,7 +33,8 @@ export function paymentsRuntime(env: Env = process.env): PaymentsRuntime {
     env: {
       accessToken: env.MP_ACCESS_TOKEN || undefined,
       webhookSecret: env.MP_WEBHOOK_SECRET || undefined,
-      now: clock(env),
+      now,
+      feeNow: feeClock(env, now),
     },
     deps: {
       fetch,
