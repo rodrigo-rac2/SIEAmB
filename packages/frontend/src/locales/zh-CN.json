@@ -141,6 +141,52 @@
     },
     "lotRange": "{{from}} 至 {{until}}"
   },
+  "payment": {
+    "title": "注册费支付",
+    "intro": "请通过 Mercado Pago 支付注册费以确认注册。",
+    "payButton": "使用 Mercado Pago 支付",
+    "redirecting": "正在打开 Mercado Pago…",
+    "payLater": "如果您想稍后支付，请保存此链接：",
+    "errors": {
+      "already_paid": "此注册已支付。",
+      "no_fee_available": "该类别在当前日期暂时无法支付。",
+      "payment_pending": "此注册已有一笔付款正在处理中，请等待确认。",
+      "registration_not_found": "未找到此注册，请检查链接。",
+      "payment_not_found": "未找到此付款。",
+      "invalidLink": "此支付链接无效。",
+      "generic": "操作未能完成，请稍后再试。"
+    },
+    "return": {
+      "title": "付款状态",
+      "checking": "正在查询付款…",
+      "amount": "金额",
+      "retry": "重试",
+      "APPROVED": {
+        "title": "付款成功！",
+        "body": "您的注册已确认，谢谢！"
+      },
+      "PENDING": {
+        "title": "付款处理中",
+        "body": "Mercado Pago 确认付款后，您的注册即被确认。Boleto 付款可能需要几天才能到账。"
+      },
+      "CREATED": {
+        "title": "付款未完成",
+        "body": "我们尚未识别到付款。如果您已付款，请等待几分钟后刷新此页面。"
+      },
+      "REJECTED": {
+        "title": "付款未通过",
+        "body": "付款被拒绝，您可以使用其他支付方式重试。"
+      },
+      "CANCELLED": {
+        "title": "付款已取消",
+        "body": "此付款在完成前已被取消或已过期。"
+      },
+      "REFUNDED": {
+        "title": "付款已退还",
+        "body": "此付款的金额已退还。"
+      }
+    }
+  },
   "dates": {
     "title": "重要日期",
     "extended": "已延期"

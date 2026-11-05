@@ -13,6 +13,8 @@ import { ImportantDatesPage } from './pages/ImportantDatesPage';
 import { NewsDetailPage } from './pages/NewsDetailPage';
 import { NewsListPage } from './pages/NewsListPage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { PaymentPage } from './pages/PaymentPage';
+import { PaymentReturnPage } from './pages/PaymentReturnPage';
 import { RegistrationFormPage } from './pages/RegistrationFormPage';
 import { RegistrationInfoPage } from './pages/RegistrationInfoPage';
 import { ProgrammePage } from './pages/ProgrammePage';
@@ -52,6 +54,8 @@ export function App() {
           <Route path="submissoes" element={<SubmissionsPage />} />
           <Route path="inscricoes" element={<RegistrationInfoPage />} />
           <Route path="inscricoes/nova" element={<RegistrationFormPage />} />
+          <Route path="inscricoes/pagar" element={<PaymentPage />} />
+          <Route path="inscricoes/pagamento" element={<PaymentReturnPage />} />
           <Route path="datas-importantes" element={<ImportantDatesPage />} />
           <Route path="avisos" element={<NewsListPage />} />
           <Route path="avisos/:newsSlug" element={<NewsDetailPage />} />
