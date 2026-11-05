@@ -48,6 +48,7 @@ model Event {
   feeTiers         FeeTier[]
   registrations    Registration[]
   preRegistrations PreRegistration[]
+  payments         Payment[]
 
   @@map("events")
 }
@@ -299,13 +300,53 @@ model PreRegistration {
   modality    Modality
   locale      String              @default("pt-BR") // UI language at submission, for the e-mail later
   consentAt   DateTime            @map("consent_at") // LGPD consent given on the form
+  // Unguessable handle for starting a payment (#160). The browser generates it on
+  // insert because it cannot read the row back; older rows get one from the database.
+  payToken    String              @unique @default(dbgenerated("gen_random_uuid()")) @map("pay_token") @db.Uuid
   createdAt   DateTime            @default(now()) @map("created_at")
 
-  event Event @relation(fields: [eventId], references: [id])
+  event    Event     @relation(fields: [eventId], references: [id])
+  payments Payment[]
 
   @@unique([eventId, email])
   @@index([eventId, createdAt])
   @@map("pre_registrations")
+}
+
+// ───────────────────────────── Payments ─────────────────────────────
+
+enum PaymentStatus {
+  CREATED // order created, nothing paid yet
+  PENDING // Mercado Pago is processing or waiting (boleto, manual review)
+  APPROVED
+  REJECTED
+  CANCELLED // cancelled or expired before being paid
+  REFUNDED
+}
+
+// One row per Mercado Pago order (#160). Written only by the server functions
+// through service_role; the browser never reads or writes this table.
+model Payment {
+  id                String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  eventId           String        @map("event_id") @db.Uuid
+  preRegistrationId String        @map("pre_registration_id") @db.Uuid
+  status            PaymentStatus @default(CREATED)
+  amountCents       Int           @map("amount_cents")
+  feeTierRef        String        @map("fee_tier_ref") // id of the fee tier the price came from
+  mpOrderId         String?       @unique @map("mp_order_id")
+  mpStatus          String?       @map("mp_status")
+  mpStatusDetail    String?       @map("mp_status_detail")
+  checkoutUrl       String?       @map("checkout_url")
+  orderSnapshot     Json?         @map("order_snapshot") // trimmed copy of the last order read from Mercado Pago, no payer data
+  paidAt            DateTime?     @map("paid_at")
+  createdAt         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime      @default(now()) @updatedAt @map("updated_at")
+
+  event           Event           @relation(fields: [eventId], references: [id])
+  preRegistration PreRegistration @relation(fields: [preRegistrationId], references: [id])
+
+  @@index([preRegistrationId, status])
+  @@map("payments")
 }
 
 // ───────────────────────────── Audit ─────────────────────────────

@@ -1,48 +1,30 @@
+import { json, readJsonObject, type Log } from './http';
 import { MercadoPagoError, fetchOrder, isOrderId } from './mercadoPago';
 import { parseSignatureHeader, verifySignature } from './signature';
+import { isUuid, type PaymentStore } from './store';
+import { applyOrderToPayment } from './sync';
 
 export interface WebhookEnv {
   accessToken?: string;
   webhookSecret?: string;
+  now: Date;
 }
 
 export interface WebhookDeps {
   fetch: typeof fetch;
-  /** Structured log line. Never pass secrets or payer data. */
-  log: (event: string, data: Record<string, unknown>) => void;
-}
-
-interface NotificationBody {
-  type?: unknown;
-  action?: unknown;
-  live_mode?: unknown;
-  data?: { id?: unknown };
-}
-
-const json = (status: number, body: Record<string, unknown>) =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
-  });
-
-async function readBody(request: Request): Promise<NotificationBody> {
-  try {
-    const parsed: unknown = await request.json();
-    return parsed && typeof parsed === 'object' ? (parsed as NotificationBody) : {};
-  } catch {
-    return {};
-  }
+  store?: PaymentStore;
+  log: Log;
 }
 
 /**
- * Mercado Pago "Order" notifications (#158).
+ * Mercado Pago "Order" notifications (#158, #160).
  *
  * 1. Refuse anything whose `x-signature` does not match our secret.
  * 2. Acknowledge, without acting, topics we do not handle.
- * 3. Read the order back from Mercado Pago and log its status.
+ * 3. Read the order back from Mercado Pago and record its status on our payment.
  *
- * Persisting the payment comes with the payments table. A non-2xx answer makes
- * Mercado Pago retry, so only failures worth a retry answer with one.
+ * A non-2xx answer makes Mercado Pago retry, so only failures worth a retry
+ * answer with one.
  */
 export async function handleMercadoPagoWebhook(
   request: Request,
@@ -50,22 +32,27 @@ export async function handleMercadoPagoWebhook(
   deps: WebhookDeps,
 ): Promise<Response> {
   if (request.method !== 'POST') return json(405, { error: 'method_not_allowed' });
-  if (!env.accessToken || !env.webhookSecret)
+  const { accessToken, webhookSecret } = env;
+  const { store } = deps;
+  if (!accessToken || !webhookSecret || !store) {
     return json(503, { error: 'payments_not_configured' });
+  }
 
   const url = new URL(request.url);
   const queryId = url.searchParams.get('data.id');
   const requestId = request.headers.get('x-request-id');
   const signature = parseSignatureHeader(request.headers.get('x-signature'));
-  const body = await readBody(request);
+  const body = await readJsonObject(request);
   const type = typeof body.type === 'string' ? body.type : url.searchParams.get('type');
   const action = typeof body.action === 'string' ? body.action : null;
+  const bodyData =
+    body.data && typeof body.data === 'object' ? (body.data as { id?: unknown }) : {};
 
   if (!signature) {
     deps.log('mp_webhook_rejected', { reason: 'missing_or_malformed_signature', requestId });
     return json(401, { error: 'invalid_signature' });
   }
-  if (!verifySignature(signature, { dataId: queryId, requestId }, env.webhookSecret)) {
+  if (!verifySignature(signature, { dataId: queryId, requestId }, webhookSecret)) {
     // Nothing here is secret: the digest only proves knowledge of the secret for these exact values.
     deps.log('mp_webhook_rejected', {
       reason: 'signature_mismatch',
@@ -79,28 +66,49 @@ export async function handleMercadoPagoWebhook(
     return json(401, { error: 'invalid_signature' });
   }
 
-  const orderId = queryId ?? (typeof body.data?.id === 'string' ? body.data.id : null);
+  const orderId = queryId ?? (typeof bodyData.id === 'string' ? bodyData.id : null);
   if (type !== 'order' || !isOrderId(orderId)) {
     deps.log('mp_webhook_ignored', { type, action, requestId, hasOrderId: isOrderId(orderId) });
     return json(200, { received: true, handled: false });
   }
 
   try {
-    const order = await fetchOrder(orderId, env.accessToken, deps.fetch);
-    deps.log('mp_webhook_order', {
+    const order = await fetchOrder(orderId, accessToken, deps.fetch);
+    const logged = {
       orderId: order.id,
       status: order.status,
       statusDetail: order.status_detail ?? null,
-      externalReference: order.external_reference ?? null,
-      totalAmount: order.total_amount ?? null,
       action,
       liveMode: body.live_mode === true,
       requestId,
+    };
+
+    let payment = await store.findPaymentByOrderId(order.id);
+    if (!payment && isUuid(order.external_reference)) {
+      // The order exists but our row never got its id (the answer to its creation was lost).
+      const byReference = await store.findPaymentById(order.external_reference);
+      if (byReference && !byReference.mpOrderId) payment = byReference;
+    }
+    if (!payment) {
+      deps.log('mp_webhook_unknown_order', logged);
+      return json(200, { received: true, handled: false });
+    }
+
+    const updated = await applyOrderToPayment(payment, order, store, env.now);
+    deps.log('mp_webhook_order', {
+      ...logged,
+      paymentId: updated.id,
+      paymentStatus: updated.status,
     });
     return json(200, { received: true, handled: true });
   } catch (error) {
     const status = error instanceof MercadoPagoError ? error.status : 0;
-    deps.log('mp_webhook_lookup_failed', { orderId, status, requestId });
-    return json(502, { error: 'order_lookup_failed' });
+    deps.log('mp_webhook_failed', {
+      orderId,
+      status,
+      requestId,
+      reason: error instanceof MercadoPagoError ? error.message : 'store_or_network',
+    });
+    return json(502, { error: 'order_processing_failed' });
   }
 }
