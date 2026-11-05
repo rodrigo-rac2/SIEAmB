@@ -217,4 +217,6 @@ export interface Registration {
   modality: Modality;
   status: RegistrationStatus;
   createdAt: string; // ISO
+  /** Handle for starting the payment of a pre-registration (#160). Only set when payments are on. */
+  payToken?: string;
 }

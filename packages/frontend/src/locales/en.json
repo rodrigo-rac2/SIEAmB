@@ -141,6 +141,52 @@
     },
     "lotRange": "{{from}} to {{until}}"
   },
+  "payment": {
+    "title": "Registration payment",
+    "intro": "To confirm your registration, pay the fee through Mercado Pago.",
+    "payButton": "Pay with Mercado Pago",
+    "redirecting": "Opening Mercado Pago…",
+    "payLater": "If you prefer to pay later, keep this link:",
+    "errors": {
+      "already_paid": "This registration is already paid.",
+      "no_fee_available": "Payment is not available yet for this category on this date.",
+      "payment_pending": "A payment for this registration is already being processed. Please wait for the confirmation.",
+      "registration_not_found": "We could not find this registration. Please check the link.",
+      "payment_not_found": "We could not find this payment.",
+      "invalidLink": "This payment link is not valid.",
+      "generic": "The operation could not be completed. Please try again in a moment."
+    },
+    "return": {
+      "title": "Payment status",
+      "checking": "Checking the payment…",
+      "amount": "Amount",
+      "retry": "Try again",
+      "APPROVED": {
+        "title": "Payment approved!",
+        "body": "Your registration is confirmed. Thank you!"
+      },
+      "PENDING": {
+        "title": "Payment being processed",
+        "body": "As soon as Mercado Pago confirms the payment, your registration will be confirmed. A boleto can take a few days to clear."
+      },
+      "CREATED": {
+        "title": "Payment not completed",
+        "body": "We have not identified the payment yet. If you have already paid, wait a few minutes and refresh this page."
+      },
+      "REJECTED": {
+        "title": "Payment not approved",
+        "body": "The payment was declined. You can try again with another payment method."
+      },
+      "CANCELLED": {
+        "title": "Payment cancelled",
+        "body": "This payment was cancelled or expired before it was completed."
+      },
+      "REFUNDED": {
+        "title": "Payment refunded",
+        "body": "The amount of this payment was refunded."
+      }
+    }
+  },
   "dates": {
     "title": "Important Dates",
     "extended": "extended"

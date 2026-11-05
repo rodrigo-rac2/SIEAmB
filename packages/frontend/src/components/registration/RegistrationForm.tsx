@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { registrationSchema, type RegistrationFormData } from '@sieamb/shared';
+import { registrationSchema, type Registration, type RegistrationFormData } from '@sieamb/shared';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -14,7 +14,11 @@ import './RegistrationForm.css';
 // Categories offered to the II SIEAmB (committee fee table, 2026-10-10). The fee tiers decide what is shown.
 const CATEGORIES = ['ESTUDANTE_GRADUACAO', 'ESTUDANTE_POS', 'PROFISSIONAL'] as const;
 
-export function RegistrationForm({ onSuccess }: { onSuccess: () => void }) {
+export function RegistrationForm({
+  onSuccess,
+}: {
+  onSuccess: (registration: Registration) => void;
+}) {
   const { t, i18n } = useTranslation();
   const { event } = useEvent();
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -34,7 +38,7 @@ export function RegistrationForm({ onSuccess }: { onSuccess: () => void }) {
     setSubmitError(null);
     try {
       const parsed = registrationSchema.parse(data);
-      await getDataProvider().createRegistration(event.id, {
+      const registration = await getDataProvider().createRegistration(event.id, {
         fullName: parsed.fullName,
         email: parsed.email,
         cpf: parsed.cpf || undefined,
@@ -45,7 +49,7 @@ export function RegistrationForm({ onSuccess }: { onSuccess: () => void }) {
         modality: parsed.modality,
         locale: i18n.language,
       });
-      onSuccess();
+      onSuccess(registration);
     } catch (err) {
       if (err instanceof DuplicateRegistrationError) {
         setSubmitError(t('registration.errors.duplicate'));

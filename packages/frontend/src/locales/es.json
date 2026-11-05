@@ -141,6 +141,52 @@
     },
     "lotRange": "del {{from}} al {{until}}"
   },
+  "payment": {
+    "title": "Pago de la inscripción",
+    "intro": "Para confirmar la inscripción, realice el pago de la tasa a través de Mercado Pago.",
+    "payButton": "Pagar con Mercado Pago",
+    "redirecting": "Abriendo Mercado Pago…",
+    "payLater": "Si prefiere pagar más tarde, guarde este enlace:",
+    "errors": {
+      "already_paid": "Esta inscripción ya está pagada.",
+      "no_fee_available": "El pago todavía no está disponible para esta categoría en esta fecha.",
+      "payment_pending": "Ya hay un pago en proceso para esta inscripción. Espere la confirmación.",
+      "registration_not_found": "No encontramos esta inscripción. Revise el enlace.",
+      "payment_not_found": "No encontramos este pago.",
+      "invalidLink": "Este enlace de pago no es válido.",
+      "generic": "No fue posible completar la operación. Inténtelo de nuevo en unos instantes."
+    },
+    "return": {
+      "title": "Estado del pago",
+      "checking": "Consultando el pago…",
+      "amount": "Importe",
+      "retry": "Intentar de nuevo",
+      "APPROVED": {
+        "title": "¡Pago aprobado!",
+        "body": "Su inscripción está confirmada. ¡Gracias!"
+      },
+      "PENDING": {
+        "title": "Pago en proceso",
+        "body": "En cuanto Mercado Pago confirme el pago, su inscripción quedará confirmada. Un boleto puede tardar algunos días en acreditarse."
+      },
+      "CREATED": {
+        "title": "Pago no completado",
+        "body": "Todavía no identificamos el pago. Si ya pagó, espere unos minutos y actualice esta página."
+      },
+      "REJECTED": {
+        "title": "Pago no aprobado",
+        "body": "El pago fue rechazado. Puede intentarlo de nuevo con otro medio de pago."
+      },
+      "CANCELLED": {
+        "title": "Pago cancelado",
+        "body": "Este pago fue cancelado o venció antes de completarse."
+      },
+      "REFUNDED": {
+        "title": "Pago devuelto",
+        "body": "El importe de este pago fue devuelto."
+      }
+    }
+  },
   "dates": {
     "title": "Fechas Importantes",
     "extended": "prorrogado"

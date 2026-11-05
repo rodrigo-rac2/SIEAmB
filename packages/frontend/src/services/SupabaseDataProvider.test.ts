@@ -28,12 +28,10 @@ function fakeClient(
   opts: { insertError?: { code: string; message: string }; eventRow?: { id: string } | null } = {},
 ): Fake {
   const insert = vi.fn().mockResolvedValue({ error: opts.insertError ?? null });
-  const eventLookups = vi
-    .fn()
-    .mockResolvedValue({
-      data: opts.eventRow === undefined ? { id: 'db-uuid-2027' } : opts.eventRow,
-      error: null,
-    });
+  const eventLookups = vi.fn().mockResolvedValue({
+    data: opts.eventRow === undefined ? { id: 'db-uuid-2027' } : opts.eventRow,
+    error: null,
+  });
   const client = {
     from: (table: string) => {
       if (table === 'pre_registrations') return { insert };
@@ -68,6 +66,46 @@ describe('SupabaseDataProvider.createRegistration', () => {
     expect(typeof row.consent_at).toBe('string');
     expect(row).not.toHaveProperty('id'); // the database generates it
     expect(result.status).toBe('PENDING_PAYMENT');
+  });
+
+  it('sends no pay_token while payments are off, because production does not have that column', async () => {
+    vi.stubEnv('VITE_PAYMENTS_ENABLED', 'false');
+    const fake = fakeClient();
+    const result = await new SupabaseDataProvider(fake.client).createRegistration(
+      'evt-2027',
+      input,
+    );
+    const row = fake.insert.mock.calls[0]![0] as Record<string, unknown>;
+    expect(row).not.toHaveProperty('pay_token');
+    expect(result).not.toHaveProperty('payToken');
+    vi.unstubAllEnvs();
+  });
+
+  it('generates a new pay token per registration when payments are on and hands it back', async () => {
+    vi.stubEnv('VITE_PAYMENTS_ENABLED', 'true');
+    const fake = fakeClient();
+    const provider = new SupabaseDataProvider(fake.client);
+    const first = await provider.createRegistration('evt-2027', input);
+    const second = await provider.createRegistration('evt-2027', {
+      ...input,
+      email: 'other@example.com',
+    });
+    const rows = fake.insert.mock.calls.map((call) => call[0] as Record<string, unknown>);
+    const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+    expect(rows[0]!.pay_token).toMatch(uuid);
+    expect(first.payToken).toBe(rows[0]!.pay_token);
+    expect(second.payToken).toBe(rows[1]!.pay_token);
+    expect(first.payToken).not.toBe(second.payToken);
+    vi.unstubAllEnvs();
+  });
+
+  it('hands back no pay token when the insert fails', async () => {
+    vi.stubEnv('VITE_PAYMENTS_ENABLED', 'true');
+    const fake = fakeClient({ insertError: { code: '23505', message: 'duplicate key' } });
+    await expect(
+      new SupabaseDataProvider(fake.client).createRegistration('evt-2027', input),
+    ).rejects.toBeInstanceOf(DuplicateRegistrationError);
+    vi.unstubAllEnvs();
   });
 
   it('resolves the event id once per fixture id', async () => {
