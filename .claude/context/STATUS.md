@@ -75,7 +75,7 @@ The backlog is GitHub Issues, ordered by milestone: https://github.com/rodrigo-r
 
 After launch: remove `PAYMENTS_NOW` from Vercel Preview once 10 Nov has passed; accounts (#14); a way to issue refunds; the empenho and exemption flows; the payment decision ADR (#16 checklist) and the `docs/IMPLEMENTATION_PLAN.md` §7 rewrite for the Orders API; an automated test up to the checkout redirect.
 
-Milestones after the opening: **Peer review (Jan-Mar 2027)** #21, **Event (24-26 Mar 2027)** #22 certificates/anais, #23 zh-CN review (no milestone). Still open from the Edital milestone: #132 presentation text, #126 programme card.
+Milestones after the opening: **Peer review (Jan-Mar 2027)** #21, **Event (24-26 Mar 2027)** #22 certificates/anais, #23 zh-CN review (no milestone). Still open from the Edital milestone: #132 presentation text, #12 committee asks.
 
 ## External dependencies to kick off early
 
