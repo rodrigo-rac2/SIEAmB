@@ -23,6 +23,7 @@
   - **Screens** (behind `VITE_PAYMENTS_ENABLED`, on for Vercel Preview only): pay button after the form, `/:event/inscricoes/pagar?t=<pay token>` for paying later, `/:event/inscricoes/pagamento?p=<payment id>` as the return page.
   - **Vercel env**: Preview has the sandbox `MP_ACCESS_TOKEN` and `MP_WEBHOOK_SECRET`, `VITE_PAYMENTS_ENABLED=true` and `PAYMENTS_NOW=2026-11-12T12:00:00-03:00` (moves only the fee-lookup clock so lot 1 can be tried before 10 Nov; ignored in production; **remove it after 10 Nov**). Production has none of them, so the endpoints answer 503 there. `.env.local` holds production and test credentials, both webhook secrets and the test seller and buyer (`MP_*`, `MP_TEST_*`).
   - **Confirmed against real sandbox payments on 2026-11-05**: the signature recipe is HMAC-SHA256 over `id:<data.id lower-cased>;request-id:<x-request-id>;ts:<ts>;` with the webhook secret (the lower-casing is not in the docs pages we read); sandbox payments do send `order.processed` notifications, within seconds; the Vercel firewall lets Mercado Pago through; test credentials work with the Orders API although its reference says otherwise; an approved card payment is `processed` / `accredited`; Mercado Pago sends the buyer back to our return URL with its own `status=` query, which we ignore. The checkout answers **403 to a headless browser**, so an automated test can go as far as the redirect, not through the payment.
+  - **Boleto (tested 2026-11-05 on dev)**: the checkout asks for CPF, name and address and generates the boleto; Mercado Pago sends `order.action_required` (`action_required` / `waiting_payment`, method `bolbradesco`) and the payment is recorded as PENDING, which the return page shows as "Pagamento em processamento". A boleto actually being paid could not be tried in the sandbox.
   - **Not done**: production migration and Vercel production env (go-live, needs Rodrigo's go); the production webhook secret was typed from a screenshot and is unchecked; **no Pix** on the account (cards, boleto and account money only, a Pix key could not be created on 2026-11-05); the fee table only covers ESTUDANTE_GRADUACAO, ESTUDANTE_POS and PROFISSIONAL, any other category answers "no fee available"; people who pre-registered before payments existed need their pay link sent to them (every row has a `pay_token`); committee list of who paid (#15); refunds are recorded when Mercado Pago reports them but there is no screen to issue one; no empenho or exemption flow; no confirmation e-mail (#18); ADR for the payment decision (#16 checklist); test rows named `TESTE PAGAMENTO (#160)` are in sieamb-dev.
 - **Still waiting on the committee**: II SIEAmB presentation text (with Prof. Viviane for approval, #12), edital text (#11), 2027 thematic areas (#37), Rodrigo's own team entry (#12), Mayra's photo (#12). **Waiting on Rodrigo**: Supabase/Resend accounts (#13, #14, #15, #18), the Mercado Pago Pix key and the go-live decision for payments (#16), `.env.local` template ready.
 
@@ -59,10 +60,22 @@ Professora Viviane (project lead) said there is **no budget for ~R$250/month**. 
 
 The backlog is GitHub Issues, ordered by milestone: https://github.com/rodrigo-rac2/SIEAmB/milestones
 
-1. **Edital (23 Oct 2026)** — #11 editais page (scaffold buildable now), #12 presentation text + Rodrigo's entry, #37 areas (2025 list buildable now), #58 not-found for unknown slug
-2. **Registrations + submissions open (10 Nov 2026)** — #13 Supabase, #14 registration persistence + e-mail, #15 admin, #16 payment decision (by 24 Oct), #17 submissions MVP, #18 Resend
-3. **Peer review (Jan-Mar 2027)** — #21
-4. **Event (24-26 Mar 2027)** — #22 certificates/anais; #23 zh-CN review (no milestone)
+**Plan saved on 2026-11-05, driven by the 10 Nov opening.** The committee was asked on that day to test the payment flow on dev (https://dev.sieamb.org/2027/inscricoes/nova, sandbox test card). After their test, in this order:
+
+1. **Apply the committee's feedback** on the texts, the fees and the flow, on dev.
+2. **Settle what blocks go-live** (#16):
+   - Pix key on the Mercado Pago account, or open with card and boleto only.
+   - Boleto validity: orders are created with `expiration_time: P1D` and the order shows no separate due date for the boleto. Check whether a boleto paid on day two or three is still credited; lengthen the validity if not.
+   - Vercel plan: #98 mentions Hobby; confirm the plan allows collecting fees.
+3. **Go live, only with Rodrigo's go**: `migrate deploy` of `20261105230000_payments` on sieamb-prod, production `MP_ACCESS_TOKEN` / `MP_WEBHOOK_SECRET` / `VITE_PAYMENTS_ENABLED=true` on Vercel Production, release `develop` → `main` (closes #158, #160, #162), then one real low-value payment and its refund. That payment is also the check of the production webhook secret, which was typed from a screenshot.
+4. **Send the pay link to everyone who pre-registered before payments existed.** Every row has a `pay_token`; the link is `/:event/inscricoes/pagar?t=<pay_token>`. Nobody has received one.
+5. **Committee list of who paid** (#15). A CSV export covers the first days if the screen is not ready.
+6. **Confirmation e-mail** (#18, #14). Blocked on the Resend key (`RESEND_API_KEY` is empty in `.env.local`).
+7. **Submissions** (#17). Opening on 9 Nov needs accounts and PDF upload and has no plan yet: it needs a simpler fallback or a later date, a call for Rodrigo and the committee.
+
+After launch: remove `PAYMENTS_NOW` from Vercel Preview once 10 Nov has passed; accounts (#14); a way to issue refunds; the empenho and exemption flows; the payment decision ADR (#16 checklist) and the `docs/IMPLEMENTATION_PLAN.md` §7 rewrite for the Orders API; an automated test up to the checkout redirect.
+
+Milestones after the opening: **Peer review (Jan-Mar 2027)** #21, **Event (24-26 Mar 2027)** #22 certificates/anais, #23 zh-CN review (no milestone). Still open from the Edital milestone: #132 presentation text, #12 committee asks.
 
 ## External dependencies to kick off early
 
