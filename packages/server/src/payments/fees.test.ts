@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { FEE_EVENTS, FEE_TIERS, centsToAmount, resolveFeeTier, type FeeTier } from './fees';
+import {
+  FEE_EVENTS,
+  FEE_TIERS,
+  centsToAmount,
+  paymentDeadlines,
+  resolveFeeTier,
+  type FeeTier,
+} from './fees';
 
 const EVENTS = [{ id: 'evt-2027', slug: '2027' }];
 const tier = (overrides: Partial<FeeTier> = {}): FeeTier => ({
@@ -100,5 +107,33 @@ describe('centsToAmount', () => {
     [123456, '1234.56'],
   ])('%i centavos → %s', (cents, amount) => {
     expect(centsToAmount(cents)).toBe(amount);
+  });
+});
+
+describe('paymentDeadlines (#201)', () => {
+  const Q = { eventSlug: '2027', category: 'ESTUDANTE_POS', modality: 'ONLINE' };
+
+  it('lists the end of each lot, earliest first, with the fee that follows', () => {
+    expect(paymentDeadlines(Q)).toEqual([
+      { date: '2027-01-01T23:59:00-03:00', amountCents: 5000, nextAmountCents: 7000 },
+      { date: '2027-03-20T23:59:00-03:00', amountCents: 7000, nextAmountCents: null },
+    ]);
+  });
+
+  it('is empty for a category with no fee, another modality, or an unknown event', () => {
+    expect(paymentDeadlines({ ...Q, category: 'COMUNIDADE_UFCG' })).toEqual([]);
+    expect(paymentDeadlines({ ...Q, modality: 'PRESENCIAL' })).toEqual([]);
+    expect(paymentDeadlines({ ...Q, eventSlug: '1999' })).toEqual([]);
+  });
+
+  it('ignores a lot with a broken date or a price that is not a positive whole number', () => {
+    const tiers = [
+      { id: 'a', eventId: 'evt-2027', category: 'X', modality: 'ONLINE', amountCents: 1000, validFrom: '2026-11-10T00:00:00-03:00', validUntil: 'soon' },
+      { id: 'b', eventId: 'evt-2027', category: 'X', modality: 'ONLINE', amountCents: 0, validFrom: '2026-11-10T00:00:00-03:00', validUntil: '2027-01-01T23:59:00-03:00' },
+      { id: 'c', eventId: 'evt-2027', category: 'X', modality: 'ONLINE', amountCents: 2000, validFrom: '2027-01-02T00:00:00-03:00', validUntil: '2027-02-01T23:59:00-03:00' },
+    ];
+    expect(paymentDeadlines({ eventSlug: '2027', category: 'X', modality: 'ONLINE' }, tiers)).toEqual([
+      { date: '2027-02-01T23:59:00-03:00', amountCents: 2000, nextAmountCents: null },
+    ]);
   });
 });

@@ -6,6 +6,10 @@ import {
   emailKindFor,
   enqueueMissingReceived,
   enqueueReminders,
+  deadlineOfKey,
+  deadlineReminderDue,
+  brDate,
+  formatDate,
   handleRegistrationReceived,
   receivedApplies,
   refreshOpenPayments,
@@ -402,35 +406,40 @@ describe('reminderDue', () => {
   const candidate = (over: Partial<ReminderCandidate> = {}): ReminderCandidate => ({
     preRegistrationId: REGISTRATION.id,
     registeredAt: ago(2 * DAY),
+    eventSlug: '2027',
+    category: 'ESTUDANTE_POS',
+    modality: 'ONLINE',
     payments: [],
     emails: [],
     ...over,
   });
-  const reminder = (ms: number) => ({ kind: 'REMINDER' as const, createdAt: ago(ms) });
+  const reminder = (ms: number) => ({ kind: 'REMINDER' as const, dedupeKey: 'reminder:r:n', createdAt: ago(ms) });
 
   it('the first is due a day after registering, not before', () => {
     expect(reminderDue(candidate({ registeredAt: ago(DAY) }), NOW)).toBe(1);
     expect(reminderDue(candidate({ registeredAt: ago(DAY - 1000) }), NOW)).toBeNull();
   });
-  it('the second is due two days after the first, the third four days after the second', () => {
+  it('the second is due two days after the first, which is day 3', () => {
     expect(reminderDue(candidate({ emails: [reminder(2 * DAY)] }), NOW)).toBe(2);
     expect(reminderDue(candidate({ emails: [reminder(2 * DAY - 1000)] }), NOW)).toBeNull();
-    expect(reminderDue(candidate({ emails: [reminder(7 * DAY), reminder(4 * DAY)] }), NOW)).toBe(3);
-    expect(reminderDue(candidate({ emails: [reminder(7 * DAY), reminder(3 * DAY)] }), NOW)).toBeNull();
   });
-  it('never a fourth', () => {
-    const emails = [reminder(30 * DAY), reminder(20 * DAY), reminder(10 * DAY)];
+  it('never a third counted from the registration', () => {
+    const emails = [reminder(30 * DAY), reminder(20 * DAY)];
     expect(reminderDue(candidate({ registeredAt: ago(40 * DAY), emails }), NOW)).toBeNull();
   });
-  it('someone who registered weeks ago gets one reminder now, not three at once', () => {
+  it('a date reminder already sent does not use up the two', () => {
+    const dated = { kind: 'REMINDER' as const, dedupeKey: 'deadline:r:2027-01-01:7', createdAt: ago(3 * DAY) };
+    expect(reminderDue(candidate({ registeredAt: ago(10 * DAY), emails: [dated] }), NOW)).toBe(1);
+  });
+  it('someone who registered weeks ago gets one reminder now, not two at once', () => {
     const old = candidate({ registeredAt: ago(20 * DAY) });
     expect(reminderDue(old, NOW)).toBe(1);
     expect(reminderDue({ ...old, emails: [reminder(1000)] }, NOW)).toBeNull();
   });
   it('waits 20 hours after any other e-mail to the same person', () => {
-    const recent = [{ kind: 'FAILED' as const, createdAt: ago(19 * HOUR) }];
+    const recent = [{ kind: 'FAILED' as const, dedupeKey: 'p:FAILED', createdAt: ago(19 * HOUR) }];
     expect(reminderDue(candidate({ payments: [{ id: 'p', status: 'REJECTED', mpStatus: 'failed' }], emails: recent }), NOW)).toBeNull();
-    const older = [{ kind: 'FAILED' as const, createdAt: ago(21 * HOUR) }];
+    const older = [{ kind: 'FAILED' as const, dedupeKey: 'p:FAILED', createdAt: ago(21 * HOUR) }];
     expect(reminderDue(candidate({ payments: [{ id: 'p', status: 'REJECTED', mpStatus: 'failed' }], emails: older }), NOW)).toBe(1);
   });
   it('nothing for someone who paid, or whose card is under review', () => {
@@ -497,7 +506,7 @@ describe('enqueueReminders and their delivery', () => {
     expect(sent).toHaveLength(0);
   });
 
-  it('sends three reminders over a week and then stops', async () => {
+  it('sends two reminders, on day 1 and day 3, and then stops', async () => {
     const { store, deps, sent } = setup();
     // A second past the first day, so the first run already finds it.
     store.registeredAt = ago(DAY + 1000);
@@ -507,9 +516,9 @@ describe('enqueueReminders and their delivery', () => {
       await enqueueReminders(deps, now);
       await deliverDueEmails(deps, now);
     }
-    expect(sent).toHaveLength(3);
+    expect(sent).toHaveLength(2);
     const days = store.emails.map((e) => Math.round((Date.parse(e.createdAt) - NOW.getTime()) / DAY));
-    expect(days).toEqual([0, 2, 6]);
+    expect(days).toEqual([0, 2]);
   });
 });
 
@@ -786,5 +795,143 @@ describe('a card refused on the spot (#195)', () => {
     await notify(payment, 'CREATED', 'waiting_retry');
     expect(sent.map((m) => m.subject)).toEqual(['Pagamento não aprovado (II SIEAmB)']);
     expect(sent[0]!.text).toContain('/2027/inscricoes/pagar?t=');
+  });
+});
+
+// ───────────────────────────── Date reminders (#201) ─────────────────────────────
+
+describe('date reminders: 7 days and 1 day before a payment date', () => {
+  // Fee table shipped with the site, ESTUDANTE_POS: lot 1 (R$ 50) until 01/01/2027 23:59,
+  // lot 2 (R$ 70) until 20/03/2027 23:59.
+  const at = (iso: string) => new Date(iso);
+  const candidate = (over: Partial<ReminderCandidate> = {}): ReminderCandidate => ({
+    preRegistrationId: REGISTRATION.id,
+    registeredAt: '2026-11-20T15:00:00.000Z',
+    eventSlug: '2027',
+    category: 'ESTUDANTE_POS',
+    modality: 'ONLINE',
+    payments: [],
+    emails: [],
+    ...over,
+  });
+
+  it.each([
+    ['7 days before the fee goes up', '2026-12-25T15:00:00Z', 'deadline:' + REGISTRATION.id + ':2027-01-01:7'],
+    ['the day before the fee goes up', '2026-12-31T15:00:00Z', 'deadline:' + REGISTRATION.id + ':2027-01-01:1'],
+    ['7 days before registration closes', '2027-03-13T15:00:00Z', 'deadline:' + REGISTRATION.id + ':2027-03-20:7'],
+    ['the day before registration closes', '2027-03-19T15:00:00Z', 'deadline:' + REGISTRATION.id + ':2027-03-20:1'],
+  ])('is due %s', (_name, now, key) => {
+    expect(deadlineReminderDue(candidate(), at(now))?.key).toBe(key);
+  });
+
+  it.each([
+    ['8 days before', '2026-12-24T15:00:00Z'],
+    ['6 days before', '2026-12-26T15:00:00Z'],
+    ['2 days before', '2026-12-30T15:00:00Z'],
+    ['on the last day itself', '2027-01-01T15:00:00Z'],
+    ['the day after', '2027-01-02T15:00:00Z'],
+    ['after registration closed', '2027-03-21T15:00:00Z'],
+  ])('is not due %s', (_name, now) => {
+    expect(deadlineReminderDue(candidate(), at(now))).toBeNull();
+  });
+
+  it('counts days on the Brazilian calendar, not in UTC', () => {
+    // 31/12 22:30 in Brazil is already 01/01 in UTC: still "the day before".
+    expect(deadlineReminderDue(candidate(), at('2027-01-01T01:30:00Z'))?.daysBefore).toBe(1);
+    // 24/12 23:30 in Brazil is 25/12 in UTC: still 8 days before, not 7.
+    expect(deadlineReminderDue(candidate(), at('2026-12-25T02:30:00Z'))).toBeNull();
+  });
+
+  it('is not repeated for the same date and distance', () => {
+    const sentAlready = [{ kind: 'REMINDER' as const, dedupeKey: 'deadline:' + REGISTRATION.id + ':2027-01-01:7', createdAt: '2026-12-25T12:00:00.000Z' }];
+    expect(deadlineReminderDue(candidate({ emails: sentAlready }), at('2026-12-25T21:00:00Z'))).toBeNull();
+  });
+
+  it.each([
+    ['who paid', [{ id: 'p', status: 'APPROVED' as const, mpStatus: 'processed' }]],
+    ['with a boleto waiting', [{ id: 'p', status: 'PENDING' as const, mpStatus: 'action_required' }]],
+    ['whose card is under review', [{ id: 'p', status: 'PENDING' as const, mpStatus: 'in_review' }]],
+  ])('is not due for someone %s', (_name, payments) => {
+    expect(deadlineReminderDue(candidate({ payments }), at('2026-12-25T15:00:00Z'))).toBeNull();
+  });
+
+  it('is not due on the day someone registered, nor within 6 hours of another reminder', () => {
+    expect(deadlineReminderDue(candidate({ registeredAt: '2026-12-25T12:00:00.000Z' }), at('2026-12-25T15:00:00Z'))).toBeNull();
+    const justReminded = [{ kind: 'REMINDER' as const, dedupeKey: 'reminder:r:1', createdAt: '2026-12-25T12:00:00.000Z' }];
+    expect(deadlineReminderDue(candidate({ registeredAt: '2026-12-24T11:00:00.000Z', emails: justReminded }), at('2026-12-25T15:00:00Z'))).toBeNull();
+  });
+
+  it('has no dates for a category without a fee, or an unknown event', () => {
+    expect(deadlineReminderDue(candidate({ category: 'COMUNIDADE_UFCG' }), at('2026-12-25T15:00:00Z'))).toBeNull();
+    expect(deadlineReminderDue(candidate({ eventSlug: '1999' }), at('2026-12-25T15:00:00Z'))).toBeNull();
+  });
+
+  it('reads the date back from its key, and nothing from other keys', () => {
+    expect(deadlineOfKey('deadline:abc:2027-01-01:7')).toBe('2027-01-01');
+    expect(deadlineOfKey('reminder:abc:1')).toBeNull();
+    expect(deadlineOfKey('received:abc')).toBeNull();
+    expect(deadlineOfKey('deadline:abc:2027-01-01:7:extra')).toBeNull();
+  });
+
+  it('formats the date as the Brazilian calendar day in each language', () => {
+    expect(brDate(Date.parse('2027-01-01T23:59:00-03:00'))).toBe('2027-01-01');
+    expect(formatDate('2027-01-01T23:59:00-03:00', 'pt-BR')).toBe('01/01/2027');
+    expect(formatDate('2027-01-01T23:59:00-03:00', 'en')).toBe('01/01/2027');
+    expect(formatDate('2027-03-20T23:59:00-03:00', 'es')).toBe('20/03/2027');
+    // Day first in English too, so 20 March is never read as an impossible month.
+    expect(formatDate('2027-03-20T23:59:00-03:00', 'en')).toBe('20/03/2027');
+    expect(formatDate('2027-03-20T23:59:00-03:00', 'zh-CN')).toMatch(/2027.*0?3.*20/);
+  });
+
+  it('e-mails the current fee, the date and the next fee a week before the price goes up', async () => {
+    const { store, deps, sent } = setup();
+    const now = at('2026-12-25T15:00:00Z');
+    store.clock = now;
+    store.registeredAt = '2026-12-10T15:00:00.000Z';
+    // Both reminders counted from the registration already went out.
+    await store.enqueueEmail({ preRegistrationId: REGISTRATION.id, paymentId: null, kind: 'REMINDER', dedupeKey: 'reminder:x:1' });
+    await store.enqueueEmail({ preRegistrationId: REGISTRATION.id, paymentId: null, kind: 'REMINDER', dedupeKey: 'reminder:x:2' });
+    store.emails.forEach((e) => { e.status = 'SENT'; e.createdAt = '2026-12-13T15:00:00.000Z'; });
+    expect(await enqueueReminders(deps, now)).toBe(1);
+    await deliverDueEmails(deps, now);
+    expect(sent).toHaveLength(1);
+    expect(sent[0]!.subject).toBe('O valor da inscrição no II SIEAmB vale até 01/01/2027');
+    const text = sent[0]!.text.replace(/\s/g, ' ');
+    expect(text).toContain('R$ 50,00');
+    expect(text).toContain('R$ 70,00');
+    expect(text).toContain('01/01/2027');
+    expect(text).toContain('/2027/inscricoes/pagar?t=');
+    expect(text).not.toMatch(/undefined/);
+  });
+
+  it('says registration is closing, with no next fee, before the last lot ends', async () => {
+    const { store, deps, sent } = setup();
+    const now = at('2027-03-19T15:00:00Z');
+    store.clock = now;
+    store.registeredAt = '2027-03-01T15:00:00.000Z';
+    await store.enqueueEmail({ preRegistrationId: REGISTRATION.id, paymentId: null, kind: 'REMINDER', dedupeKey: 'reminder:x:1' });
+    await store.enqueueEmail({ preRegistrationId: REGISTRATION.id, paymentId: null, kind: 'REMINDER', dedupeKey: 'reminder:x:2' });
+    store.emails.forEach((e) => { e.status = 'SENT'; e.createdAt = '2027-03-04T15:00:00.000Z'; });
+    await enqueueReminders(deps, now);
+    await deliverDueEmails(deps, now);
+    expect(sent[0]!.subject).toBe('As inscrições do II SIEAmB encerram em 20/03/2027');
+    expect(sent[0]!.text.replace(/\s/g, ' ')).toContain('R$ 70,00');
+    expect(sent[0]!.text).not.toMatch(/passa a custar|undefined/);
+  });
+
+  it('drops a date reminder that is delivered after its date, or after the person paid', async () => {
+    const late = setup({ failSends: 1 });
+    const now = at('2026-12-31T15:00:00Z');
+    late.store.clock = now;
+    late.store.registeredAt = '2026-12-29T10:00:00.000Z';
+    await late.store.enqueueEmail({ preRegistrationId: REGISTRATION.id, paymentId: null, kind: 'REMINDER', dedupeKey: 'deadline:' + REGISTRATION.id + ':2027-01-01:1' });
+    await deliverDueEmails(late.deps, now); // mail server down
+    expect(await deliverDueEmails(late.deps, at('2027-01-02T15:00:00Z'))).toMatchObject({ sent: 0, skipped: 1 });
+
+    const paid = setup();
+    paid.store.clock = now;
+    await paid.store.enqueueEmail({ preRegistrationId: REGISTRATION.id, paymentId: null, kind: 'REMINDER', dedupeKey: 'deadline:' + REGISTRATION.id + ':2027-01-01:1' });
+    paid.store.seed({ status: 'APPROVED' });
+    expect(await deliverDueEmails(paid.deps, now)).toMatchObject({ sent: 0, skipped: 1 });
   });
 });

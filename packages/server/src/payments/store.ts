@@ -56,6 +56,9 @@ export interface PaymentContact {
   payToken: string;
   eventSlug: string;
   eventName: string;
+  /** For looking up the fee in date reminders (#201). */
+  category: string;
+  modality: string;
 }
 
 export type EmailKind = 'PROCESSING' | 'CONFIRMED' | 'FAILED' | 'REMINDER' | 'RECEIVED';
@@ -67,6 +70,8 @@ export interface EmailJob {
   /** Null for a reminder to someone who never started a payment. */
   paymentId: string | null;
   kind: EmailKind;
+  /** What makes it unique; a date reminder carries its date here. */
+  dedupeKey: string;
   status: 'PENDING' | 'SENT' | 'SKIPPED';
   attempts: number;
 }
@@ -83,8 +88,11 @@ export interface NewEmail {
 export interface ReminderCandidate {
   preRegistrationId: string;
   registeredAt: string;
+  eventSlug: string;
+  category: string;
+  modality: string;
   payments: { id: string; status: PaymentStatus; mpStatus: string | null }[];
-  emails: { kind: EmailKind; createdAt: string }[];
+  emails: { kind: EmailKind; dedupeKey: string; createdAt: string }[];
 }
 
 /** Thrown by insertPayment when the pre-registration already has an open payment. */

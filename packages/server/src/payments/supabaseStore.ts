@@ -45,17 +45,19 @@ interface EmailRow {
   pre_registration_id: string;
   payment_id: string | null;
   kind: EmailKind;
+  dedupe_key: string;
   status: EmailJob['status'];
   attempts: number;
 }
 
-const EMAIL_COLUMNS = 'id,pre_registration_id,payment_id,kind,status,attempts';
+const EMAIL_COLUMNS = 'id,pre_registration_id,payment_id,kind,dedupe_key,status,attempts';
 
 const toEmailJob = (row: EmailRow): EmailJob => ({
   id: row.id,
   preRegistrationId: row.pre_registration_id,
   paymentId: row.payment_id,
   kind: row.kind,
+  dedupeKey: row.dedupe_key,
   status: row.status,
   attempts: row.attempts,
 });
@@ -270,10 +272,12 @@ export class SupabasePaymentStore implements PaymentStore {
         email: string;
         locale: string;
         pay_token: string;
+        category: string;
+        modality: string;
         event: { slug: string; name: string } | null;
       }[]
     >(
-      `pre_registrations?id=eq.${encodeURIComponent(preRegistrationId)}&select=full_name,email,locale,pay_token,event:events(slug,name)&limit=1`,
+      `pre_registrations?id=eq.${encodeURIComponent(preRegistrationId)}&select=full_name,email,locale,pay_token,category,modality,event:events(slug,name)&limit=1`,
     );
     const row = rows[0];
     if (!row?.event) return null;
@@ -284,6 +288,8 @@ export class SupabasePaymentStore implements PaymentStore {
       payToken: row.pay_token,
       eventSlug: row.event.slug,
       eventName: row.event.name,
+      category: row.category,
+      modality: row.modality,
     };
   }
 
@@ -308,17 +314,27 @@ export class SupabasePaymentStore implements PaymentStore {
       {
         id: string;
         created_at: string;
+        category: string;
+        modality: string;
+        event: { slug: string } | null;
         payments: { id: string; status: PaymentStatus; mp_status: string | null }[];
-        payment_emails: { kind: EmailKind; created_at: string }[];
+        payment_emails: { kind: EmailKind; dedupe_key: string; created_at: string }[];
       }[]
     >(
-      `pre_registrations?${filter}&select=id,created_at,payments(id,status,mp_status),payment_emails(kind,created_at)&order=created_at.asc&limit=${limit}`,
+      `pre_registrations?${filter}&select=id,created_at,category,modality,event:events(slug),payments(id,status,mp_status),payment_emails(kind,dedupe_key,created_at)&order=created_at.asc&limit=${limit}`,
     );
     return rows.map((row) => ({
       preRegistrationId: row.id,
       registeredAt: row.created_at,
+      eventSlug: row.event?.slug ?? '',
+      category: row.category,
+      modality: row.modality,
       payments: row.payments.map((p) => ({ id: p.id, status: p.status, mpStatus: p.mp_status })),
-      emails: row.payment_emails.map((e) => ({ kind: e.kind, createdAt: e.created_at })),
+      emails: row.payment_emails.map((e) => ({
+        kind: e.kind,
+        dedupeKey: e.dedupe_key,
+        createdAt: e.created_at,
+      })),
     }));
   }
 }

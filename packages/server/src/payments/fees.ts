@@ -57,6 +57,44 @@ export function resolveFeeTier(
   return matches.length === 1 ? matches[0]! : null;
 }
 
+/** A date after which paying changes: the fee goes up, or registration closes. */
+export interface PaymentDeadline {
+  /** Last moment of the lot, as written in the fee table. */
+  date: string;
+  amountCents: number;
+  /** Fee of the lot that follows; null when this is the last one and registration closes. */
+  nextAmountCents: number | null;
+}
+
+/**
+ * The dates that matter for paying, for one category and modality, earliest first:
+ * the end of each lot. Used by the date reminders (#201).
+ */
+export function paymentDeadlines(
+  query: Omit<FeeQuery, 'now'>,
+  tiers: FeeTier[] = FEE_TIERS,
+  events: FeeEvent[] = FEE_EVENTS,
+): PaymentDeadline[] {
+  const event = events.find((e) => e.slug === query.eventSlug);
+  if (!event) return [];
+  const lots = tiers
+    .filter(
+      (tier) =>
+        tier.eventId === event.id &&
+        tier.category === query.category &&
+        tier.modality === query.modality &&
+        Number.isInteger(tier.amountCents) &&
+        tier.amountCents > 0 &&
+        !Number.isNaN(Date.parse(tier.validUntil)),
+    )
+    .sort((x, y) => Date.parse(x.validUntil) - Date.parse(y.validUntil));
+  return lots.map((lot, i) => ({
+    date: lot.validUntil,
+    amountCents: lot.amountCents,
+    nextAmountCents: lots.at(i + 1)?.amountCents ?? null,
+  }));
+}
+
 /** 3000 → "30.00", the decimal string Mercado Pago expects. */
 export function centsToAmount(cents: number): string {
   return (cents / 100).toFixed(2);
