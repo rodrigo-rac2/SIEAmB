@@ -9,6 +9,9 @@ describe('mapOrderStatus', () => {
     ['action_required', 'waiting_capture', 'PENDING'],
     ['processing', 'in_process', 'PENDING'],
     ['processing', 'pending_review_manual', 'PENDING'],
+    // First real card payment in production, 2026-11-16 (#182).
+    ['in_review', 'in_review', 'PENDING'],
+    ['in_review', 'pending_review_manual', 'PENDING'],
     ['failed', 'rejected_by_issuer', 'REJECTED'],
     ['failed', 'high_risk', 'REJECTED'],
     ['refunded', 'refunded', 'REFUNDED'],
