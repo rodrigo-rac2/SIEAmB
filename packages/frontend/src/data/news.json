@@ -58,22 +58,22 @@
     "eventId": "evt-2027",
     "slug": "pre-inscricoes-abertas",
     "title": {
-      "pt-BR": "Pré-inscrições abertas",
-      "en": "Pre-registration is open",
-      "es": "Preinscripciones abiertas",
-      "zh-CN": "预报名开放"
+      "pt-BR": "Inscrições abertas",
+      "en": "Registration is open",
+      "es": "Inscripciones abiertas",
+      "zh-CN": "注册已开放"
     },
     "excerpt": {
-      "pt-BR": "Garanta sua participação no II SIEAmB fazendo sua pré-inscrição.",
-      "en": "Secure your place at the II SIEAmB by pre-registering.",
-      "es": "Asegure su participación en el II SIEAmB con su preinscripción.",
-      "zh-CN": "通过预报名确保您参加第二届 SIEAmB。"
+      "pt-BR": "Garanta sua participação no II SIEAmB fazendo sua inscrição.",
+      "en": "Secure your place at the II SIEAmB by registering.",
+      "es": "Asegure su participación en el II SIEAmB con su inscripción.",
+      "zh-CN": "立即注册，确保您参加第二届 SIEAmB。"
     },
     "bodyMd": {
-      "pt-BR": "As **pré-inscrições** para o II SIEAmB já estão abertas!\n\nAo se pré-inscrever, você garante prioridade nas comunicações do evento e será avisado assim que o pagamento for disponibilizado.\n\n[Faça sua pré-inscrição](../inscricoes/nova)",
-      "en": "**Pre-registration** for the II SIEAmB is now open!\n\nBy pre-registering you get priority in the event communications and will be notified as soon as payment becomes available.\n\n[Pre-register now](../inscricoes/nova)",
-      "es": "¡Las **preinscripciones** para el II SIEAmB ya están abiertas!\n\nAl preinscribirse, usted tiene prioridad en las comunicaciones del evento y será avisado en cuanto el pago esté disponible.\n\n[Haga su preinscripción](../inscricoes/nova)",
-      "zh-CN": "第二届 SIEAmB 的**预报名**现已开放！\n\n预报名后，您将优先收到会议通知，并在开放缴费后第一时间获得提醒。\n\n[立即预报名](../inscricoes/nova)"
+      "pt-BR": "As **inscrições** para o II SIEAmB já estão abertas!\n\nPreencha o formulário e pague a taxa pelo Mercado Pago, com cartão ou boleto. Os valores de cada categoria estão na página de [Inscrições](../inscricoes).\n\n[Faça sua inscrição](../inscricoes/nova)",
+      "en": "**Registration** for the II SIEAmB is now open!\n\nFill in the form and pay the fee through Mercado Pago, by card or boleto. The fees for each category are on the [Registration](../inscricoes) page.\n\n[Register now](../inscricoes/nova)",
+      "es": "¡Las **inscripciones** para el II SIEAmB ya están abiertas!\n\nComplete el formulario y pague la tasa por Mercado Pago, con tarjeta o boleto. Los valores de cada categoría están en la página de [Inscripciones](../inscricoes).\n\n[Haga su inscripción](../inscricoes/nova)",
+      "zh-CN": "第二届 SIEAmB 的**注册**现已开放！\n\n填写表格后，即可通过 Mercado Pago 使用银行卡或 boleto 支付注册费。各类别的费用见[注册](../inscricoes)页面。\n\n[立即注册](../inscricoes/nova)"
     },
     "coverImageUrl": null,
     "status": "PUBLISHED",
