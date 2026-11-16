@@ -309,8 +309,8 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  background: var(--color-accent);
-  color: #fff;
+  background: var(--color-accent-light);
+  color: var(--color-ink);
   font-size: var(--text-sm);
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -323,7 +323,7 @@
   width: 0.6em;
   height: 0.6em;
   border-radius: 50%;
-  background: #fff;
+  background: var(--color-error);
   animation: registration-callout-pulse 1.6s ease-in-out infinite;
 }
 
@@ -347,7 +347,8 @@
 
 .registration-callout__text p {
   margin: 0;
-  opacity: 0.92;
+  color: inherit;
+  font-size: var(--text-lg);
 }
 
 .registration-callout__actions {
