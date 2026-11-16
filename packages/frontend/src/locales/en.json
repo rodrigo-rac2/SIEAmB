@@ -115,8 +115,8 @@
       "PRESENCIAL": "In person",
       "ONLINE": "Online"
     },
-    "registerCta": "Pre-register",
-    "formTitle": "Pre-registration",
+    "registerCta": "Register",
+    "formTitle": "Registration",
     "fullName": "Full name",
     "email": "Email",
     "cpf": "CPF",
@@ -125,19 +125,19 @@
     "country": "Country",
     "institution": "Institution",
     "consent": "I authorise the use of my data (name, e-mail, CPF or passport) to organise the event and to send me information about registrations, under the Brazilian data protection law (LGPD).",
-    "submit": "Submit pre-registration",
+    "submit": "Submit registration",
     "submitting": "Submitting…",
-    "successTitle": "Pre-registration received!",
-    "successBody": "Your pre-registration was recorded successfully. Payment instructions will be sent by email soon. Follow the event news.",
-    "paymentNote": "Registration payment will be available soon. Pre-registered participants will be notified by email.",
+    "successTitle": "Registration received!",
+    "successBody": "Your registration was recorded successfully. Payment instructions will be sent by email soon. Follow the event news.",
+    "paymentNote": "The fee is paid through Mercado Pago right after you submit the form, by card or boleto.",
     "errors": {
       "invalid_cpf": "Invalid CPF. Check the digits.",
       "cpf_or_passport_required": "Provide CPF or passport.",
       "fullName": "Enter your full name.",
       "email": "Enter a valid email.",
       "duplicate": "A registration with this email already exists for this event.",
-      "consent_required": "You need to authorise the use of your data to send the pre-registration.",
-      "closed": "Pre-registration for this event is not open."
+      "consent_required": "You need to authorise the use of your data to send the registration.",
+      "closed": "Registration for this event is not open."
     },
     "lotRange": "{{from}} to {{until}}"
   },
@@ -226,7 +226,7 @@
     "loggingIn": "Signing in…",
     "loginError": "Incorrect email or password.",
     "noAccount": "Not registered yet?",
-    "registerLink": "Pre-register now"
+    "registerLink": "Register now"
   },
   "myRegistration": {
     "title": "My Registration",

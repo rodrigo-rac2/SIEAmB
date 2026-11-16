@@ -115,8 +115,8 @@
       "PRESENCIAL": "Presencial",
       "ONLINE": "En línea"
     },
-    "registerCta": "Preinscribirse",
-    "formTitle": "Preinscripción",
+    "registerCta": "Inscribirse",
+    "formTitle": "Inscripción",
     "fullName": "Nombre completo",
     "email": "Correo electrónico",
     "cpf": "CPF",
@@ -125,19 +125,19 @@
     "country": "País",
     "institution": "Institución",
     "consent": "Autorizo el uso de mis datos (nombre, correo electrónico, CPF o pasaporte) para la organización del evento y para el envío de información sobre las inscripciones, conforme a la LGPD.",
-    "submit": "Enviar preinscripción",
+    "submit": "Enviar inscripción",
     "submitting": "Enviando…",
-    "successTitle": "¡Preinscripción recibida!",
-    "successBody": "Su preinscripción fue registrada con éxito. Las instrucciones de pago serán enviadas por correo electrónico pronto. Siga los avisos del evento.",
-    "paymentNote": "El pago de las inscripciones estará disponible pronto. Los preinscritos serán avisados por correo electrónico.",
+    "successTitle": "¡Inscripción recibida!",
+    "successBody": "Su inscripción fue registrada con éxito. Las instrucciones de pago serán enviadas por correo electrónico pronto. Siga los avisos del evento.",
+    "paymentNote": "El pago de la tasa se realiza por Mercado Pago justo después de enviar el formulario, con tarjeta o boleto.",
     "errors": {
       "invalid_cpf": "CPF inválido. Verifique los dígitos.",
       "cpf_or_passport_required": "Informe CPF o pasaporte.",
       "fullName": "Ingrese su nombre completo.",
       "email": "Ingrese un correo electrónico válido.",
       "duplicate": "Ya existe una inscripción con este correo para este evento.",
-      "consent_required": "Es necesario autorizar el uso de los datos para enviar la preinscripción.",
-      "closed": "La preinscripción de este evento no está abierta."
+      "consent_required": "Es necesario autorizar el uso de los datos para enviar la inscripción.",
+      "closed": "La inscripción de este evento no está abierta."
     },
     "lotRange": "del {{from}} al {{until}}"
   },
@@ -226,7 +226,7 @@
     "loggingIn": "Ingresando…",
     "loginError": "Correo o contraseña incorrectos.",
     "noAccount": "¿Aún no está inscrito?",
-    "registerLink": "Haga su preinscripción"
+    "registerLink": "Haga su inscripción"
   },
   "myRegistration": {
     "title": "Mi Inscripción",

@@ -115,8 +115,8 @@
       "PRESENCIAL": "Presencial",
       "ONLINE": "Online"
     },
-    "registerCta": "Fazer pré-inscrição",
-    "formTitle": "Pré-inscrição",
+    "registerCta": "Fazer inscrição",
+    "formTitle": "Inscrição",
     "fullName": "Nome completo",
     "email": "E-mail",
     "cpf": "CPF",
@@ -125,19 +125,19 @@
     "country": "País",
     "institution": "Instituição",
     "consent": "Autorizo o uso dos meus dados (nome, e-mail, CPF ou passaporte) para a organização do evento e para o envio de informações sobre as inscrições, conforme a LGPD.",
-    "submit": "Enviar pré-inscrição",
+    "submit": "Enviar inscrição",
     "submitting": "Enviando…",
-    "successTitle": "Pré-inscrição recebida!",
-    "successBody": "Sua pré-inscrição foi registrada com sucesso. As instruções de pagamento serão enviadas por e-mail em breve. Acompanhe os avisos do evento.",
-    "paymentNote": "O pagamento das inscrições será disponibilizado em breve. Pré-inscritos serão avisados por e-mail.",
+    "successTitle": "Inscrição recebida!",
+    "successBody": "Sua inscrição foi registrada com sucesso. As instruções de pagamento serão enviadas por e-mail em breve. Acompanhe os avisos do evento.",
+    "paymentNote": "O pagamento da taxa é feito pelo Mercado Pago logo após o envio do formulário, com cartão ou boleto.",
     "errors": {
       "invalid_cpf": "CPF inválido. Confira os dígitos.",
       "cpf_or_passport_required": "Informe CPF ou passaporte.",
       "fullName": "Informe seu nome completo.",
       "email": "Informe um e-mail válido.",
       "duplicate": "Já existe uma inscrição com este e-mail para este evento.",
-      "consent_required": "É preciso autorizar o uso dos dados para enviar a pré-inscrição.",
-      "closed": "As pré-inscrições deste evento não estão abertas."
+      "consent_required": "É preciso autorizar o uso dos dados para enviar a inscrição.",
+      "closed": "As inscrições deste evento não estão abertas."
     },
     "lotRange": "de {{from}} a {{until}}"
   },
@@ -226,7 +226,7 @@
     "loggingIn": "Entrando…",
     "loginError": "E-mail ou senha incorretos.",
     "noAccount": "Ainda não tem inscrição?",
-    "registerLink": "Faça sua pré-inscrição"
+    "registerLink": "Faça sua inscrição"
   },
   "myRegistration": {
     "title": "Minha Inscrição",
