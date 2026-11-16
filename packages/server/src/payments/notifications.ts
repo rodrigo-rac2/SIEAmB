@@ -35,6 +35,8 @@ export interface EmailDeps {
  * - refused: "payment not approved"
  * - cancelled: only when it was pending. An order that expired without anyone
  *   trying to pay it is not news to the person.
+ * - back to "not paid" after being pending: the attempt was refused and the order
+ *   waits for another try (#188), which is "payment not approved" too.
  */
 export function emailKindFor(previous: PaymentStatus, next: PaymentStatus): EmailKind | null {
   if (previous === next) return null;
@@ -46,6 +48,7 @@ export function emailKindFor(previous: PaymentStatus, next: PaymentStatus): Emai
     case 'REJECTED':
       return 'FAILED';
     case 'CANCELLED':
+    case 'CREATED':
       return previous === 'PENDING' ? 'FAILED' : null;
     default:
       return null;
@@ -60,7 +63,8 @@ export function stillApplies(kind: EmailKind, status: PaymentStatus): boolean {
     case 'CONFIRMED':
       return status === 'APPROVED';
     case 'FAILED':
-      return status === 'REJECTED' || status === 'CANCELLED';
+      // CREATED: refused, and nothing paid since.
+      return status === 'REJECTED' || status === 'CANCELLED' || status === 'CREATED';
     case 'REMINDER':
       // Decided from all the payments of the registration, see `reminderState`.
       return false;

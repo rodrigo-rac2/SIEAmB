@@ -50,6 +50,8 @@ describe('emailKindFor', () => {
     ['CREATED', 'REJECTED', 'FAILED'],
     ['PENDING', 'REJECTED', 'FAILED'],
     ['PENDING', 'CANCELLED', 'FAILED'],
+    // Refused after a review, order open for another try (#188).
+    ['PENDING', 'CREATED', 'FAILED'],
     // An order nobody tried to pay expiring is not news to the person.
     ['CREATED', 'CANCELLED', null],
     ['REJECTED', 'CANCELLED', null],
@@ -57,6 +59,7 @@ describe('emailKindFor', () => {
     ['PENDING', 'PENDING', null],
     ['APPROVED', 'APPROVED', null],
     ['CREATED', 'CREATED', null],
+    ['REJECTED', 'CREATED', null],
     // No refund e-mail yet.
     ['APPROVED', 'REFUNDED', null],
   ];
@@ -76,6 +79,7 @@ describe('stillApplies', () => {
     expect(stillApplies('CONFIRMED', 'REFUNDED')).toBe(false);
     expect(stillApplies('FAILED', 'REJECTED')).toBe(true);
     expect(stillApplies('FAILED', 'CANCELLED')).toBe(true);
+    expect(stillApplies('FAILED', 'CREATED')).toBe(true);
     expect(stillApplies('FAILED', 'APPROVED')).toBe(false);
   });
 });
