@@ -30,4 +30,19 @@ describe('HomePage', () => {
     expect(screen.queryByText('Edital publicado')).toBeNull();
     expect(screen.queryByRole('heading', { name: 'Editais' })).toBeNull();
   });
+
+  it('announces open registrations under the hero, with a button straight to the form (#174)', async () => {
+    renderAtEvent('/2027/', <HomePage />);
+    const callout = within(await screen.findByRole('region', { name: 'Garanta sua vaga no II SIEAmB' }));
+    expect(callout.getByText('Inscrições abertas')).toBeInTheDocument();
+    expect(callout.getByRole('link', { name: /Fazer inscrição/ })).toHaveAttribute('href', '/2027/inscricoes/nova');
+    expect(callout.getByRole('link', { name: 'Ver valores' })).toHaveAttribute('href', '/2027/inscricoes');
+  });
+
+  it('an edition with registrations closed shows no registration call-out', async () => {
+    renderAtEvent('/2025/', <HomePage />);
+    await screen.findAllByRole('row');
+    expect(screen.queryByText('Inscrições abertas')).toBeNull();
+    expect(screen.queryByRole('link', { name: /Fazer inscrição/ })).toBeNull();
+  });
 });
