@@ -45,4 +45,29 @@ describe('payerData', () => {
     expect(data.firstName).toHaveLength(60);
     expect(data.lastName).toHaveLength(100);
   });
+
+  it('folds accents and cedillas to plain letters, as a card carries the name (#198)', () => {
+    expect(payerData('José Antônio da Conceição', null)).toEqual({
+      firstName: 'Jose',
+      lastName: 'Antonio da Conceicao',
+    });
+    expect(payerData('Cláudia Araújo Müller', null)).toEqual({ firstName: 'Claudia', lastName: 'Araujo Muller' });
+    expect(payerData('Ñandú Æon', null).firstName).toBe('Nandu');
+    expect(payerData('Søren Weiß Łukasz', null)).toEqual({ firstName: 'Soren', lastName: 'Weiss Lukasz' });
+  });
+  it('handles a name already split into letter plus combining accent', () => {
+    expect(payerData('Jose\u0301 Arau\u0301jo', null)).toEqual({ firstName: 'Jose', lastName: 'Araujo' });
+  });
+  it('keeps apostrophes and hyphens, drops digits and symbols', () => {
+    expect(payerData("Ana-Maria D'Ávila 3º <b>", null)).toEqual({ firstName: 'Ana-Maria', lastName: "D'Avila b" });
+  });
+  it('sends no name when nothing Latin is left, instead of something mangled', () => {
+    expect(payerData('周林', null)).toEqual({});
+    expect(payerData('Иван Петров', '52998224725')).toEqual({ cpf: '52998224725' });
+    expect(payerData('🙂 !!!', null)).toEqual({});
+  });
+  it('never sends a non-ASCII character', () => {
+    const data = payerData('Zoë Çağla Ångström Íñigo Õunapuu', null);
+    expect(`${data.firstName} ${data.lastName}`).toMatch(/^[A-Za-z' -]+$/);
+  });
 });

@@ -18,9 +18,21 @@ export function isValidCpf(input: string): boolean {
   return digit(9) === Number(cpf[9]) && digit(10) === Number(cpf[10]);
 }
 
+/**
+ * The name as a card would carry it: accents and cedillas folded to plain letters
+ * (José → Jose, Conceição → Conceicao), anything else that is not a Latin letter,
+ * an apostrophe or a hyphen dropped (#198). Only for what goes to Mercado Pago.
+ */
 const clean = (value: string): string =>
   value
-    .replace(/\p{Cc}+/gu, ' ')
+    .normalize('NFD')
+    .replace(/\p{M}+/gu, '')
+    .replace(/[\u00df]/g, 'ss')
+    .replace(/\u00f8/g, 'o')
+    .replace(/\u00d8/g, 'O')
+    .replace(/\u0142/g, 'l')
+    .replace(/\u0141/g, 'L')
+    .replace(/[^A-Za-z' -]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 
