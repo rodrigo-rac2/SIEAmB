@@ -1,7 +1,8 @@
 import { timingSafeEqual } from 'node:crypto';
-import { emailLocale, renderEmail, type NotificationKind } from './emailTemplates';
+import { emailLocale, renderEmail, type EmailData, type NotificationKind } from './emailTemplates';
 import { json, type Log } from './http';
 import type { PaymentStatus } from './status';
+import { paymentDeadlines, resolveFeeTier, type PaymentDeadline } from './fees';
 import { fetchOrder } from './mercadoPago';
 import { isUuid, type EmailJob, type EmailKind, type Payment, type PaymentStore, type ReminderCandidate } from './store';
 import { applyOrderToPayment } from './sync';
@@ -92,10 +93,13 @@ const TEMPLATE: Record<Exclude<EmailKind, 'REMINDER' | 'RECEIVED'>, Notification
 const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;
 
-/** At most this many reminders per registration. */
-export const REMINDER_LIMIT = 3;
-/** First reminder a day after registering, then two and four days after the previous one. */
-export const REMINDER_GAPS_MS = [1 * DAY, 2 * DAY, 4 * DAY];
+/** Reminders counted from the registration: one a day after it, one two days after that (day 3). */
+export const REMINDER_LIMIT = 2;
+export const REMINDER_GAPS_MS = [1 * DAY, 2 * DAY];
+/** Reminders counted from a date: this many days before each payment deadline (#201). */
+export const DEADLINE_OFFSETS_DAYS = [7, 1];
+/** A date reminder still keeps this distance from another reminder. */
+export const DEADLINE_QUIET_MS = 6 * HOUR;
 /** No reminder within this long of any other e-mail to the same person. */
 export const QUIET_AFTER_EMAIL_MS = 20 * HOUR;
 
@@ -128,10 +132,13 @@ export function receivedApplies(payments: { status: PaymentStatus }[]): boolean 
   return !payments.some((p) => p.status === 'APPROVED' || p.status === 'PENDING' || p.status === 'REFUNDED');
 }
 
-/** Which reminder (1, 2 or 3) is due for a registration now, or null. */
+const isTimed = (e: { kind: EmailKind; dedupeKey: string }) =>
+  e.kind === 'REMINDER' && e.dedupeKey.startsWith('reminder:');
+
+/** Which reminder counted from the registration (1 or 2) is due now, or null. */
 export function reminderDue(candidate: ReminderCandidate, now: Date): number | null {
   if (!reminderState(candidate.payments)) return null;
-  const reminders = candidate.emails.filter((e) => e.kind === 'REMINDER');
+  const reminders = candidate.emails.filter(isTimed);
   const sent = reminders.length;
   if (sent >= REMINDER_LIMIT) return null;
 
@@ -142,6 +149,57 @@ export function reminderDue(candidate: ReminderCandidate, now: Date): number | n
   const since = sent === 0 ? at(candidate.registeredAt) : Math.max(...reminders.map((e) => at(e.createdAt)));
   if (Number.isNaN(since)) return null;
   return now.getTime() - since >= REMINDER_GAPS_MS[sent]! ? sent + 1 : null;
+}
+
+/** Calendar day in Brazil (UTC-3, no daylight saving), as a day count. */
+const brDay = (ms: number): number => Math.floor((ms - 3 * HOUR) / DAY);
+
+/** The Brazilian calendar date of an instant, `YYYY-MM-DD`: what a date reminder is keyed by. */
+export const brDate = (ms: number): string => new Date(ms - 3 * HOUR).toISOString().slice(0, 10);
+
+export interface DeadlineReminder {
+  key: string;
+  deadline: PaymentDeadline;
+  daysBefore: number;
+}
+
+/**
+ * The date reminder due today for a registration, or null: exactly 7 days or 1 day
+ * (on the Brazilian calendar) before the end of a lot. Only for registrations with
+ * nothing paid and no boleto waiting, never on the day someone registered, and
+ * once per date and distance.
+ */
+export function deadlineReminderDue(
+  candidate: ReminderCandidate,
+  now: Date,
+  deadlines: PaymentDeadline[] = paymentDeadlines(candidate),
+): DeadlineReminder | null {
+  if (reminderState(candidate.payments)?.variant !== 'unpaid') return null;
+  const today = brDay(now.getTime());
+  const registered = Date.parse(candidate.registeredAt);
+  if (Number.isNaN(registered) || brDay(registered) === today) return null;
+  const lastReminder = Math.max(
+    0,
+    ...candidate.emails.filter((e) => e.kind === 'REMINDER').map((e) => Date.parse(e.createdAt)),
+  );
+  if (lastReminder && now.getTime() - lastReminder < DEADLINE_QUIET_MS) return null;
+
+  for (const deadline of deadlines) {
+    const end = Date.parse(deadline.date);
+    if (Number.isNaN(end) || now.getTime() >= end) continue;
+    const daysBefore = brDay(end) - today;
+    if (!DEADLINE_OFFSETS_DAYS.includes(daysBefore)) continue;
+    const key = `deadline:${candidate.preRegistrationId}:${brDate(end)}:${daysBefore}`;
+    if (candidate.emails.some((e) => e.dedupeKey === key)) continue;
+    return { key, deadline, daysBefore };
+  }
+  return null;
+}
+
+/** `deadline:<registration>:<YYYY-MM-DD>:<days>` → the date part, or null for any other key. */
+export function deadlineOfKey(dedupeKey: string): string | null {
+  const match = /^deadline:[^:]+:(\d{4}-\d{2}-\d{2}):\d+$/.exec(dedupeKey);
+  return match ? match[1]! : null;
 }
 
 /** Reminders go out between 08:00 and 20:00 in Brazil (UTC-3, no daylight saving). */
@@ -162,6 +220,18 @@ export async function enqueueReminders(
   );
   let recorded = 0;
   for (const candidate of candidates) {
+    // A date reminder comes first: it cannot wait for tomorrow.
+    const dated = deadlineReminderDue(candidate, now);
+    if (dated) {
+      const job = await deps.store.enqueueEmail({
+        preRegistrationId: candidate.preRegistrationId,
+        paymentId: null,
+        kind: 'REMINDER',
+        dedupeKey: dated.key,
+      });
+      if (job) recorded += 1;
+      continue;
+    }
     const number = reminderDue(candidate, now);
     if (!number) continue;
     const state = reminderState(candidate.payments);
@@ -197,6 +267,18 @@ export function formatAmount(amountCents: number, locale: string): string {
   return new Intl.NumberFormat(emailLocale(locale), { style: 'currency', currency: 'BRL' }).format(
     amountCents / 100,
   );
+}
+
+/** The Brazilian calendar date of a deadline, written for the reader's language (01/01/2027). */
+export function formatDate(iso: string, locale: string): string {
+  // Day first in every language, English included: 03/20 would be read as a wrong date here.
+  const tag = emailLocale(locale) === 'en' ? 'en-GB' : emailLocale(locale);
+  return new Intl.DateTimeFormat(tag, {
+    timeZone: 'America/Fortaleza',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(new Date(iso));
 }
 
 export type DeliveryOutcome = 'sent' | 'skipped' | 'failed' | 'busy' | 'no_mailer';
@@ -236,9 +318,27 @@ export async function deliverEmail(
           : null;
     const contact = await store.findContact(job.preRegistrationId);
 
+    const dated = deadlineOfKey(job.dedupeKey);
     let template: NotificationKind | null = null;
+    let extra: Partial<EmailData> = {};
     if (job.kind === 'RECEIVED') {
       if (receivedApplies(payments)) template = 'received';
+    } else if (job.kind === 'REMINDER' && dated) {
+      // Still unpaid, still before the date, and the lot it speaks of is the one in force.
+      const deadline = contact
+        ? paymentDeadlines(contact).find((d) => brDate(Date.parse(d.date)) === dated)
+        : undefined;
+      const tier = contact ? resolveFeeTier({ ...contact, now }) : null;
+      if (reminder?.variant === 'unpaid' && deadline && tier && tier.validUntil === deadline.date) {
+        template = deadline.nextAmountCents ? 'reminderPriceUp' : 'reminderClosing';
+        extra = {
+          amount: formatAmount(deadline.amountCents, contact!.locale),
+          deadline: formatDate(deadline.date, contact!.locale),
+          nextAmount: deadline.nextAmountCents
+            ? formatAmount(deadline.nextAmountCents, contact!.locale)
+            : '',
+        };
+      }
     } else if (job.kind === 'REMINDER') {
       if (reminder) template = reminder.variant === 'pending' ? 'reminderPending' : 'reminderUnpaid';
     } else if (payment && stillApplies(job.kind, payment.status)) {
@@ -267,6 +367,7 @@ export async function deliverEmail(
       amount: payment ? formatAmount(payment.amountCents, contact.locale) : '',
       statusUrl: payment ? `${site}/${slug}/inscricoes/pagamento?p=${payment.id}` : '',
       payUrl: `${site}/${slug}/inscricoes/pagar?t=${contact.payToken}`,
+      ...extra,
     });
     await mailer.send({ to: contact.email, ...mail });
     await store.finishEmail(job.id, 'SENT', now);

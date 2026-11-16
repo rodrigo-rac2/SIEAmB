@@ -5,6 +5,8 @@ export type NotificationKind =
   | 'failed'
   | 'reminderUnpaid'
   | 'reminderPending'
+  | 'reminderPriceUp'
+  | 'reminderClosing'
   | 'received';
 
 export interface EmailData {
@@ -16,6 +18,9 @@ export interface EmailData {
   statusUrl: string;
   /** Page that starts a new payment for the same registration. */
   payUrl: string;
+  /** Date reminders (#201): the date, formatted for the locale, and the fee after it. */
+  deadline?: string;
+  nextAmount?: string;
 }
 
 export interface Email {
@@ -93,6 +98,26 @@ const COPY: Record<Locale, LocaleCopy> = {
         linkLabel: 'Acompanhar o pagamento',
         link: (d) => d.statusUrl,
       },
+      reminderPriceUp: {
+        subject: (d) => `O valor da inscrição no ${d.eventName} vale até ${d.deadline}`,
+        body: (d) => [
+          `Sua inscrição no ${d.eventName} ainda não foi paga. O valor atual, de ${d.amount}, vale até ${d.deadline}.`,
+          `Depois dessa data, a inscrição passa a custar ${d.nextAmount}.`,
+          'Para garantir o valor atual, faça o pagamento pelo link abaixo, com cartão ou boleto. Se já pagou, desconsidere este aviso.',
+        ],
+        linkLabel: 'Pagar a inscrição',
+        link: (d) => d.payUrl,
+      },
+      reminderClosing: {
+        subject: (d) => `As inscrições do ${d.eventName} encerram em ${d.deadline}`,
+        body: (d) => [
+          `Sua inscrição no ${d.eventName} ainda não foi paga, e o prazo para o pagamento termina em ${d.deadline}.`,
+          `O valor é de ${d.amount}. Para concluir a inscrição, faça o pagamento pelo link abaixo, com cartão ou boleto.`,
+          'Se já pagou, desconsidere este aviso.',
+        ],
+        linkLabel: 'Pagar a inscrição',
+        link: (d) => d.payUrl,
+      },
       received: {
         subject: (d) => `Inscrição recebida (${d.eventName})`,
         body: (d) => [
@@ -156,6 +181,26 @@ const COPY: Record<Locale, LocaleCopy> = {
         ],
         linkLabel: 'Follow the payment',
         link: (d) => d.statusUrl,
+      },
+      reminderPriceUp: {
+        subject: (d) => `The ${d.eventName} registration fee is valid until ${d.deadline}`,
+        body: (d) => [
+          `Your registration for the ${d.eventName} has not been paid yet. The current fee of ${d.amount} is valid until ${d.deadline}.`,
+          `After that date, registration costs ${d.nextAmount}.`,
+          'To keep the current fee, pay through the link below, by card or boleto. If you have already paid, please disregard this notice.',
+        ],
+        linkLabel: 'Pay the registration',
+        link: (d) => d.payUrl,
+      },
+      reminderClosing: {
+        subject: (d) => `Registration for the ${d.eventName} closes on ${d.deadline}`,
+        body: (d) => [
+          `Your registration for the ${d.eventName} has not been paid yet, and the deadline for payment is ${d.deadline}.`,
+          `The fee is ${d.amount}. To complete your registration, pay through the link below, by card or boleto.`,
+          'If you have already paid, please disregard this notice.',
+        ],
+        linkLabel: 'Pay the registration',
+        link: (d) => d.payUrl,
       },
       received: {
         subject: (d) => `Registration received (${d.eventName})`,
@@ -221,6 +266,26 @@ const COPY: Record<Locale, LocaleCopy> = {
         linkLabel: 'Seguir el pago',
         link: (d) => d.statusUrl,
       },
+      reminderPriceUp: {
+        subject: (d) => `El valor de la inscripción en el ${d.eventName} vale hasta el ${d.deadline}`,
+        body: (d) => [
+          `Su inscripción en el ${d.eventName} todavía no fue pagada. El valor actual, de ${d.amount}, vale hasta el ${d.deadline}.`,
+          `Después de esa fecha, la inscripción pasa a costar ${d.nextAmount}.`,
+          'Para mantener el valor actual, realice el pago por el enlace de abajo, con tarjeta o boleto. Si ya pagó, ignore este aviso.',
+        ],
+        linkLabel: 'Pagar la inscripción',
+        link: (d) => d.payUrl,
+      },
+      reminderClosing: {
+        subject: (d) => `Las inscripciones del ${d.eventName} cierran el ${d.deadline}`,
+        body: (d) => [
+          `Su inscripción en el ${d.eventName} todavía no fue pagada, y el plazo para el pago termina el ${d.deadline}.`,
+          `El valor es de ${d.amount}. Para completar la inscripción, realice el pago por el enlace de abajo, con tarjeta o boleto.`,
+          'Si ya pagó, ignore este aviso.',
+        ],
+        linkLabel: 'Pagar la inscripción',
+        link: (d) => d.payUrl,
+      },
       received: {
         subject: (d) => `Inscripción recibida (${d.eventName})`,
         body: (d) => [
@@ -285,6 +350,26 @@ const COPY: Record<Locale, LocaleCopy> = {
         linkLabel: '查看付款进度',
         link: (d) => d.statusUrl,
       },
+      reminderPriceUp: {
+        subject: (d) => `${d.eventName} 当前注册费有效期至 ${d.deadline}`,
+        body: (d) => [
+          `您在 ${d.eventName} 的注册尚未付款。当前注册费为 ${d.amount}，有效期至 ${d.deadline}。`,
+          `该日期之后，注册费将调整为 ${d.nextAmount}。`,
+          '如需按当前费用注册，请通过下面的链接使用银行卡或 boleto 付款。如果您已经付款，请忽略此通知。',
+        ],
+        linkLabel: '支付注册费',
+        link: (d) => d.payUrl,
+      },
+      reminderClosing: {
+        subject: (d) => `${d.eventName} 注册将于 ${d.deadline} 截止`,
+        body: (d) => [
+          `您在 ${d.eventName} 的注册尚未付款，付款截止日期为 ${d.deadline}。`,
+          `注册费为 ${d.amount}。如需完成注册，请通过下面的链接使用银行卡或 boleto 付款。`,
+          '如果您已经付款，请忽略此通知。',
+        ],
+        linkLabel: '支付注册费',
+        link: (d) => d.payUrl,
+      },
       received: {
         subject: (d) => `已收到注册（${d.eventName}）`,
         body: (d) => [
@@ -317,7 +402,9 @@ const ESCAPES: Record<string, string> = {
 /** The name comes from a public form: it must never be read as markup. */
 export const escapeHtml = (value: string): string => value.replace(/[&<>"']/g, (c) => ESCAPES[c]!);
 
-export function renderEmail(kind: NotificationKind, locale: string, data: EmailData): Email {
+export function renderEmail(kind: NotificationKind, locale: string, input: EmailData): Email {
+  // The date fields are only filled for date reminders; never print "undefined" elsewhere.
+  const data: EmailData = { deadline: '', nextAmount: '', ...input };
   const copy = COPY[emailLocale(locale)];
   const part = copy.kinds[kind];
   const greeting = copy.greeting(data.firstName);

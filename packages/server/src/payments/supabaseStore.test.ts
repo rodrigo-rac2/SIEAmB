@@ -156,6 +156,7 @@ describe('SupabasePaymentStore', () => {
       pre_registration_id: ROW.pre_registration_id,
       payment_id: ROW.id,
       kind: 'CONFIRMED',
+      dedupe_key: `${ROW.id}:CONFIRMED`,
       status: 'PENDING',
       attempts: 2,
     };
@@ -164,6 +165,7 @@ describe('SupabasePaymentStore', () => {
       preRegistrationId: ROW.pre_registration_id,
       paymentId: ROW.id,
       kind: 'CONFIRMED',
+      dedupeKey: `${ROW.id}:CONFIRMED`,
       status: 'PENDING',
       attempts: 2,
     } as const;
@@ -260,6 +262,8 @@ describe('SupabasePaymentStore', () => {
           email: 'pessoa@example.com',
           locale: 'es',
           pay_token: '3f2b8c1e-9a4d-4e7f-8b21-6c5d4e3f2a10',
+          category: 'PROFISSIONAL',
+          modality: 'ONLINE',
           event: { slug: '2027', name: 'II SIEAmB' },
         },
       ]);
@@ -270,6 +274,8 @@ describe('SupabasePaymentStore', () => {
         payToken: '3f2b8c1e-9a4d-4e7f-8b21-6c5d4e3f2a10',
         eventSlug: '2027',
         eventName: 'II SIEAmB',
+        category: 'PROFISSIONAL',
+        modality: 'ONLINE',
       });
       expect(sent().url).not.toMatch(/cpf|passport/);
     });
@@ -301,16 +307,22 @@ describe('SupabasePaymentStore', () => {
         {
           id: ROW.pre_registration_id,
           created_at: '2026-11-10T12:00:00.000Z',
+          category: 'ESTUDANTE_POS',
+          modality: 'ONLINE',
+          event: { slug: '2027' },
           payments: [{ id: ROW.id, status: 'PENDING', mp_status: 'action_required' }],
-          payment_emails: [{ kind: 'PROCESSING', created_at: '2026-11-10T12:05:00.000Z' }],
+          payment_emails: [{ kind: 'PROCESSING', dedupe_key: 'k1', created_at: '2026-11-10T12:05:00.000Z' }],
         },
       ]);
       expect(await store.listReminderCandidates(NOW, 500)).toEqual([
         {
           preRegistrationId: ROW.pre_registration_id,
           registeredAt: '2026-11-10T12:00:00.000Z',
+          eventSlug: '2027',
+          category: 'ESTUDANTE_POS',
+          modality: 'ONLINE',
           payments: [{ id: ROW.id, status: 'PENDING', mpStatus: 'action_required' }],
-          emails: [{ kind: 'PROCESSING', createdAt: '2026-11-10T12:05:00.000Z' }],
+          emails: [{ kind: 'PROCESSING', dedupeKey: 'k1', createdAt: '2026-11-10T12:05:00.000Z' }],
         },
       ]);
       // `payment_emails` is the outbox table; the address column itself must not be asked for.

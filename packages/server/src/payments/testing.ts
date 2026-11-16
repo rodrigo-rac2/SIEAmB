@@ -28,6 +28,8 @@ export const CONTACT: PaymentContact = {
   payToken: '3f2b8c1e-9a4d-4e7f-8b21-6c5d4e3f2a10',
   eventSlug: '2027',
   eventName: 'II SIEAmB',
+  category: 'ESTUDANTE_POS',
+  modality: 'ONLINE',
 };
 
 export interface StoredEmail extends EmailJob {
@@ -222,8 +224,11 @@ export class FakeStore implements PaymentStore {
       {
         preRegistrationId: REGISTRATION.id,
         registeredAt: this.registeredAt,
+        eventSlug: REGISTRATION.eventSlug,
+        category: REGISTRATION.category,
+        modality: REGISTRATION.modality,
         payments: this.payments.map((p) => ({ id: p.id, status: p.status, mpStatus: p.mpStatus })),
-        emails: this.emails.map((e) => ({ kind: e.kind, createdAt: e.createdAt })),
+        emails: this.emails.map((e) => ({ kind: e.kind, dedupeKey: e.dedupeKey, createdAt: e.createdAt })),
       },
     ];
   }
@@ -234,6 +239,7 @@ export class FakeStore implements PaymentStore {
       preRegistrationId: email.preRegistrationId,
       paymentId: email.paymentId,
       kind: email.kind,
+      dedupeKey: email.dedupeKey,
       status: email.status,
       attempts: email.attempts,
     };
