@@ -2,7 +2,7 @@ import { json, readJsonObject, type Log } from './http';
 import { MercadoPagoError, fetchOrder, isOrderId } from './mercadoPago';
 import { parseSignatureHeader, verifySignature } from './signature';
 import { isUuid, type PaymentStore } from './store';
-import { applyOrderToPayment } from './sync';
+import { applyOrderToPayment, type PaymentNotifier } from './sync';
 
 export interface WebhookEnv {
   accessToken?: string;
@@ -14,6 +14,7 @@ export interface WebhookDeps {
   fetch: typeof fetch;
   store?: PaymentStore;
   log: Log;
+  notify?: PaymentNotifier;
 }
 
 /**
@@ -94,7 +95,7 @@ export async function handleMercadoPagoWebhook(
       return json(200, { received: true, handled: false });
     }
 
-    const updated = await applyOrderToPayment(payment, order, store, env.now);
+    const updated = await applyOrderToPayment(payment, order, store, env.now, deps.notify);
     deps.log('mp_webhook_order', {
       ...logged,
       paymentId: updated.id,

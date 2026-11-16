@@ -3,7 +3,7 @@ import { json, readJsonObject, type Log } from './http';
 import { MercadoPagoError, cancelOrder, createOrder, fetchOrder } from './mercadoPago';
 import { OPEN_STATUSES } from './status';
 import { OpenPaymentExistsError, isUuid, type Payment, type PaymentStore } from './store';
-import { applyOrderToPayment } from './sync';
+import { applyOrderToPayment, type PaymentNotifier } from './sync';
 
 export interface OrdersEnv {
   accessToken?: string;
@@ -18,6 +18,7 @@ export interface OrdersDeps {
   store?: PaymentStore;
   log: Log;
   resolveFee?: (query: Parameters<typeof resolveFeeTier>[0]) => FeeTier | null;
+  notify?: PaymentNotifier;
 }
 
 /** Orders expire after one day (`P1D`); stop reusing one a little before that. */
@@ -66,11 +67,11 @@ export async function handleCreateOrder(
     // Too old to reuse: see what really happened to it before opening another one.
     try {
       const order = await fetchOrder(open.mpOrderId, accessToken, deps.fetch);
-      open = await applyOrderToPayment(open, order, store, env.now);
+      open = await applyOrderToPayment(open, order, store, env.now, deps.notify);
       if (open.status === 'CREATED' && open.mpOrderId) {
         // Still payable at Mercado Pago: cancel it there first, or it could be paid behind the new one.
         const cancelled = await cancelOrder(open.mpOrderId, accessToken, deps.fetch);
-        open = await applyOrderToPayment(open, cancelled, store, env.now);
+        open = await applyOrderToPayment(open, cancelled, store, env.now, deps.notify);
         if (open.status === 'CREATED') {
           open = await store.updatePayment(open.id, { status: 'CANCELLED' });
         }

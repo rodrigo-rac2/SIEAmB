@@ -1,6 +1,8 @@
 import { createHmac } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
 import { FakeStore, NOW, ORDER_ID, TOKEN, answer, mercadoPago, order } from './testing';
+import { createPaymentNotifier, type OutgoingMail } from './notifications';
+import { handlePaymentStatus } from './paymentStatus';
 import { handleMercadoPagoWebhook } from './webhook';
 
 const SECRET = 'c'.repeat(64);
@@ -287,3 +289,85 @@ function fetchMockAnswer(deps: { fetch: typeof fetch }, body: unknown) {
     answer(body),
   );
 }
+
+describe('handleMercadoPagoWebhook: telling the person (#185)', () => {
+  function withEmails(responses: (Response | Error)[], failSends = 0) {
+    const base = setup(...responses);
+    const sent: OutgoingMail[] = [];
+    let failures = failSends;
+    const mailer = {
+      send: async (mail: OutgoingMail) => {
+        if (failures > 0) {
+          failures -= 1;
+          throw new Error('smtp down');
+        }
+        sent.push(mail);
+      },
+    };
+    const notify = createPaymentNotifier(
+      { store: base.store, mailer, siteUrl: 'https://sieamb.org', log: base.log },
+      () => NOW,
+    );
+    return { ...base, sent, deps: { ...base.deps, notify } };
+  }
+
+  it('e-mails "payment confirmed" once, however many times the approval is notified', async () => {
+    const { deps, store, sent } = withEmails([]);
+    store.seed({ mpOrderId: ORDER_ID });
+    await handleMercadoPagoWebhook(notification(), ENV, deps);
+    await handleMercadoPagoWebhook(notification(), ENV, deps);
+    expect(sent.map((m) => m.subject)).toEqual(['Inscrição concluída: pagamento confirmado (II SIEAmB)']);
+  });
+
+  it('e-mails "we are processing your payment" for a card Mercado Pago is reviewing, then "confirmed"', async () => {
+    const { deps, store, sent } = withEmails([
+      answer(order({ status: 'in_review', status_detail: 'pending_review_manual' })),
+      answer(order()),
+    ]);
+    store.seed({ mpOrderId: ORDER_ID });
+    await handleMercadoPagoWebhook(notification(), ENV, deps);
+    expect(store.payments[0]!.status).toBe('PENDING');
+    await handleMercadoPagoWebhook(notification(), ENV, deps);
+    expect(sent.map((m) => m.subject)).toEqual([
+      'Inscrição recebida: estamos processando seu pagamento (II SIEAmB)',
+      'Inscrição concluída: pagamento confirmado (II SIEAmB)',
+    ]);
+  });
+
+  it('e-mails "payment not approved" when the order fails', async () => {
+    const { deps, store, sent } = withEmails([answer(order({ status: 'failed', status_detail: 'rejected' }))]);
+    store.seed({ mpOrderId: ORDER_ID });
+    await handleMercadoPagoWebhook(notification(), ENV, deps);
+    expect(sent.map((m) => m.subject)).toEqual(['Pagamento não aprovado (II SIEAmB)']);
+  });
+
+  it('still answers 200 and records the approval when the mail server is down', async () => {
+    const { deps, store, sent } = withEmails([], 1);
+    store.seed({ mpOrderId: ORDER_ID });
+    const response = await handleMercadoPagoWebhook(notification(), ENV, deps);
+    expect(response.status).toBe(200);
+    expect(store.payments[0]!.status).toBe('APPROVED');
+    expect(sent).toHaveLength(0);
+    expect(store.emails[0]).toMatchObject({ kind: 'CONFIRMED', status: 'PENDING' });
+  });
+
+  it('the return page and the notification seeing the same approval send one e-mail', async () => {
+    const { deps, store, sent } = withEmails([]);
+    const payment = store.seed({ mpOrderId: ORDER_ID });
+    const statusRequest = new Request(`https://sieamb.org/api/v1/payments/status?p=${payment.id}`);
+    await Promise.all([
+      handleMercadoPagoWebhook(notification(), ENV, deps),
+      handlePaymentStatus(statusRequest, { accessToken: TOKEN, now: NOW }, deps),
+    ]);
+    expect(store.payments[0]!.status).toBe('APPROVED');
+    expect(sent).toHaveLength(1);
+  });
+
+  it('sends nothing for an order status it does not know', async () => {
+    const { deps, store, sent } = withEmails([answer(order({ status: 'something_new', status_detail: 'x' }))]);
+    store.seed({ mpOrderId: ORDER_ID });
+    await handleMercadoPagoWebhook(notification(), ENV, deps);
+    expect(sent).toHaveLength(0);
+    expect(store.emails).toHaveLength(0);
+  });
+});

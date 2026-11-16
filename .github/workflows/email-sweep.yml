@@ -1,0 +1,54 @@
+name: Payment background job
+
+# Every 10 minutes each site is asked to (#185, #187):
+#   1. re-check open payments at Mercado Pago, in case a notification never arrived;
+#   2. record the reminders that are due (only where REMINDERS_ENABLED=true, never at night);
+#   3. send the e-mails that are still owed.
+# The endpoint answers with counts only. GitHub may start scheduled runs late;
+# that only delays a retry, since e-mails are first sent when the status changes.
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: prod
+            url: https://sieamb.org
+            secret: CRON_SECRET_PROD
+          - name: dev
+            url: https://dev.sieamb.org
+            secret: CRON_SECRET_DEV
+    steps:
+      - name: Run the job on ${{ matrix.name }}
+        env:
+          SITE: ${{ matrix.url }}
+          CRON_SECRET: ${{ secrets[matrix.secret] }}
+          BYPASS: ${{ secrets.E2E_BYPASS_TOKEN }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "No sweep secret for ${{ matrix.name }} yet, nothing to do."
+            exit 0
+          fi
+          status=$(curl -sS -o body.json -w '%{http_code}' --max-time 60 -X POST \
+            "$SITE/api/v1/payments/emails/deliver" \
+            -H "Authorization: Bearer $CRON_SECRET" -H "x-sieamb-e2e: $BYPASS") || status=000
+          echo "${{ matrix.name }} answered HTTP $status: $(cat body.json 2>/dev/null)"
+          # 503 means e-mails are not configured there yet (no sender or no secret): not a failure.
+          if [ "$status" != "200" ] && [ "$status" != "503" ]; then
+            exit 1
+          fi
+          # A sweep that could not send something turns the run red, so it gets looked at.
+          failed=$(python3 -c "import json;print(json.load(open('body.json')).get('failed',0))" 2>/dev/null || echo 0)
+          if [ "$failed" != "0" ]; then
+            exit 1
+          fi
