@@ -2,6 +2,21 @@
 
 Append a dated entry per working session. Newest first.
 
+## 2026-11-16 — Payments live, e-mails, reminders
+
+- Payments released to production (#166): card and boleto through Mercado Pago, wording changed from "pré-inscrição" to "inscrição", "Inscrições abertas" call-out on the home page, CPF mask in the form.
+- Real cards kept being refused as high risk. The order now sends the buyer's name without accents, the CPF and a single instalment (#191, #194, #198); the first card was approved after that. A card under Mercado Pago's review counts as pending, a refused card can be retried on the same order (#182, #188).
+- E-mails built and released the same day (#185, #187, #195): outbox table, background job every 10 minutes from GitHub Actions, registration-received e-mail, Resend as the sender, `inscricoes@sieamb.org` with Cloudflare forwarding.
+- Reminder schedule decided by Rodrigo after a look at what shops and event organisers do: day 1, day 3, then 7 days and 1 day before each fee date (#201). Switched on at 16:07; the first reminder went to the 10 people who registered before payments existed, and the first of them paid within two hours.
+- Four test registrations erased by hand from production; soft delete proposed (#204, ADR-006).
+- Submission system proposal written for Najara and Profa. Viviane as a shared document (roles, author flow, review, notifications, nine questions for the committee). Not built; waiting for their answers.
+- Decisions recorded in ADR-004 (payments), ADR-005 (e-mails and reminders), ADR-006 (soft delete, proposed) (#205).
+- Gotchas: the Pagar button on Mercado Pago's page stays locked when the browser is logged in as the seller; the Mercado Pago checkout refuses headless browsers; a boleto shows a three-day due date while the order expires in one (#167).
+
+## 2026-11-05 — Payments built on dev (#16, #158, #160)
+
+- Mercado Pago chosen, account under the empresa júnior, Checkout Pro with the Orders API. First server code in the repository (`packages/server`, Vercel functions under `/api/v1/payments`). Sandbox card and boleto payments confirmed end to end on dev; details in STATUS.md.
+
 ## 2026-10-25 — Pre-registrations persist (#149)
 
 - Rodrigo: "this site is open for business... the pre-inscricao... is still just a template". Confirmed: the live form showed "Pré-inscrição recebida!" and `StaticDataProvider` faked success; every submission since 10 Oct was lost. The `registrations` table from #13 needs an auth user, so it could not take anonymous rows.
