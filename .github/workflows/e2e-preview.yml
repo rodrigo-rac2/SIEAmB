@@ -60,6 +60,10 @@ jobs:
         env:
           BASE_URL: ${{ steps.target.outputs.url }}
           E2E_BYPASS_TOKEN: ${{ secrets.E2E_BYPASS_TOKEN }}
+          # The account tests (#208) read their confirmation links from the dev login
+          # service; they skip themselves on production.
+          SUPABASE_DEV_URL: ${{ secrets.SUPABASE_DEV_URL }}
+          SUPABASE_DEV_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_DEV_SERVICE_ROLE_KEY }}
         run: npm run test -w @sieamb/e2e
       - uses: actions/upload-artifact@v4
         if: failure()

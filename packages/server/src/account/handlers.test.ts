@@ -27,6 +27,9 @@ describe('router', () => {
   it('reads the action from the path', () => {
     expect(actionOf(new Request('https://x.org/api/v1/account/me'))).toBe('me');
     expect(actionOf(new Request('https://x.org/api/v1/account/link-confirm/?a=1'))).toBe('link-confirm');
+    // What the rewrite in vercel.json produces.
+    expect(actionOf(new Request('https://x.org/api/v1/account?action=signup'))).toBe('signup');
+    expect(actionOf(new Request('https://x.org/api/v1/account'))).toBe('');
   });
 
   it('answers 404 to an unknown action and 405 to a wrong method', async () => {

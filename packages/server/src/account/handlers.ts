@@ -479,8 +479,15 @@ export async function handleAccount(
   }
 }
 
-/** The last path segment of `/api/v1/account/<action>`. */
+/**
+ * The action of `/api/v1/account/<action>`. The rewrite hands it over as
+ * `?action=`; when the platform passes the original address, it is the last segment.
+ */
 export function actionOf(request: Request): string {
-  const path = new URL(request.url).pathname.replace(/\/+$/, '');
-  return decodeURIComponent(path.slice(path.lastIndexOf('/') + 1));
+  const url = new URL(request.url);
+  const fromQuery = url.searchParams.get('action');
+  if (fromQuery) return fromQuery;
+  const path = url.pathname.replace(/\/+$/, '');
+  const last = decodeURIComponent(path.slice(path.lastIndexOf('/') + 1));
+  return last === 'account' ? '' : last;
 }
