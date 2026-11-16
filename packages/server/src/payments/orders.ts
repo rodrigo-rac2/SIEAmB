@@ -1,6 +1,7 @@
 import { centsToAmount, resolveFeeTier, type FeeTier } from './fees';
 import { json, readJsonObject, type Log } from './http';
 import { MercadoPagoError, cancelOrder, createOrder, fetchOrder } from './mercadoPago';
+import { payerData } from './payer';
 import { OPEN_STATUSES } from './status';
 import { OpenPaymentExistsError, isUuid, type Payment, type PaymentStore } from './store';
 import { applyOrderToPayment, type PaymentNotifier } from './sync';
@@ -139,6 +140,7 @@ export async function handleCreateOrder(
         title: `SIEAmB ${registration.eventSlug} - inscrição`,
         amount: centsToAmount(payment.amountCents),
         payerEmail: registration.email,
+        payer: payerData(registration.fullName, registration.cpf),
         returnUrl: `${new URL(request.url).origin}/${registration.eventSlug}/inscricoes/pagamento?p=${payment.id}`,
       },
       accessToken,
