@@ -133,10 +133,12 @@ export class SupabasePaymentStore implements PaymentStore {
         email: string;
         category: string;
         modality: string;
+        full_name: string;
+        cpf: string | null;
         event: { slug: string } | null;
       }[]
     >(
-      `pre_registrations?pay_token=eq.${encodeURIComponent(token)}&select=id,event_id,email,category,modality,event:events(slug)&limit=1`,
+      `pre_registrations?pay_token=eq.${encodeURIComponent(token)}&select=id,event_id,email,category,modality,full_name,cpf,event:events(slug)&limit=1`,
     );
     const row = rows[0];
     if (!row?.event) return null;
@@ -147,6 +149,8 @@ export class SupabasePaymentStore implements PaymentStore {
       email: row.email,
       category: row.category,
       modality: row.modality,
+      fullName: row.full_name,
+      cpf: row.cpf,
     };
   }
 

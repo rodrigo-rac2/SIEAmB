@@ -1,3 +1,5 @@
+import type { PayerData } from './payer';
+
 const API_BASE = 'https://api.mercadopago.com';
 
 /** Order ids look like `ORD01J49MMW3SSBK5PSV3DFR32959` (sandbox: `ORDTST…`). */
@@ -65,6 +67,8 @@ export interface NewOrder {
   title: string;
   amount: string;
   payerEmail: string;
+  /** Name and CPF of the buyer, already checked by `payerData` (#191). */
+  payer?: PayerData;
   returnUrl: string;
 }
 
@@ -87,7 +91,12 @@ export async function createOrder(
       processing_mode: 'manual',
       total_amount: order.amount,
       external_reference: order.reference,
-      payer: { email: order.payerEmail },
+      payer: {
+        email: order.payerEmail,
+        ...(order.payer?.firstName ? { first_name: order.payer.firstName } : {}),
+        ...(order.payer?.lastName ? { last_name: order.payer.lastName } : {}),
+        ...(order.payer?.cpf ? { identification: { type: 'CPF', number: order.payer.cpf } } : {}),
+      },
       items: [{ title: order.title, unit_price: order.amount, quantity: 1 }],
       expiration_time: 'P1D',
       config: {
