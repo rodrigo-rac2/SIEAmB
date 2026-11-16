@@ -57,7 +57,11 @@
     "editalRead": "阅读征稿通知",
     "quickEditais": "征稿通知",
     "quickEditaisDesc": "征稿通知、规则与投稿模板。",
-    "editalPdf": "征稿通知 PDF"
+    "editalPdf": "征稿通知 PDF",
+    "registrationBadge": "注册已开放",
+    "registrationTitle": "立即锁定 {{event}} 的参会名额",
+    "registrationBody": "在线注册并付款，支持银行卡或 boleto。",
+    "registrationFees": "查看费用"
   },
   "about": {
     "title": "会议简介",

@@ -57,7 +57,11 @@
     "editalRead": "Ler o edital",
     "quickEditais": "Editais",
     "quickEditaisDesc": "Edital, normas e modelos para submissão.",
-    "editalPdf": "Edital em PDF"
+    "editalPdf": "Edital em PDF",
+    "registrationBadge": "Inscrições abertas",
+    "registrationTitle": "Garanta sua vaga no {{event}}",
+    "registrationBody": "Inscrição e pagamento online, com cartão ou boleto.",
+    "registrationFees": "Ver valores"
   },
   "about": {
     "title": "O Evento",

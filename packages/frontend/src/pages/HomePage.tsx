@@ -124,6 +124,31 @@ export function HomePage() {
         </div>
       </section>
 
+      {event.settings.registrationOpen && (
+        <section className="registration-callout" aria-labelledby="registration-callout-title">
+          <div className="container registration-callout__inner">
+            <div className="registration-callout__text">
+              <span className="registration-callout__badge">
+                <span className="registration-callout__dot" aria-hidden="true" />
+                {t('home.registrationBadge')}
+              </span>
+              <h2 id="registration-callout-title" className="registration-callout__title">
+                {t('home.registrationTitle', { event: event.name })}
+              </h2>
+              <p>{t('home.registrationBody')}</p>
+            </div>
+            <div className="registration-callout__actions">
+              <Link className="registration-callout__primary" to={`${base}/inscricoes/nova`}>
+                {t('registration.registerCta')} →
+              </Link>
+              <Link className="registration-callout__secondary" to={`${base}/inscricoes`}>
+                {t('home.registrationFees')}
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
+
       {edital && (
         <section className="edital-strip" aria-labelledby="edital-strip-title">
           <div className="container edital-strip__inner">

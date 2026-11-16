@@ -57,7 +57,11 @@
     "editalRead": "Read the call",
     "quickEditais": "Calls for papers",
     "quickEditaisDesc": "The call, rules and submission templates.",
-    "editalPdf": "Call in PDF"
+    "editalPdf": "Call in PDF",
+    "registrationBadge": "Registration is open",
+    "registrationTitle": "Secure your place at the {{event}}",
+    "registrationBody": "Register and pay online, by card or boleto.",
+    "registrationFees": "See the fees"
   },
   "about": {
     "title": "The Event",
