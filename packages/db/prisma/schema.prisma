@@ -152,9 +152,11 @@ model User {
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
-  memberships   EventMember[]
-  registrations Registration[]
-  newsAuthored  News[]
+  memberships      EventMember[]
+  registrations    Registration[]
+  newsAuthored     News[]
+  preRegistrations PreRegistration[]
+  linkRequests     RegistrationLinkRequest[]
 
   @@map("users")
 }
@@ -303,13 +305,21 @@ model PreRegistration {
   // Unguessable handle for starting a payment (#160). The browser generates it on
   // insert because it cannot read the row back; older rows get one from the database.
   payToken    String              @unique @default(dbgenerated("gen_random_uuid()")) @map("pay_token") @db.Uuid
+  // The account this registration belongs to (#208). Set by the server only, once the
+  // account's e-mail is confirmed and matches, or after a confirmed link request (#209).
+  userId      String?             @map("user_id") @db.Uuid
   createdAt   DateTime            @default(now()) @map("created_at")
 
-  event    Event          @relation(fields: [eventId], references: [id])
-  payments Payment[]
-  emails   PaymentEmail[]
+  event        Event                     @relation(fields: [eventId], references: [id])
+  user         User?                     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  payments     Payment[]
+  emails       PaymentEmail[]
+  linkRequests RegistrationLinkRequest[]
 
   @@unique([eventId, email])
+  @@unique([eventId, userId]) // one registration per account per event; rows without an account are not compared
+  @@index([cpf])
+  @@index([passport])
   @@index([eventId, createdAt])
   @@map("pre_registrations")
 }
@@ -388,6 +398,50 @@ model PaymentEmail {
   @@index([status, createdAt])
   @@index([preRegistrationId])
   @@map("payment_emails")
+}
+
+// ───────────────────────────── Accounts (#208, #209) ─────────────────────────────
+
+enum LinkRequestStatus {
+  PENDING // waiting for the click on the link sent to the registration's e-mail
+  CONFIRMED
+  NEEDS_ORGANISER // the person has no access to that inbox; an organiser decides
+  REJECTED
+  EXPIRED
+}
+
+// "This registration under another e-mail is mine" (#209). A CPF or passport match
+// only raises the question; the link e-mailed to the registration's address proves it.
+model RegistrationLinkRequest {
+  id                String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  preRegistrationId String            @map("pre_registration_id") @db.Uuid
+  userId            String            @map("user_id") @db.Uuid
+  tokenHash         String            @unique @map("token_hash") // sha-256 of the token in the e-mail; the token itself is never stored
+  status            LinkRequestStatus @default(PENDING)
+  expiresAt         DateTime          @map("expires_at")
+  decidedAt         DateTime?         @map("decided_at")
+  decidedBy         String?           @map("decided_by") @db.Uuid // the organiser, when one decided
+  createdAt         DateTime          @default(now()) @map("created_at")
+
+  preRegistration PreRegistration @relation(fields: [preRegistrationId], references: [id], onDelete: Cascade)
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([preRegistrationId, status])
+  @@map("registration_link_requests")
+}
+
+// Counters behind the rate limits (#208). `key` is a hash, never an address or an IP.
+// Written only through the hit_rate_limit() function.
+model RateLimitHit {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key         String
+  windowStart DateTime @map("window_start")
+  count       Int      @default(1)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@unique([key, windowStart])
+  @@map("rate_limit_hits")
 }
 
 // ───────────────────────────── Audit ─────────────────────────────

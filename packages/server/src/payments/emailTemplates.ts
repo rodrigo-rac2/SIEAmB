@@ -412,16 +412,35 @@ export function renderEmail(kind: NotificationKind, locale: string, input: Email
   const link = part.link(data);
   const signature = copy.signature(data.eventName);
 
-  const text = [greeting, ...paragraphs, `${part.linkLabel}: ${link}`, signature].join('\n\n');
+  return {
+    subject: part.subject(data),
+    ...layoutEmail({ greeting, paragraphs, linkLabel: part.linkLabel, link, signature }),
+  };
+}
+
+export interface EmailLayout {
+  greeting: string;
+  paragraphs: string[];
+  linkLabel: string;
+  link: string;
+  signature: string;
+}
+
+/** The one look every e-mail of the site has: greeting, paragraphs, one button, signature. */
+export function layoutEmail({ greeting, paragraphs, linkLabel, link, signature }: EmailLayout): {
+  text: string;
+  html: string;
+} {
+  const text = [greeting, ...paragraphs, `${linkLabel}: ${link}`, signature].join('\n\n');
   const html = [
     '<div style="font-family: Arial, Helvetica, sans-serif; font-size: 16px; line-height: 1.5; color: #1c2420; max-width: 560px;">',
     `<p>${escapeHtml(greeting)}</p>`,
     ...paragraphs.map((p) => `<p>${escapeHtml(p)}</p>`),
-    `<p><a href="${escapeHtml(link)}" style="display: inline-block; background: #3f4f1c; color: #ffffff; text-decoration: none; font-weight: bold; padding: 12px 20px; border-radius: 6px;">${escapeHtml(part.linkLabel)}</a></p>`,
+    `<p><a href="${escapeHtml(link)}" style="display: inline-block; background: #3f4f1c; color: #ffffff; text-decoration: none; font-weight: bold; padding: 12px 20px; border-radius: 6px;">${escapeHtml(linkLabel)}</a></p>`,
     `<p style="font-size: 13px; color: #4a564f;">${escapeHtml(link)}</p>`,
     `<p>${escapeHtml(signature)}</p>`,
     '</div>',
   ].join('\n');
 
-  return { subject: part.subject(data), text, html };
+  return { text, html };
 }
