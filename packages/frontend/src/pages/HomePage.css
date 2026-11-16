@@ -285,3 +285,100 @@
 .edital-strip__primary:hover {
   filter: brightness(1.1);
 }
+
+/* "Registrations are open" call-out under the hero (#174). */
+.registration-callout {
+  background: var(--color-primary);
+  color: var(--color-surface);
+  padding-block: var(--space-6);
+}
+
+.registration-callout__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+}
+
+.registration-callout__text {
+  flex: 1 1 420px;
+}
+
+.registration-callout__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--color-accent-light);
+  color: var(--color-ink);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: var(--space-1) var(--space-3);
+  border-radius: 999px;
+}
+
+.registration-callout__dot {
+  width: 0.6em;
+  height: 0.6em;
+  border-radius: 50%;
+  background: var(--color-error);
+  animation: registration-callout-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes registration-callout-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.7);
+  }
+}
+
+.registration-callout__title {
+  color: inherit;
+  font-size: var(--text-2xl, 1.75rem);
+  margin: var(--space-3) 0 var(--space-1);
+}
+
+.registration-callout__text p {
+  margin: 0;
+  color: inherit;
+  font-size: var(--text-lg);
+}
+
+.registration-callout__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+  font-weight: 700;
+}
+
+.registration-callout__primary {
+  background: var(--color-surface);
+  color: var(--color-primary);
+  font-size: var(--text-lg);
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.25);
+}
+
+.registration-callout__primary:hover {
+  filter: brightness(0.95);
+}
+
+.registration-callout__secondary {
+  color: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .registration-callout__dot {
+    animation: none;
+  }
+}

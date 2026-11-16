@@ -172,18 +172,18 @@ test.describe('registration form @smoke', () => {
     await page.getByLabel(/Nome completo/).fill('Maria da Silva Santos');
     await page.getByLabel(/E-mail/).fill(`e2e+${Date.now()}@sieamb.org`);
     await page.getByLabel('CPF', { exact: true }).fill('111.111.111-11');
-    await page.getByRole('button', { name: /Enviar pré-inscrição/ }).click();
+    await page.getByRole('button', { name: /Enviar inscrição/ }).click();
     await expect(page.getByText('CPF inválido. Confira os dígitos.')).toBeVisible();
     await expect(
-      page.getByText('É preciso autorizar o uso dos dados para enviar a pré-inscrição.'),
+      page.getByText('É preciso autorizar o uso dos dados para enviar a inscrição.'),
     ).toBeVisible();
 
     await page.getByLabel('CPF', { exact: true }).fill('529.982.247-25');
     await page.getByLabel(/Autorizo o uso dos meus dados/).check();
     if (isProduction(baseURL)) return; // never write a test row into the production table
 
-    await page.getByRole('button', { name: /Enviar pré-inscrição/ }).click();
-    await expect(page.getByText('Pré-inscrição recebida!')).toBeVisible();
+    await page.getByRole('button', { name: /Enviar inscrição/ }).click();
+    await expect(page.getByText('Inscrição recebida!')).toBeVisible();
   });
 });
 
