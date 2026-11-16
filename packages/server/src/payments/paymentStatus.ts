@@ -2,7 +2,7 @@ import { json, type Log } from './http';
 import { fetchOrder } from './mercadoPago';
 import { OPEN_STATUSES } from './status';
 import { isUuid, type PaymentStore } from './store';
-import { applyOrderToPayment } from './sync';
+import { applyOrderToPayment, type PaymentNotifier } from './sync';
 
 export interface StatusEnv {
   accessToken?: string;
@@ -13,6 +13,7 @@ export interface StatusDeps {
   fetch: typeof fetch;
   store?: PaymentStore;
   log: Log;
+  notify?: PaymentNotifier;
 }
 
 /**
@@ -41,7 +42,7 @@ export async function handlePaymentStatus(
   if (OPEN_STATUSES.includes(payment.status) && payment.mpOrderId) {
     try {
       const order = await fetchOrder(payment.mpOrderId, accessToken, deps.fetch);
-      payment = await applyOrderToPayment(payment, order, store, env.now);
+      payment = await applyOrderToPayment(payment, order, store, env.now, deps.notify);
     } catch {
       // Mercado Pago unreachable: answer with what we have, the notification will catch up.
       deps.log('mp_status_refresh_failed', { paymentId: payment.id });
