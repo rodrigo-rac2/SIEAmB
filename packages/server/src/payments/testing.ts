@@ -22,7 +22,8 @@ export const NOW = new Date('2026-11-12T15:00:00-03:00');
 
 export const CONTACT: PaymentContact = {
   fullName: 'Maria Clara de Souza',
-  email: 'pessoa@example.com',
+  // Not an example.com address: those are never mailed (see isSendableEmail).
+  email: 'pessoa@ufcg.edu.br',
   locale: 'pt-BR',
   payToken: '3f2b8c1e-9a4d-4e7f-8b21-6c5d4e3f2a10',
   eventSlug: '2027',
@@ -208,6 +209,15 @@ export class FakeStore implements PaymentStore {
 
   async listReminderCandidates(registeredBefore: Date, _limit: number): Promise<ReminderCandidate[]> {
     if (Date.parse(this.registeredAt) >= registeredBefore.getTime()) return [];
+    return this.candidate();
+  }
+
+  async listRecentRegistrations(since: Date, _limit: number): Promise<ReminderCandidate[]> {
+    if (Date.parse(this.registeredAt) < since.getTime()) return [];
+    return this.candidate();
+  }
+
+  private candidate(): ReminderCandidate[] {
     return [
       {
         preRegistrationId: REGISTRATION.id,

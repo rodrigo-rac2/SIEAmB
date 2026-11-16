@@ -3,7 +3,7 @@ import { emailLocale, renderEmail, type NotificationKind } from './emailTemplate
 import { json, type Log } from './http';
 import type { PaymentStatus } from './status';
 import { fetchOrder } from './mercadoPago';
-import type { EmailJob, EmailKind, Payment, PaymentStore, ReminderCandidate } from './store';
+import { isUuid, type EmailJob, type EmailKind, type Payment, type PaymentStore, type ReminderCandidate } from './store';
 import { applyOrderToPayment } from './sync';
 import type { PaymentNotifier } from './sync';
 
@@ -38,7 +38,16 @@ export interface EmailDeps {
  * - back to "not paid" after being pending: the attempt was refused and the order
  *   waits for another try (#188), which is "payment not approved" too.
  */
-export function emailKindFor(previous: PaymentStatus, next: PaymentStatus): EmailKind | null {
+export function emailKindFor(
+  previous: PaymentStatus,
+  next: PaymentStatus,
+  detail: { previous?: string | null; next?: string | null } = {},
+): EmailKind | null {
+  // An attempt refused on the spot leaves our status where it was (not paid) while the
+  // order moves to "waiting for a retry": the person must still be told (#195).
+  if (next === 'CREATED' && detail.next === 'waiting_retry' && detail.previous !== 'waiting_retry') {
+    return 'FAILED';
+  }
   if (previous === next) return null;
   switch (next) {
     case 'PENDING':
@@ -66,12 +75,13 @@ export function stillApplies(kind: EmailKind, status: PaymentStatus): boolean {
       // CREATED: refused, and nothing paid since.
       return status === 'REJECTED' || status === 'CANCELLED' || status === 'CREATED';
     case 'REMINDER':
-      // Decided from all the payments of the registration, see `reminderState`.
+    case 'RECEIVED':
+      // Decided from all the payments of the registration, see `reminderState` and `receivedApplies`.
       return false;
   }
 }
 
-const TEMPLATE: Record<Exclude<EmailKind, 'REMINDER'>, NotificationKind> = {
+const TEMPLATE: Record<Exclude<EmailKind, 'REMINDER' | 'RECEIVED'>, NotificationKind> = {
   PROCESSING: 'processing',
   CONFIRMED: 'confirmed',
   FAILED: 'failed',
@@ -108,6 +118,14 @@ export function reminderState(
   const waitingOnPerson = pending.find((p) => p.mpStatus === 'action_required');
   if (pending.some((p) => p.mpStatus !== 'action_required') || !waitingOnPerson) return null;
   return { variant: 'pending', paymentId: waitingOnPerson.id };
+}
+
+/**
+ * "Registration received, the fee is still to be paid" is true until a payment is
+ * approved or in flight. After that the payment e-mails say what matters.
+ */
+export function receivedApplies(payments: { status: PaymentStatus }[]): boolean {
+  return !payments.some((p) => p.status === 'APPROVED' || p.status === 'PENDING' || p.status === 'REFUNDED');
 }
 
 /** Which reminder (1, 2 or 3) is due for a registration now, or null. */
@@ -162,8 +180,12 @@ export async function enqueueReminders(
 // One address, no spaces or line breaks: the row is written by the browser, not by our form checks.
 const EMAIL = /^[^\s@<>,;"]+@[^\s@<>,;"]+\.[^\s@<>,;"]+$/;
 
+// Addresses our own tests register with, and domains reserved for examples: mail to them
+// only bounces, and bounces hurt the sender's reputation.
+const TEST_ADDRESS = /^e2e\+[^@]*@sieamb\.org$|@(?:[^@]+\.)?example\.(?:com|org|net)$|\.(?:test|invalid|example|localhost)$/i;
+
 export const isSendableEmail = (value: unknown): value is string =>
-  typeof value === 'string' && value.length <= 200 && EMAIL.test(value);
+  typeof value === 'string' && value.length <= 200 && EMAIL.test(value) && !TEST_ADDRESS.test(value);
 
 /** First word of the name, without anything that could break a line. */
 export function firstName(fullName: string): string {
@@ -197,14 +219,17 @@ export async function deliverEmail(
     if (!claimed) return 'busy';
 
     // A reminder is decided from every payment of the registration; a status e-mail from its own.
-    const payments = job.kind === 'REMINDER' ? await store.listPayments(job.preRegistrationId) : [];
+    const perRegistration = job.kind === 'REMINDER' || job.kind === 'RECEIVED';
+    const payments = perRegistration ? await store.listPayments(job.preRegistrationId) : [];
     const reminder =
       job.kind === 'REMINDER'
         ? reminderState(payments.map((p) => ({ id: p.id, status: p.status, mpStatus: p.mpStatus })))
         : null;
     const paymentId = reminder?.variant === 'pending' ? reminder.paymentId : job.paymentId;
     const payment: Payment | null =
-      job.kind === 'REMINDER'
+      job.kind === 'RECEIVED'
+        ? null
+        : job.kind === 'REMINDER'
         ? (payments.find((p) => p.id === paymentId) ?? null)
         : job.paymentId
           ? await store.findPaymentById(job.paymentId)
@@ -212,13 +237,15 @@ export async function deliverEmail(
     const contact = await store.findContact(job.preRegistrationId);
 
     let template: NotificationKind | null = null;
-    if (job.kind === 'REMINDER') {
+    if (job.kind === 'RECEIVED') {
+      if (receivedApplies(payments)) template = 'received';
+    } else if (job.kind === 'REMINDER') {
       if (reminder) template = reminder.variant === 'pending' ? 'reminderPending' : 'reminderUnpaid';
     } else if (payment && stillApplies(job.kind, payment.status)) {
       template = TEMPLATE[job.kind];
     }
     const reason = !template
-      ? job.kind !== 'REMINDER' && !payment
+      ? !perRegistration && !payment
         ? 'no_payment'
         : 'outdated'
       : !contact
@@ -260,8 +287,11 @@ export async function deliverEmail(
  * must never make Mercado Pago retry a notification we already recorded.
  */
 export function createPaymentNotifier(deps: EmailDeps, now: () => Date = () => new Date()): PaymentNotifier {
-  return async (payment, previous) => {
-    const kind = emailKindFor(previous, payment.status);
+  return async (payment, previous, previousDetail) => {
+    const kind = emailKindFor(previous, payment.status, {
+      previous: previousDetail,
+      next: payment.mpStatusDetail,
+    });
     if (!kind) return;
     try {
       const job = await deps.store.enqueueEmail({
@@ -301,6 +331,85 @@ export async function deliverDueEmails(deps: EmailDeps, now: Date, limit = 20): 
     else if (outcome === 'failed') result.failed += 1;
   }
   return result;
+}
+
+// ───────────────────────────── Registration received (#195) ─────────────────────────────
+
+const receivedKey = (preRegistrationId: string) => `received:${preRegistrationId}`;
+
+/**
+ * `POST /api/v1/registrations/received` with `{ token }`, called by the form right
+ * after it saves a registration. The pay token is the unguessable handle the browser
+ * generated, and the e-mail is owed once per registration, so calling this twice,
+ * or by someone replaying it, sends nothing more.
+ */
+export async function handleRegistrationReceived(
+  request: Request,
+  env: { now: Date },
+  deps: Partial<EmailDeps> & { log: Log },
+): Promise<Response> {
+  if (request.method !== 'POST') return json(405, { error: 'method_not_allowed' });
+  const { store, siteUrl, log } = deps;
+  if (!store || !siteUrl) return json(503, { error: 'emails_not_configured' });
+  let token: unknown;
+  try {
+    token = ((await request.json()) as { token?: unknown } | null)?.token;
+  } catch {
+    token = undefined;
+  }
+  if (!isUuid(token)) return json(400, { error: 'invalid_token' });
+
+  try {
+    const registration = await store.findPreRegistrationByToken(token);
+    if (!registration) return json(404, { error: 'registration_not_found' });
+    const job = await store.enqueueEmail({
+      preRegistrationId: registration.id,
+      paymentId: null,
+      kind: 'RECEIVED',
+      dedupeKey: receivedKey(registration.id),
+    });
+    if (job) await deliverEmail(job, { store, mailer: deps.mailer, siteUrl, log }, env.now);
+    return json(202, { received: true });
+  } catch {
+    // The background job sends it for a recent registration, so the form is not failed for this.
+    log('registration_received_failed', {});
+    return json(202, { received: true });
+  }
+}
+
+/** A registration this recent is covered by the safety net below. */
+export const RECEIVED_WINDOW_MS = 24 * HOUR;
+/** Give the form's own call a moment before the job steps in. */
+export const RECEIVED_GRACE_MS = 2 * 60 * 1000;
+
+/**
+ * Records "registration received" for recent registrations that have none, in case
+ * the form's call never arrived (closed tab, network). Older registrations are left
+ * alone on purpose: writing to everyone who ever registered is a decision for a person.
+ */
+export async function enqueueMissingReceived(
+  deps: Pick<EmailDeps, 'store' | 'log'>,
+  now: Date,
+  limit = 200,
+): Promise<number> {
+  const recent = await deps.store.listRecentRegistrations(
+    new Date(now.getTime() - RECEIVED_WINDOW_MS),
+    limit,
+  );
+  let recorded = 0;
+  for (const registration of recent) {
+    if (now.getTime() - Date.parse(registration.registeredAt) < RECEIVED_GRACE_MS) continue;
+    if (registration.emails.some((e) => e.kind === 'RECEIVED')) continue;
+    if (!receivedApplies(registration.payments)) continue;
+    const job = await deps.store.enqueueEmail({
+      preRegistrationId: registration.preRegistrationId,
+      paymentId: null,
+      kind: 'RECEIVED',
+      dedupeKey: receivedKey(registration.preRegistrationId),
+    });
+    if (job) recorded += 1;
+  }
+  return recorded;
 }
 
 // ───────────────────────────── Background job (#187) ─────────────────────────────
@@ -360,8 +469,9 @@ function sameSecret(given: string, expected: string): boolean {
  * `Authorization: Bearer <CRON_SECRET>`. In order:
  *
  * 1. re-check open payments at Mercado Pago;
- * 2. record the reminders that are due (only when enabled, and never at night);
- * 3. send what the outbox still owes.
+ * 2. record "registration received" for recent registrations that have none;
+ * 3. record the reminders that are due (only when enabled, and never at night);
+ * 4. send what the outbox still owes.
  *
  * One step failing does not stop the others. The answer carries counts only.
  */
@@ -381,6 +491,7 @@ export async function handleEmailSweep(
   const emailDeps: EmailDeps = { store, mailer, siteUrl, log };
   const result = {
     refreshed: 0,
+    received: 0,
     reminders: 0,
     due: 0,
     sent: 0,
@@ -399,6 +510,11 @@ export async function handleEmailSweep(
     } catch {
       result.errors.push('refresh');
     }
+  }
+  try {
+    result.received = await enqueueMissingReceived(emailDeps, now);
+  } catch {
+    result.errors.push('received');
   }
   if (mailer && env.remindersEnabled && withinSendingHours(now)) {
     try {

@@ -356,6 +356,7 @@ enum PaymentEmailKind {
   CONFIRMED // payment confirmed, registration complete
   FAILED // payment refused, or cancelled after an attempt
   REMINDER // the registration is still unpaid (#187)
+  RECEIVED // the form was submitted (#195)
 }
 
 enum PaymentEmailStatus {
