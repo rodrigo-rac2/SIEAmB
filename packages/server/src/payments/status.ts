@@ -19,6 +19,9 @@ export function mapOrderStatus(status: string, statusDetail?: string | null): Pa
     // `in_review`: Mercado Pago is reviewing the payment by hand (`pending_review_manual`), seen on
     // the first real card payment. Money may still be taken, so it is pending, never "try again".
     case 'action_required':
+      // `waiting_retry`: the attempt was refused (seen with `high_risk` on the first real card
+      // payment, #188) and the same order waits for another try. Nothing is being processed.
+      return statusDetail === 'waiting_retry' ? 'CREATED' : 'PENDING';
     case 'processing':
     case 'in_review':
       return 'PENDING';

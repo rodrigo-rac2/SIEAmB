@@ -370,4 +370,20 @@ describe('handleMercadoPagoWebhook: telling the person (#185)', () => {
     expect(sent).toHaveLength(0);
     expect(store.emails).toHaveLength(0);
   });
+
+  it('a card reviewed and then refused: "processing", then "not approved" with the pay link, and the payment can be retried (#188)', async () => {
+    const { deps, store, sent } = withEmails([
+      answer(order({ status: 'in_review', status_detail: 'pending_review_manual' })),
+      answer(order({ status: 'action_required', status_detail: 'waiting_retry' })),
+    ]);
+    store.seed({ mpOrderId: ORDER_ID });
+    await handleMercadoPagoWebhook(notification(), ENV, deps);
+    await handleMercadoPagoWebhook(notification(), ENV, deps);
+    expect(store.payments[0]).toMatchObject({ status: 'CREATED', mpStatusDetail: 'waiting_retry' });
+    expect(sent.map((m) => m.subject)).toEqual([
+      'Inscrição recebida: estamos processando seu pagamento (II SIEAmB)',
+      'Pagamento não aprovado (II SIEAmB)',
+    ]);
+    expect(sent[1]!.text).toContain('/2027/inscricoes/pagar?t=');
+  });
 });
