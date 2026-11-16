@@ -171,7 +171,7 @@
       },
       "PENDING": {
         "title": "Pagamento em processamento",
-        "body": "Assim que o Mercado Pago confirmar o pagamento, sua inscrição será confirmada. Boletos podem levar alguns dias para compensar."
+        "body": "O Mercado Pago ainda está processando ou analisando o pagamento, o que pode levar de alguns minutos a alguns dias, conforme o meio de pagamento. Assim que ele for confirmado, sua inscrição será confirmada. Não é preciso pagar de novo: guarde o endereço desta página para acompanhar."
       },
       "CREATED": {
         "title": "Pagamento não concluído",

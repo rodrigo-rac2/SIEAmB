@@ -171,7 +171,7 @@
       },
       "PENDING": {
         "title": "Payment being processed",
-        "body": "As soon as Mercado Pago confirms the payment, your registration will be confirmed. A boleto can take a few days to clear."
+        "body": "Mercado Pago is still processing or reviewing the payment, which can take from a few minutes to a few days depending on the payment method. Your registration is confirmed as soon as the payment is. There is no need to pay again: keep the address of this page to follow it."
       },
       "CREATED": {
         "title": "Payment not completed",

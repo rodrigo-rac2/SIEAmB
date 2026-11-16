@@ -16,8 +16,11 @@ export function mapOrderStatus(status: string, statusDetail?: string | null): Pa
       return statusDetail === 'accredited' || statusDetail === 'partially_refunded'
         ? 'APPROVED'
         : null;
+    // `in_review`: Mercado Pago is reviewing the payment by hand (`pending_review_manual`), seen on
+    // the first real card payment. Money may still be taken, so it is pending, never "try again".
     case 'action_required':
     case 'processing':
+    case 'in_review':
       return 'PENDING';
     case 'failed':
       return 'REJECTED';

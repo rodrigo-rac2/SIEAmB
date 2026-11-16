@@ -171,7 +171,7 @@
       },
       "PENDING": {
         "title": "Pago en proceso",
-        "body": "En cuanto Mercado Pago confirme el pago, su inscripción quedará confirmada. Un boleto puede tardar algunos días en acreditarse."
+        "body": "Mercado Pago todavía está procesando o revisando el pago, lo que puede tardar de algunos minutos a algunos días según el medio de pago. Su inscripción se confirma en cuanto se confirme el pago. No es necesario pagar de nuevo: guarde la dirección de esta página para seguirlo."
       },
       "CREATED": {
         "title": "Pago no completado",
