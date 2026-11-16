@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { Registration, RegistrationInput } from '@sieamb/shared';
 import { DuplicateRegistrationError, type DataProvider } from './DataProvider';
+import { paymentsEnabled } from './payments';
 import { StaticDataProvider } from './StaticDataProvider';
 
 /** The subset of the Supabase client this provider touches, so tests can fake it. */
@@ -43,7 +44,11 @@ export class SupabaseDataProvider extends StaticDataProvider implements DataProv
   ): Promise<Registration> {
     const dbEventId = await this.resolveEventId(eventId);
     const now = new Date().toISOString();
+    // The row cannot be read back, so the handle for paying it is generated here.
+    // Sent only when payments are on: the column does not exist where they are off.
+    const payToken = paymentsEnabled() ? crypto.randomUUID() : undefined;
     const { error } = await this.client.from('pre_registrations').insert({
+      ...(payToken ? { pay_token: payToken } : {}),
       event_id: dbEventId,
       full_name: input.fullName,
       email: input.email.trim().toLowerCase(),
@@ -70,6 +75,7 @@ export class SupabaseDataProvider extends StaticDataProvider implements DataProv
       modality: input.modality,
       status: 'PENDING_PAYMENT',
       createdAt: now,
+      ...(payToken ? { payToken } : {}),
     };
   }
 

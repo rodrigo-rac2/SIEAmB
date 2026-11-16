@@ -1,0 +1,14 @@
+{
+  "name": "@sieamb/server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Server-side logic behind the Vercel functions in /api (payments first)",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "vitest": "^2.1.8"
+  }
+}

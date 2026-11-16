@@ -141,6 +141,52 @@
     },
     "lotRange": "de {{from}} a {{until}}"
   },
+  "payment": {
+    "title": "Pagamento da inscrição",
+    "intro": "Para confirmar a inscrição, faça o pagamento da taxa pelo Mercado Pago.",
+    "payButton": "Pagar com Mercado Pago",
+    "redirecting": "Abrindo o Mercado Pago…",
+    "payLater": "Se preferir pagar depois, guarde este link:",
+    "errors": {
+      "already_paid": "Esta inscrição já está paga.",
+      "no_fee_available": "O pagamento ainda não está disponível para esta categoria nesta data.",
+      "payment_pending": "Já existe um pagamento em processamento para esta inscrição. Aguarde a confirmação.",
+      "registration_not_found": "Não encontramos esta inscrição. Confira o link.",
+      "payment_not_found": "Não encontramos este pagamento.",
+      "invalidLink": "Este link de pagamento não é válido.",
+      "generic": "Não foi possível concluir a operação. Tente novamente em instantes."
+    },
+    "return": {
+      "title": "Situação do pagamento",
+      "checking": "Consultando o pagamento…",
+      "amount": "Valor",
+      "retry": "Tentar novamente",
+      "APPROVED": {
+        "title": "Pagamento aprovado!",
+        "body": "Sua inscrição está confirmada. Obrigado!"
+      },
+      "PENDING": {
+        "title": "Pagamento em processamento",
+        "body": "Assim que o Mercado Pago confirmar o pagamento, sua inscrição será confirmada. Boletos podem levar alguns dias para compensar."
+      },
+      "CREATED": {
+        "title": "Pagamento não concluído",
+        "body": "Ainda não identificamos o pagamento. Se você já pagou, aguarde alguns minutos e atualize esta página."
+      },
+      "REJECTED": {
+        "title": "Pagamento não aprovado",
+        "body": "O pagamento foi recusado. Você pode tentar novamente com outro meio de pagamento."
+      },
+      "CANCELLED": {
+        "title": "Pagamento cancelado",
+        "body": "Este pagamento foi cancelado ou expirou antes de ser concluído."
+      },
+      "REFUNDED": {
+        "title": "Pagamento devolvido",
+        "body": "O valor deste pagamento foi devolvido."
+      }
+    }
+  },
   "dates": {
     "title": "Datas Importantes",
     "extended": "prorrogado"

@@ -1,0 +1,28 @@
+.payment {
+  max-width: 60ch;
+}
+
+.payment__button {
+  padding: 0.75rem 1.5rem;
+  border: 0;
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-primary);
+  color: var(--color-on-primary, #fff);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.payment__button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.payment__error {
+  margin-top: 0.75rem;
+  color: var(--color-error, #b00020);
+}
+
+.payment__link {
+  word-break: break-all;
+}
