@@ -5,10 +5,12 @@ import {
   type Registration,
   type RegistrationFormData,
 } from '@sieamb/shared';
-import { useState, type ChangeEvent } from 'react';
+import { useEffect, useState, type ChangeEvent } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../../contexts/AuthContext';
 import { useEvent } from '../../contexts/EventContext';
+import { checkDuplicateRegistration, fetchAccount } from '../../services/account';
 import {
   DuplicateRegistrationError,
   RegistrationClosedError,
@@ -22,20 +24,51 @@ const CATEGORIES = ['ESTUDANTE_GRADUACAO', 'ESTUDANTE_POS', 'PROFISSIONAL'] as c
 export function RegistrationForm({
   onSuccess,
 }: {
-  onSuccess: (registration: Registration) => void;
+  /** The e-mail is handed back too: the saved row cannot be read by the browser. */
+  onSuccess: (registration: Registration, email: string) => void;
 }) {
   const { t, i18n } = useTranslation();
   const { event } = useEvent();
+  const { accessToken } = useAuth();
   const [submitError, setSubmitError] = useState<string | null>(null);
+  // Logged in (#210): the registration is made with the account's own e-mail.
+  const [accountEmail, setAccountEmail] = useState<string | null>(null);
 
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
     defaultValues: { country: 'BR', category: 'ESTUDANTE_POS', modality: 'ONLINE', consent: false },
   });
+
+  useEffect(() => {
+    if (!accessToken) return setAccountEmail(null);
+    let active = true;
+    fetchAccount(accessToken)
+      .then(({ user }) => {
+        if (!active) return;
+        setAccountEmail(user.email);
+        reset({
+          country: user.passport ? user.country : 'BR',
+          category: 'ESTUDANTE_POS',
+          modality: 'ONLINE',
+          consent: false,
+          fullName: user.fullName,
+          email: user.email,
+          cpf: user.cpf ? maskCpf(user.cpf) : '',
+          passport: user.passport ?? '',
+          institution: user.institution ?? '',
+        });
+      })
+      // The form still works without the account's data.
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [accessToken, reset]);
 
   if (!event) return null;
 
@@ -43,6 +76,17 @@ export function RegistrationForm({
     setSubmitError(null);
     try {
       const parsed = registrationSchema.parse(data);
+      const check = await checkDuplicateRegistration({
+        eventSlug: event.slug,
+        email: parsed.email,
+        cpf: parsed.cpf || undefined,
+        passport: parsed.passport || undefined,
+        country: parsed.country,
+      });
+      if (check.duplicate) {
+        setSubmitError(t('registration.errors.duplicateDocument', { email: check.maskedEmail ?? '' }));
+        return;
+      }
       const registration = await getDataProvider().createRegistration(event.id, {
         fullName: parsed.fullName,
         email: parsed.email,
@@ -54,7 +98,7 @@ export function RegistrationForm({
         modality: parsed.modality,
         locale: i18n.language,
       });
-      onSuccess(registration);
+      onSuccess(registration, parsed.email);
     } catch (err) {
       if (err instanceof DuplicateRegistrationError) {
         setSubmitError(t('registration.errors.duplicate'));
@@ -90,7 +134,14 @@ export function RegistrationForm({
         <label htmlFor="email">
           {t('registration.email')} <span aria-hidden="true">*</span>
         </label>
-        <input id="email" type="email" autoComplete="email" {...register('email')} />
+        <input
+          id="email"
+          type="email"
+          autoComplete="email"
+          readOnly={Boolean(accountEmail)}
+          {...register('email')}
+        />
+        {accountEmail && <p className="reg-form__hint">{t('registration.accountEmailHint')}</p>}
         {errKey('email') && <p className="reg-form__error">{errKey('email')}</p>}
       </div>
 

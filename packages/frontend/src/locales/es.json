@@ -141,9 +141,13 @@
       "email": "Ingrese un correo electrónico válido.",
       "duplicate": "Ya existe una inscripción con este correo para este evento.",
       "consent_required": "Es necesario autorizar el uso de los datos para enviar la inscripción.",
-      "closed": "La inscripción de este evento no está abierta."
+      "closed": "La inscripción de este evento no está abierta.",
+      "duplicateDocument": "Ya existe una inscripción en esta edición con este documento, hecha con el correo {{email}}. Entre en su cuenta o hable con la organización."
     },
-    "lotRange": "del {{from}} al {{until}}"
+    "lotRange": "del {{from}} al {{until}}",
+    "accountEmailHint": "La inscripción usa el correo de su cuenta.",
+    "accountCta": "Para seguir su inscripción y enviar trabajos, cree su cuenta con el mismo correo:",
+    "goToArea": "Ver mi inscripción en Mi área"
   },
   "payment": {
     "title": "Pago de la inscripción",
@@ -264,5 +268,117 @@
     "foundersTitle": "Fundadores",
     "lattes": "Currículo Lattes",
     "orcid": "ORCID"
+  },
+  "account": {
+    "email": "Correo electrónico",
+    "backToLogin": "Volver a la entrada",
+    "sentHint": "Si el mensaje no llega en unos minutos, revise la carpeta de spam o pídalo de nuevo.",
+    "nav": {
+      "login": "Entrar",
+      "myArea": "Mi área",
+      "logout": "Salir"
+    },
+    "login": {
+      "title": "Entrar",
+      "submit": "Entrar",
+      "submitting": "Entrando…",
+      "forgot": "Olvidé mi contraseña",
+      "create": "Crear cuenta",
+      "errors": {
+        "invalid_credentials": "Correo o contraseña incorrectos.",
+        "email_not_confirmed": "Este correo todavía no fue confirmado. Use el enlace que enviamos, o pida otro en \"Crear cuenta\".",
+        "too_many_attempts": "Demasiados intentos. Espere unos minutos e intente de nuevo.",
+        "generic": "No fue posible entrar ahora. Intente de nuevo en un momento."
+      }
+    },
+    "signup": {
+      "title": "Crear cuenta",
+      "intro": "Informe su nombre y su correo. Enviaremos un enlace para confirmar el correo y elegir la contraseña.",
+      "submit": "Enviar enlace de confirmación",
+      "sentTitle": "Revise su correo",
+      "sentBody": "Si {{email}} puede tener una cuenta, enviamos un mensaje con el enlace para continuar."
+    },
+    "recover": {
+      "title": "Olvidé mi contraseña",
+      "intro": "Informe el correo de su cuenta. Enviaremos un enlace para crear una nueva contraseña.",
+      "submit": "Enviar enlace",
+      "sentTitle": "Revise su correo",
+      "sentBody": "Si {{email}} tiene una cuenta, enviamos un mensaje con el enlace para crear la nueva contraseña."
+    },
+    "confirm": {
+      "title": "Crear contraseña",
+      "intro": "Correo confirmado. Elija la contraseña de su cuenta."
+    },
+    "newPassword": {
+      "title": "Nueva contraseña",
+      "intro": "Elija la nueva contraseña de su cuenta."
+    },
+    "password": {
+      "label": "Contraseña",
+      "new": "Nueva contraseña",
+      "repeat": "Repita la contraseña",
+      "hint": "Use al menos {{min}} caracteres.",
+      "submit": "Guardar contraseña",
+      "mismatch": "Las dos contraseñas no son iguales.",
+      "checking": "Comprobando el enlace…",
+      "invalidTitle": "Este enlace ya no es válido",
+      "invalidBody": "El enlace ya fue usado o expiró. Pida otro para continuar.",
+      "askAgain": "Pedir otro enlace"
+    },
+    "link": {
+      "title": "Confirmar inscripción",
+      "doneTitle": "Inscripción unida a la cuenta",
+      "doneBody": "La inscripción y el pago ahora aparecen en la cuenta que hizo la solicitud."
+    },
+    "area": {
+      "title": "Mi área",
+      "registrationTitle": "Mi inscripción",
+      "otherEditions": "Otras ediciones",
+      "none": "Usted todavía no está inscrito en esta edición.",
+      "registerCta": "Hacer la inscripción",
+      "states": {
+        "PAID": "Inscripción confirmada",
+        "PENDING": "Pago en proceso",
+        "UNPAID": "Esperando el pago"
+      },
+      "stateBody": {
+        "PAID": "Pago recibido. Nada más que hacer.",
+        "PENDING": "Recibimos su solicitud de pago y esperamos la confirmación. Los boletos pueden tardar algunos días.",
+        "UNPAID": "La inscripción solo se completa con el pago de la tasa."
+      },
+      "payCta": "Pagar la inscripción",
+      "followPayment": "Ver el pago",
+      "registeredOn": "inscripción hecha el {{date}}",
+      "profileTitle": "Mis datos",
+      "country": "País del pasaporte (sigla de 2 letras)",
+      "documentHint": "Informe el CPF, o el pasaporte si no tiene CPF. Una vez guardado, el documento solo puede ser modificado por la organización.",
+      "documentLockedHint": "Para corregir el documento, hable con la organización.",
+      "saved": "Datos guardados.",
+      "suggestionBody": "Encontramos una inscripción en el {{event}} con su documento, hecha con el correo {{email}}. ¿Es suya?",
+      "yesMine": "Sí, es mía",
+      "sendAgain": "Enviar el enlace de nuevo",
+      "noAccess": "Ya no tengo acceso a ese correo",
+      "requestSent": "Enviamos un enlace de confirmación a {{email}}. Abra ese correo y confirme para unir la inscripción a esta cuenta.",
+      "requestOrganiser": "Su solicitud fue enviada a la organización, que la revisará y responderá."
+    },
+    "errors": {
+      "generic": "Algo salió mal. Intente de nuevo en un momento.",
+      "invalid_email": "Informe un correo válido.",
+      "invalid_name": "Informe su nombre completo.",
+      "invalid_cpf": "CPF inválido.",
+      "invalid_passport": "Pasaporte inválido.",
+      "invalid_country": "Informe la sigla de 2 letras del país del pasaporte.",
+      "weak_password": "La contraseña necesita al menos {{min}} caracteres y no puede contener su correo.",
+      "too_many_attempts": "Demasiados intentos. Espere un poco e intente de nuevo.",
+      "not_logged_in": "Su sesión terminó. Entre de nuevo.",
+      "email_not_confirmed": "Confirme su correo para continuar.",
+      "document_locked": "El documento ya fue informado y solo puede ser modificado por la organización.",
+      "document_in_use": "Este documento ya está en otra cuenta. Si la cuenta es suya, entre con ella; si no, hable con la organización.",
+      "already_registered": "Esta cuenta ya tiene una inscripción en esta edición.",
+      "registration_not_found": "No encontramos esa inscripción.",
+      "link_not_found": "Este enlace no es válido.",
+      "link_expired": "Este enlace expiró. Pida otro en Mi área.",
+      "cannot_link": "No fue posible unir la inscripción a esa cuenta. Hable con la organización."
+    }
   }
 }

@@ -141,9 +141,13 @@
       "email": "Informe um e-mail válido.",
       "duplicate": "Já existe uma inscrição com este e-mail para este evento.",
       "consent_required": "É preciso autorizar o uso dos dados para enviar a inscrição.",
-      "closed": "As inscrições deste evento não estão abertas."
+      "closed": "As inscrições deste evento não estão abertas.",
+      "duplicateDocument": "Já existe uma inscrição nesta edição com este documento, feita com o e-mail {{email}}. Entre na sua conta ou fale com a organização."
     },
-    "lotRange": "de {{from}} a {{until}}"
+    "lotRange": "de {{from}} a {{until}}",
+    "accountEmailHint": "A inscrição usa o e-mail da sua conta.",
+    "accountCta": "Para acompanhar sua inscrição e enviar trabalhos, crie sua conta com o mesmo e-mail:",
+    "goToArea": "Ver minha inscrição em Minha área"
   },
   "payment": {
     "title": "Pagamento da inscrição",
@@ -264,5 +268,117 @@
     "foundersTitle": "Idealizadores",
     "lattes": "Currículo Lattes",
     "orcid": "ORCID"
+  },
+  "account": {
+    "email": "E-mail",
+    "backToLogin": "Voltar para a entrada",
+    "sentHint": "Se a mensagem não chegar em alguns minutos, confira a caixa de spam ou peça de novo.",
+    "nav": {
+      "login": "Entrar",
+      "myArea": "Minha área",
+      "logout": "Sair"
+    },
+    "login": {
+      "title": "Entrar",
+      "submit": "Entrar",
+      "submitting": "Entrando…",
+      "forgot": "Esqueci minha senha",
+      "create": "Criar conta",
+      "errors": {
+        "invalid_credentials": "E-mail ou senha incorretos.",
+        "email_not_confirmed": "Este e-mail ainda não foi confirmado. Use o link que enviamos, ou peça outro em \"Criar conta\".",
+        "too_many_attempts": "Muitas tentativas. Aguarde alguns minutos e tente de novo.",
+        "generic": "Não foi possível entrar agora. Tente de novo em instantes."
+      }
+    },
+    "signup": {
+      "title": "Criar conta",
+      "intro": "Informe seu nome e seu e-mail. Enviaremos um link para confirmar o e-mail e escolher a senha.",
+      "submit": "Enviar link de confirmação",
+      "sentTitle": "Confira seu e-mail",
+      "sentBody": "Se {{email}} puder ter uma conta, enviamos uma mensagem com o link para continuar."
+    },
+    "recover": {
+      "title": "Esqueci minha senha",
+      "intro": "Informe o e-mail da sua conta. Enviaremos um link para criar uma nova senha.",
+      "submit": "Enviar link",
+      "sentTitle": "Confira seu e-mail",
+      "sentBody": "Se {{email}} tiver uma conta, enviamos uma mensagem com o link para criar a nova senha."
+    },
+    "confirm": {
+      "title": "Criar senha",
+      "intro": "E-mail confirmado. Escolha a senha da sua conta."
+    },
+    "newPassword": {
+      "title": "Nova senha",
+      "intro": "Escolha a nova senha da sua conta."
+    },
+    "password": {
+      "label": "Senha",
+      "new": "Nova senha",
+      "repeat": "Repita a senha",
+      "hint": "Use pelo menos {{min}} caracteres.",
+      "submit": "Salvar senha",
+      "mismatch": "As duas senhas não são iguais.",
+      "checking": "Conferindo o link…",
+      "invalidTitle": "Este link não vale mais",
+      "invalidBody": "O link já foi usado ou expirou. Peça outro para continuar.",
+      "askAgain": "Pedir outro link"
+    },
+    "link": {
+      "title": "Confirmar inscrição",
+      "doneTitle": "Inscrição reunida à conta",
+      "doneBody": "A inscrição e o pagamento agora aparecem na conta que fez o pedido."
+    },
+    "area": {
+      "title": "Minha área",
+      "registrationTitle": "Minha inscrição",
+      "otherEditions": "Outras edições",
+      "none": "Você ainda não está inscrito nesta edição.",
+      "registerCta": "Fazer a inscrição",
+      "states": {
+        "PAID": "Inscrição confirmada",
+        "PENDING": "Pagamento em processamento",
+        "UNPAID": "Aguardando pagamento"
+      },
+      "stateBody": {
+        "PAID": "Pagamento recebido. Nada mais a fazer.",
+        "PENDING": "Recebemos seu pedido de pagamento e aguardamos a confirmação. Boletos podem levar alguns dias.",
+        "UNPAID": "A inscrição só é concluída com o pagamento da taxa."
+      },
+      "payCta": "Pagar a inscrição",
+      "followPayment": "Ver o pagamento",
+      "registeredOn": "inscrição feita em {{date}}",
+      "profileTitle": "Meus dados",
+      "country": "País do passaporte (sigla de 2 letras)",
+      "documentHint": "Informe o CPF, ou o passaporte se você não tem CPF. Depois de salvo, o documento só pode ser alterado pela organização.",
+      "documentLockedHint": "Para corrigir o documento, fale com a organização.",
+      "saved": "Dados salvos.",
+      "suggestionBody": "Encontramos uma inscrição no {{event}} com o seu documento, feita com o e-mail {{email}}. Ela é sua?",
+      "yesMine": "Sim, é minha",
+      "sendAgain": "Enviar o link de novo",
+      "noAccess": "Não tenho mais acesso a esse e-mail",
+      "requestSent": "Enviamos um link de confirmação para {{email}}. Abra esse e-mail e confirme para reunir a inscrição a esta conta.",
+      "requestOrganiser": "Seu pedido foi encaminhado à organização, que vai conferir e responder."
+    },
+    "errors": {
+      "generic": "Algo deu errado. Tente de novo em instantes.",
+      "invalid_email": "Informe um e-mail válido.",
+      "invalid_name": "Informe seu nome completo.",
+      "invalid_cpf": "CPF inválido.",
+      "invalid_passport": "Passaporte inválido.",
+      "invalid_country": "Informe a sigla de 2 letras do país do passaporte.",
+      "weak_password": "A senha precisa ter pelo menos {{min}} caracteres e não pode conter o seu e-mail.",
+      "too_many_attempts": "Muitas tentativas. Aguarde um pouco e tente de novo.",
+      "not_logged_in": "Sua sessão terminou. Entre de novo.",
+      "email_not_confirmed": "Confirme seu e-mail para continuar.",
+      "document_locked": "O documento já foi informado e só pode ser alterado pela organização.",
+      "document_in_use": "Este documento já está em outra conta. Se a conta é sua, entre com ela; se não, fale com a organização.",
+      "already_registered": "Esta conta já tem uma inscrição nesta edição.",
+      "registration_not_found": "Não encontramos essa inscrição.",
+      "link_not_found": "Este link não é válido.",
+      "link_expired": "Este link expirou. Peça outro em Minha área.",
+      "cannot_link": "Não foi possível reunir a inscrição a essa conta. Fale com a organização."
+    }
   }
 }

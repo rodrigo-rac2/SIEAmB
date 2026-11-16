@@ -1,7 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { PageLayout } from './components/layout/PageLayout';
+import { AuthProvider } from './contexts/AuthContext';
 import { AboutPage } from './pages/AboutPage';
+import { LinkPage } from './pages/account/LinkPage';
+import { LoginPage } from './pages/account/LoginPage';
+import { MyAreaPage } from './pages/account/MyAreaPage';
+import { PasswordPage } from './pages/account/PasswordPage';
+import { SignupPage } from './pages/account/SignupPage';
 import { AnaisPage } from './pages/AnaisPage';
 import { CommitteePage } from './pages/CommitteePage';
 import { ContactPage } from './pages/ContactPage';
@@ -39,6 +45,14 @@ function RootRedirect() {
 
 export function App() {
   return (
+    <AuthProvider>
+      <AppRoutes />
+    </AuthProvider>
+  );
+}
+
+function AppRoutes() {
+  return (
     <Routes>
       <Route path="/" element={<RootRedirect />} />
       <Route element={<PageLayout />}>
@@ -56,6 +70,13 @@ export function App() {
           <Route path="inscricoes/nova" element={<RegistrationFormPage />} />
           <Route path="inscricoes/pagar" element={<PaymentPage />} />
           <Route path="inscricoes/pagamento" element={<PaymentReturnPage />} />
+          <Route path="conta/entrar" element={<LoginPage />} />
+          <Route path="conta/criar" element={<SignupPage mode="signup" />} />
+          <Route path="conta/recuperar" element={<SignupPage mode="recover" />} />
+          <Route path="conta/confirmar" element={<PasswordPage type="signup" />} />
+          <Route path="conta/nova-senha" element={<PasswordPage type="recovery" />} />
+          <Route path="conta/vincular" element={<LinkPage />} />
+          <Route path="minha-area" element={<MyAreaPage />} />
           <Route path="datas-importantes" element={<ImportantDatesPage />} />
           <Route path="avisos" element={<NewsListPage />} />
           <Route path="avisos/:newsSlug" element={<NewsDetailPage />} />

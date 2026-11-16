@@ -5,13 +5,16 @@ import { Link } from 'react-router-dom';
 import { PaymentPrompt } from '../components/payment/PaymentPrompt';
 import { RegistrationForm } from '../components/registration/RegistrationForm';
 import { PageHeader } from '../components/shared/PageHeader';
+import { useAuth } from '../contexts/AuthContext';
 import { useEvent } from '../contexts/EventContext';
 import { paymentsEnabled } from '../services/payments';
 
 export function RegistrationFormPage() {
   const { t } = useTranslation();
   const { event } = useEvent();
+  const auth = useAuth();
   const [done, setDone] = useState<Registration | null>(null);
+  const [email, setEmail] = useState('');
 
   if (!event) return null;
 
@@ -42,10 +45,31 @@ export function RegistrationFormPage() {
               ) : (
                 <p>{t('registration.successBody')}</p>
               )}
+              {auth.enabled && (
+                <p data-testid="account-cta">
+                  {auth.accessToken ? (
+                    <Link to={`/${event.slug}/minha-area`}>{t('registration.goToArea')}</Link>
+                  ) : (
+                    <>
+                      {t('registration.accountCta')}{' '}
+                      <Link
+                        to={`/${event.slug}/conta/criar?email=${encodeURIComponent(email)}`}
+                      >
+                        {t('account.signup.title')}
+                      </Link>
+                    </>
+                  )}
+                </p>
+              )}
               <Link to={`/${event.slug}/`}>{t('common.backToHome')}</Link>
             </div>
           ) : (
-            <RegistrationForm onSuccess={setDone} />
+            <RegistrationForm
+              onSuccess={(registration, registeredEmail) => {
+                setEmail(registeredEmail);
+                setDone(registration);
+              }}
+            />
           )}
         </div>
       </section>
