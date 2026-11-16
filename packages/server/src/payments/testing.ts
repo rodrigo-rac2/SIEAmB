@@ -44,6 +44,8 @@ export const REGISTRATION: PreRegistrationRef = {
   email: 'pessoa@example.com',
   category: 'ESTUDANTE_POS',
   modality: 'ONLINE',
+  fullName: 'Maria Clara de Souza',
+  cpf: '52998224725',
 };
 
 /** In-memory PaymentStore that enforces the same one-open-payment rule as the database. */

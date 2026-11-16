@@ -46,7 +46,7 @@ describe('SupabasePaymentStore', () => {
     );
   });
 
-  it('reads only the columns the payment needs from the pre-registration, never the CPF', async () => {
+  it('reads only the columns the payment needs from the pre-registration, never the passport', async () => {
     const { store, sent } = setup([
       {
         id: 'r1',
@@ -54,6 +54,8 @@ describe('SupabasePaymentStore', () => {
         email: 'a@b.c',
         category: 'ESTUDANTE_POS',
         modality: 'ONLINE',
+        full_name: 'Maria Clara',
+        cpf: '52998224725',
         event: { slug: '2027' },
       },
     ]);
@@ -65,9 +67,12 @@ describe('SupabasePaymentStore', () => {
       email: 'a@b.c',
       category: 'ESTUDANTE_POS',
       modality: 'ONLINE',
+      fullName: 'Maria Clara',
+      cpf: '52998224725',
     });
-    expect(sent().url).toContain('select=id,event_id,email,category,modality,event:events(slug)');
-    expect(sent().url).not.toMatch(/cpf|passport|full_name/);
+    // Name and CPF go to Mercado Pago with the order (#191); nothing else personal is read.
+    expect(sent().url).toContain('select=id,event_id,email,category,modality,full_name,cpf,event:events(slug)');
+    expect(sent().url).not.toMatch(/passport|institution|country/);
   });
 
   it('escapes a value that tries to add a filter', async () => {

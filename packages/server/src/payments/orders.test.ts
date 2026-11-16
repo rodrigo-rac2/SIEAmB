@@ -125,7 +125,12 @@ describe('handleCreateOrder: creating the order', () => {
       processing_mode: 'manual',
       total_amount: '50.00',
       external_reference: payment.id,
-      payer: { email: REGISTRATION.email },
+      payer: {
+        email: REGISTRATION.email,
+        first_name: 'Maria',
+        last_name: 'Clara de Souza',
+        identification: { type: 'CPF', number: '52998224725' },
+      },
       items: [{ unit_price: '50.00', quantity: 1 }],
     });
     const returnUrl = `https://dev.sieamb.org/2027/inscricoes/pagamento?p=${payment.id}`;

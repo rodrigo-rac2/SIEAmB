@@ -7,6 +7,9 @@ export interface PreRegistrationRef {
   email: string;
   category: string;
   modality: string;
+  /** Sent to Mercado Pago with the order (#191). Personal data: never log them. */
+  fullName: string;
+  cpf: string | null;
 }
 
 export interface Payment {
