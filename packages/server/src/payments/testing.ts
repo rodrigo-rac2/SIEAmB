@@ -4,6 +4,9 @@ import type { MercadoPagoOrder } from './mercadoPago';
 import { OPEN_STATUSES } from './status';
 import {
   OpenPaymentExistsError,
+  type EmailJob,
+  type EmailKind,
+  type PaymentContact,
   type NewPayment,
   type Payment,
   type PaymentPatch,
@@ -15,6 +18,21 @@ export const TOKEN = 'APP_USR-test-token';
 export const PAY_TOKEN = '3f2b8c1e-9a4d-4e7f-8b21-6c5d4e3f2a10';
 export const ORDER_ID = 'ORDTST01M6PCN643FNC0HP9DMKKVM8XR';
 export const NOW = new Date('2026-11-12T15:00:00-03:00');
+
+export const CONTACT: PaymentContact = {
+  fullName: 'Maria Clara de Souza',
+  email: 'pessoa@example.com',
+  locale: 'pt-BR',
+  payToken: '3f2b8c1e-9a4d-4e7f-8b21-6c5d4e3f2a10',
+  eventSlug: '2027',
+  eventName: 'II SIEAmB',
+};
+
+export interface StoredEmail extends EmailJob {
+  lockedUntil: number | null;
+  lastError: string | null;
+  sentAt: string | null;
+}
 
 export const REGISTRATION: PreRegistrationRef = {
   id: 'aaaaaaaa-0000-4000-8000-000000000001',
@@ -31,6 +49,9 @@ export class FakeStore implements PaymentStore {
   registrations = new Map<string, PreRegistrationRef>([[PAY_TOKEN, REGISTRATION]]);
   snapshots = new Map<string, Record<string, unknown>>();
   failNextUpdate = false;
+  emails: StoredEmail[] = [];
+  contact: PaymentContact | null = { ...CONTACT };
+  failNextEnqueue = false;
   private sequence = 0;
 
   seed(overrides: Partial<Payment> = {}): Payment {
@@ -96,6 +117,78 @@ export class FakeStore implements PaymentStore {
       if (value !== undefined) (payment as unknown as Record<string, unknown>)[key] = value;
     }
     return { ...payment };
+  }
+
+  // Same rules as the database: one e-mail per payment and kind, and a claim only
+  // succeeds for whoever read the current attempt counter.
+  async enqueueEmail(paymentId: string, kind: EmailKind) {
+    if (this.failNextEnqueue) {
+      this.failNextEnqueue = false;
+      throw new Error('payments_store_failed: 500');
+    }
+    if (this.emails.some((e) => e.paymentId === paymentId && e.kind === kind)) return null;
+    const email: StoredEmail = {
+      id: `dddddddd-0000-4000-8000-${String(this.emails.length + 1).padStart(12, '0')}`,
+      paymentId,
+      kind,
+      status: 'PENDING',
+      attempts: 0,
+      lockedUntil: null,
+      lastError: null,
+      sentAt: null,
+    };
+    this.emails.push(email);
+    return this.job(email);
+  }
+
+  async listDueEmails(now: Date, limit: number) {
+    return this.emails
+      .filter(
+        (e) =>
+          e.status === 'PENDING' &&
+          e.attempts < 6 &&
+          (e.lockedUntil === null || e.lockedUntil < now.getTime()),
+      )
+      .slice(0, limit)
+      .map((e) => this.job(e));
+  }
+
+  async claimEmail(job: EmailJob, now: Date) {
+    const email = this.emails.find((e) => e.id === job.id);
+    if (!email || email.status !== 'PENDING' || email.attempts !== job.attempts) return false;
+    email.attempts += 1;
+    email.lockedUntil = now.getTime() + 2 * 60 * 1000;
+    return true;
+  }
+
+  async finishEmail(id: string, outcome: 'SENT' | 'SKIPPED', now: Date) {
+    const email = this.emails.find((e) => e.id === id);
+    if (!email) return;
+    email.status = outcome;
+    email.sentAt = outcome === 'SENT' ? now.toISOString() : null;
+    email.lockedUntil = null;
+    email.lastError = null;
+  }
+
+  async releaseEmail(id: string, reason: string) {
+    const email = this.emails.find((e) => e.id === id);
+    if (!email) return;
+    email.lockedUntil = null;
+    email.lastError = reason;
+  }
+
+  async findContact(_preRegistrationId: string) {
+    return this.contact ? { ...this.contact } : null;
+  }
+
+  private job(email: StoredEmail): EmailJob {
+    return {
+      id: email.id,
+      paymentId: email.paymentId,
+      kind: email.kind,
+      status: email.status,
+      attempts: email.attempts,
+    };
   }
 }
 

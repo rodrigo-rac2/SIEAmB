@@ -1,5 +1,8 @@
 import {
   OpenPaymentExistsError,
+  type EmailJob,
+  type EmailKind,
+  type PaymentContact,
   type NewPayment,
   type Payment,
   type PaymentPatch,
@@ -27,6 +30,31 @@ const PAYMENT_COLUMNS =
   'id,event_id,pre_registration_id,status,amount_cents,fee_tier_ref,mp_order_id,mp_status,mp_status_detail,checkout_url,paid_at,created_at';
 
 const UNIQUE_VIOLATION = '23505';
+
+/** How long a delivery attempt keeps an e-mail to itself before others may retry it. */
+export const EMAIL_LOCK_MS = 2 * 60 * 1000;
+/** After this many failed attempts an e-mail stays in the outbox for a person to look at. */
+export const EMAIL_MAX_ATTEMPTS = 6;
+
+class DuplicateEmailError extends Error {}
+
+interface EmailRow {
+  id: string;
+  payment_id: string;
+  kind: EmailKind;
+  status: EmailJob['status'];
+  attempts: number;
+}
+
+const EMAIL_COLUMNS = 'id,payment_id,kind,status,attempts';
+
+const toEmailJob = (row: EmailRow): EmailJob => ({
+  id: row.id,
+  paymentId: row.payment_id,
+  kind: row.kind,
+  status: row.status,
+  attempts: row.attempts,
+});
 
 const toPayment = (row: PaymentRow): Payment => ({
   id: row.id,
@@ -84,7 +112,10 @@ export class SupabasePaymentStore implements PaymentStore {
     });
     if (!response.ok) {
       const problem = (await response.json().catch(() => ({}))) as { code?: string };
-      if (problem.code === UNIQUE_VIOLATION) throw new OpenPaymentExistsError();
+      if (problem.code === UNIQUE_VIOLATION) {
+        if (path.startsWith('payment_emails')) throw new DuplicateEmailError();
+        throw new OpenPaymentExistsError();
+      }
       throw new Error(`payments_store_failed: ${response.status} ${problem.code ?? ''}`.trim());
     }
     return (await response.json()) as T;
@@ -161,5 +192,85 @@ export class SupabasePaymentStore implements PaymentStore {
     );
     if (!rows[0]) throw new Error('payments_store_failed: update matched no row');
     return toPayment(rows[0]);
+  }
+
+  async enqueueEmail(paymentId: string, kind: EmailKind): Promise<EmailJob | null> {
+    try {
+      const rows = await this.request<EmailRow[]>(`payment_emails?select=${EMAIL_COLUMNS}`, {
+        method: 'POST',
+        body: JSON.stringify({ payment_id: paymentId, kind }),
+      });
+      return rows[0] ? toEmailJob(rows[0]) : null;
+    } catch (error) {
+      // unique (payment_id, kind): this e-mail is already owed or sent.
+      if (error instanceof DuplicateEmailError) return null;
+      throw error;
+    }
+  }
+
+  async listDueEmails(now: Date, limit: number): Promise<EmailJob[]> {
+    const iso = encodeURIComponent(now.toISOString());
+    const rows = await this.request<EmailRow[]>(
+      `payment_emails?status=eq.PENDING&attempts=lt.${EMAIL_MAX_ATTEMPTS}&or=(locked_until.is.null,locked_until.lt.${iso})&select=${EMAIL_COLUMNS}&order=created_at.asc&limit=${limit}`,
+    );
+    return rows.map(toEmailJob);
+  }
+
+  async claimEmail(job: EmailJob, now: Date): Promise<boolean> {
+    // Compare-and-swap on the attempt counter: of two senders reading the same row, one matches.
+    const rows = await this.request<{ id: string }[]>(
+      `payment_emails?id=eq.${encodeURIComponent(job.id)}&status=eq.PENDING&attempts=eq.${job.attempts}&select=id`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({
+          attempts: job.attempts + 1,
+          locked_until: new Date(now.getTime() + EMAIL_LOCK_MS).toISOString(),
+        }),
+      },
+    );
+    return rows.length === 1;
+  }
+
+  async finishEmail(id: string, outcome: 'SENT' | 'SKIPPED', now: Date): Promise<void> {
+    await this.request<unknown[]>(`payment_emails?id=eq.${encodeURIComponent(id)}&select=id`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        status: outcome,
+        sent_at: outcome === 'SENT' ? now.toISOString() : null,
+        locked_until: null,
+        last_error: null,
+      }),
+    });
+  }
+
+  async releaseEmail(id: string, reason: string): Promise<void> {
+    await this.request<unknown[]>(`payment_emails?id=eq.${encodeURIComponent(id)}&select=id`, {
+      method: 'PATCH',
+      body: JSON.stringify({ locked_until: null, last_error: reason.slice(0, 120) }),
+    });
+  }
+
+  async findContact(preRegistrationId: string): Promise<PaymentContact | null> {
+    const rows = await this.request<
+      {
+        full_name: string;
+        email: string;
+        locale: string;
+        pay_token: string;
+        event: { slug: string; name: string } | null;
+      }[]
+    >(
+      `pre_registrations?id=eq.${encodeURIComponent(preRegistrationId)}&select=full_name,email,locale,pay_token,event:events(slug,name)&limit=1`,
+    );
+    const row = rows[0];
+    if (!row?.event) return null;
+    return {
+      fullName: row.full_name,
+      email: row.email,
+      locale: row.locale,
+      payToken: row.pay_token,
+      eventSlug: row.event.slug,
+      eventName: row.event.name,
+    };
   }
 }

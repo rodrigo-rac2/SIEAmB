@@ -344,9 +344,43 @@ model Payment {
 
   event           Event           @relation(fields: [eventId], references: [id])
   preRegistration PreRegistration @relation(fields: [preRegistrationId], references: [id])
+  emails          PaymentEmail[]
 
   @@index([preRegistrationId, status])
   @@map("payments")
+}
+
+enum PaymentEmailKind {
+  PROCESSING // registration received, payment being processed
+  CONFIRMED // payment confirmed, registration complete
+  FAILED // payment refused, or cancelled after an attempt
+}
+
+enum PaymentEmailStatus {
+  PENDING
+  SENT
+  SKIPPED // nothing to send: no valid address, or the payment moved on before delivery
+}
+
+// Outbox of the e-mails owed about a payment (#185). A row is written when the
+// status changes and delivered right after, or by the scheduled sweep if that fails.
+// Unique per payment and kind, so the same e-mail is never owed twice.
+model PaymentEmail {
+  id          String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  paymentId   String             @map("payment_id") @db.Uuid
+  kind        PaymentEmailKind
+  status      PaymentEmailStatus @default(PENDING)
+  attempts    Int                @default(0)
+  lockedUntil DateTime?          @map("locked_until") // a delivery attempt holds the row until then
+  lastError   String?            @map("last_error") // error name only, never personal data
+  sentAt      DateTime?          @map("sent_at")
+  createdAt   DateTime           @default(now()) @map("created_at")
+
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@unique([paymentId, kind])
+  @@index([status, createdAt])
+  @@map("payment_emails")
 }
 
 // ───────────────────────────── Audit ─────────────────────────────

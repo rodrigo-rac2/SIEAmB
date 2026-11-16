@@ -1,0 +1,53 @@
+name: Payment e-mail sweep
+
+# Payment e-mails (#185) are sent right when a payment changes status. This run
+# is the safety net: every 10 minutes it asks each site to send what is still
+# pending, which covers a mail server that was down and e-mails recorded before
+# a sender was configured. The endpoint answers with counts only.
+# GitHub may start scheduled runs late; that only delays a retry.
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: prod
+            url: https://sieamb.org
+            secret: CRON_SECRET_PROD
+          - name: dev
+            url: https://dev.sieamb.org
+            secret: CRON_SECRET_DEV
+    steps:
+      - name: Deliver pending e-mails on ${{ matrix.name }}
+        env:
+          SITE: ${{ matrix.url }}
+          CRON_SECRET: ${{ secrets[matrix.secret] }}
+          BYPASS: ${{ secrets.E2E_BYPASS_TOKEN }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "No sweep secret for ${{ matrix.name }} yet, nothing to do."
+            exit 0
+          fi
+          status=$(curl -sS -o body.json -w '%{http_code}' --max-time 60 -X POST \
+            "$SITE/api/v1/payments/emails/deliver" \
+            -H "Authorization: Bearer $CRON_SECRET" -H "x-sieamb-e2e: $BYPASS") || status=000
+          echo "${{ matrix.name }} answered HTTP $status: $(cat body.json 2>/dev/null)"
+          # 503 means e-mails are not configured there yet (no sender or no secret): not a failure.
+          if [ "$status" != "200" ] && [ "$status" != "503" ]; then
+            exit 1
+          fi
+          # A sweep that could not send something turns the run red, so it gets looked at.
+          failed=$(python3 -c "import json;print(json.load(open('body.json')).get('failed',0))" 2>/dev/null || echo 0)
+          if [ "$failed" != "0" ]; then
+            exit 1
+          fi
