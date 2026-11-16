@@ -295,11 +295,15 @@ export class SupabasePaymentStore implements PaymentStore {
     return rows.map(toPayment);
   }
 
-  async listReminderCandidates(
-    registeredBefore: Date,
-    limit: number,
-  ): Promise<ReminderCandidate[]> {
-    const iso = encodeURIComponent(registeredBefore.toISOString());
+  listReminderCandidates(registeredBefore: Date, limit: number): Promise<ReminderCandidate[]> {
+    return this.listRegistrations(`created_at=lt.${encodeURIComponent(registeredBefore.toISOString())}`, limit);
+  }
+
+  listRecentRegistrations(since: Date, limit: number): Promise<ReminderCandidate[]> {
+    return this.listRegistrations(`created_at=gte.${encodeURIComponent(since.toISOString())}`, limit);
+  }
+
+  private async listRegistrations(filter: string, limit: number): Promise<ReminderCandidate[]> {
     const rows = await this.request<
       {
         id: string;
@@ -308,7 +312,7 @@ export class SupabasePaymentStore implements PaymentStore {
         payment_emails: { kind: EmailKind; created_at: string }[];
       }[]
     >(
-      `pre_registrations?created_at=lt.${iso}&select=id,created_at,payments(id,status,mp_status),payment_emails(kind,created_at)&order=created_at.asc&limit=${limit}`,
+      `pre_registrations?${filter}&select=id,created_at,payments(id,status,mp_status),payment_emails(kind,created_at)&order=created_at.asc&limit=${limit}`,
     );
     return rows.map((row) => ({
       preRegistrationId: row.id,

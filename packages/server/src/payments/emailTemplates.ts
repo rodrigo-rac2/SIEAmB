@@ -4,7 +4,8 @@ export type NotificationKind =
   | 'confirmed'
   | 'failed'
   | 'reminderUnpaid'
-  | 'reminderPending';
+  | 'reminderPending'
+  | 'received';
 
 export interface EmailData {
   firstName: string;
@@ -92,6 +93,16 @@ const COPY: Record<Locale, LocaleCopy> = {
         linkLabel: 'Acompanhar o pagamento',
         link: (d) => d.statusUrl,
       },
+      received: {
+        subject: (d) => `Inscrição recebida (${d.eventName})`,
+        body: (d) => [
+          `Recebemos sua inscrição no ${d.eventName}.`,
+          'Para concluí-la, falta o pagamento da taxa, que pode ser feito agora ou depois, pelo Mercado Pago, com cartão ou boleto. Guarde este e-mail: o link abaixo é o seu link de pagamento.',
+          'Você receberá outro e-mail assim que o pagamento for confirmado. Se já pagou, desconsidere este aviso.',
+        ],
+        linkLabel: 'Pagar a inscrição',
+        link: (d) => d.payUrl,
+      },
     },
   },
   en: {
@@ -145,6 +156,16 @@ const COPY: Record<Locale, LocaleCopy> = {
         ],
         linkLabel: 'Follow the payment',
         link: (d) => d.statusUrl,
+      },
+      received: {
+        subject: (d) => `Registration received (${d.eventName})`,
+        body: (d) => [
+          `We received your registration for the ${d.eventName}.`,
+          'To complete it, the fee still has to be paid, now or later, through Mercado Pago, by card or boleto. Keep this e-mail: the link below is your payment link.',
+          'You will get another e-mail as soon as the payment is confirmed. If you have already paid, please disregard this notice.',
+        ],
+        linkLabel: 'Pay the registration',
+        link: (d) => d.payUrl,
       },
     },
   },
@@ -200,6 +221,16 @@ const COPY: Record<Locale, LocaleCopy> = {
         linkLabel: 'Seguir el pago',
         link: (d) => d.statusUrl,
       },
+      received: {
+        subject: (d) => `Inscripción recibida (${d.eventName})`,
+        body: (d) => [
+          `Recibimos su inscripción en el ${d.eventName}.`,
+          'Para completarla, falta el pago de la tasa, que puede hacerse ahora o después, por Mercado Pago, con tarjeta o boleto. Guarde este correo: el enlace de abajo es su enlace de pago.',
+          'Recibirá otro correo en cuanto el pago sea confirmado. Si ya pagó, ignore este aviso.',
+        ],
+        linkLabel: 'Pagar la inscripción',
+        link: (d) => d.payUrl,
+      },
     },
   },
   'zh-CN': {
@@ -253,6 +284,16 @@ const COPY: Record<Locale, LocaleCopy> = {
         ],
         linkLabel: '查看付款进度',
         link: (d) => d.statusUrl,
+      },
+      received: {
+        subject: (d) => `已收到注册（${d.eventName}）`,
+        body: (d) => [
+          `我们已收到您在 ${d.eventName} 的注册。`,
+          '如需完成注册，还需支付注册费。您可以现在或稍后通过 Mercado Pago 使用银行卡或 boleto 付款。请保留此邮件：下面的链接就是您的付款链接。',
+          '付款确认后，您会再收到一封邮件。如果您已经付款，请忽略此通知。',
+        ],
+        linkLabel: '支付注册费',
+        link: (d) => d.payUrl,
       },
     },
   },

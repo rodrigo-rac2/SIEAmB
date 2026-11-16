@@ -4,7 +4,10 @@ import {
   deliverDueEmails,
   deliverEmail,
   emailKindFor,
+  enqueueMissingReceived,
   enqueueReminders,
+  handleRegistrationReceived,
+  receivedApplies,
   refreshOpenPayments,
   reminderDue,
   reminderState,
@@ -19,7 +22,7 @@ import {
 } from './notifications';
 import type { PaymentStatus } from './status';
 import type { ReminderCandidate } from './store';
-import { FakeStore, NOW, ORDER_ID, REGISTRATION, TOKEN, answer, mercadoPago, order } from './testing';
+import { FakeStore, NOW, ORDER_ID, PAY_TOKEN, REGISTRATION, TOKEN, answer, mercadoPago, order } from './testing';
 
 const SITE = 'https://sieamb.org';
 
@@ -66,6 +69,16 @@ describe('emailKindFor', () => {
   it.each(cases)('%s → %s owes %s', (previous, next, kind) => {
     expect(emailKindFor(previous, next)).toBe(kind);
   });
+
+  it('a card refused on the spot owes "not approved" although our status does not change (#195)', () => {
+    expect(emailKindFor('CREATED', 'CREATED', { previous: 'created', next: 'waiting_retry' })).toBe('FAILED');
+    expect(emailKindFor('CREATED', 'CREATED', { previous: null, next: 'waiting_retry' })).toBe('FAILED');
+    expect(emailKindFor('PENDING', 'CREATED', { previous: 'pending_review_manual', next: 'waiting_retry' })).toBe('FAILED');
+  });
+  it('the same refusal seen again owes nothing', () => {
+    expect(emailKindFor('CREATED', 'CREATED', { previous: 'waiting_retry', next: 'waiting_retry' })).toBeNull();
+    expect(emailKindFor('CREATED', 'CREATED', { previous: 'created', next: 'created' })).toBeNull();
+  });
 });
 
 describe('stillApplies', () => {
@@ -86,16 +99,23 @@ describe('stillApplies', () => {
 
 describe('small helpers', () => {
   it.each([
-    ['pessoa@example.com', true],
-    ['a.b+c@sub.example.org', true],
+    ['pessoa@ufcg.edu.br', true],
+    ['a.b+c@sub.gmail.com', true],
+    // Never mailed: our own test registrations and domains reserved for examples.
+    ['e2e+1794846696000@sieamb.org', false],
+    ['pessoa@example.com', false],
+    ['a@sub.example.org', false],
+    ['a@host.test', false],
+    ['a@x.invalid', false],
+    ['contato@sieamb.org', true],
     ['', false],
     ['sem-arroba', false],
     ['a@b', false],
-    ['a b@example.com', false],
-    ['a@example.com\r\nBcc: x@evil.test', false],
-    ['a@example.com, b@example.com', false],
-    ['<a@example.com>', false],
-    [`${'a'.repeat(200)}@example.com`, false],
+    ['a b@gmail.com', false],
+    ['a@gmail.com\r\nBcc: x@evil.org', false],
+    ['a@gmail.com, b@gmail.com', false],
+    ['<a@gmail.com>', false],
+    [`${'a'.repeat(200)}@gmail.com`, false],
     [null, false],
   ])('isSendableEmail(%j) is %s', (value, expected) => {
     expect(isSendableEmail(value)).toBe(expected);
@@ -122,7 +142,7 @@ describe('createPaymentNotifier', () => {
     const payment = store.seed({ status: 'PENDING', amountCents: 7000 });
     await notify(payment, 'CREATED');
     expect(sent).toHaveLength(1);
-    expect(sent[0]!.to).toBe('pessoa@example.com');
+    expect(sent[0]!.to).toBe('pessoa@ufcg.edu.br');
     expect(sent[0]!.subject).toBe('Inscrição recebida: estamos processando seu pagamento (II SIEAmB)');
     expect(sent[0]!.text).toContain('Olá, Maria.');
     expect(sent[0]!.text).toContain(`${SITE}/2027/inscricoes/pagamento?p=${payment.id}`);
@@ -189,7 +209,8 @@ describe('createPaymentNotifier', () => {
   });
 
   it.each([
-    ['an address with a line break', 'a@example.com\r\nBcc: x@evil.test'],
+    ['an address with a line break', 'a@gmail.com\r\nBcc: x@evil.org'],
+    ['one of our own test registrations', 'e2e+123@sieamb.org'],
     ['an empty address', ''],
   ])('skips %s instead of handing it to the mail server', async (_name, email) => {
     const { store, mailer, notify } = setup();
@@ -212,7 +233,7 @@ describe('createPaymentNotifier', () => {
     await notify(store.seed({ status: 'APPROVED' }), 'PENDING');
     await notify(store.seed({ status: 'PENDING' }), 'CREATED');
     const logged = JSON.stringify(log.mock.calls);
-    expect(logged).not.toContain('pessoa@example.com');
+    expect(logged).not.toContain('pessoa@ufcg.edu.br');
     expect(logged).not.toContain('Maria');
     expect(logged).not.toContain(store.contact!.payToken);
   });
@@ -332,6 +353,7 @@ describe('handleEmailSweep', () => {
     const body = (await response.json()) as Record<string, unknown>;
     expect(body).toEqual({
       refreshed: 0,
+      received: 0,
       reminders: 0,
       due: 1,
       sent: 1,
@@ -340,7 +362,7 @@ describe('handleEmailSweep', () => {
       mailer: true,
       errors: [],
     });
-    expect(JSON.stringify(body)).not.toMatch(/example\.com|Maria/);
+    expect(JSON.stringify(body)).not.toMatch(/ufcg|Maria/);
   });
 });
 
@@ -623,5 +645,146 @@ describe('handleEmailSweep as the background job', () => {
     const response = await handleEmailSweep(call(), env(), deps);
     expect(response.status).toBe(502);
     expect(await response.json()).toMatchObject({ errors: ['refresh'], sent: 1 });
+  });
+});
+
+// ───────────────────────────── Registration received (#195) ─────────────────────────────
+
+describe('receivedApplies', () => {
+  const p = (status: PaymentStatus) => ({ status });
+  it('is true until a payment is approved or in flight', () => {
+    expect(receivedApplies([])).toBe(true);
+    expect(receivedApplies([p('CREATED'), p('REJECTED'), p('CANCELLED')])).toBe(true);
+    expect(receivedApplies([p('PENDING')])).toBe(false);
+    expect(receivedApplies([p('APPROVED')])).toBe(false);
+    expect(receivedApplies([p('REFUNDED')])).toBe(false);
+  });
+});
+
+describe('handleRegistrationReceived (the form says a registration was saved)', () => {
+  const call = (body: unknown, method = 'POST') =>
+    new Request('https://sieamb.org/api/v1/registrations/received', {
+      method,
+      headers: { 'content-type': 'application/json' },
+      body: method === 'POST' ? (typeof body === 'string' ? body : JSON.stringify(body)) : undefined,
+    });
+  const env = { now: NOW };
+
+  it('e-mails "registration received" with the pay link, before any payment exists', async () => {
+    const { store, deps, sent } = setup();
+    const response = await handleRegistrationReceived(call({ token: PAY_TOKEN }), env, deps);
+    expect(response.status).toBe(202);
+    expect(sent).toHaveLength(1);
+    expect(sent[0]!.to).toBe('pessoa@ufcg.edu.br');
+    expect(sent[0]!.subject).toBe('Inscrição recebida (II SIEAmB)');
+    expect(sent[0]!.text).toContain(`${SITE}/2027/inscricoes/pagar?t=${store.contact!.payToken}`);
+    expect(sent[0]!.text).not.toMatch(/R\$|undefined|pagamento\?p=/);
+    expect(store.emails[0]).toMatchObject({ kind: 'RECEIVED', paymentId: null, status: 'SENT' });
+  });
+
+  it('sends it once, however many times it is called', async () => {
+    const { deps, sent } = setup();
+    await handleRegistrationReceived(call({ token: PAY_TOKEN }), env, deps);
+    await Promise.all([
+      handleRegistrationReceived(call({ token: PAY_TOKEN }), env, deps),
+      handleRegistrationReceived(call({ token: PAY_TOKEN }), env, deps),
+    ]);
+    expect(sent).toHaveLength(1);
+  });
+
+  it.each([
+    ['no token', {}],
+    ['a token that is not a uuid', { token: 'abc' }],
+    ['a filter injection', { token: "3f2b8c1e-9a4d-4e7f-8b21-6c5d4e3f2a10&select=*" }],
+    ['a number', { token: 42 }],
+    ['an array body', [PAY_TOKEN]],
+    ['invalid JSON', '{not json'],
+  ])('answers 400 to %s and sends nothing', async (_name, body) => {
+    const { deps, sent } = setup();
+    const response = await handleRegistrationReceived(call(body), env, deps);
+    expect(response.status).toBe(400);
+    expect(sent).toHaveLength(0);
+  });
+
+  it('answers 404 to a well-formed token nobody has', async () => {
+    const { deps, sent } = setup();
+    const response = await handleRegistrationReceived(call({ token: '11111111-2222-4333-8444-555555555555' }), env, deps);
+    expect(response.status).toBe(404);
+    expect(sent).toHaveLength(0);
+  });
+
+  it('refuses GET, and is closed while there is no database', async () => {
+    const { deps } = setup();
+    expect((await handleRegistrationReceived(call({}, 'GET'), env, deps)).status).toBe(405);
+    expect((await handleRegistrationReceived(call({ token: PAY_TOKEN }), env, { log: deps.log })).status).toBe(503);
+  });
+
+  it('still answers 202 when the mail server is down, and the job sends it later', async () => {
+    const { store, deps, sent } = setup({ failSends: 1 });
+    const response = await handleRegistrationReceived(call({ token: PAY_TOKEN }), env, deps);
+    expect(response.status).toBe(202);
+    expect(sent).toHaveLength(0);
+    expect(store.emails[0]).toMatchObject({ kind: 'RECEIVED', status: 'PENDING' });
+    await deliverDueEmails(deps, NOW);
+    expect(sent).toHaveLength(1);
+  });
+
+  it('records it without a sender, so nothing is lost before one is configured', async () => {
+    const { store, deps } = setup({ mailer: false });
+    const response = await handleRegistrationReceived(call({ token: PAY_TOKEN }), env, deps);
+    expect(response.status).toBe(202);
+    expect(store.emails[0]).toMatchObject({ kind: 'RECEIVED', status: 'PENDING', attempts: 0 });
+  });
+
+  it('a store failure does not fail the form', async () => {
+    const { store, deps } = setup();
+    store.failNextEnqueue = true;
+    expect((await handleRegistrationReceived(call({ token: PAY_TOKEN }), env, deps)).status).toBe(202);
+  });
+
+  it('is dropped if the person paid before it could be sent', async () => {
+    const { store, deps, sent } = setup({ failSends: 1 });
+    await handleRegistrationReceived(call({ token: PAY_TOKEN }), env, deps);
+    store.seed({ status: 'APPROVED' });
+    expect(await deliverDueEmails(deps, NOW)).toMatchObject({ sent: 0, skipped: 1 });
+    expect(sent).toHaveLength(0);
+  });
+});
+
+describe('enqueueMissingReceived (the form\'s call never arrived)', () => {
+  it('records it for a registration made a few minutes ago', async () => {
+    const { store, deps, sent } = setup();
+    store.registeredAt = ago(5 * 60 * 1000);
+    expect(await enqueueMissingReceived(deps, NOW)).toBe(1);
+    expect(await enqueueMissingReceived(deps, NOW)).toBe(0);
+    await deliverDueEmails(deps, NOW);
+    expect(sent.map((m) => m.subject)).toEqual(['Inscrição recebida (II SIEAmB)']);
+  });
+  it('gives the form two minutes before stepping in', async () => {
+    const { store, deps } = setup();
+    store.registeredAt = ago(60 * 1000);
+    expect(await enqueueMissingReceived(deps, NOW)).toBe(0);
+  });
+  it('leaves older registrations alone: writing to everyone is a decision for a person', async () => {
+    const { store, deps } = setup();
+    store.registeredAt = ago(25 * HOUR);
+    expect(await enqueueMissingReceived(deps, NOW)).toBe(0);
+  });
+  it('skips a registration that already has a payment approved or in flight', async () => {
+    const { store, deps } = setup();
+    store.registeredAt = ago(10 * 60 * 1000);
+    store.seed({ status: 'PENDING', mpStatus: 'action_required' });
+    expect(await enqueueMissingReceived(deps, NOW)).toBe(0);
+  });
+});
+
+describe('a card refused on the spot (#195)', () => {
+  it('e-mails "not approved" once, with the pay link', async () => {
+    const { store, sent, notify } = setup();
+    const payment = store.seed({ status: 'CREATED', mpStatus: 'action_required', mpStatusDetail: 'waiting_retry' });
+    await notify(payment, 'CREATED', 'created');
+    await notify(payment, 'CREATED', 'waiting_retry');
+    expect(sent.map((m) => m.subject)).toEqual(['Pagamento não aprovado (II SIEAmB)']);
+    expect(sent[0]!.text).toContain('/2027/inscricoes/pagar?t=');
   });
 });

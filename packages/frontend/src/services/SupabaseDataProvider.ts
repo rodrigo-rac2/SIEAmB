@@ -1,7 +1,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { Registration, RegistrationInput } from '@sieamb/shared';
 import { DuplicateRegistrationError, type DataProvider } from './DataProvider';
-import { paymentsEnabled } from './payments';
+import { announceRegistration, paymentsEnabled } from './payments';
 import { StaticDataProvider } from './StaticDataProvider';
 
 /** The subset of the Supabase client this provider touches, so tests can fake it. */
@@ -66,6 +66,7 @@ export class SupabaseDataProvider extends StaticDataProvider implements DataProv
       if (error.code === RLS_VIOLATION) throw new RegistrationClosedError();
       throw new Error(`pre_registration_failed: ${error.code ?? 'unknown'} ${error.message}`);
     }
+    if (payToken) announceRegistration(payToken);
     // The anon role cannot read the row back (by design), so the id is not known here.
     return {
       id: 'pending',
