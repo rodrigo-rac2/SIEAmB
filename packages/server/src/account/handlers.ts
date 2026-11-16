@@ -1,8 +1,8 @@
 import { createHash, randomBytes } from 'node:crypto';
-import { isValidCpf, normalizeCpf } from '../../../shared/src/utils/cpf';
 import { emailLocale } from '../payments/emailTemplates';
 import { json, readJsonObject, type Log } from '../payments/http';
 import { firstName, isSendableEmail, type Mailer } from '../payments/notifications';
+import { isValidCpf } from '../payments/payer';
 import type { AuthGateway, AuthUser } from './auth';
 import { maskEmail, renderAccountEmail, type AccountEmailKind } from './emails';
 import {
@@ -49,6 +49,10 @@ const isEmail = (value: unknown): value is string =>
 
 const text = (value: unknown, max: number): string =>
   typeof value === 'string' ? value.replace(/\s+/g, ' ').trim().slice(0, max) : '';
+
+// Not imported from @sieamb/shared: that package is an ES module and the Vercel
+// functions are built as CommonJS, so the import only fails once deployed.
+const normalizeCpf = (value: string): string => value.replace(/\D/g, '');
 
 export const sha256 = (value: string): string => createHash('sha256').update(value).digest('hex');
 
