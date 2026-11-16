@@ -10,7 +10,14 @@ export interface PaymentsRuntime {
   env: { accessToken?: string; webhookSecret?: string; now: Date; feeNow: Date };
   deps: { fetch: typeof fetch; store?: PaymentStore; log: Log; notify?: PaymentNotifier };
   /** What the e-mail sweep needs (#185). */
-  emails: { store?: PaymentStore; mailer?: Mailer; siteUrl: string; cronSecret?: string };
+  emails: {
+    store?: PaymentStore;
+    mailer?: Mailer;
+    siteUrl: string;
+    cronSecret?: string;
+    /** Reminders (#187) stay off until someone turns them on for the environment. */
+    remindersEnabled: boolean;
+  };
 }
 
 type Env = Record<string, string | undefined>;
@@ -63,6 +70,12 @@ export function paymentsRuntime(env: Env = process.env, now: Date = new Date()):
       // Without a sender the e-mails are still recorded, and go out once one is configured.
       notify: store ? createPaymentNotifier({ store, mailer, siteUrl, log }) : undefined,
     },
-    emails: { store, mailer, siteUrl, cronSecret: env.CRON_SECRET || undefined },
+    emails: {
+      store,
+      mailer,
+      siteUrl,
+      cronSecret: env.CRON_SECRET || undefined,
+      remindersEnabled: env.REMINDERS_ENABLED === 'true',
+    },
   };
 }

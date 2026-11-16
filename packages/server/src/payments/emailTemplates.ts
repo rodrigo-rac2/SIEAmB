@@ -1,10 +1,15 @@
-/** The three e-mails a person gets about a payment (#185). */
-export type NotificationKind = 'processing' | 'confirmed' | 'failed';
+/** The e-mails a person gets about a payment (#185) and the two reminders (#187). */
+export type NotificationKind =
+  | 'processing'
+  | 'confirmed'
+  | 'failed'
+  | 'reminderUnpaid'
+  | 'reminderPending';
 
 export interface EmailData {
   firstName: string;
   eventName: string;
-  /** Already formatted for the locale, e.g. "R$ 70,00". */
+  /** Already formatted for the locale, e.g. "R$ 70,00". Empty when no payment was started. */
   amount: string;
   /** Page that shows the payment status; works as a receipt once approved. */
   statusUrl: string;
@@ -67,6 +72,26 @@ const COPY: Record<Locale, LocaleCopy> = {
         linkLabel: 'Pagar a inscrição',
         link: (d) => d.payUrl,
       },
+      reminderUnpaid: {
+        subject: (d) => `Sua inscrição no ${d.eventName} aguarda o pagamento`,
+        body: (d) => [
+          `Recebemos sua inscrição no ${d.eventName}, mas ainda não identificamos o pagamento da taxa.`,
+          'Para concluir a inscrição, faça o pagamento pelo Mercado Pago, com cartão ou boleto, pelo link abaixo.',
+          'Se você já pagou, desconsidere esta mensagem: a confirmação chega por e-mail assim que o pagamento for registrado.',
+        ],
+        linkLabel: 'Pagar a inscrição',
+        link: (d) => d.payUrl,
+      },
+      reminderPending: {
+        subject: (d) => `Seu pagamento no ${d.eventName} ainda está pendente`,
+        body: (d) => [
+          `O pagamento de ${d.amount} da sua inscrição no ${d.eventName} ainda não foi confirmado pelo Mercado Pago.`,
+          'Se você gerou um boleto e ainda não pagou, ele precisa ser pago para a inscrição ser concluída. Depois de pago, um boleto pode levar alguns dias para compensar.',
+          'Assim que o pagamento for confirmado, você recebe outro e-mail.',
+        ],
+        linkLabel: 'Acompanhar o pagamento',
+        link: (d) => d.statusUrl,
+      },
     },
   },
   en: {
@@ -100,6 +125,26 @@ const COPY: Record<Locale, LocaleCopy> = {
         ],
         linkLabel: 'Pay the registration',
         link: (d) => d.payUrl,
+      },
+      reminderUnpaid: {
+        subject: (d) => `Your registration for the ${d.eventName} is waiting for payment`,
+        body: (d) => [
+          `We received your registration for the ${d.eventName}, but we have not identified the payment of the fee yet.`,
+          'To complete your registration, pay through Mercado Pago, by card or boleto, using the link below.',
+          'If you have already paid, please disregard this message: the confirmation arrives by e-mail as soon as the payment is recorded.',
+        ],
+        linkLabel: 'Pay the registration',
+        link: (d) => d.payUrl,
+      },
+      reminderPending: {
+        subject: (d) => `Your payment for the ${d.eventName} is still pending`,
+        body: (d) => [
+          `The payment of ${d.amount} for your registration for the ${d.eventName} has not been confirmed by Mercado Pago yet.`,
+          'If you generated a boleto and have not paid it, it needs to be paid for the registration to be completed. Once paid, a boleto can take a few days to clear.',
+          'You will get another e-mail as soon as the payment is confirmed.',
+        ],
+        linkLabel: 'Follow the payment',
+        link: (d) => d.statusUrl,
       },
     },
   },
@@ -135,6 +180,26 @@ const COPY: Record<Locale, LocaleCopy> = {
         linkLabel: 'Pagar la inscripción',
         link: (d) => d.payUrl,
       },
+      reminderUnpaid: {
+        subject: (d) => `Su inscripción en el ${d.eventName} espera el pago`,
+        body: (d) => [
+          `Recibimos su inscripción en el ${d.eventName}, pero todavía no identificamos el pago de la tasa.`,
+          'Para completar la inscripción, realice el pago por Mercado Pago, con tarjeta o boleto, por el enlace de abajo.',
+          'Si ya pagó, ignore este mensaje: la confirmación llega por correo en cuanto el pago sea registrado.',
+        ],
+        linkLabel: 'Pagar la inscripción',
+        link: (d) => d.payUrl,
+      },
+      reminderPending: {
+        subject: (d) => `Su pago en el ${d.eventName} sigue pendiente`,
+        body: (d) => [
+          `El pago de ${d.amount} de su inscripción en el ${d.eventName} todavía no fue confirmado por Mercado Pago.`,
+          'Si generó un boleto y aún no lo pagó, debe pagarlo para completar la inscripción. Una vez pagado, un boleto puede tardar algunos días en acreditarse.',
+          'En cuanto el pago sea confirmado, recibirá otro correo.',
+        ],
+        linkLabel: 'Seguir el pago',
+        link: (d) => d.statusUrl,
+      },
     },
   },
   'zh-CN': {
@@ -168,6 +233,26 @@ const COPY: Record<Locale, LocaleCopy> = {
         ],
         linkLabel: '支付注册费',
         link: (d) => d.payUrl,
+      },
+      reminderUnpaid: {
+        subject: (d) => `您在 ${d.eventName} 的注册尚待付款`,
+        body: (d) => [
+          `我们已收到您在 ${d.eventName} 的注册，但尚未查到注册费的付款。`,
+          '如需完成注册，请通过下面的链接在 Mercado Pago 使用银行卡或 boleto 付款。',
+          '如果您已经付款，请忽略此邮件：付款登记后，您会收到确认邮件。',
+        ],
+        linkLabel: '支付注册费',
+        link: (d) => d.payUrl,
+      },
+      reminderPending: {
+        subject: (d) => `您在 ${d.eventName} 的付款仍未完成`,
+        body: (d) => [
+          `您在 ${d.eventName} 注册的 ${d.amount} 付款尚未得到 Mercado Pago 的确认。`,
+          '如果您生成了 boleto 但尚未支付，需要完成支付才能完成注册。支付后，boleto 可能需要几天才能到账。',
+          '付款确认后，您会再收到一封邮件。',
+        ],
+        linkLabel: '查看付款进度',
+        link: (d) => d.statusUrl,
       },
     },
   },

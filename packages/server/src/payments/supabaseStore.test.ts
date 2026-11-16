@@ -148,25 +148,44 @@ describe('SupabasePaymentStore', () => {
   describe('e-mail outbox (#185)', () => {
     const EMAIL = {
       id: 'dddddddd-0000-4000-8000-000000000001',
+      pre_registration_id: ROW.pre_registration_id,
       payment_id: ROW.id,
       kind: 'CONFIRMED',
       status: 'PENDING',
       attempts: 2,
     };
-    const JOB = { id: EMAIL.id, paymentId: ROW.id, kind: 'CONFIRMED', status: 'PENDING', attempts: 2 } as const;
+    const JOB = {
+      id: EMAIL.id,
+      preRegistrationId: ROW.pre_registration_id,
+      paymentId: ROW.id,
+      kind: 'CONFIRMED',
+      status: 'PENDING',
+      attempts: 2,
+    } as const;
+    const NEW = {
+      preRegistrationId: ROW.pre_registration_id,
+      paymentId: ROW.id,
+      kind: 'CONFIRMED',
+      dedupeKey: `${ROW.id}:CONFIRMED`,
+    } as const;
     const NOW = new Date('2026-11-16T15:00:00.000Z');
 
     it('records an owed e-mail and maps the row back', async () => {
       const { store, sent } = setup([EMAIL]);
-      expect(await store.enqueueEmail(ROW.id, 'CONFIRMED')).toEqual(JOB);
+      expect(await store.enqueueEmail(NEW)).toEqual(JOB);
       expect(sent().init?.method).toBe('POST');
       expect(sent().url).toContain('/rest/v1/payment_emails?');
-      expect(JSON.parse(String(sent().init?.body))).toEqual({ payment_id: ROW.id, kind: 'CONFIRMED' });
+      expect(JSON.parse(String(sent().init?.body))).toEqual({
+        pre_registration_id: ROW.pre_registration_id,
+        payment_id: ROW.id,
+        kind: 'CONFIRMED',
+        dedupe_key: `${ROW.id}:CONFIRMED`,
+      });
     });
 
     it('answers null, not an error, when this payment already has that e-mail', async () => {
       const { store } = setup({ code: '23505' }, 409);
-      expect(await store.enqueueEmail(ROW.id, 'CONFIRMED')).toBeNull();
+      expect(await store.enqueueEmail(NEW)).toBeNull();
     });
 
     it('still reports the one-open-payment clash as itself', async () => {
@@ -178,7 +197,7 @@ describe('SupabasePaymentStore', () => {
 
     it('does not hide another failure while recording an e-mail', async () => {
       const { store } = setup({ code: '42501' }, 403);
-      await expect(store.enqueueEmail(ROW.id, 'CONFIRMED')).rejects.toThrow(/payments_store_failed: 403/);
+      await expect(store.enqueueEmail(NEW)).rejects.toThrow(/payments_store_failed: 403/);
     });
 
     it('lists pending e-mails that are unlocked and under the attempt limit, oldest first', async () => {
@@ -248,6 +267,49 @@ describe('SupabasePaymentStore', () => {
         eventName: 'II SIEAmB',
       });
       expect(sent().url).not.toMatch(/cpf|passport/);
+    });
+
+    it('records a reminder for someone who never started a payment, with no payment id', async () => {
+      const { store, sent } = setup([{ ...EMAIL, payment_id: null, kind: 'REMINDER' }]);
+      const job = await store.enqueueEmail({
+        preRegistrationId: ROW.pre_registration_id,
+        paymentId: null,
+        kind: 'REMINDER',
+        dedupeKey: `reminder:${ROW.pre_registration_id}:1`,
+      });
+      expect(job).toMatchObject({ paymentId: null, kind: 'REMINDER' });
+      expect(JSON.parse(String(sent().init?.body))).toMatchObject({ payment_id: null });
+    });
+
+    it('lists open payments that have an order and were not touched lately, stalest first', async () => {
+      const { store, sent } = setup([ROW]);
+      await store.listOpenPayments(NOW, 20);
+      const url = decodeURIComponent(sent().url);
+      expect(url).toContain('status=in.(CREATED,PENDING)');
+      expect(url).toContain('mp_order_id=not.is.null');
+      expect(url).toContain('updated_at=lt.2026-11-16T15:00:00.000Z');
+      expect(url).toContain('order=updated_at.asc');
+    });
+
+    it('reads reminder candidates with their payments and e-mails, and no personal data', async () => {
+      const { store, sent } = setup([
+        {
+          id: ROW.pre_registration_id,
+          created_at: '2026-11-10T12:00:00.000Z',
+          payments: [{ id: ROW.id, status: 'PENDING', mp_status: 'action_required' }],
+          payment_emails: [{ kind: 'PROCESSING', created_at: '2026-11-10T12:05:00.000Z' }],
+        },
+      ]);
+      expect(await store.listReminderCandidates(NOW, 500)).toEqual([
+        {
+          preRegistrationId: ROW.pre_registration_id,
+          registeredAt: '2026-11-10T12:00:00.000Z',
+          payments: [{ id: ROW.id, status: 'PENDING', mpStatus: 'action_required' }],
+          emails: [{ kind: 'PROCESSING', createdAt: '2026-11-10T12:05:00.000Z' }],
+        },
+      ]);
+      // `payment_emails` is the outbox table; the address column itself must not be asked for.
+      expect(sent().url).not.toMatch(/[(,=]email\b|full_name|cpf|passport|pay_token/);
     });
 
     it('answers null for a registration that is gone', async () => {

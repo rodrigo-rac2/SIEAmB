@@ -34,4 +34,11 @@ describe('smtpSettings', () => {
   it.each(['abc', '0', '-1', '25.5'])('falls back to 465 for the invalid port "%s"', (port) => {
     expect(smtpSettings({ SMTP_USER: 'a@b.c', SMTP_PASS: 'x', SMTP_PORT: port })?.port).toBe(465);
   });
+
+  it('sends answers to another address only when one is given', () => {
+    const base = { SMTP_USER: 'resend', SMTP_PASS: 're_123' };
+    expect(smtpSettings(base)).not.toHaveProperty('replyTo');
+    expect(smtpSettings({ ...base, MAIL_REPLY_TO: '  ' })).not.toHaveProperty('replyTo');
+    expect(smtpSettings({ ...base, MAIL_REPLY_TO: ' comissao@example.org ' })?.replyTo).toBe('comissao@example.org');
+  });
 });

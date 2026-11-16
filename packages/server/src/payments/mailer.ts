@@ -8,6 +8,8 @@ export interface SmtpSettings {
   pass: string;
   /** What people see as the sender, e.g. `II SIEAmB <sieambufcg@gmail.com>`. */
   from: string;
+  /** Where answers go, when it is not the sending address (e.g. the committee inbox). */
+  replyTo?: string;
 }
 
 type Env = Record<string, string | undefined>;
@@ -29,6 +31,7 @@ export function smtpSettings(env: Env): SmtpSettings | null {
     user,
     pass,
     from: env.MAIL_FROM?.trim() || `SIEAmB <${user}>`,
+    ...(env.MAIL_REPLY_TO?.trim() ? { replyTo: env.MAIL_REPLY_TO.trim() } : {}),
   };
 }
 
@@ -47,6 +50,7 @@ export function createSmtpMailer(settings: SmtpSettings): Mailer {
     async send(mail: OutgoingMail): Promise<void> {
       await transport.sendMail({
         from: settings.from,
+        ...(settings.replyTo ? { replyTo: settings.replyTo } : {}),
         to: mail.to,
         subject: mail.subject,
         text: mail.text,

@@ -2,6 +2,8 @@ import {
   OpenPaymentExistsError,
   type EmailJob,
   type EmailKind,
+  type NewEmail,
+  type ReminderCandidate,
   type PaymentContact,
   type NewPayment,
   type Payment,
@@ -40,16 +42,18 @@ class DuplicateEmailError extends Error {}
 
 interface EmailRow {
   id: string;
-  payment_id: string;
+  pre_registration_id: string;
+  payment_id: string | null;
   kind: EmailKind;
   status: EmailJob['status'];
   attempts: number;
 }
 
-const EMAIL_COLUMNS = 'id,payment_id,kind,status,attempts';
+const EMAIL_COLUMNS = 'id,pre_registration_id,payment_id,kind,status,attempts';
 
 const toEmailJob = (row: EmailRow): EmailJob => ({
   id: row.id,
+  preRegistrationId: row.pre_registration_id,
   paymentId: row.payment_id,
   kind: row.kind,
   status: row.status,
@@ -194,15 +198,20 @@ export class SupabasePaymentStore implements PaymentStore {
     return toPayment(rows[0]);
   }
 
-  async enqueueEmail(paymentId: string, kind: EmailKind): Promise<EmailJob | null> {
+  async enqueueEmail(email: NewEmail): Promise<EmailJob | null> {
     try {
       const rows = await this.request<EmailRow[]>(`payment_emails?select=${EMAIL_COLUMNS}`, {
         method: 'POST',
-        body: JSON.stringify({ payment_id: paymentId, kind }),
+        body: JSON.stringify({
+          pre_registration_id: email.preRegistrationId,
+          payment_id: email.paymentId,
+          kind: email.kind,
+          dedupe_key: email.dedupeKey,
+        }),
       });
       return rows[0] ? toEmailJob(rows[0]) : null;
     } catch (error) {
-      // unique (payment_id, kind): this e-mail is already owed or sent.
+      // unique dedupe_key: this e-mail is already owed or sent.
       if (error instanceof DuplicateEmailError) return null;
       throw error;
     }
@@ -272,5 +281,36 @@ export class SupabasePaymentStore implements PaymentStore {
       eventSlug: row.event.slug,
       eventName: row.event.name,
     };
+  }
+
+  async listOpenPayments(updatedBefore: Date, limit: number): Promise<Payment[]> {
+    const iso = encodeURIComponent(updatedBefore.toISOString());
+    const rows = await this.request<PaymentRow[]>(
+      `payments?status=in.(CREATED,PENDING)&mp_order_id=not.is.null&updated_at=lt.${iso}&select=${PAYMENT_COLUMNS}&order=updated_at.asc&limit=${limit}`,
+    );
+    return rows.map(toPayment);
+  }
+
+  async listReminderCandidates(
+    registeredBefore: Date,
+    limit: number,
+  ): Promise<ReminderCandidate[]> {
+    const iso = encodeURIComponent(registeredBefore.toISOString());
+    const rows = await this.request<
+      {
+        id: string;
+        created_at: string;
+        payments: { id: string; status: PaymentStatus; mp_status: string | null }[];
+        payment_emails: { kind: EmailKind; created_at: string }[];
+      }[]
+    >(
+      `pre_registrations?created_at=lt.${iso}&select=id,created_at,payments(id,status,mp_status),payment_emails(kind,created_at)&order=created_at.asc&limit=${limit}`,
+    );
+    return rows.map((row) => ({
+      preRegistrationId: row.id,
+      registeredAt: row.created_at,
+      payments: row.payments.map((p) => ({ id: p.id, status: p.status, mpStatus: p.mp_status })),
+      emails: row.payment_emails.map((e) => ({ kind: e.kind, createdAt: e.created_at })),
+    }));
   }
 }
