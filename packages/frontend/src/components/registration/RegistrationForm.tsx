@@ -1,6 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { registrationSchema, type Registration, type RegistrationFormData } from '@sieamb/shared';
-import { useState } from 'react';
+import {
+  maskCpf,
+  registrationSchema,
+  type Registration,
+  type RegistrationFormData,
+} from '@sieamb/shared';
+import { useState, type ChangeEvent } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useEvent } from '../../contexts/EventContext';
@@ -97,7 +102,12 @@ export function RegistrationForm({
             type="text"
             inputMode="numeric"
             placeholder="000.000.000-00"
-            {...register('cpf')}
+            {...register('cpf', {
+              // Format while typing; the schema strips the mask again before validating.
+              onChange: (e: ChangeEvent<HTMLInputElement>) => {
+                e.target.value = maskCpf(e.target.value);
+              },
+            })}
           />
           {errKey('cpf') && <p className="reg-form__error">{errKey('cpf')}</p>}
         </div>
