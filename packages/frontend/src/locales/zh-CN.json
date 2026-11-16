@@ -115,8 +115,8 @@
       "PRESENCIAL": "现场参会",
       "ONLINE": "线上参会"
     },
-    "registerCta": "预注册",
-    "formTitle": "预注册",
+    "registerCta": "注册",
+    "formTitle": "注册",
     "fullName": "全名",
     "email": "电子邮箱",
     "cpf": "CPF",
@@ -125,19 +125,19 @@
     "country": "国家",
     "institution": "所属机构",
     "consent": "我同意主办方使用我的数据（姓名、电子邮箱、CPF或护照号）用于会议组织及发送注册相关信息，依据巴西《通用数据保护法》（LGPD）。",
-    "submit": "提交预注册",
+    "submit": "提交注册",
     "submitting": "提交中…",
-    "successTitle": "预注册成功！",
-    "successBody": "您的预注册已成功记录。付款说明将稍后通过电子邮件发送。请关注会议公告。",
-    "paymentNote": "注册付款功能即将开放。预注册者将通过电子邮件收到通知。",
+    "successTitle": "注册成功！",
+    "successBody": "您的注册已成功记录。付款说明将稍后通过电子邮件发送。请关注会议公告。",
+    "paymentNote": "提交表格后即可通过 Mercado Pago 支付注册费，支持银行卡或 boleto。",
     "errors": {
       "invalid_cpf": "CPF 无效，请检查号码。",
       "cpf_or_passport_required": "请填写 CPF 或护照号。",
       "fullName": "请输入您的全名。",
       "email": "请输入有效的电子邮箱。",
       "duplicate": "该邮箱已在本届会议注册过。",
-      "consent_required": "需要同意数据使用后才能提交预注册。",
-      "closed": "本届会议的预注册尚未开放。"
+      "consent_required": "需要同意数据使用后才能提交注册。",
+      "closed": "本届会议的注册尚未开放。"
     },
     "lotRange": "{{from}} 至 {{until}}"
   },
@@ -226,7 +226,7 @@
     "loggingIn": "登录中…",
     "loginError": "邮箱或密码错误。",
     "noAccount": "还未注册？",
-    "registerLink": "立即预注册"
+    "registerLink": "立即注册"
   },
   "myRegistration": {
     "title": "我的注册",
