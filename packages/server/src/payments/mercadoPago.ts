@@ -100,6 +100,9 @@ export async function createOrder(
       items: [{ title: order.title, unit_price: order.amount, quantity: 1 }],
       expiration_time: 'P1D',
       config: {
+        // One payment, no instalments (#194): the fees are small and every real attempt the
+        // checkout preselected in instalments was refused as high risk.
+        payment_method: { max_installments: 1 },
         online: {
           success_url: order.returnUrl,
           failure_url: order.returnUrl,

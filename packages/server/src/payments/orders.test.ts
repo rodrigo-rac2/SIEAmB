@@ -134,6 +134,8 @@ describe('handleCreateOrder: creating the order', () => {
       items: [{ unit_price: '50.00', quantity: 1 }],
     });
     const returnUrl = `https://dev.sieamb.org/2027/inscricoes/pagamento?p=${payment.id}`;
+    // One payment, no instalments (#194).
+    expect(body.config.payment_method).toEqual({ max_installments: 1 });
     expect(body.config.online).toEqual({
       success_url: returnUrl,
       failure_url: returnUrl,

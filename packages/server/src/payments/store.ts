@@ -58,7 +58,7 @@ export interface PaymentContact {
   eventName: string;
 }
 
-export type EmailKind = 'PROCESSING' | 'CONFIRMED' | 'FAILED' | 'REMINDER';
+export type EmailKind = 'PROCESSING' | 'CONFIRMED' | 'FAILED' | 'REMINDER' | 'RECEIVED';
 
 /** One e-mail owed to a person about a payment (#185): a row of the outbox. */
 export interface EmailJob {
@@ -123,6 +123,8 @@ export interface PaymentStore {
   listOpenPayments(updatedBefore: Date, limit: number): Promise<Payment[]>;
   /** Registrations made before `registeredBefore`, with their payments and the e-mails already owed. */
   listReminderCandidates(registeredBefore: Date, limit: number): Promise<ReminderCandidate[]>;
+  /** Registrations made from `since` on, same shape: for the "registration received" safety net (#195). */
+  listRecentRegistrations(since: Date, limit: number): Promise<ReminderCandidate[]>;
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;

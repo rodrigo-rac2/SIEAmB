@@ -152,3 +152,17 @@ export function recallPayToken(): string | null {
 export function formatBRL(cents: number, locale: string): string {
   return new Intl.NumberFormat(locale, { style: 'currency', currency: 'BRL' }).format(cents / 100);
 }
+
+/**
+ * Tells the server a registration was just saved, so it sends the "registration
+ * received" e-mail with the pay link (#195). Best effort: the form never fails or
+ * waits because of it, and the background job covers a call that did not arrive.
+ */
+export function announceRegistration(payToken: string, fetchImpl: typeof fetch = fetch): void {
+  void fetchImpl('/api/v1/registrations/received', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ token: payToken }),
+    keepalive: true,
+  }).catch(() => undefined);
+}
