@@ -178,7 +178,9 @@ test.describe('registration form @smoke', () => {
       page.getByText('É preciso autorizar o uso dos dados para enviar a inscrição.'),
     ).toBeVisible();
 
-    await page.getByLabel('CPF', { exact: true }).fill('529.982.247-25');
+    // Typed without punctuation: the field masks it (#179).
+    await page.getByLabel('CPF', { exact: true }).fill('52998224725');
+    await expect(page.getByLabel('CPF', { exact: true })).toHaveValue('529.982.247-25');
     await page.getByLabel(/Autorizo o uso dos meus dados/).check();
     if (isProduction(baseURL)) return; // never write a test row into the production table
 
