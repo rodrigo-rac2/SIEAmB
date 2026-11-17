@@ -519,6 +519,7 @@
   },
   "panel": {
     "title": "Painel da organização",
+    "short": "Painel",
     "search": "Buscar",
     "all": "Todas",
     "download": "Baixar planilha",

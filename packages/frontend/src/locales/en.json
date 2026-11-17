@@ -519,6 +519,7 @@
   },
   "panel": {
     "title": "Organisers' panel",
+    "short": "Panel",
     "search": "Search",
     "all": "All",
     "download": "Download spreadsheet",

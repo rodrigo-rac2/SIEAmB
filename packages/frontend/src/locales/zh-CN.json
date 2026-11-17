@@ -519,6 +519,7 @@
   },
   "panel": {
     "title": "组委会面板",
+    "short": "管理面板",
     "search": "搜索",
     "all": "全部",
     "download": "下载表格",
