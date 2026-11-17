@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { REASON_MIN, announceRegistration, handleAdmin, paymentState, type AdminDeps } from './handlers';
-import { ADMIN, EVENT, NOBODY, NOW, ORGANISER, OTHER_EVENT, REVIEWER, call, setup } from './testing';
+import { ADMIN, EVENT, NOBODY, NOW, ORGANISER, OTHER_EVENT, PLATFORM, REVIEWER, call, setup } from './testing';
 
 interface Answer {
   announcements: Record<string, unknown>[];
@@ -387,7 +387,12 @@ describe('people and roles', () => {
     const { deps, tokens, store } = setup();
     store.invites.push({ eventId: EVENT.id, email: 'futuro@ufpb.br', role: 'REVIEWER' });
     const asAdmin = await body(await get(deps, 'members', tokens.admin));
-    expect(asAdmin.canManage).toEqual(['ADMIN', 'ORGANIZER', 'REVIEWER']);
+    // An administrator gives organisers and reviewers; only the owner gives administrators (#268).
+    expect(asAdmin.canManage).toEqual(['ORGANIZER', 'REVIEWER']);
+    expect(asAdmin.owner).toBe(false);
+    const asOwner = await body(await get(deps, 'members', tokens.platform));
+    expect(asOwner.canManage).toEqual(['ADMIN', 'ORGANIZER', 'REVIEWER']);
+    expect(asOwner.owner).toBe(true);
     expect(asAdmin.members.map((m) => `${m.email as string}:${m.role as string}`)).toEqual([
       `${ADMIN.email}:ADMIN`,
       `${ORGANISER.email}:ORGANIZER`,
@@ -468,6 +473,32 @@ describe('people and roles', () => {
     expect(store.invites).toEqual([]);
     expect(sent).toEqual([]);
     expect(store.audits.map((a) => a.action)).toEqual(['member.remove', 'member.remove']);
+  });
+
+  it('only the owner gives or takes the Administrador role (#268)', async () => {
+    const { deps, tokens, store, sent } = setup();
+    const refused = await post(deps, 'member-add', tokens.admin, { email: NOBODY.email, role: 'ADMIN' });
+    expect(refused.status).toBe(403);
+    expect(await body(refused)).toEqual({ error: 'owner_only' });
+    // Nor by inviting an address that has no account yet.
+    expect((await post(deps, 'member-add', tokens.admin, { email: 'nova@ufcg.edu.br', role: 'ADMIN' })).status).toBe(403);
+    expect(store.invites).toEqual([]);
+    expect(store.members.some((m) => m.userId === NOBODY.id)).toBe(false);
+    expect(sent).toEqual([]);
+    // An administrator still gives the two roles below theirs.
+    expect((await post(deps, 'member-add', tokens.admin, { email: NOBODY.email, role: 'ORGANIZER' })).status).toBe(200);
+    expect((await post(deps, 'member-add', tokens.admin, { email: NOBODY.email, role: 'REVIEWER' })).status).toBe(200);
+
+    store.members.push({ eventId: EVENT.id, userId: 'user-admin-2', email: 'thays@ufcg.edu.br', fullName: 'Thays', role: 'ADMIN' });
+    store.users.push({ id: 'user-admin-2', email: 'thays@ufcg.edu.br', fullName: 'Thays' });
+    const takeAway = await post(deps, 'member-remove', tokens.admin, { email: 'thays@ufcg.edu.br', role: 'ADMIN' });
+    expect(takeAway.status).toBe(403);
+    expect(store.members.some((m) => m.userId === 'user-admin-2' && m.role === 'ADMIN')).toBe(true);
+
+    expect((await post(deps, 'member-add', tokens.platform, { email: NOBODY.email, role: 'ADMIN' })).status).toBe(200);
+    expect(store.members.some((m) => m.userId === NOBODY.id && m.role === 'ADMIN')).toBe(true);
+    expect((await post(deps, 'member-remove', tokens.platform, { email: 'thays@ufcg.edu.br', role: 'ADMIN' })).status).toBe(200);
+    expect(store.members.some((m) => m.userId === 'user-admin-2')).toBe(false);
   });
 
   it('does not let an administrator remove their own administrator role', async () => {
@@ -1152,5 +1183,288 @@ describe('what is about test data stays among test accounts (#255)', () => {
     // A real organiser reaches everyone, test addresses included (they are simply never mailed).
     await send(ctx.tokens.organiser, 'all');
     expect(ctx.store.announcements.at(-1)!.emails).toHaveLength(5);
+  });
+});
+
+describe('every account with its roles (#268)', () => {
+  const lines = (data: Record<string, unknown>) =>
+    (data.accounts as { email: string; roles: string[]; owner: boolean; canEdit: boolean }[]).map(
+      (a) => `${a.email} [${a.roles.join(',')}]${a.owner ? ' owner' : ''}${a.canEdit ? ' editable' : ''}`,
+    );
+
+  it('shows an administrator everyone, and lets them act on themselves and on people below them', async () => {
+    const { deps, tokens, store } = setup();
+    store.members.push({ eventId: EVENT.id, userId: ORGANISER.id, email: ORGANISER.email, fullName: 'Viviane Farias', role: 'REVIEWER' });
+    const data = await body(await get(deps, 'members', tokens.admin));
+    expect(lines(data)).toEqual([
+      `${REVIEWER.email} [REVIEWER] editable`,
+      `${ADMIN.email} [ADMIN] editable`,
+      `${NOBODY.email} [] editable`,
+      `${PLATFORM.email} [] owner`,
+      `${ORGANISER.email} [ORGANIZER,REVIEWER] editable`,
+    ]);
+    store.members.push({ eventId: EVENT.id, userId: NOBODY.id, email: NOBODY.email, fullName: 'Pessoa Comum', role: 'ADMIN' });
+    const again = await body(await get(deps, 'members', tokens.admin));
+    expect(lines(again)).toContain(`${NOBODY.email} [ADMIN]`);
+  });
+
+  it('lets the owner act on anyone', async () => {
+    const { deps, tokens } = setup();
+    const data = await body(await get(deps, 'members', tokens.platform));
+    expect((data.accounts as { canEdit: boolean }[]).every((a) => a.canEdit)).toBe(true);
+  });
+
+  it('shows an organiser neither administrators nor the owner, and nothing to edit', async () => {
+    const { deps, tokens } = setup();
+    const data = await body(await get(deps, 'members', tokens.organiser));
+    expect(lines(data)).toEqual([`${REVIEWER.email} [REVIEWER]`, `${NOBODY.email} []`, `${ORGANISER.email} [ORGANIZER]`]);
+    expect(JSON.stringify(data)).not.toContain(ADMIN.email);
+    expect(JSON.stringify(data)).not.toContain(PLATFORM.email);
+  });
+
+  it('keeps the accounts of a test run among test accounts', async () => {
+    const { deps, tokens, store, auth } = setup();
+    const run = { id: 'user-run', email: 'e2e+r1a1-admin-x@sieamb.org', emailConfirmed: true };
+    store.users.push({ id: run.id, email: run.email, fullName: 'Administradora E2E' });
+    store.members.push({ eventId: EVENT.id, userId: run.id, email: run.email, fullName: 'Administradora E2E', role: 'ADMIN' });
+    store.invites.push({ eventId: EVENT.id, email: 'e2e+r1a1-convidada@sieamb.org', role: 'REVIEWER' });
+    store.users.push({ id: 'user-demo', email: 'demo.helena@example.com', fullName: 'Helena Demo' });
+    const real = await body(await get(deps, 'members', tokens.admin));
+    expect(JSON.stringify(real)).not.toContain('e2e+');
+    // A sample person is not a run account: she stays.
+    expect(JSON.stringify(real.accounts)).toContain('demo.helena@example.com');
+    const test = await body(await get(deps, 'members', auth.login(run)));
+    expect(JSON.stringify(test.accounts)).toContain(run.email);
+    expect(JSON.stringify(test.accounts)).toContain(ADMIN.email);
+    expect(test.invites).toEqual([{ email: 'e2e+r1a1-convidada@sieamb.org', role: 'REVIEWER' }]);
+  });
+});
+
+describe('an administrator updates someone else\'s account (#269)', () => {
+  it('corrects the name and the institution, logs it and tells the person', async () => {
+    const { deps, tokens, store, outbox, sent } = setup();
+    const response = await post(deps, 'account-update', tokens.admin, { userId: NOBODY.id, fullName: '  Pessoa Corrigida ', institution: 'UFRN' });
+    expect(await body(response)).toEqual({ ok: true, changed: true });
+    expect(store.users.find((u) => u.id === NOBODY.id)).toMatchObject({ fullName: 'Pessoa Corrigida', institution: 'UFRN', email: NOBODY.email });
+    expect(store.audits[0]).toMatchObject({ actorId: ADMIN.id, action: 'account.update', entity: 'user', entityId: NOBODY.id, meta: { email: NOBODY.email, fields: ['fullName', 'institution'] } });
+    expect(outbox.notifications).toEqual([{ userId: NOBODY.id, eventId: EVENT.id, kind: 'account.updated', data: {} }]);
+    expect(sent).toEqual([]);
+  });
+
+  it('changes nothing, logs nothing and tells nobody when the data is the same', async () => {
+    const { deps, tokens, store, outbox } = setup();
+    const response = await post(deps, 'account-update', tokens.admin, { userId: NOBODY.id, fullName: 'Pessoa Comum' });
+    expect(await body(response)).toEqual({ ok: true, changed: false });
+    expect(store.audits).toEqual([]);
+    expect(outbox.notifications).toEqual([]);
+  });
+
+  it('an administrator never touches the e-mail, the documents or the owner flag, whatever is sent', async () => {
+    const { deps, tokens, store } = setup();
+    const before = JSON.stringify(store.users.find((u) => u.id === NOBODY.id));
+    const response = await post(deps, 'account-update', tokens.admin, { userId: NOBODY.id, email: 'tomada@ufcg.edu.br', cpf: '52998224725', owner: true, isPlatformAdmin: true });
+    expect(await body(response)).toEqual({ ok: true, changed: false });
+    expect(JSON.stringify(store.users.find((u) => u.id === NOBODY.id))).toBe(before);
+  });
+
+  it('refuses a name that is too short, and an account that does not exist', async () => {
+    const { deps, tokens, store } = setup();
+    const short = await post(deps, 'account-update', tokens.admin, { userId: NOBODY.id, fullName: 'Ab' });
+    expect(short.status).toBe(400);
+    expect(await body(short)).toEqual({ error: 'invalid_name' });
+    for (const userId of ['user-nobody-here', '', undefined, { id: NOBODY.id }]) {
+      const missing = await post(deps, 'account-update', tokens.admin, { userId, fullName: 'Alguém Qualquer' });
+      expect(missing.status).toBe(404);
+      expect(await body(missing)).toEqual({ error: 'account_not_found' });
+    }
+    expect(store.audits).toEqual([]);
+  });
+
+  it('an administrator does not change another administrator nor the owner; the owner changes anyone', async () => {
+    const { deps, tokens, store } = setup();
+    store.users.push({ id: 'user-admin-2', email: 'thays@ufcg.edu.br', fullName: 'Thays' });
+    store.members.push({ eventId: EVENT.id, userId: 'user-admin-2', email: 'thays@ufcg.edu.br', fullName: 'Thays', role: 'ADMIN' });
+    for (const userId of ['user-admin-2', PLATFORM.id]) {
+      const response = await post(deps, 'account-update', tokens.admin, { userId, fullName: 'Nome Trocado' });
+      expect(response.status).toBe(403);
+      expect(await body(response)).toEqual({ error: 'owner_only' });
+    }
+    expect(store.users.some((u) => u.fullName === 'Nome Trocado')).toBe(false);
+    // Themselves, yes, and without a notice to themselves.
+    expect((await post(deps, 'account-update', tokens.admin, { userId: ADMIN.id, fullName: 'Najara E. Agripino' })).status).toBe(200);
+    expect((await post(deps, 'account-update', tokens.platform, { userId: 'user-admin-2', fullName: 'Thays Corrigida' })).status).toBe(200);
+    expect(store.users.find((u) => u.id === 'user-admin-2')!.fullName).toBe('Thays Corrigida');
+  });
+
+  it('is not for an organiser, a reviewer, someone without a role or a visitor', async () => {
+    const { deps, tokens, store } = setup();
+    const data = { userId: NOBODY.id, fullName: 'Nome Trocado' };
+    expect((await post(deps, 'account-update', tokens.organiser, data)).status).toBe(403);
+    expect((await post(deps, 'account-update', tokens.reviewer, data)).status).toBe(404);
+    expect((await post(deps, 'account-update', tokens.nobody, data)).status).toBe(404);
+    expect((await post(deps, 'account-update', undefined, data)).status).toBe(401);
+    expect((await post(deps, 'account-password-link', tokens.organiser, data)).status).toBe(403);
+    expect((await post(deps, 'account-password-link', tokens.nobody, data)).status).toBe(404);
+    expect((await post(deps, 'account-password-link', undefined, data)).status).toBe(401);
+    expect(store.users.find((u) => u.id === NOBODY.id)!.fullName).toBe('Pessoa Comum');
+    expect(store.audits).toEqual([]);
+  });
+});
+
+describe('an administrator sends someone a new-password link (#270)', () => {
+  it('e-mails the link to the person only, never returns it, and logs it', async () => {
+    const { deps, tokens, store, sent, auth } = setup();
+    auth.accounts.set(NOBODY.email, true);
+    const response = await post(deps, 'account-password-link', tokens.admin, { userId: NOBODY.id });
+    const answer = await body(response);
+    expect(answer).toEqual({ ok: true, queued: true });
+    expect(JSON.stringify(answer)).not.toContain('recovery-for');
+    expect(sent).toHaveLength(1);
+    expect(sent[0]).toMatchObject({ to: NOBODY.email, subject: 'Escolha uma nova senha (II SIEAmB)' });
+    expect(sent[0]!.text).toContain(`https://dev.sieamb.org/2027/conta/nova-senha?token_hash=${encodeURIComponent(`recovery-for-${NOBODY.email}`)}&type=recovery`);
+    expect(sent[0]!.text).toContain('sua senha atual continua valendo');
+    expect(store.audits[0]).toMatchObject({ actorId: ADMIN.id, action: 'account.password_link', entityId: NOBODY.id, meta: { email: NOBODY.email } });
+    expect(JSON.stringify(store.audits)).not.toContain('recovery-for');
+    // The password itself is never set by anyone but the person.
+    expect(auth.passwords).toEqual([]);
+  });
+
+  it('says so when the account has no login, and sends nothing', async () => {
+    const { deps, tokens, sent, store } = setup();
+    const response = await post(deps, 'account-password-link', tokens.admin, { userId: NOBODY.id });
+    expect(response.status).toBe(409);
+    expect(await body(response)).toEqual({ error: 'account_without_login' });
+    expect(sent).toEqual([]);
+    expect(store.audits).toEqual([]);
+  });
+
+  it('an administrator cannot ask it for another administrator or for the owner', async () => {
+    const { deps, tokens, store, sent, auth } = setup();
+    auth.accounts.set(PLATFORM.email, true);
+    store.users.push({ id: 'user-admin-2', email: 'thays@ufcg.edu.br', fullName: 'Thays' });
+    store.members.push({ eventId: EVENT.id, userId: 'user-admin-2', email: 'thays@ufcg.edu.br', fullName: 'Thays', role: 'ADMIN' });
+    auth.accounts.set('thays@ufcg.edu.br', true);
+    for (const userId of [PLATFORM.id, 'user-admin-2']) {
+      const response = await post(deps, 'account-password-link', tokens.admin, { userId });
+      expect(response.status).toBe(403);
+    }
+    expect(sent).toEqual([]);
+    expect((await post(deps, 'account-password-link', tokens.platform, { userId: 'user-admin-2' })).status).toBe(200);
+    expect(sent.map((m) => m.to)).toEqual(['thays@ufcg.edu.br']);
+  });
+});
+
+describe('the owner changes what nobody else does: e-mail, CPF and password (#272)', () => {
+  const CPF = '52998224725';
+
+  it('changes the e-mail in the login service and in the account, logs it and tells the old address', async () => {
+    const { deps, tokens, store, auth, sent } = setup();
+    const response = await post(deps, 'account-update', tokens.platform, { userId: NOBODY.id, email: ' Pessoa.Nova@UFRN.br ' });
+    expect(await body(response)).toEqual({ ok: true, changed: true });
+    expect(auth.emails).toEqual([{ userId: NOBODY.id, email: 'pessoa.nova@ufrn.br' }]);
+    expect(store.users.find((u) => u.id === NOBODY.id)!.email).toBe('pessoa.nova@ufrn.br');
+    expect(store.audits[0]).toMatchObject({ action: 'account.update', entityId: NOBODY.id, meta: { email: NOBODY.email, newEmail: 'pessoa.nova@ufrn.br', fields: ['email'] } });
+    expect(sent.map((m) => m.to)).toEqual([NOBODY.email]);
+    expect(sent[0]!.subject).toBe('O e-mail da sua conta foi alterado (II SIEAmB)');
+    expect(sent[0]!.text).toContain('pessoa.nova@ufrn.br');
+  });
+
+  it('refuses an address another account has, or one that is not an address, and changes nothing', async () => {
+    const { deps, tokens, store, auth, sent } = setup();
+    auth.accounts.set(ORGANISER.email, true);
+    const taken = await post(deps, 'account-update', tokens.platform, { userId: NOBODY.id, email: ORGANISER.email, fullName: 'Nome Que Não Deve Ficar' });
+    expect(taken.status).toBe(409);
+    expect(await body(taken)).toEqual({ error: 'email_in_use' });
+    const invalid = await post(deps, 'account-update', tokens.platform, { userId: NOBODY.id, email: 'sem-arroba' });
+    expect(invalid.status).toBe(400);
+    expect(await body(invalid)).toEqual({ error: 'invalid_email' });
+    expect(store.users.find((u) => u.id === NOBODY.id)).toMatchObject({ email: NOBODY.email, fullName: 'Pessoa Comum' });
+    expect(store.audits).toEqual([]);
+    expect(sent).toEqual([]);
+  });
+
+  it('puts the login back on the old address when the account cannot take the new one', async () => {
+    const { deps, tokens, store, auth } = setup();
+    // The login service does not know the address, but an account row already has it.
+    store.users.push({ id: 'user-orphan', email: 'orfa@ufcg.edu.br', fullName: 'Conta Órfã' });
+    const response = await post(deps, 'account-update', tokens.platform, { userId: NOBODY.id, email: 'orfa@ufcg.edu.br' });
+    expect(response.status).toBe(409);
+    expect(await body(response)).toEqual({ error: 'email_in_use' });
+    expect(auth.emails).toEqual([
+      { userId: NOBODY.id, email: 'orfa@ufcg.edu.br' },
+      { userId: NOBODY.id, email: NOBODY.email },
+    ]);
+    expect(store.users.find((u) => u.id === NOBODY.id)!.email).toBe(NOBODY.email);
+  });
+
+  it('sets, replaces and takes off the CPF, and refuses an invalid one or one another account has', async () => {
+    const { deps, tokens, store } = setup();
+    expect(await body(await post(deps, 'account-update', tokens.platform, { userId: NOBODY.id, cpf: '529.982.247-25' }))).toEqual({ ok: true, changed: true });
+    expect(store.users.find((u) => u.id === NOBODY.id)!.cpf).toBe(CPF);
+    // The audit line says the field changed, never the number.
+    expect(JSON.stringify(store.audits)).not.toContain(CPF);
+    const invalid = await post(deps, 'account-update', tokens.platform, { userId: NOBODY.id, cpf: '111.111.111-11' });
+    expect(invalid.status).toBe(400);
+    expect(await body(invalid)).toEqual({ error: 'invalid_cpf' });
+    const taken = await post(deps, 'account-update', tokens.platform, { userId: ORGANISER.id, cpf: CPF });
+    expect(taken.status).toBe(409);
+    expect(await body(taken)).toEqual({ error: 'document_in_use' });
+    expect(store.users.find((u) => u.id === ORGANISER.id)!.cpf ?? null).toBeNull();
+    expect(await body(await post(deps, 'account-update', tokens.platform, { userId: NOBODY.id, cpf: '' }))).toEqual({ ok: true, changed: true });
+    expect(store.users.find((u) => u.id === NOBODY.id)!.cpf).toBeNull();
+  });
+
+  it('shows the CPF in the list to the owner only', async () => {
+    const { deps, tokens, store } = setup();
+    store.users.find((u) => u.id === NOBODY.id)!.cpf = CPF;
+    const asOwner = await body(await get(deps, 'members', tokens.platform));
+    expect((asOwner.accounts as { userId: string; cpf?: string }[]).find((a) => a.userId === NOBODY.id)!.cpf).toBe(CPF);
+    for (const token of [tokens.admin, tokens.organiser]) {
+      expect(JSON.stringify(await body(await get(deps, 'members', token)))).not.toContain(CPF);
+    }
+  });
+
+  it('sets a password, tells the person it changed without saying what it is, and logs it without the password', async () => {
+    const { deps, tokens, store, auth, sent } = setup();
+    const response = await post(deps, 'account-password-set', tokens.platform, { userId: NOBODY.id, password: 'uma-senha-bem-longa' });
+    expect(await body(response)).toEqual({ ok: true });
+    expect(auth.passwords).toEqual([{ userId: NOBODY.id, password: 'uma-senha-bem-longa' }]);
+    expect(store.audits[0]).toMatchObject({ actorId: PLATFORM.id, action: 'account.password_set', entityId: NOBODY.id });
+    expect(JSON.stringify(store.audits)).not.toContain('uma-senha-bem-longa');
+    expect(sent.map((m) => m.to)).toEqual([NOBODY.email]);
+    expect(sent[0]!.subject).toBe('A senha da sua conta foi alterada (II SIEAmB)');
+    expect(`${sent[0]!.text}${sent[0]!.html}`).not.toContain('uma-senha-bem-longa');
+  });
+
+  it.each([
+    ['too short', 'curta'],
+    ['built on the address', 'pessoa-2027-xx'],
+    ['missing', undefined],
+    ['not text', 1234567890123],
+  ])('refuses a password that is %s', async (_label, password) => {
+    const { deps, tokens, auth, store } = setup();
+    const response = await post(deps, 'account-password-set', tokens.platform, { userId: NOBODY.id, password });
+    expect(response.status).toBe(400);
+    expect(await body(response)).toEqual({ error: 'weak_password' });
+    expect(auth.passwords).toEqual([]);
+    expect(store.audits).toEqual([]);
+  });
+
+  it('is the owner\'s alone: an administrator is refused the password, and their e-mail and CPF are ignored', async () => {
+    const { deps, tokens, store, auth, sent } = setup();
+    const refused = await post(deps, 'account-password-set', tokens.admin, { userId: NOBODY.id, password: 'uma-senha-bem-longa' });
+    expect(refused.status).toBe(403);
+    expect(await body(refused)).toEqual({ error: 'owner_only' });
+    // Not even for their own account by this door: Minha área has its own.
+    expect((await post(deps, 'account-password-set', tokens.admin, { userId: ADMIN.id, password: 'uma-senha-bem-longa' })).status).toBe(403);
+    expect((await post(deps, 'account-password-set', tokens.organiser, { userId: NOBODY.id, password: 'uma-senha-bem-longa' })).status).toBe(403);
+    expect((await post(deps, 'account-password-set', tokens.nobody, { userId: NOBODY.id, password: 'uma-senha-bem-longa' })).status).toBe(404);
+    expect((await post(deps, 'account-password-set', undefined, { userId: NOBODY.id, password: 'uma-senha-bem-longa' })).status).toBe(401);
+    expect(await body(await post(deps, 'account-update', tokens.admin, { userId: NOBODY.id, email: 'tomada@ufcg.edu.br', cpf: CPF }))).toEqual({ ok: true, changed: false });
+    expect(auth.passwords).toEqual([]);
+    expect(auth.emails).toEqual([]);
+    expect(store.users.find((u) => u.id === NOBODY.id)).toMatchObject({ email: NOBODY.email });
+    expect(store.users.find((u) => u.id === NOBODY.id)!.cpf ?? null).toBeNull();
+    expect(sent).toEqual([]);
   });
 });

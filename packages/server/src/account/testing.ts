@@ -226,6 +226,12 @@ export class FakeAuth implements AuthGateway {
   async setPassword(userId: string, password: string) {
     this.passwords.push({ userId, password });
   }
+  emails: { userId: string; email: string }[] = [];
+  async setEmail(userId: string, email: string): Promise<'ok' | 'in_use'> {
+    if (this.accounts.has(email)) return 'in_use';
+    this.emails.push({ userId, email });
+    return 'ok';
+  }
 }
 
 export const USER: AuthUser = { id: 'user-1', email: 'maria@ufcg.edu.br', emailConfirmed: true };

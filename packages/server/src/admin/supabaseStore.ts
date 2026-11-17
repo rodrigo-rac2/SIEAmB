@@ -2,6 +2,9 @@ import { RestError, UNIQUE_VIOLATION, q, type RestClient } from '../core/rest';
 import type { PaymentStatus } from '../payments/status';
 import {
   RegistrationExistsError,
+  AccountConflictError,
+  type Account,
+  type AccountPatch,
   type AdminRegistration,
   type AdminStore,
   type AdminSubmission,
@@ -113,6 +116,25 @@ const unique = async <T>(work: () => Promise<T>): Promise<T> => {
     throw error;
   }
 };
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const ACCOUNT_COLUMNS = 'id,email,full_name,institution,cpf,is_platform_admin';
+interface AccountRow {
+  id: string;
+  email: string;
+  full_name: string;
+  institution: string | null;
+  cpf: string | null;
+  is_platform_admin: boolean;
+}
+const toAccount = (row: AccountRow): Account => ({
+  id: row.id,
+  email: row.email,
+  fullName: row.full_name,
+  institution: row.institution,
+  cpf: row.cpf,
+  owner: row.is_platform_admin,
+});
 
 export class SupabaseAdminStore implements AdminStore {
   constructor(private readonly rest: RestClient) {}
@@ -311,6 +333,32 @@ export class SupabaseAdminStore implements AdminStore {
       method: 'PATCH',
       body: JSON.stringify({ status, updated_at: now.toISOString() }),
     });
+  }
+
+  async listAccounts(): Promise<Account[]> {
+    const rows = await this.rest.request<AccountRow[]>(`users?select=${ACCOUNT_COLUMNS}&order=full_name.asc,email.asc&limit=5000`);
+    return rows.map(toAccount);
+  }
+
+  async findAccount(id: string): Promise<Account | null> {
+    // Anything that is not an account id finds nobody, instead of an error from the database.
+    if (!UUID.test(id)) return null;
+    const rows = await this.rest.request<AccountRow[]>(`users?id=eq.${q(id)}&select=${ACCOUNT_COLUMNS}&limit=1`);
+    return rows[0] ? toAccount(rows[0]) : null;
+  }
+
+  async updateAccount(id: string, patch: AccountPatch, now: Date): Promise<void> {
+    const body: Record<string, unknown> = { updated_at: now.toISOString() };
+    if (patch.fullName !== undefined) body.full_name = patch.fullName;
+    if (patch.institution !== undefined) body.institution = patch.institution;
+    if (patch.email !== undefined) body.email = patch.email;
+    if (patch.cpf !== undefined) body.cpf = patch.cpf;
+    try {
+      await this.rest.request<unknown>(`users?id=eq.${q(id)}`, { method: 'PATCH', body: JSON.stringify(body) });
+    } catch (error) {
+      if (error instanceof RestError && error.code === UNIQUE_VIOLATION) throw new AccountConflictError();
+      throw error;
+    }
   }
 
   async listMembers(eventId: string): Promise<Member[]> {

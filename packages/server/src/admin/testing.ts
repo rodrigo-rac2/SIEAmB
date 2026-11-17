@@ -6,6 +6,9 @@ import { FakeOutbox } from '../submissions/testing';
 import type { AdminDeps } from './handlers';
 import {
   RegistrationExistsError,
+  AccountConflictError,
+  type Account,
+  type AccountPatch,
   type AdminRegistration,
   type AdminStore,
   type AdminSubmission,
@@ -41,12 +44,38 @@ export class FakeAdminStore implements AdminStore {
     { eventId: EVENT.id, userId: REVIEWER.id, email: REVIEWER.email, fullName: 'Avaliador Um', role: 'REVIEWER' },
   ];
   invites: (Invite & { eventId: string })[] = [];
-  users = [
+  users: { id: string; email: string; fullName: string; institution?: string | null; cpf?: string | null; owner?: boolean }[] = [
     { id: ADMIN.id, email: ADMIN.email, fullName: 'Najara Escarião' },
     { id: ORGANISER.id, email: ORGANISER.email, fullName: 'Viviane Farias' },
     { id: REVIEWER.id, email: REVIEWER.email, fullName: 'Avaliador Um' },
     { id: NOBODY.id, email: NOBODY.email, fullName: 'Pessoa Comum' },
+    { id: PLATFORM.id, email: PLATFORM.email, fullName: 'Rodrigo Dono', owner: true },
   ];
+  private account = (u: FakeAdminStore['users'][number]): Account => ({
+    id: u.id,
+    email: u.email,
+    fullName: u.fullName,
+    institution: u.institution ?? null,
+    cpf: u.cpf ?? null,
+    owner: u.owner === true,
+  });
+  async listAccounts() {
+    return [...this.users].sort((a, b) => a.fullName.localeCompare(b.fullName)).map(this.account);
+  }
+  async findAccount(id: string) {
+    const user = this.users.find((u) => u.id === id);
+    return user ? this.account(user) : null;
+  }
+  async updateAccount(id: string, patch: AccountPatch) {
+    const user = this.users.find((u) => u.id === id)!;
+    const taken = this.users.some(
+      (u) => u.id !== id && ((patch.cpf && u.cpf === patch.cpf) || (patch.email && u.email === patch.email)),
+    );
+    if (taken) throw new AccountConflictError();
+    Object.assign(user, patch);
+    // The people lists read the name from the account, as the real one does with its join.
+    for (const member of this.members) if (member.userId === id) Object.assign(member, { fullName: user.fullName, email: user.email });
+  }
   links: (PendingLink & { eventId: string; status: string })[] = [];
   audits: { actorId: string; action: string; entity: string; entityId: string | null; meta: Record<string, unknown> }[] = [];
   failAudit = false;

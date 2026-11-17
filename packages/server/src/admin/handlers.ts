@@ -1,4 +1,4 @@
-import { authenticate, isEmail, text } from '../account/handlers';
+import { authenticate, isEmail, isWeakPassword, text } from '../account/handlers';
 import type { AuthGateway, AuthUser } from '../account/auth';
 import { notifyUsers, sendThroughOutbox, type OutboxDeps, type OutboxMail } from '../core/outbox';
 import { emailLocale, layoutEmail } from '../payments/emailTemplates';
@@ -7,7 +7,10 @@ import { audienceFor, firstName, isTestAddress } from '../payments/notifications
 import { isValidCpf } from '../payments/payer';
 import {
   AUDIENCES,
+  AccountConflictError,
   RegistrationExistsError,
+  type Account,
+  type AccountPatch,
   type AdminRegistration,
   type Audience,
   type Person,
@@ -425,16 +428,218 @@ async function reviewerChange(request: Request, deps: AdminDeps, assign: boolean
 
 // ───────────────────────────── People and roles ─────────────────────────────
 
+/** The administrator (or owner) asking, and the account they ask about, when they may act on it. */
+async function onAccount(
+  request: Request,
+  deps: AdminDeps,
+  body: Record<string, unknown>,
+): Promise<{ ctx: Context; target: Account; owner: boolean } | { response: Response }> {
+  const ctx = await context(request, deps, body.eventSlug, 'ADMIN');
+  if ('response' in ctx) return ctx;
+  const id = text(body.userId, 40);
+  const target = id ? await deps.store.findAccount(id) : null;
+  if (!target) return { response: json(404, { error: 'account_not_found' }) };
+  const admin = (await deps.store.listMembers(ctx.event.id)).some((m) => m.userId === target.id && m.role === 'ADMIN');
+  const viewer = { id: ctx.user.id, role: ctx.role, owner: await isOwner(deps, ctx.user.id) };
+  if (!mayActOn(viewer, { id: target.id, owner: target.owner, admin })) return { response: json(403, { error: 'owner_only' }) };
+  return { ctx, target, owner: viewer.owner };
+}
+
+const loginUrl = (deps: AdminDeps, ctx: Context) => `${deps.siteUrl.replace(/\/+$/, '')}/${encodeURIComponent(ctx.event.slug)}/conta/entrar`;
+
+/** A short notice to an account's address about something done to it by the organisers. */
+const accountNotice = (to: string, name: string, eventName: string, key: string, subject: string, paragraphs: string[], link: string): OutboxMail => ({
+  to,
+  dedupeKey: key,
+  subject: `${subject} (${eventName})`,
+  ...layoutEmail({
+    greeting: name ? `Olá, ${firstName(name)}.` : 'Olá.',
+    paragraphs: [...paragraphs, 'Se você não esperava esta mensagem, responda a este e-mail para falar com a organização.'],
+    linkLabel: 'Entrar no site',
+    link,
+    signature: `Comissão organizadora do ${eventName}`,
+  }),
+});
+
+/**
+ * An administrator corrects someone's name or institution (#269). The e-mail the person logs in
+ * with and the CPF are only the owner's to change (#272): from anyone else they are ignored.
+ */
+async function accountUpdate(request: Request, deps: AdminDeps): Promise<Response> {
+  const body = await readJsonObject(request);
+  const found = await onAccount(request, deps, body);
+  if ('response' in found) return found.response;
+  const { ctx, target, owner } = found;
+  const patch: AccountPatch = {};
+  if (owner && body.email !== undefined) {
+    const email = text(body.email, 200).toLowerCase();
+    if (!isEmail(email)) return json(400, { error: 'invalid_email' });
+    if (email !== target.email) patch.email = email;
+  }
+  if (owner && body.cpf !== undefined) {
+    const cpf = typeof body.cpf === 'string' ? body.cpf.replace(/\D/g, '') : '';
+    // Empty takes the document off the account, so the person can give the right one in Minha área.
+    if (cpf && !isValidCpf(cpf)) return json(400, { error: 'invalid_cpf' });
+    if ((cpf || null) !== target.cpf) patch.cpf = cpf || null;
+  }
+  if (body.fullName !== undefined) {
+    const fullName = text(body.fullName, 150);
+    if (fullName.length < 3) return json(400, { error: 'invalid_name' });
+    if (fullName !== target.fullName) patch.fullName = fullName;
+  }
+  if (body.institution !== undefined) {
+    const institution = text(body.institution, 200) || null;
+    if (institution !== target.institution) patch.institution = institution;
+  }
+  const fields = Object.keys(patch);
+  if (fields.length === 0) return json(200, { ok: true, changed: false });
+  // The login service first: it is the one that knows whether the address is taken.
+  if (patch.email && (await deps.auth.setEmail(target.id, patch.email)) === 'in_use') return json(409, { error: 'email_in_use' });
+  try {
+    await deps.store.updateAccount(target.id, patch, deps.now());
+  } catch (error) {
+    // Nothing half done: the login goes back to the address the account still has.
+    if (patch.email) await deps.auth.setEmail(target.id, target.email).catch(() => undefined);
+    if (error instanceof AccountConflictError) return json(409, { error: patch.cpf ? 'document_in_use' : 'email_in_use' });
+    throw error;
+  }
+  await audit(deps, ctx, 'account.update', 'user', target.id, { email: target.email, fields, ...(patch.email ? { newEmail: patch.email } : {}) });
+  // A changed address is told to the old one, which is where a surprised owner of the account would look.
+  if (patch.email && target.id !== ctx.user.id) {
+    await sendThroughOutbox(
+      [
+        accountNotice(target.email, target.fullName, ctx.event.name, `account-email:${target.id}:${deps.now().getTime()}`, 'O e-mail da sua conta foi alterado', [
+          `A organização do ${ctx.event.name} alterou o e-mail da sua conta no site para ${patch.email}. A partir de agora, entre no site com esse endereço.`,
+        ], loginUrl(deps, ctx)),
+      ],
+      deps,
+      deps.now(),
+    );
+  }
+  // The person is told that someone else changed their data, unless they did it themselves.
+  if (target.id !== ctx.user.id) {
+    await notifyUsers([{ userId: target.id, eventId: ctx.event.id, kind: 'account.updated', data: {} }], deps);
+  }
+  return json(200, { ok: true, changed: true });
+}
+
+/**
+ * The owner, and only the owner, sets someone's password (#272). The person is told by e-mail
+ * that it was changed, never what it is: the owner passes it on.
+ */
+async function accountPasswordSet(request: Request, deps: AdminDeps): Promise<Response> {
+  const body = await readJsonObject(request);
+  const found = await onAccount(request, deps, body);
+  if ('response' in found) return found.response;
+  const { ctx, target, owner } = found;
+  if (!owner) return json(403, { error: 'owner_only' });
+  const password = typeof body.password === 'string' ? body.password : '';
+  if (isWeakPassword(password, target.email)) return json(400, { error: 'weak_password' });
+  await deps.auth.setPassword(target.id, password);
+  await audit(deps, ctx, 'account.password_set', 'user', target.id, { email: target.email });
+  if (target.id !== ctx.user.id) {
+    await sendThroughOutbox(
+      [
+        accountNotice(target.email, target.fullName, ctx.event.name, `account-password:${target.id}:${deps.now().getTime()}`, 'A senha da sua conta foi alterada', [
+          `A organização do ${ctx.event.name} definiu uma nova senha para a sua conta no site e vai informá-la a você.`,
+          'Depois de entrar, você pode escolher outra senha pelo link "Esqueci minha senha".',
+        ], loginUrl(deps, ctx)),
+      ],
+      deps,
+      deps.now(),
+    );
+  }
+  return json(200, { ok: true });
+}
+
+/**
+ * An administrator sends someone the e-mail to choose a new password (#270). The link goes
+ * to the person's own address and nowhere else: not to the screen, not to the administrator.
+ */
+async function accountPasswordLink(request: Request, deps: AdminDeps): Promise<Response> {
+  const body = await readJsonObject(request);
+  const found = await onAccount(request, deps, body);
+  if ('response' in found) return found.response;
+  const { ctx, target } = found;
+  const start = await deps.auth.startRecovery(target.email);
+  if (!start) return json(409, { error: 'account_without_login' });
+  const url = `${deps.siteUrl.replace(/\/+$/, '')}/${encodeURIComponent(ctx.event.slug)}/conta/nova-senha?token_hash=${encodeURIComponent(start.tokenHash)}&type=recovery`;
+  const recorded = await sendThroughOutbox(
+    [
+      {
+        to: target.email,
+        dedupeKey: `password-link:${target.id}:${deps.now().getTime()}`,
+        subject: `Escolha uma nova senha (${ctx.event.name})`,
+        ...layoutEmail({
+          greeting: target.fullName ? `Olá, ${firstName(target.fullName)}.` : 'Olá.',
+          paragraphs: [
+            `A organização do ${ctx.event.name} pediu o envio deste link para você escolher uma nova senha da sua conta no site.`,
+            'Se você não esperava esta mensagem, ignore: sua senha atual continua valendo.',
+          ],
+          linkLabel: 'Escolher nova senha',
+          link: url,
+          signature: `Comissão organizadora do ${ctx.event.name}`,
+        }),
+      },
+    ],
+    deps,
+    deps.now(),
+  );
+  await audit(deps, ctx, 'account.password_link', 'user', target.id, { email: target.email });
+  return json(200, { ok: true, queued: recorded > 0 });
+}
+
+/**
+ * What each standing gives and takes (#268): an organiser only reviewers, an administrator
+ * reviewers and organisers, the owner (the platform administrator) any role.
+ */
+const grantable = (role: PanelRole, owner: boolean): MemberRole[] =>
+  owner ? ROLES : role === 'ADMIN' ? ['ORGANIZER', 'REVIEWER'] : ['REVIEWER'];
+
+/** An account the automatic tests made for one run. On the shared dev site only test accounts see those. */
+const RUN_ADDRESS = /^e2e\+[^@]*@sieamb\.org$/i;
+
+const isOwner = async (deps: AdminDeps, userId: string): Promise<boolean> =>
+  (await deps.store.findAccount(userId))?.owner === true;
+
+/**
+ * Whether the person may change someone's account or send them a new-password link
+ * (#269, #270): the owner for anyone; an administrator for themselves and for people
+ * who are neither administrators nor the owner.
+ */
+const mayActOn = (viewer: { id: string; role: PanelRole; owner: boolean }, target: { id: string; owner: boolean; admin: boolean }): boolean =>
+  viewer.owner || (viewer.role === 'ADMIN' && (target.id === viewer.id || (!target.owner && !target.admin)));
+
 async function members(request: Request, deps: AdminDeps): Promise<Response> {
   const ctx = await context(request, deps, slugOf(request));
   if ('response' in ctx) return ctx.response;
+  const owner = await isOwner(deps, ctx.user.id);
+  const admin = ctx.role === 'ADMIN';
+  const shown = (email: string) => isTestAddress(ctx.user.email) || !RUN_ADDRESS.test(email);
+  const all = await deps.store.listMembers(ctx.event.id);
+  const adminIds = new Set(all.filter((m) => m.role === 'ADMIN').map((m) => m.userId));
+  const viewer = { id: ctx.user.id, role: ctx.role, owner };
   return json(200, {
     role: ctx.role,
-    // What this person may give or take: an administrator any role, an organiser only reviewers.
-    canManage: ctx.role === 'ADMIN' ? ROLES : (['REVIEWER'] as MemberRole[]),
+    owner,
+    canManage: grantable(ctx.role, owner),
     // An organiser is not told who the administrators are, nor who was invited to be one (#264).
-    members: (await deps.store.listMembers(ctx.event.id)).filter((m) => ctx.role === 'ADMIN' || m.role !== 'ADMIN'),
-    invites: (await deps.store.listInvites(ctx.event.id)).filter((i) => ctx.role === 'ADMIN' || i.role !== 'ADMIN'),
+    members: all.filter((m) => (admin || m.role !== 'ADMIN') && shown(m.email)),
+    invites: (await deps.store.listInvites(ctx.event.id)).filter((i) => (admin || i.role !== 'ADMIN') && shown(i.email)),
+    // Every account with its roles in this edition (#268). The same rule hides administrators and the owner.
+    accounts: (await deps.store.listAccounts())
+      .filter((a) => shown(a.email) && (admin || !(a.owner || adminIds.has(a.id))))
+      .map((a) => ({
+        userId: a.id,
+        email: a.email,
+        fullName: a.fullName,
+        institution: a.institution,
+        // The document is only for the owner, who is the one who can reset it (#272).
+        ...(owner ? { cpf: a.cpf } : {}),
+        owner: a.owner,
+        roles: ROLES.filter((r) => all.some((m) => m.userId === a.id && m.role === r)),
+        canEdit: mayActOn(viewer, { id: a.id, owner: a.owner, admin: adminIds.has(a.id) }),
+      })),
   });
 }
 
@@ -444,11 +649,13 @@ async function memberChange(request: Request, deps: AdminDeps, add: boolean): Pr
   if ('response' in ctx) return ctx.response;
   const role = ROLES.find((r) => r === body.role);
   if (!role) return json(400, { error: 'invalid_role' });
-  if (ctx.role !== 'ADMIN' && role !== 'REVIEWER') return json(403, { error: 'admin_only' });
   const email = text(body.email, 200).toLowerCase();
-  if (!isEmail(email)) return json(400, { error: 'invalid_email' });
   // Nobody removes their own administrator role: the edition must not be left without one by accident.
-  if (!add && role === 'ADMIN' && email === ctx.user.email) return json(409, { error: 'cannot_remove_self' });
+  if (!add && role === 'ADMIN' && ctx.role === 'ADMIN' && email === ctx.user.email) return json(409, { error: 'cannot_remove_self' });
+  if (!grantable(ctx.role, await isOwner(deps, ctx.user.id)).includes(role)) {
+    return json(403, { error: ctx.role === 'ADMIN' ? 'owner_only' : 'admin_only' });
+  }
+  if (!isEmail(email)) return json(400, { error: 'invalid_email' });
 
   const account = await deps.store.findUserByEmail(email);
   if (add) {
@@ -643,6 +850,9 @@ const ROUTES: Record<string, Partial<Record<string, Handler>>> = {
   'reviewer-assign': { POST: (request, deps) => reviewerChange(request, deps, true) },
   'reviewer-unassign': { POST: (request, deps) => reviewerChange(request, deps, false) },
   members: { GET: members },
+  'account-update': { POST: accountUpdate },
+  'account-password-link': { POST: accountPasswordLink },
+  'account-password-set': { POST: accountPasswordSet },
   'member-add': { POST: (request, deps) => memberChange(request, deps, true) },
   'member-remove': { POST: (request, deps) => memberChange(request, deps, false) },
   'link-requests': { GET: linkRequests },

@@ -24,6 +24,8 @@ export interface AuthGateway {
   /** Null for a missing, expired or forged token. */
   userFromToken(accessToken: string): Promise<AuthUser | null>;
   setPassword(userId: string, password: string): Promise<void>;
+  /** Changes the address an account logs in with, already confirmed. `in_use` when another account has it. */
+  setEmail(userId: string, email: string): Promise<'ok' | 'in_use'>;
 }
 
 /** A password nobody knows, for the time between creating an account and its owner choosing one. */
@@ -142,5 +144,18 @@ export class SupabaseAuthGateway implements AuthGateway {
       body: JSON.stringify({ password }),
     });
     if (!response.ok) throw new Error(`auth_password_failed: ${response.status}`);
+  }
+
+  async setEmail(userId: string, email: string): Promise<'ok' | 'in_use'> {
+    const response = await this.call(`admin/users/${encodeURIComponent(userId)}`, {
+      method: 'PUT',
+      body: JSON.stringify({ email, email_confirm: true }),
+    });
+    if (response.status === 422) {
+      const answer = (await response.json().catch(() => ({}))) as { error_code?: string };
+      if (answer.error_code === 'email_exists') return 'in_use';
+    }
+    if (!response.ok) throw new Error(`auth_email_failed: ${response.status}`);
+    return 'ok';
   }
 }
