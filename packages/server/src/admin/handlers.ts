@@ -458,9 +458,16 @@ async function memberChange(request: Request, deps: AdminDeps, add: boolean): Pr
     await deps.store.removeInvite(ctx.event.id, email, role);
     // Someone who is no longer a reviewer keeps no paper to review, nor the way into its file (#232).
     if (account && role === 'REVIEWER') {
+      const notices = [];
       for (const id of await deps.store.unassignReviewerEverywhere(ctx.event.id, account.id)) {
         await settleStatus(deps, id, deps.now());
+        const paper = await deps.store.findSubmission(id);
+        if (paper) {
+          notices.push({ userId: account.id, eventId: ctx.event.id, kind: 'review.unassigned', data: { number: paper.number, title: paper.title } });
+        }
       }
+      // Told once per paper, the same as when taken off by hand (#242).
+      await notifyUsers(notices, deps);
     }
   }
   await audit(deps, ctx, add ? 'member.add' : 'member.remove', 'event_member', account?.id ?? null, { email, role, invited: add && !account });

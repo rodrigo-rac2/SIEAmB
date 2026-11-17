@@ -238,7 +238,7 @@ export function AuthorList({
                         aria-label={t('papers.form.suggestionClear', { n })}
                         onClick={() => patch(index, { ref: undefined, emailHint: undefined, email: '' })}
                       >
-                        ×
+                        {t('papers.form.suggestionUndo')}
                       </button>
                     </div>
                     <p className="reg-form__hint">{t('papers.form.suggestionPicked')}</p>
@@ -255,7 +255,7 @@ export function AuthorList({
               </div>
               <div className="papers__author-actions">
                 <button
-                  className="account__button account__button--quiet"
+                  className="papers__icon"
                   type="button"
                   aria-label={t('papers.form.authorUp', { n })}
                   disabled={index === 0}
@@ -264,7 +264,7 @@ export function AuthorList({
                   ↑
                 </button>
                 <button
-                  className="account__button account__button--quiet"
+                  className="papers__icon"
                   type="button"
                   aria-label={t('papers.form.authorDown', { n })}
                   disabled={index === rows.length - 1}
@@ -274,7 +274,7 @@ export function AuthorList({
                 </button>
                 {!row.self && (
                   <button
-                    className="account__button account__button--quiet"
+                    className="papers__icon"
                     type="button"
                     aria-label={t('papers.form.authorRemove', { n })}
                     onClick={() => onChange(rows.filter((_, i) => i !== index))}

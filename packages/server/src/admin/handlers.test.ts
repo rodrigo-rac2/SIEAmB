@@ -866,6 +866,10 @@ describe('payment reminders at the click of a button (#225)', () => {
   });
 });
 
+/** The "taken off" notices written, as [who, kind, paper number]. */
+const ctx_notices = (_store: unknown, outbox: { notifications: { userId: string; kind: string; data: Record<string, unknown> }[] }) =>
+  outbox.notifications.filter((n) => n.kind === 'review.unassigned').map((n) => [n.userId, n.kind, n.data.number]);
+
 describe('reviewers of a paper (#232)', () => {
   const ready = () => {
     const ctx = setup();
@@ -1001,7 +1005,7 @@ describe('reviewers of a paper (#232)', () => {
   });
 
   it('takes a person off every paper when they stop being a reviewer', async () => {
-    const { assign, paper, deps, tokens, store } = ready();
+    const { assign, paper, deps, tokens, store, outbox } = ready();
     const second = { ...paper, id: 'p2', number: 8, reviewers: [] as typeof paper.reviewers, status: 'SUBMITTED' };
     const elsewhere = { ...paper, id: 'p3', number: 9, eventId: OTHER_EVENT.id, status: 'UNDER_REVIEW', reviewers: [{ userId: REVIEWER.id, fullName: 'Avaliador Um', email: REVIEWER.email }] };
     store.submissions.push(second, elsewhere);
@@ -1016,6 +1020,11 @@ describe('reviewers of a paper (#232)', () => {
     expect(second.status).toBe('UNDER_REVIEW');
     // Another edition is another matter.
     expect(elsewhere.reviewers).toHaveLength(1);
+    // The person is told of each paper they no longer review (#242), and of nothing else.
+    expect(ctx_notices(store, outbox)).toEqual([
+      [REVIEWER.id, 'review.unassigned', 7],
+      [REVIEWER.id, 'review.unassigned', 8],
+    ]);
   });
 });
 
