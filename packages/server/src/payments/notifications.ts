@@ -262,6 +262,20 @@ const EMAIL = /^[^\s@<>,;"]+@[^\s@<>,;"]+\.[^\s@<>,;"]+$/;
 // only bounces, and bounces hurt the sender's reputation.
 const TEST_ADDRESS = /^e2e\+[^@]*@sieamb\.org$|@(?:[^@]+\.)?example\.(?:com|org|net)$|\.(?:test|invalid|example|localhost)$/i;
 
+/** An address of our own tests or of a domain reserved for examples: never a real inbox. */
+export const isTestAddress = (value: string): boolean => TEST_ADDRESS.test(value);
+
+/**
+ * Who is told about something. What is only about test people (a paper whose authors
+ * are all test addresses, a test registration) stays among test accounts: on the dev
+ * site real organisers share the database with the automatic tests, and were mailed
+ * dozens of times per test run (#255). Real data goes to everyone, as always.
+ */
+export function audienceFor<T extends { email: string }>(subjectEmails: string[], recipients: T[]): T[] {
+  const aboutTests = subjectEmails.length > 0 && subjectEmails.every(isTestAddress);
+  return aboutTests ? recipients.filter((r) => isTestAddress(r.email)) : recipients;
+}
+
 export const isSendableEmail = (value: unknown): value is string =>
   typeof value === 'string' && value.length <= 200 && EMAIL.test(value) && !TEST_ADDRESS.test(value);
 

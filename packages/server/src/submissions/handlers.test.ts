@@ -1167,3 +1167,41 @@ describe('one paper, for the form (#250)', () => {
     expect(JSON.stringify(await body(await one(deps, tokens.main, s.id)))).not.toContain('seed-');
   });
 });
+
+describe('a paper of test accounts is announced to test organisers only (#255)', () => {
+  const TEST_ORG = { userId: 'user-test-org', email: 'e2e+r1a1-organizadora-x1@sieamb.org', fullName: 'Organizadora E2E' };
+  const REAL_ORG = { userId: ORGANISER.id, email: ORGANISER.email, fullName: 'Viviane' };
+  const testAuthor = { id: 'user-test-author', email: 'e2e+r1a1-autora-ab12@sieamb.org', emailConfirmed: true };
+  const THEIRS = `2027/${testAuthor.id}/dddddddd-0000-4000-8000-000000000004.pdf`;
+
+  it('leaves the real organisers out of every notice about it: sent, changed and withdrawn', async () => {
+    const ctx = await ready();
+    ctx.store.organisers = [REAL_ORG, TEST_ORG];
+    ctx.files.objects.set(THEIRS, await pdf(5));
+    const token = ctx.auth.login(testAuthor, 'tok-test-author');
+    const data = paper({ authors: [{ fullName: 'Autora E2E', email: testAuthor.email }, { fullName: 'Coautor E2E', email: 'e2e+r1a1-coautor-cd34@sieamb.org' }], filePath: THEIRS });
+    const first = await body(await ctx.save(data, token));
+    const id = first.submission.id as string;
+    await ctx.save({ ...data, id, filePath: undefined, title: 'Trabalho de teste E2E (revisto)' }, token);
+    await handleSubmissions(call('POST', 'withdraw', { token, body: { eventSlug: '2027', id } }), 'withdraw', ctx.deps);
+    expect(ctx.store.submissions[0]!.deletedAt).not.toBeNull();
+    // Nothing reached a real inbox, and nothing was put in a real organiser's bell.
+    expect(ctx.sent).toEqual([]);
+    expect(ctx.outbox.notifications.some((n) => n.userId === ORGANISER.id)).toBe(false);
+    expect(ctx.outbox.notifications.filter((n) => n.userId === TEST_ORG.userId).map((n) => n.kind)).toEqual([
+      'organiser.submission.received',
+      'organiser.submission.updated',
+      'organiser.submission.withdrawn',
+    ]);
+  });
+
+  it('tells every organiser as soon as one author is a real person', async () => {
+    const ctx = await ready();
+    ctx.store.organisers = [REAL_ORG, TEST_ORG];
+    ctx.files.objects.set(THEIRS, await pdf(5));
+    const token = ctx.auth.login(testAuthor, 'tok-test-author');
+    await ctx.save(paper({ authors: [{ fullName: 'Autora E2E', email: testAuthor.email }, { fullName: 'Ana Reis', email: 'ana@ufrn.br' }], filePath: THEIRS }), token);
+    expect(ctx.sent.map((m) => m.to).sort()).toEqual(['ana@ufrn.br', ORGANISER.email].sort());
+    expect(ctx.outbox.notifications.map((n) => n.userId).sort()).toEqual([ORGANISER.id, TEST_ORG.userId].sort());
+  });
+});
