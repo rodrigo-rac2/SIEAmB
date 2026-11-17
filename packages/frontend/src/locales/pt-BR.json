@@ -453,7 +453,7 @@
       "keywordsEn": "Keywords (em inglês)",
       "keywordsHint": "Até {{max}} em cada idioma, separadas por ponto e vírgula.",
       "authorsTitle": "Autores",
-      "authorsHint": "Até {{max}} autores, na ordem em que aparecem no trabalho. Você precisa estar na lista, em qualquer posição. Os demais não precisam ter conta nem inscrição para o trabalho ser enviado, e recebem um aviso por e-mail. Qualquer autor com conta pode alterar ou retirar o trabalho.",
+      "authorsHint": "Até {{max}} autores, na ordem em que aparecem no trabalho. Você precisa estar na lista, em qualquer posição. Os demais não precisam ter conta nem inscrição para o trabalho ser enviado, e recebem um aviso por e-mail. Depois de enviado, só você, que enviou, pode alterar ou retirar o trabalho; os demais autores acompanham em Meus trabalhos.",
       "authorName": "Nome do autor {{n}}",
       "authorEmail": "E-mail do autor {{n}}",
       "authorYou": "você",
@@ -506,7 +506,8 @@
       "upload_failed": "Não foi possível enviar o arquivo. Confira sua conexão e tente de novo."
     },
     "count_one": "{{count}} trabalho",
-    "count_other": "{{count}} trabalhos"
+    "count_other": "{{count}} trabalhos",
+    "readOnly": "só quem enviou pode alterar"
   },
   "reviewing": {
     "title": "Trabalhos para avaliar",
@@ -577,7 +578,7 @@
       "paper": "Trabalho",
       "authors": "Autores",
       "file": "Arquivo",
-      "withdrawn": "Retirado pelo autor",
+      "withdrawn": "Retirado",
       "authorRegistered": "Há autor com inscrição confirmada.",
       "noAuthorRegistered": "Nenhum autor com inscrição confirmada.",
       "notRegistered": "sem inscrição",
@@ -597,7 +598,11 @@
         "closeConfirm": "Encerrar as submissões? Ninguém poderá enviar, alterar ou retirar trabalhos até que sejam reabertas.",
         "closeYes": "Sim, encerrar",
         "reopen": "Reabrir submissões"
-      }
+      },
+      "withdraw": "Retirar",
+      "editFor": "Alterar o trabalho nº {{number}}",
+      "withdrawFor": "Retirar o trabalho nº {{number}}",
+      "withdrawConfirm": "Retirar o trabalho nº {{number}}? Os autores serão avisados."
     },
     "people": {
       "role": "Papel",

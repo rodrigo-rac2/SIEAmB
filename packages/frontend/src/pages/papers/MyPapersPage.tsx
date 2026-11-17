@@ -98,6 +98,7 @@ function PaperCard({
         </span>{' '}
         <span className="papers__meta">
           {paper.position !== null && `${t('papers.authorPosition', { n: paper.position })} · `}
+          {!paper.sentByMe && !paper.canEdit && `${t('papers.readOnly')} · `}
           {t('papers.sentOn', { date: day(paper.createdAt, locale) })}
         </span>
       </p>

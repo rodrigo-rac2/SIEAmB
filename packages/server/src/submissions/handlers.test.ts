@@ -557,7 +557,8 @@ describe('anyone among the authors can send', () => {
     const token = auth.login({ id: 'user-prof', email: PROF.email, emailConfirmed: true }, 'tok-prof');
     const list = await body(await handleSubmissions(call('GET', 'mine', { token, query: '?eventSlug=2027' }), 'mine', deps));
     expect(list.submissions).toHaveLength(1);
-    expect(list.submissions[0]).toMatchObject({ position: 1, sentByMe: false, canEdit: true });
+    // He sees it, as first author, and it is the sender who changes it (#250).
+    expect(list.submissions[0]).toMatchObject({ position: 1, sentByMe: false, canEdit: false });
     expect(list.limits).toMatchObject({ asMain: 1, asCoauthor: 0 });
   });
 
@@ -721,55 +722,80 @@ describe('changing a paper', () => {
     expect((await save(paper({ id, filePath: undefined }))).status).toBe(200);
   });
 
-  it('lets any of the authors change it, in their own name, with a file of their own', async () => {
+  it('does not let another author of the paper change it: only whoever sent it (#250)', async () => {
     const { save, id, store, tokens, files, sent: mails } = await sent();
     const theirs = `2027/${OTHER.id}/bbbbbbbb-0000-4000-8000-000000000002.pdf`;
     files.objects.set(theirs, await pdf(6));
-    const response = await save(
-      paper({ id, filePath: theirs, fileName: 'versao-do-joao.pdf', title: 'Título revisto pelo segundo autor' }),
-      tokens.other,
-    );
-    expect(response.status).toBe(200);
-    expect((await body(response)).submission).toMatchObject({ position: 2, sentByMe: false, canEdit: true });
-    // Still the paper Maria sent; the change is told to everyone with João's name on it.
-    expect(store.submissions[0]).toMatchObject({ userId: MAIN.id, title: 'Título revisto pelo segundo autor', filePath: theirs });
-    expect(mails.find((m) => m.to === MAIN.email)!.text).toContain('foi alterado por João Lima');
+    // João is the second author. Neither the text, nor the order, nor the file are his to change.
+    for (const change of [
+      { title: 'Título trocado pelo segundo autor' },
+      { authors: [{ fullName: 'João Lima', email: OTHER.email }, ME] },
+      { filePath: theirs, fileName: 'versao-do-joao.pdf' },
+    ]) {
+      const response = await save(paper({ id, filePath: undefined, ...change }), tokens.other);
+      expect(response.status).toBe(404);
+      expect(await body(response)).toEqual({ error: 'submission_not_found' });
+    }
+    expect(store.submissions[0]).toMatchObject({ userId: MAIN.id, title: 'Governança da água no semiárido paraibano', filePath: PATH });
+    expect(store.submissions[0]!.authors.map((a) => a.email)).toEqual([MAIN.email, OTHER.email]);
+    expect(mails).toEqual([]);
   });
 
-  it('lets an author change the order and drop another author, but not leave the list', async () => {
-    const { save, id, store, tokens } = await sent();
+  it('lets the sender change the order and drop an author, but not leave the list', async () => {
+    const { save, id, store } = await sent();
     const joao = { fullName: 'João Lima', email: OTHER.email };
-    // João puts himself first.
-    expect((await save(paper({ id, filePath: undefined, authors: [joao, ME] }), tokens.other)).status).toBe(200);
+    expect((await save(paper({ id, filePath: undefined, authors: [joao, ME] }))).status).toBe(200);
     expect(store.submissions[0]!.authors.map((a) => [a.position, a.email])).toEqual([[1, OTHER.email], [2, MAIN.email]]);
-    // He cannot save a list he is not in.
-    const without = await save(paper({ id, filePath: undefined, authors: [ME] }), tokens.other);
+    const without = await save(paper({ id, filePath: undefined, authors: [joao] }));
     expect(without.status).toBe(400);
     expect(await body(without)).toEqual({ error: 'sender_not_listed' });
     expect(store.submissions[0]!.authors).toHaveLength(2);
-    // He can drop Maria, who then no longer finds the paper.
-    expect((await save(paper({ id, filePath: undefined, authors: [joao] }), tokens.other)).status).toBe(200);
-    const gone = await save(paper({ id, filePath: undefined }), tokens.main);
-    expect(gone.status).toBe(404);
+    expect((await save(paper({ id, filePath: undefined, authors: [ME] }))).status).toBe(200);
+    expect(store.submissions[0]!.authors.map((a) => a.email)).toEqual([MAIN.email]);
   });
 
-  it('does not let an author attach a file from another author’s folder', async () => {
-    const { save, id, tokens, store } = await sent();
-    const response = await save(paper({ id, filePath: PATH, title: 'Com o arquivo da Maria' }), tokens.other);
-    expect(response.status).toBe(400);
-    expect(await body(response)).toEqual({ error: 'file_missing' });
-    expect(store.submissions[0]!.title).toBe('Governança da água no semiárido paraibano');
-  });
-
-  it.each([
-    ['an organiser', 'organiser'],
-    ['someone who is not an author', 'stranger'],
-  ] as const)('does not let %s change it', async (_name, who) => {
-    const { save, id, store, tokens, auth } = await sent();
+  it('lets an organiser change any paper, without being one of its authors, and says who did it (#250)', async () => {
+    const { save, id, store, tokens, sent: mails } = await sent();
     store.organisers = [{ userId: ORGANISER.id, email: ORGANISER.email, fullName: 'Viviane' }];
+    const response = await save(paper({ id, filePath: undefined, title: 'Título corrigido pela organização' }), tokens.organiser);
+    expect(response.status).toBe(200);
+    expect((await body(response)).submission).toMatchObject({ position: null, sentByMe: false, canEdit: true, asOrganiser: true });
+    // Still the sender's paper, with its authors as they were.
+    expect(store.submissions[0]).toMatchObject({ userId: MAIN.id, title: 'Título corrigido pela organização' });
+    expect(store.submissions[0]!.authors.map((a) => a.email)).toEqual([MAIN.email, OTHER.email]);
+    // The authors are told, and the organiser is named by the role, not by their address.
+    const toAuthor = mails.find((m) => m.to === MAIN.email)!;
+    expect(toAuthor.text).toContain('foi alterado por Comissão organizadora');
+    expect(toAuthor.text).not.toContain(ORGANISER.email);
+  });
+
+  it('lets an organiser change a paper under review, and after submissions close', async () => {
+    const reviewing = await sent();
+    reviewing.store.organisers = [{ userId: ORGANISER.id, email: ORGANISER.email, fullName: 'Viviane' }];
+    reviewing.store.submissions[0]!.status = 'UNDER_REVIEW';
+    expect((await reviewing.save(paper({ id: reviewing.id, filePath: undefined, title: 'Corrigido em avaliação' }), reviewing.tokens.organiser)).status).toBe(200);
+    expect(reviewing.store.submissions[0]).toMatchObject({ title: 'Corrigido em avaliação', status: 'UNDER_REVIEW' });
+
+    const closed = await sent();
+    closed.store.organisers = [{ userId: ORGANISER.id, email: ORGANISER.email, fullName: 'Viviane' }];
+    closed.store.closedAt = NOW.toISOString();
+    expect((await closed.save(paper({ id: closed.id, filePath: undefined, title: 'Corrigido com as submissões encerradas' }), closed.tokens.organiser)).status).toBe(200);
+    // Closed is still closed for a new paper, organiser or not.
+    expect((await closed.save(paper({ title: 'Um trabalho novo da organizadora', authors: [{ fullName: 'Viviane', email: ORGANISER.email }] }), closed.tokens.organiser)).status).toBe(409);
+  });
+
+  it('does not let an organiser empty the author list', async () => {
+    const { save, id, store, tokens } = await sent();
+    store.organisers = [{ userId: ORGANISER.id, email: ORGANISER.email, fullName: 'Viviane' }];
+    const response = await save(paper({ id, filePath: undefined, authors: [] }), tokens.organiser);
+    expect(response.status).toBe(400);
+    expect(store.submissions[0]!.authors).toHaveLength(2);
+  });
+
+  it('does not let someone who is neither the sender nor an organiser change it', async () => {
+    const { save, id, store, auth } = await sent();
     const stranger = auth.login({ id: 'user-stranger', email: 'estranho@ufrn.br', emailConfirmed: true }, 'tok-stranger');
-    const token = who === 'stranger' ? stranger : tokens[who];
-    const response = await save(paper({ id, filePath: undefined, title: 'Título trocado por outra pessoa' }), token);
+    const response = await save(paper({ id, filePath: undefined, title: 'Título trocado por outra pessoa' }), stranger);
     expect(response.status).toBe(404);
     expect(store.submissions[0]!.title).toBe('Governança da água no semiárido paraibano');
   });
@@ -823,7 +849,7 @@ describe('withdrawing a paper', () => {
     expect((await withdraw(tokens.main)).status).toBe(200);
     expect(store.submissions).toHaveLength(1);
     expect(store.submissions[0]!.deletedAt).not.toBeNull();
-    expect(store.deletions).toEqual([{ id: store.submissions[0]!.id, userId: MAIN.id, reason: 'withdrawn by one of its authors' }]);
+    expect(store.deletions).toEqual([{ id: store.submissions[0]!.id, userId: MAIN.id, reason: 'withdrawn by its sender' }]);
     expect(mails.map((m) => m.to).sort()).toEqual([OTHER.email, MAIN.email, ORGANISER.email].sort());
     expect(mails.every((m) => m.subject.includes('retirado'))).toBe(true);
     // Gone from Meus trabalhos, and the slot is free again.
@@ -833,20 +859,28 @@ describe('withdrawing a paper', () => {
     expect((await withdraw(tokens.main)).status).toBe(404);
   });
 
-  it('can be done by any of the authors, and everyone is told who did it', async () => {
-    const { withdraw, tokens, store, sent: mails } = await sent();
-    expect((await withdraw(tokens.other)).status).toBe(200);
-    expect(store.deletions).toEqual([{ id: store.submissions[0]!.id, userId: OTHER.id, reason: 'withdrawn by one of its authors' }]);
-    expect(mails.map((m) => m.to).sort()).toEqual([OTHER.email, MAIN.email, ORGANISER.email].sort());
-    expect(mails.find((m) => m.to === MAIN.email)!.text).toContain('foi retirado por João Lima');
-  });
-
-  it('cannot be done by an organiser, nor by someone who is not an author', async () => {
-    const { withdraw, tokens, store, auth } = await sent();
-    expect((await withdraw(tokens.organiser)).status).toBe(404);
+  it('cannot be done by another author of the paper, nor by a stranger: only by whoever sent it (#250)', async () => {
+    const { withdraw, tokens, store, auth, sent: mails } = await sent();
+    store.organisers = [];
+    expect((await withdraw(tokens.other)).status).toBe(404);
     const stranger = auth.login({ id: 'user-stranger', email: 'estranho@ufrn.br', emailConfirmed: true }, 'tok-stranger');
     expect((await withdraw(stranger)).status).toBe(404);
     expect(store.submissions[0]!.deletedAt).toBeNull();
+    expect(store.deletions).toEqual([]);
+    expect(mails).toEqual([]);
+  });
+
+  it('can be done by an organiser, at any time, and the authors are told (#250)', async () => {
+    const { withdraw, tokens, store, sent: mails } = await sent();
+    store.submissions[0]!.status = 'UNDER_REVIEW';
+    store.closedAt = NOW.toISOString();
+    expect((await withdraw(tokens.organiser)).status).toBe(200);
+    expect(store.deletions).toEqual([{ id: store.submissions[0]!.id, userId: ORGANISER.id, reason: 'withdrawn by the organisers' }]);
+    expect(mails.find((m) => m.to === MAIN.email)!.text).toContain('foi retirado por Comissão organizadora');
+    // The sender cannot while it is under review or closed.
+    const again = await sent();
+    again.store.submissions[0]!.status = 'UNDER_REVIEW';
+    expect((await again.withdraw(again.tokens.main)).status).toBe(409);
   });
 
   it('cannot be done after submissions close, when the date locks', async () => {
@@ -877,7 +911,7 @@ describe('Meus trabalhos', () => {
     const data = await body(await mine(deps, tokens.main));
     expect(data.submissions.map((s) => [s.title, s.position, s.sentByMe, s.canEdit])).toEqual([
       ['Meu', 1, true, true],
-      ['Do João comigo', 2, false, true],
+      ['Do João comigo', 2, false, false],
     ]);
     expect(data.limits).toEqual({ asMain: 1, maxAsMain: 3, asCoauthor: 1, maxAsCoauthor: 5 });
     expect(data.state).toBe('open');
@@ -891,7 +925,7 @@ describe('Meus trabalhos', () => {
     const token = auth.login({ id: 'user-new', email: 'nova@ufrn.br', emailConfirmed: true }, 'tok-new');
     const data = await body(await mine(deps, token));
     expect(data.submissions).toHaveLength(1);
-    expect(data.submissions[0]).toMatchObject({ position: 2, sentByMe: false, canEdit: true });
+    expect(data.submissions[0]).toMatchObject({ position: 2, sentByMe: false, canEdit: false });
   });
 
   it('shows the papers as locked after submissions close', async () => {
@@ -1102,5 +1136,34 @@ describe('submissions closed by the organisers (#236)', () => {
     clock.window = new Date('2026-11-14T12:00:00-03:00');
     const response = await handleSubmissions(call('GET', 'rules', { query: '?eventSlug=2027' }), 'rules', deps);
     expect((await body(response)).state).toBe('not_open');
+  });
+});
+
+describe('one paper, for the form (#250)', () => {
+  const one = (deps: SubmissionDeps, token: string | undefined, id: string, slug = '2027') =>
+    handleSubmissions(call('GET', 'one', { token, query: `?eventSlug=${slug}&id=${id}` }), 'one', deps);
+
+  it('gives it to the sender to change, to another author to look at, and to an organiser to change', async () => {
+    const { deps, tokens, store } = setup();
+    const s = store.seed({ authors: [{ position: 1, fullName: 'Maria', email: MAIN.email }, { position: 2, fullName: 'João', email: OTHER.email }] });
+    store.organisers = [{ userId: ORGANISER.id, email: ORGANISER.email, fullName: 'Viviane' }];
+    expect((await body(await one(deps, tokens.main, s.id))).submission).toMatchObject({ id: s.id, sentByMe: true, canEdit: true, asOrganiser: false });
+    expect((await body(await one(deps, tokens.other, s.id))).submission).toMatchObject({ position: 2, canEdit: false, asOrganiser: false });
+    expect((await body(await one(deps, tokens.organiser, s.id))).submission).toMatchObject({ position: null, canEdit: true, asOrganiser: true });
+  });
+
+  it('does not exist for anyone else, nor when withdrawn, nor without a login, nor in another edition', async () => {
+    const { deps, tokens, store, auth } = setup();
+    const s = store.seed();
+    const stranger = auth.login({ id: 'user-stranger', email: 'estranho@ufrn.br', emailConfirmed: true }, 'tok-stranger');
+    expect((await one(deps, stranger, s.id)).status).toBe(404);
+    expect((await one(deps, undefined, s.id)).status).toBe(401);
+    expect((await one(deps, tokens.main, 'sub-none')).status).toBe(404);
+    expect((await one(deps, tokens.main, s.id, '1999')).status).toBe(404);
+    s.deletedAt = NOW.toISOString();
+    expect((await one(deps, tokens.main, s.id)).status).toBe(404);
+    // The answer never says where the file is kept.
+    s.deletedAt = null;
+    expect(JSON.stringify(await body(await one(deps, tokens.main, s.id)))).not.toContain('seed-');
   });
 });

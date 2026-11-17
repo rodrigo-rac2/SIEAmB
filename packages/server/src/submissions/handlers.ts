@@ -54,7 +54,7 @@ const KEYWORD = { min: 2, max: 60 };
 const site = (deps: SubmissionDeps) => deps.siteUrl.replace(/\/+$/, '');
 
 /** What a paper looks like to someone allowed to see it. */
-function view(submission: Submission, user: AuthUser, open: boolean) {
+function view(submission: Submission, user: AuthUser, open: boolean, organiser = false) {
   const mine = submission.authors.find((a) => a.email === user.email);
   return {
     id: submission.id,
@@ -75,8 +75,11 @@ function view(submission: Submission, user: AuthUser, open: boolean) {
     /** Where the reader stands in the author list, from 1. */
     position: mine?.position ?? null,
     sentByMe: submission.userId === user.id,
-    // Any of the authors changes a paper, while submissions are open and it is not under review.
-    canEdit: Boolean(mine) && open && submission.status === 'SUBMITTED',
+    // Whoever sent the paper changes or withdraws it, while submissions are open and it is not
+    // under review; the other authors only see it (#250). The organisers can at any time.
+    canEdit: organiser || (submission.userId === user.id && open && submission.status === 'SUBMITTED'),
+    /** The reader may change it because of their role in the organisation, not as its sender. */
+    asOrganiser: organiser && submission.userId !== user.id,
   };
 }
 
@@ -142,6 +145,7 @@ async function mine(request: Request, deps: SubmissionDeps): Promise<Response> {
   if ('response' in ctx) return ctx.response;
   const { user, event, rules: r } = ctx;
   const all = await deps.store.listByAuthorEmail(event.id, user.email);
+  const organiser = all.length > 0 && (await deps.store.isOrganiser(event.id, user.id));
   return json(200, {
     state: ctx.state,
     closesAt: r.closesAt,
@@ -154,8 +158,27 @@ async function mine(request: Request, deps: SubmissionDeps): Promise<Response> {
       asCoauthor: all.filter((s) => (positionOf(s, user.email) ?? 0) > 1).length,
       maxAsCoauthor: r.maxAsCoauthor,
     },
-    submissions: all.map((s) => view(s, user, ctx.open)),
+    submissions: all.map((s) => view(s, user, ctx.open, organiser)),
   });
+}
+
+/**
+ * One paper, to open the form on it: for whoever sent it, its other authors (who will
+ * find they cannot change it) and the organisers. To anyone else it does not exist.
+ */
+async function one(request: Request, deps: SubmissionDeps): Promise<Response> {
+  const params = new URL(request.url).searchParams;
+  const ctx = await context(request, deps, params.get('eventSlug'));
+  if ('response' in ctx) return ctx.response;
+  const submission = await deps.store.findById(text(params.get('id'), 40));
+  if (!submission || submission.deletedAt || submission.eventId !== ctx.event.id) {
+    return json(404, { error: 'submission_not_found' });
+  }
+  const organiser = await deps.store.isOrganiser(ctx.event.id, ctx.user.id);
+  if (!organiser && positionOf(submission, ctx.user.email) === null) {
+    return json(404, { error: 'submission_not_found' });
+  }
+  return json(200, { submission: view(submission, ctx.user, ctx.open, organiser) });
 }
 
 /** A short-lived link to the file, for its authors and for the organisers. */
@@ -279,7 +302,7 @@ type Parsed =
   | { error: string; extra?: Record<string, unknown> }
   | { fields: Omit<SubmissionInput, 'filePath' | 'fileName' | 'filePages' | 'authors' | 'locale'>; authors: Author[] };
 
-function parse(body: Record<string, unknown>, ctx: Context, pepper: string): Parsed {
+function parse(body: Record<string, unknown>, ctx: Context, pepper: string, mustBeListed: boolean): Parsed {
   const { rules: r, user, event } = ctx;
   const title = text(body.title, TITLE.max + 1);
   const titleEn = text(body.titleEn, TITLE.max + 1);
@@ -312,7 +335,9 @@ function parse(body: Record<string, unknown>, ctx: Context, pepper: string): Par
     }
     authors.push({ position: authors.length + 1, fullName, email });
   }
-  if (!authors.some((a) => a.email === user.email)) return { error: 'sender_not_listed' };
+  // Whoever sends or changes a paper is one of its authors; an organiser fixing someone's paper is not.
+  if (mustBeListed && !authors.some((a) => a.email === user.email)) return { error: 'sender_not_listed' };
+  if (authors.length === 0) return { error: 'sender_not_listed' };
   return { fields: { title, titleEn, modality, areaRef, abstract, keywords, keywordsEn }, authors };
 }
 
@@ -327,18 +352,21 @@ async function save(request: Request, deps: SubmissionDeps): Promise<Response> {
   const body = await readJsonObject(request);
   const ctx = await context(request, deps, body.eventSlug);
   if ('response' in ctx) return ctx.response;
-  if (!ctx.open) return closedResponse(ctx.state);
   const { user, event, rules: r } = ctx;
 
   const id = text(body.id, 40);
   const existing = id ? await deps.store.findById(id) : null;
-  // Any of the authors changes the paper; to anyone else it does not exist.
-  if (id && (!existing || existing.deletedAt || positionOf(existing, user.email) === null || existing.eventId !== event.id)) {
+  // The organisers change any paper of the edition, at any time (#250).
+  const organiser = Boolean(id) && (await deps.store.isOrganiser(event.id, user.id));
+  if (!ctx.open && !organiser) return closedResponse(ctx.state);
+  // Only whoever sent the paper changes it; to the other authors and to anyone else it does not exist here.
+  if (id && (!existing || existing.deletedAt || existing.eventId !== event.id || (existing.userId !== user.id && !organiser))) {
     return json(404, { error: 'submission_not_found' });
   }
-  if (existing && existing.status !== 'SUBMITTED') return json(409, { error: 'submission_locked' });
+  const asOrganiser = Boolean(existing) && organiser && existing!.userId !== user.id;
+  if (existing && existing.status !== 'SUBMITTED' && !organiser) return json(409, { error: 'submission_locked' });
 
-  const parsed = parse(body, ctx, deps.pepper);
+  const parsed = parse(body, ctx, deps.pepper, !asOrganiser);
   if ('error' in parsed) return json(400, { error: parsed.error, ...parsed.extra });
   const { fields, authors } = parsed;
 
@@ -407,21 +435,24 @@ async function save(request: Request, deps: SubmissionDeps): Promise<Response> {
     : await deps.store.insert(event.id, user.id, input, now);
   deps.log(existing ? 'submission_updated' : 'submission_created', { submissionId: saved.id });
   await announce(existing ? 'updated' : 'received', saved, ctx, deps, now);
-  return json(existing ? 200 : 201, { submission: view(saved, user, true) });
+  return json(existing ? 200 : 201, { submission: view(saved, user, ctx.open, organiser) });
 }
 
 async function withdraw(request: Request, deps: SubmissionDeps): Promise<Response> {
   const body = await readJsonObject(request);
   const ctx = await context(request, deps, body.eventSlug);
   if ('response' in ctx) return ctx.response;
-  if (!ctx.open) return closedResponse(ctx.state);
   const submission = await deps.store.findById(text(body.id, 40));
-  if (!submission || submission.deletedAt || positionOf(submission, ctx.user.email) === null || submission.eventId !== ctx.event.id) {
+  const organiser = Boolean(submission) && (await deps.store.isOrganiser(ctx.event.id, ctx.user.id));
+  if (!ctx.open && !organiser) return closedResponse(ctx.state);
+  // Whoever sent it, or the organisers; to the other authors it is not theirs to withdraw (#250).
+  if (!submission || submission.deletedAt || submission.eventId !== ctx.event.id || (submission.userId !== ctx.user.id && !organiser)) {
     return json(404, { error: 'submission_not_found' });
   }
-  if (submission.status !== 'SUBMITTED') return json(409, { error: 'submission_locked' });
+  if (submission.status !== 'SUBMITTED' && !organiser) return json(409, { error: 'submission_locked' });
   const now = deps.now();
-  await deps.store.softDelete(submission.id, ctx.user.id, 'withdrawn by one of its authors', now);
+  const bySender = submission.userId === ctx.user.id;
+  await deps.store.softDelete(submission.id, ctx.user.id, bySender ? 'withdrawn by its sender' : 'withdrawn by the organisers', now);
   deps.log('submission_withdrawn', { submissionId: submission.id });
   await announce('withdrawn', submission, ctx, deps, now);
   return json(200, { ok: true });
@@ -443,7 +474,8 @@ async function announce(
   try {
     const { event } = ctx;
     // Who did it: the person logged in, by the name they have in the author list.
-    const main = submission.authors.find((a) => a.email === ctx.user.email)?.fullName ?? ctx.user.email;
+    // An organiser who is not an author is named by the role, never by their address.
+    const main = submission.authors.find((a) => a.email === ctx.user.email)?.fullName ?? 'Comissão organizadora';
     const stamp = kind === 'received' ? 'received' : `${kind}:${now.getTime()}`;
     const base = {
       eventName: event.name,
@@ -500,6 +532,7 @@ type Handler = (request: Request, deps: SubmissionDeps) => Promise<Response>;
 const ROUTES: Record<string, Partial<Record<string, Handler>>> = {
   rules: { GET: rules },
   mine: { GET: mine },
+  one: { GET: one },
   people: { GET: people },
   reviewing: { GET: reviewing },
   file: { GET: file },

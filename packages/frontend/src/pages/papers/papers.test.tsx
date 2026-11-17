@@ -173,15 +173,25 @@ describe('MyPapersPage', () => {
     expect(within(card).getByRole('link', { name: 'Alterar' })).toHaveAttribute('href', '/2027/meus-trabalhos/paper-1');
   });
 
-  it('gives an author in any position the same paper, to change or withdraw', async () => {
-    stubApi({ mine: { body: mine({ submissions: [paper({ position: 2, sentByMe: false, filePages: null })] }) }, me: account(null) });
+  it('gives the sender the paper to change or withdraw, whatever their place among the authors', async () => {
+    stubApi({ mine: { body: mine({ submissions: [paper({ position: 2, sentByMe: true, filePages: null })] }) }, me: account(null) });
     mount(...LIST, <MyPapersPage />);
     const card = await screen.findByTestId('paper-card');
     expect(card).toHaveTextContent('você é o 2º autor');
-    expect(card).not.toHaveTextContent(/principal|coautor|somente consulta/i);
+    expect(card).not.toHaveTextContent(/principal|coautor|só quem enviou/i);
     expect(within(card).getByRole('link', { name: 'Alterar' })).toBeInTheDocument();
     expect(within(card).getByRole('button', { name: 'Retirar o trabalho' })).toBeInTheDocument();
     expect(card).not.toHaveTextContent('páginas');
+  });
+
+  it('gives another author the paper to see and download, and says who can change it (#250)', async () => {
+    stubApi({ mine: { body: mine({ submissions: [paper({ position: 2, sentByMe: false, canEdit: false })] }) }, me: account(null) });
+    mount(...LIST, <MyPapersPage />);
+    const card = await screen.findByTestId('paper-card');
+    expect(card).toHaveTextContent('você é o 2º autor · só quem enviou pode alterar');
+    expect(within(card).queryByRole('link', { name: 'Alterar' })).not.toBeInTheDocument();
+    expect(within(card).queryByRole('button', { name: 'Retirar o trabalho' })).not.toBeInTheDocument();
+    expect(within(card).getByRole('button', { name: 'Baixar o arquivo' })).toBeInTheDocument();
   });
 
   it('offers only the download once the paper can no longer be changed', async () => {
@@ -685,7 +695,7 @@ describe('PaperFormPage, changing a paper', () => {
   const EDIT = ['/2027/meus-trabalhos/paper-1', '/:eventSlug/meus-trabalhos/:paperId'] as const;
 
   it('starts with the paper as it is and saves without a new file', async () => {
-    const calls = stubApi({ mine: { body: mine({ submissions: [paper()] }) }, save: { body: { submission: paper() } } });
+    const calls = stubApi({ one: { body: { submission: paper() } }, save: { body: { submission: paper() } } });
     mount(...EDIT, <PaperFormPage />);
     const title = await screen.findByLabelText('Título em português');
     expect(title).toHaveValue('Governança da água no semiárido');
@@ -707,14 +717,46 @@ describe('PaperFormPage, changing a paper', () => {
     expect(calls.some((c) => c.url.includes('upload-url'))).toBe(false);
   });
 
+  it('asks the server for that one paper', async () => {
+    const calls = stubApi({ one: { body: { submission: paper() } } });
+    mount(...EDIT, <PaperFormPage />);
+    await screen.findByLabelText('Título em português');
+    expect(calls.find((c) => c.url.includes('/one'))).toMatchObject({
+      url: '/api/v1/submissions/one?eventSlug=2027&id=paper-1',
+      authorization: 'Bearer access-token-1',
+    });
+  });
+
   it.each([
-    ['is someone else’s or does not exist', mine()],
-    ['can no longer be changed', mine({ submissions: [paper({ canEdit: false })] })],
-  ])('shows no form when the paper %s', async (_name, data) => {
-    stubApi({ mine: { body: data } });
+    ['is someone else’s or does not exist', { status: 404, body: { error: 'submission_not_found' } }],
+    ['was sent by another author, who is the one to change it (#250)', { body: { submission: paper({ position: 2, sentByMe: false, canEdit: false }) } }],
+    ['can no longer be changed', { body: { submission: paper({ status: 'UNDER_REVIEW', canEdit: false }) } }],
+  ])('shows no form when the paper %s', async (_name, answer) => {
+    stubApi({ one: answer });
     mount(...EDIT, <PaperFormPage />);
     expect(await screen.findByRole('alert')).toHaveTextContent('Não encontramos esse trabalho, ou ele não pode mais ser alterado.');
     expect(screen.queryByLabelText('Título em português')).not.toBeInTheDocument();
+  });
+
+  it('lets an organiser change someone else’s paper, with no row of their own, and goes back to the panel (#250)', async () => {
+    const theirs = paper({ position: null, sentByMe: false, canEdit: true, asOrganiser: true });
+    const calls = stubApi({ one: { body: { submission: theirs } }, save: { body: { submission: theirs } } });
+    mount(...EDIT, <PaperFormPage />, auth({ email: 'viviane@ufcg.edu.br' }));
+    const title = await screen.findByLabelText('Título em português');
+    // Every author can be edited or removed: none of them is the organiser.
+    expect(screen.queryByLabelText(/\(você\)/)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Remover autor 1' })).toBeInTheDocument();
+    expect(screen.getByLabelText('E-mail do autor 1')).not.toHaveAttribute('readonly');
+    await userEvent.clear(title);
+    await userEvent.type(title, 'Título corrigido pela organização');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }));
+    expect(await screen.findByTestId('where')).toHaveTextContent('/2027/painel/trabalhos');
+    const saved = calls.find((c) => c.url.includes('/save'))!.body as { authors: unknown[]; title: string };
+    expect(saved.title).toBe('Título corrigido pela organização');
+    expect(saved.authors).toEqual([
+      { fullName: 'Maria Clara de Souza', email: 'maria@ufcg.edu.br' },
+      { fullName: 'João Lima', email: 'joao@ufpb.br' },
+    ]);
   });
 });
 

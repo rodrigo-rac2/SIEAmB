@@ -392,8 +392,48 @@ describe('papers tab', () => {
     expect(first).toHaveTextContent('Nenhum autor com inscrição confirmada.');
     expect(first).toHaveTextContent('Enviado');
     expect(first).toHaveTextContent('13 páginas');
-    expect(second).toHaveTextContent('Retirado pelo autor');
+    expect(second).toHaveTextContent('Retirado');
+    // Standing papers can be changed or withdrawn by the organisers; a withdrawn one cannot (#250).
+    expect(within(first!).getByRole('link', { name: 'Alterar o trabalho nº 12' })).toHaveAttribute('href', '/2027/meus-trabalhos/p1');
+    expect(within(first!).getByRole('button', { name: 'Retirar o trabalho nº 12' })).toBeInTheDocument();
+    expect(within(second!).queryByRole('link', { name: /Alterar o trabalho/ })).not.toBeInTheDocument();
+    expect(within(second!).queryByRole('button', { name: /Retirar o trabalho/ })).not.toBeInTheDocument();
     expect(second).toHaveTextContent('Há autor com inscrição confirmada.');
+  });
+
+  it('an organiser withdraws a paper only after confirming, and the list is read again (#250)', async () => {
+    let withdrawn = false;
+    const calls = stubApi({
+      members: members('ORGANIZER'),
+      submissions: () => ({
+        body: { ...papers.body, submissions: papers.body.submissions.map((s) => (s.id === 'p1' && withdrawn ? { ...s, deletedAt: '2026-12-05T12:00:00Z' } : s)) },
+      }),
+      withdraw: () => {
+        withdrawn = true;
+        return { body: { ok: true } };
+      },
+    });
+    panel('papers');
+    await userEvent.click(await screen.findByRole('button', { name: 'Retirar o trabalho nº 12' }));
+    expect(calls.some((c) => c.url.includes('/withdraw'))).toBe(false);
+    expect(screen.getByText('Retirar o trabalho nº 12? Os autores serão avisados.')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Sim, retirar' }));
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Retirar o trabalho nº 12' })).not.toBeInTheDocument());
+    expect(calls.find((c) => c.url.includes('/withdraw'))).toMatchObject({
+      url: '/api/v1/submissions/withdraw',
+      method: 'POST',
+      body: { eventSlug: '2027', id: 'p1' },
+    });
+    expect(screen.getAllByTestId('paper-row')[0]).toHaveTextContent('Retirado');
+  });
+
+  it('cancelling a withdrawal in the panel sends nothing', async () => {
+    const calls = stubApi({ members: members('ORGANIZER'), submissions: papers });
+    panel('papers');
+    await userEvent.click(await screen.findByRole('button', { name: 'Retirar o trabalho nº 12' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+    expect(screen.getByRole('button', { name: 'Retirar o trabalho nº 12' })).toBeInTheDocument();
+    expect(calls.every((c) => c.method === 'GET')).toBe(true);
   });
 
   describe('closing and reopening submissions (#236)', () => {

@@ -35,6 +35,8 @@ export interface Paper {
   /** Where the reader stands in the author list, from 1. */
   position: number | null;
   sentByMe: boolean;
+  /** The reader may change it as an organiser, not as its sender (#250). */
+  asOrganiser?: boolean;
   canEdit: boolean;
 }
 
@@ -199,6 +201,10 @@ export interface ReviewPaper {
 
 export const fetchReviewing = (token: string, eventSlug: string): Promise<{ submissions: ReviewPaper[] }> =>
   request('GET', 'reviewing', { token, query: slugQuery(eventSlug) });
+
+/** One paper, for the form: the sender, another author (read only) or an organiser. */
+export const fetchPaper = (token: string, eventSlug: string, id: string): Promise<{ submission: Paper }> =>
+  request('GET', 'one', { token, query: `${slugQuery(eventSlug)}&id=${encodeURIComponent(id)}` });
 
 export const fetchMyPapers = (token: string, eventSlug: string): Promise<MyPapers> =>
   request('GET', 'mine', { token, query: slugQuery(eventSlug) });

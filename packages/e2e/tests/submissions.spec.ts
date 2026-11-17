@@ -155,29 +155,43 @@ test.describe('submissions @submissions', () => {
     await page.goto(`/${EVENT}/meus-trabalhos`);
     await expect(page.getByTestId('paper-card')).toHaveCount(1);
 
-    // 9. The third author, in another browser: the same paper, and she can change it.
+    // 9. The third author, in another browser: sees the paper and downloads it, and cannot change
+    //    or withdraw it. Only whoever sent it can (#250), in the site and in the server.
     const other = await browser.newContext();
     const coPage = await other.newPage();
     await logIn(coPage, knownEmail);
     await coPage.goto(`/${EVENT}/meus-trabalhos`);
     const coCard = coPage.getByTestId('paper-card');
     await expect(coCard).toContainText(title);
-    await expect(coCard).toContainText('você é o 3º autor');
+    await expect(coCard).toContainText('você é o 3º autor · só quem enviou pode alterar');
+    await expect(coCard.getByRole('link', { name: 'Alterar' })).toHaveCount(0);
+    await expect(coCard.getByRole('button', { name: 'Retirar o trabalho' })).toHaveCount(0);
     await expect(coPage.getByTestId('paper-limits')).toContainText('consta nas demais posições em 1 de 5');
     const [coDownload] = await Promise.all([coPage.waitForEvent('download'), coCard.getByRole('button', { name: 'Baixar o arquivo' }).click()]);
     expect(coDownload.suggestedFilename()).toBe('Resumo expandido E2E.pdf');
-    await coCard.getByRole('link', { name: 'Alterar' }).click();
-    await expect(coPage.getByLabel('Título em português')).toHaveValue(title);
-    await expect(coPage.getByLabel('Nome do autor 1')).toHaveValue('Prof. Sem Conta E2E');
-    await expect(coPage.getByLabel('Nome do autor 3 (você)')).toHaveValue(knownName);
-    await coPage.getByLabel('Título em português').fill(`${title} (revisto)`);
-    await coPage.getByRole('button', { name: 'Salvar alterações' }).click();
-    await expect(coPage.getByTestId('paper-card')).toContainText(`${title} (revisto)`);
-    await expect(coPage.getByTestId('paper-card')).toContainText('Resumo expandido E2E.pdf · 5 páginas');
+    const editHref = await card.getByRole('link', { name: 'Alterar' }).getAttribute('href');
+    await coPage.goto(editHref!);
+    await expect(coPage.getByRole('alert')).toContainText('Não encontramos esse trabalho');
+    const coToken = await coPage.evaluate(() => JSON.parse(localStorage.getItem('sieamb-auth')!).access_token as string);
+    const paperId = editHref!.split('/').pop()!;
+    const refused = await coPage.request.post('/api/v1/submissions/withdraw', {
+      headers: { authorization: `Bearer ${coToken}` },
+      data: { eventSlug: EVENT, id: paperId },
+    });
+    expect(refused.status()).toBe(404);
     await other.close();
 
-    // 10. The sender sees the change, and withdraws: gone from the list, the record is kept.
-    await page.reload();
+    // 9b. The sender changes the title and keeps the file.
+    await card.getByRole('link', { name: 'Alterar' }).click();
+    await expect(page.getByLabel('Título em português')).toHaveValue(title);
+    await expect(page.getByLabel('Nome do autor 1')).toHaveValue('Prof. Sem Conta E2E');
+    await expect(page.getByLabel('Nome do autor 2 (você)')).toHaveValue('Autora Que Envia E2E');
+    await page.getByLabel('Título em português').fill(`${title} (revisto)`);
+    await page.getByRole('button', { name: 'Salvar alterações' }).click();
+    await expect(page.getByTestId('paper-card')).toContainText(`${title} (revisto)`);
+    await expect(page.getByTestId('paper-card')).toContainText('Resumo expandido E2E.pdf · 5 páginas');
+
+    // 10. The sender withdraws: gone from the list, the record is kept.
     await expect(page.getByTestId('paper-card')).toContainText(`${title} (revisto)`);
     await page.getByRole('button', { name: 'Retirar o trabalho' }).click();
     await page.getByRole('button', { name: 'Sim, retirar' }).click();
@@ -188,7 +202,7 @@ test.describe('submissions @submissions', () => {
     );
     expect(rows).toHaveLength(1);
     expect(rows[0]!.deleted_at).not.toBeNull();
-    expect(rows[0]!.deleted_reason).toBe('withdrawn by one of its authors');
+    expect(rows[0]!.deleted_reason).toBe('withdrawn by its sender');
   });
 
   test('a stranger cannot reach a paper or its file', async ({ page, request }) => {
@@ -351,6 +365,17 @@ test.describe('submissions @submissions', () => {
     expect(file.status()).toBe(404);
     await authorPage.reload();
     await expect(authorPage.getByTestId('paper-card').getByRole('link', { name: 'Alterar' })).toBeVisible();
+
+    // 7. The organisers can change or withdraw any paper (#250): here, withdraw it from the panel.
+    await expect(row.getByRole('link', { name: `Alterar o trabalho nº ${number}` })).toHaveAttribute('href', `/${EVENT}/meus-trabalhos/${paperId}`);
+    await row.getByRole('button', { name: `Retirar o trabalho nº ${number}` }).click();
+    await expect(row).toContainText(`Retirar o trabalho nº ${number}? Os autores serão avisados.`);
+    await row.getByRole('button', { name: 'Sim, retirar' }).click();
+    await expect(row).toContainText('Retirado');
+    await authorPage.reload();
+    await expect(authorPage.getByTestId('no-papers')).toBeVisible();
+    const gone = await admin<{ deleted_reason: string | null }[]>(`/rest/v1/submissions?id=eq.${paperId}&select=deleted_reason`);
+    expect(gone[0]!.deleted_reason).toBe('withdrawn by the organisers');
 
     await admin(`/rest/v1/audit_logs?actor_id=eq.${organiserId}`, { method: 'DELETE' }).catch(() => undefined);
     await authorContext.close();
