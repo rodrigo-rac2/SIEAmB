@@ -651,9 +651,11 @@ async function memberChange(request: Request, deps: AdminDeps, add: boolean): Pr
   const role = ROLES.find((r) => r === body.role);
   if (!role) return json(400, { error: 'invalid_role' });
   const email = text(body.email, 200).toLowerCase();
-  // Nobody removes their own administrator role: the edition must not be left without one by accident.
-  if (!add && role === 'ADMIN' && ctx.role === 'ADMIN' && email === ctx.user.email) return json(409, { error: 'cannot_remove_self' });
-  if (!grantable(ctx.role, await isOwner(deps, ctx.user.id)).includes(role)) {
+  const owner = await isOwner(deps, ctx.user.id);
+  // An administrator does not remove their own administrator role: the edition must not be left without
+  // one by accident. The owner may (#277): they stand as administrator everywhere, with or without it.
+  if (!add && role === 'ADMIN' && ctx.role === 'ADMIN' && !owner && email === ctx.user.email) return json(409, { error: 'cannot_remove_self' });
+  if (!grantable(ctx.role, owner).includes(role)) {
     return json(403, { error: ctx.role === 'ADMIN' ? 'owner_only' : 'admin_only' });
   }
   if (!isEmail(email)) return json(400, { error: 'invalid_email' });

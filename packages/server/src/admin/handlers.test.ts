@@ -511,6 +511,16 @@ describe('people and roles', () => {
     expect(store.members.some((m) => m.userId === ADMIN.id && m.role === 'ADMIN')).toBe(true);
   });
 
+  it('lets the owner take the administrator role off their own account, and they still open the panel (#277)', async () => {
+    const { deps, tokens, store } = setup();
+    store.members.push({ eventId: EVENT.id, userId: PLATFORM.id, email: PLATFORM.email, fullName: 'Rodrigo Dono', role: 'ADMIN' });
+    const response = await post(deps, 'member-remove', tokens.platform, { email: PLATFORM.email, role: 'ADMIN' });
+    expect(response.status).toBe(200);
+    expect(store.members.some((m) => m.userId === PLATFORM.id)).toBe(false);
+    const after = await body(await get(deps, 'members', tokens.platform));
+    expect(after).toMatchObject({ role: 'ADMIN', owner: true, canManage: ['ADMIN', 'ORGANIZER', 'REVIEWER'] });
+  });
+
   it.each([
     ['an unknown role', { email: 'x@y.org', role: 'OWNER' }, 'invalid_role'],
     ['a role the panel does not manage', { email: 'x@y.org', role: 'FINANCE' }, 'invalid_role'],
