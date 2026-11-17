@@ -420,6 +420,47 @@ describe('PaperFormPage, new paper', () => {
     ]);
   });
 
+  it('sends the name of the account even when Send is pressed before it arrived', async () => {
+    const calls = stubApi(ok());
+    // The account answers late: only after the person already pressed Send.
+    let release = () => undefined as void;
+    const late = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const answer = globalThis.fetch;
+    vi.stubGlobal('fetch', async (input: string, init?: RequestInit) => {
+      if (input.includes('/account/me')) await late;
+      return answer(input, init);
+    });
+    mount(...NEW, <PaperFormPage />);
+    await fill();
+    expect(screen.getByLabelText('Nome do autor 1 (você)')).toHaveValue('');
+    await userEvent.upload(screen.getByLabelText('Arquivo do trabalho'), pdfFile());
+    await userEvent.click(screen.getByRole('button', { name: 'Enviar trabalho' }));
+    // Nothing is sent without the name.
+    expect(posted(calls)).toEqual([]);
+    release();
+    await screen.findByTestId('where');
+    expect((posted(calls).at(-1)!.body as { authors: unknown[] }).authors).toEqual([ME]);
+  });
+
+  it('asks for a missing name before uploading anything', async () => {
+    const nameless = account(null);
+    nameless.body.user.fullName = '';
+    const calls = stubApi({ ...ok(), me: nameless });
+    mount(...NEW, <PaperFormPage />);
+    await fill();
+    await userEvent.upload(screen.getByLabelText('Arquivo do trabalho'), pdfFile());
+    await userEvent.click(screen.getByRole('button', { name: 'Enviar trabalho' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Confira o nome e o e-mail de cada autor.');
+    expect(posted(calls)).toEqual([]);
+    // Once typed, it goes.
+    await userEvent.type(screen.getByLabelText('Nome do autor 1 (você)'), 'Maria Clara');
+    await userEvent.click(screen.getByRole('button', { name: 'Enviar trabalho' }));
+    await screen.findByTestId('where');
+    expect((posted(calls).at(-1)!.body as { authors: unknown[] }).authors).toEqual([{ fullName: 'Maria Clara', email: 'maria@ufcg.edu.br' }]);
+  });
+
   it('leaves out an author row left blank', async () => {
     const calls = stubApi(ok());
     mount(...NEW, <PaperFormPage />);
