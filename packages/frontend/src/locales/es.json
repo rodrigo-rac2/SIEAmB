@@ -329,6 +329,8 @@
     },
     "password": {
       "label": "Contraseña",
+      "show": "Mostrar la contraseña",
+      "hide": "Ocultar la contraseña",
       "new": "Nueva contraseña",
       "repeat": "Repita la contraseña",
       "hint": "Use al menos {{min}} caracteres.",

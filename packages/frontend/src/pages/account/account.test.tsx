@@ -194,6 +194,29 @@ describe('top bar', () => {
 });
 
 describe('LoginPage', () => {
+  it('shows and hides the password without losing what was typed, and still sends it', async () => {
+    const state = auth();
+    mount('/2027/conta/entrar', <LoginPage />, state);
+    const field = await screen.findByLabelText('Senha');
+    expect(field).toHaveAttribute('type', 'password');
+    await userEvent.type(field, 'uma-senha-longa');
+    const show = screen.getByRole('button', { name: 'Mostrar a senha' });
+    expect(show).toHaveAttribute('type', 'button');
+    expect(show).toHaveAttribute('aria-pressed', 'false');
+    await userEvent.click(show);
+    expect(field).toHaveAttribute('type', 'text');
+    expect(field).toHaveValue('uma-senha-longa');
+    // The eye never sends the form: only the log-in button does.
+    expect(state.signIn).not.toHaveBeenCalled();
+    const hide = screen.getByRole('button', { name: 'Ocultar a senha' });
+    expect(hide).toHaveAttribute('aria-pressed', 'true');
+    await userEvent.click(hide);
+    expect(field).toHaveAttribute('type', 'password');
+    await userEvent.type(screen.getByLabelText('E-mail'), 'maria@ufcg.edu.br');
+    await userEvent.click(screen.getByRole('button', { name: 'Entrar' }));
+    expect(state.signIn).toHaveBeenCalledWith('maria@ufcg.edu.br', 'uma-senha-longa');
+  });
+
   it('logs in with the e-mail and password typed', async () => {
     const state = auth();
     mount('/2027/conta/entrar', <LoginPage />, state);
@@ -335,6 +358,20 @@ describe('PasswordPage', () => {
       <PasswordPage type={type} />,
       state,
     );
+
+  it('shows each of the two passwords on its own', async () => {
+    stubApi({ password: { body: { ok: true } } });
+    open(auth(LOGGED_IN));
+    const first = await screen.findByLabelText('Nova senha');
+    const second = screen.getByLabelText('Repita a senha');
+    const eyes = screen.getAllByRole('button', { name: 'Mostrar a senha' });
+    expect(eyes).toHaveLength(2);
+    await userEvent.click(eyes[1]!);
+    expect(first).toHaveAttribute('type', 'password');
+    expect(second).toHaveAttribute('type', 'text');
+    expect(first).toHaveAttribute('autocomplete', 'new-password');
+    expect(second).toHaveAttribute('autocomplete', 'new-password');
+  });
 
   it('checks the link, then saves the password and goes to Minha área', async () => {
     const calls = stubApi({ password: { body: { ok: true } } });

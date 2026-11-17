@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { PasswordInput } from '../../components/shared/PasswordInput';
 import { useTranslation } from 'react-i18next';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { PageHeader } from '../../components/shared/PageHeader';
@@ -61,9 +62,8 @@ export function LoginPage() {
             </div>
             <div className="reg-form__field">
               <label htmlFor="login-password">{t('account.password.label')}</label>
-              <input
+              <PasswordInput
                 id="login-password"
-                type="password"
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

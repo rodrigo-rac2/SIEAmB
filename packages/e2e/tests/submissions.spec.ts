@@ -34,7 +34,7 @@ async function pdfFile(pages: number, name: string): Promise<string> {
 async function logIn(page: Page, email: string) {
   await page.goto(`/${EVENT}/conta/entrar`);
   await page.getByLabel('E-mail').fill(email);
-  await page.getByLabel('Senha').fill(PASSWORD);
+  await page.getByLabel('Senha', { exact: true }).fill(PASSWORD);
   await page.getByRole('button', { name: 'Entrar' }).click();
   await expect(page).toHaveURL(new RegExp(`/${EVENT}/minha-area$`));
 }

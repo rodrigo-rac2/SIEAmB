@@ -329,6 +329,8 @@
     },
     "password": {
       "label": "Password",
+      "show": "Show the password",
+      "hide": "Hide the password",
       "new": "New password",
       "repeat": "Repeat the password",
       "hint": "Use at least {{min}} characters.",
