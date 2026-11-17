@@ -6,6 +6,7 @@
   "framework": null,
   "rewrites": [
     { "source": "/api/v1/account/:action", "destination": "/api/v1/account?action=:action" },
+    { "source": "/api/v1/submissions/:action", "destination": "/api/v1/submissions?action=:action" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

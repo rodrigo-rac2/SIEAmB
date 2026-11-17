@@ -90,7 +90,21 @@
     "rulesTitle": "Reglas de Envío",
     "rulesBody": "Las normas de envío, las áreas temáticas y el cronograma están en la convocatoria.",
     "rulesCta": "Leer la convocatoria",
-    "templatesTitle": "Plantillas para descargar"
+    "templatesTitle": "Plantillas para descargar",
+    "state": {
+      "open": {
+        "title": "Envíos abiertos",
+        "body": "Envíe su trabajo por el sitio. Es necesario tener una cuenta; la inscripción en el evento puede hacerse después."
+      },
+      "not_open": {
+        "title": "Los envíos todavía no abrieron",
+        "body": "Ya puede crear su cuenta. El envío estará disponible en la fecha prevista en la convocatoria."
+      },
+      "closed": {
+        "title": "Envíos cerrados",
+        "body": "El plazo de envío terminó. Quien envió un trabajo sigue su situación en Mis trabajos."
+      }
+    }
   },
   "editais": {
     "title": "Convocatorias",
@@ -379,6 +393,103 @@
       "link_not_found": "Este enlace no es válido.",
       "link_expired": "Este enlace expiró. Pida otro en Mi área.",
       "cannot_link": "No fue posible unir la inscripción a esa cuenta. Hable con la organización."
+    }
+  },
+  "papers": {
+    "title": "Mis trabajos",
+    "send": "Enviar trabajo",
+    "editTitle": "Modificar trabajo",
+    "edit": "Modificar",
+    "none": "Usted todavía no envió ningún trabajo, ni figura como coautor.",
+    "number": "Trabajo n.º {{number}}",
+    "roleMain": "usted es el autor principal",
+    "roleCoauthor": "usted es coautor (solo consulta)",
+    "sentOn": "enviado el {{date}}",
+    "pages_one": "{{count}} página",
+    "pages_other": "{{count}} páginas",
+    "openFile": "Descargar el archivo",
+    "withdraw": "Retirar el trabajo",
+    "withdrawConfirm": "¿Retirar este trabajo? No será evaluado.",
+    "withdrawYes": "Sí, retirar",
+    "limits": "Usted envió {{asMain}} de {{maxAsMain}} trabajos como autor principal y figura como coautor en {{asCoauthor}} de {{maxAsCoauthor}}.",
+    "limitReached": "Usted ya envió los {{maxAsMain}} trabajos permitidos como autor principal.",
+    "window": {
+      "open": "Los envíos están abiertos hasta el {{date}}.",
+      "not_open": "Los envíos todavía no abrieron.",
+      "closed": "Los envíos cerraron el {{date}}. Los trabajos ya no pueden modificarse."
+    },
+    "modalities": {
+      "ARTIGO": "Artículo científico",
+      "RESUMO_EXPANDIDO": "Resumen ampliado"
+    },
+    "status": {
+      "SUBMITTED": "Enviado",
+      "UNDER_REVIEW": "En evaluación",
+      "APPROVED": "Aprobado",
+      "APPROVED_WITH_REVISION": "Aprobado con revisión",
+      "REJECTED": "No aprobado"
+    },
+    "registration": {
+      "none": "Usted todavía no está inscrito en el evento. La inscripción puede hacerse en cualquier momento.",
+      "noneWithPapers": "Usted todavía no está inscrito. Un trabajo aprobado solo entra en la programación si al menos uno de los autores está inscrito.",
+      "UNPAID": "Falta el pago de la tasa para completar la inscripción.",
+      "PENDING": "Estamos esperando la confirmación del pago.",
+      "PAID": "Nada más que hacer en cuanto a la inscripción."
+    },
+    "form": {
+      "title": "Título en portugués",
+      "titleEn": "Título en inglés",
+      "modality": "Modalidad",
+      "pagesHint": "De {{min}} a {{max}} páginas, contando las referencias.",
+      "area": "Área temática",
+      "areaChoose": "Elija el área",
+      "abstract": "Resumen",
+      "keywords": "Palabras clave en portugués",
+      "keywordsEn": "Keywords (en inglés)",
+      "keywordsHint": "Hasta {{max}} en cada idioma, separadas por punto y coma.",
+      "coauthorsTitle": "Coautores",
+      "coauthorsHint": "Hasta {{max}} coautores, en el orden de autoría. Usted es el autor principal. Los coautores no necesitan cuenta ni inscripción para que el trabajo sea enviado, y reciben un aviso por correo.",
+      "coauthorName": "Nombre del coautor {{n}}",
+      "coauthorEmail": "Correo del coautor {{n}}",
+      "coauthorAdd": "Agregar coautor",
+      "coauthorRemove": "Quitar",
+      "file": "Archivo del trabajo",
+      "fileReplace": "Reemplazar el archivo (opcional)",
+      "fileHint": "PDF o Word (.docx), hasta {{maxMb}} MB, en el modelo de la convocatoria y con los nombres de todos los autores.",
+      "fileCurrent": "Archivo actual: {{name}}.",
+      "submit": "Enviar trabajo",
+      "save": "Guardar cambios",
+      "sending": "Enviando…",
+      "sendAnyway": "Es otro trabajo, enviar de todos modos"
+    },
+    "errors": {
+      "generic": "Algo salió mal. Intente de nuevo en un momento.",
+      "not_logged_in": "Su sesión terminó. Entre de nuevo.",
+      "email_not_confirmed": "Confirme su correo para continuar.",
+      "event_not_found": "Esta edición no recibe trabajos por el sitio.",
+      "submissions_not_open": "Los envíos todavía no abrieron.",
+      "submissions_closed": "Los envíos fueron cerrados.",
+      "submission_not_found": "No encontramos ese trabajo, o ya no puede modificarse.",
+      "submission_locked": "Este trabajo ya está en evaluación y no puede modificarse.",
+      "too_many_attempts": "Demasiados intentos. Espere un poco e intente de nuevo.",
+      "wrong_file_type": "El archivo debe ser PDF o Word (.docx).",
+      "file_missing": "Adjunte el archivo del trabajo.",
+      "file_too_large": "El archivo supera los {{maxMb}} MB.",
+      "unreadable_file": "No fue posible leer el archivo. Compruebe que abre normalmente y que realmente es un PDF o un .docx.",
+      "wrong_page_count": "El archivo tiene {{pages}} páginas. En esta modalidad la convocatoria pide de {{minPages}} a {{maxPages}}.",
+      "invalid_title": "Informe el título en portugués.",
+      "invalid_title_en": "Informe el título en inglés.",
+      "invalid_modality": "Elija la modalidad.",
+      "invalid_area": "Elija el área temática.",
+      "invalid_abstract": "El resumen debe tener entre 50 y 5000 caracteres.",
+      "invalid_keywords": "Informe de 1 a 5 palabras clave, separadas por punto y coma.",
+      "invalid_coauthor": "Revise el nombre y el correo de cada coautor.",
+      "duplicate_author": "El correo {{email}} aparece más de una vez entre los autores.",
+      "too_many_authors": "La convocatoria permite hasta {{max}} autores por trabajo.",
+      "too_many_as_main": "Usted ya envió los {{max}} trabajos permitidos como autor principal.",
+      "coauthor_limit": "{{email}} ya figura como coautor en {{max}} trabajos, el límite de la convocatoria.",
+      "duplicate_title": "Uno de los autores ya envió un trabajo con este título (n.º {{number}}). Cada trabajo debe enviarse una sola vez.",
+      "upload_failed": "No fue posible enviar el archivo. Revise su conexión e intente de nuevo."
     }
   }
 }

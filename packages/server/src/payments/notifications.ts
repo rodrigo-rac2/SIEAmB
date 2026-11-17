@@ -557,6 +557,8 @@ export interface SweepDeps extends Partial<EmailDeps> {
   fetch?: typeof fetch;
   notify?: PaymentNotifier;
   log: Log;
+  /** Delivers what the general outbox still owes (#217); absent where it is not set up. */
+  sweepOutbox?: (now: Date) => Promise<unknown>;
 }
 
 function sameSecret(given: string, expected: string): boolean {
@@ -601,6 +603,7 @@ export async function handleEmailSweep(
     mailer: Boolean(mailer),
     errors: [] as string[],
   };
+  const extra: { outbox?: unknown } = {};
 
   if (accessToken && deps.fetch) {
     try {
@@ -629,7 +632,15 @@ export async function handleEmailSweep(
   } catch {
     result.errors.push('deliver');
   }
+  // The general outbox (#217): submissions, announcements. Counts only, like the rest.
+  if (deps.sweepOutbox) {
+    try {
+      extra.outbox = await deps.sweepOutbox(now);
+    } catch {
+      result.errors.push('outbox');
+    }
+  }
 
-  log('payment_email_sweep', { ...result });
-  return json(result.errors.length ? 502 : 200, { ...result });
+  log('payment_email_sweep', { ...result, ...extra });
+  return json(result.errors.length ? 502 : 200, { ...result, ...extra });
 }
