@@ -132,3 +132,64 @@
 .panel__role {
   white-space: nowrap;
 }
+
+/*
+ * Something asked of the server is on its way (#278): "Processando…" with a spinner, and the
+ * line, card or box it sits in is shaded and cannot be clicked until the answer is back.
+ */
+.panel__processing {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  background: var(--color-ink);
+  color: var(--color-surface);
+  font-size: var(--text-sm, 0.875rem);
+  font-weight: 600;
+  white-space: nowrap;
+  margin-inline-end: var(--space-2);
+}
+
+.panel__spinner {
+  width: 0.9em;
+  height: 0.9em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: panel-spin 0.8s linear infinite;
+}
+
+@keyframes panel-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel__spinner {
+    animation: none;
+    border-right-color: currentColor;
+    opacity: 0.6;
+  }
+}
+
+.panel__table tr:has(.panel__processing),
+.panel__people li:has(.panel__processing),
+.account__card:has(.panel__processing),
+.account__notice:has(.panel__processing),
+form:has(> .panel__processing),
+form:has(> .panel__row-actions > .panel__processing) {
+  background: color-mix(in srgb, var(--color-ink) 8%, transparent);
+  cursor: progress;
+  pointer-events: none;
+}
+
+/* Everything on the line fades except the cell that says it is being processed. */
+.panel__table tr:has(.panel__processing) > td:not(:has(.panel__processing)),
+.panel__table tr:has(.panel__processing) > td > :not(.panel__processing),
+.panel__people li:has(.panel__processing) > :not(.panel__processing),
+.account__card:has(.panel__processing) > p,
+.account__notice:has(.panel__processing) > p {
+  opacity: 0.45;
+}

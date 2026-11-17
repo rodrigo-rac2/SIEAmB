@@ -101,6 +101,21 @@ function Problem({ text }: { text: string | null }) {
   ) : null;
 }
 
+/**
+ * "Processando…" with a spinner, while something asked of the server is on its way (#278).
+ * The line, form or box it sits in is shaded and cannot be clicked until it is gone: see
+ * `.panel__processing` in Panel.css. No `role="status"`: that one is for the result.
+ */
+function Processing({ when }: { when: boolean }) {
+  const { t } = useTranslation();
+  return when ? (
+    <span className="panel__processing" aria-live="polite" data-testid="processing">
+      <span className="panel__spinner" aria-hidden="true" />
+      {t('common.processing')}
+    </span>
+  ) : null;
+}
+
 // ───────────────────────────── Registrations ─────────────────────────────
 
 function RegistrationActions({
@@ -138,6 +153,7 @@ function RegistrationActions({
         <button className="account__button account__button--quiet" type="button" disabled={busy} onClick={() => void run(() => restoreRegistration(token, slug, registration.id))}>
           {t('panel.registrations.restore')}
         </button>
+        <Processing when={busy} />
         <Problem text={error} />
       </>
     );
@@ -194,6 +210,7 @@ function RegistrationActions({
         <button className="account__button account__button--quiet" type="button" onClick={() => setMode(null)}>
           {t('common.cancel')}
         </button>
+        <Processing when={busy} />
       </span>
     </form>
   );
@@ -226,6 +243,7 @@ function RemindButton({ registration, token, slug, message }: TabProps & { regis
           {t('panel.reminders.send')}
         </button>
       )}
+      <Processing when={busy} />
       {note && (
         <span className="panel__meta" role="status">
           {note}
@@ -344,6 +362,7 @@ function NewRegistration({ token, slug, message, onDone }: TabProps & { onDone: 
         <button className="account__button account__button--quiet" type="button" onClick={() => setOpen(false)}>
           {t('common.cancel')}
         </button>
+        <Processing when={busy} />
       </span>
     </form>
   );
@@ -465,6 +484,7 @@ function RegistrationsTab(props: TabProps) {
             <button className="account__button account__button--quiet" type="button" onClick={() => setBulk('idle')}>
               {t('common.cancel')}
             </button>
+            <Processing when={bulk === 'busy'} />
           </span>
         </div>
       )}
@@ -593,6 +613,7 @@ function PaperActions({ paper, slug, onWithdraw }: { paper: PanelPaper; slug: st
       <button className="account__button account__button--quiet" type="button" onClick={() => setConfirming(false)}>
         {t('common.cancel')}
       </button>
+      <Processing when={busy} />
     </>
   );
 }
@@ -676,6 +697,7 @@ function PaperReviewers({
           </button>
         </span>
       )}
+      <Processing when={busy} />
       {/* The picker is hidden when nobody can be chosen: say why, so it does not read as a fault (#266). */}
       {!paper.deletedAt && free.length === 0 && candidates.length > 0 && (
         <span className="panel__meta" data-testid="no-reviewer-to-choose">
@@ -736,6 +758,7 @@ function SubmissionsSwitch({
             </button>
           </>
         )}
+        <Processing when={busy} />
       </div>
     </div>
   );
@@ -890,6 +913,7 @@ function AccountRow({
   canManage,
   owner,
   busy,
+  processing,
   onGive,
   onTake,
   onSave,
@@ -900,7 +924,10 @@ function AccountRow({
   canManage: MemberRole[];
   /** The person looking is the owner: e-mail, CPF and a typed password are theirs alone (#272). */
   owner: boolean;
+  /** Something is being processed somewhere in the list: nothing else can be started. */
   busy: boolean;
+  /** It is this line that is being processed. */
+  processing: boolean;
   onGive: (role: MemberRole) => void;
   onTake: (role: MemberRole) => void;
   onSave: (data: { fullName: string; institution: string; email?: string; cpf?: string }) => Promise<boolean>;
@@ -925,7 +952,7 @@ function AccountRow({
     setMode('edit');
   };
   return (
-    <tr data-testid="account-row">
+    <tr data-testid="account-row" aria-busy={processing}>
       <td>
         {mode === 'edit' ? (
           <form
@@ -955,7 +982,7 @@ function AccountRow({
                 </label>
                 <label>
                   {t('registration.cpf')}
-                  <input value={cpf} onChange={(e) => setCpf(e.target.value)} inputMode="numeric" maxLength={14} />
+                  <input value={cpf} onChange={(e) => setCpf(maskCpf(e.target.value))} inputMode="numeric" maxLength={14} placeholder="000.000.000-00" />
                 </label>
                 <span className="panel__meta">{t('panel.people.ownerFieldsHint')}</span>
               </>
@@ -963,7 +990,7 @@ function AccountRow({
               <span className="panel__meta">{account.email}</span>
             )}
             <span>
-              <button className="account__button" type="submit" disabled={busy || fullName.trim().length < 3 || (owner && !email.trim())}>
+              <button className="account__button" type="submit" disabled={busy || fullName.trim().length < 3 || (owner && (!email.trim() || ![0, 11].includes(cpf.replace(/\D/g, '').length)))}>
                 {t('common.save')}
               </button>{' '}
               <button className="account__button account__button--quiet" type="button" onClick={() => setMode('view')}>
@@ -1038,6 +1065,7 @@ function AccountRow({
         )}
       </td>
       <td>
+        <Processing when={processing} />
         {account.canEdit && mode === 'view' && (
           <>
             <button
@@ -1136,13 +1164,15 @@ function PeopleTab({ token, slug, message }: TabProps) {
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<MemberRole>('REVIEWER');
   const [note, setNote] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  // Which line is being processed: an account id, `invite:<e-mail>:<role>`, or `form` (#278).
+  const [busyKey, setBusyKey] = useState<string | null>(null);
+  const busy = busyKey !== null;
   const [search, setSearch] = useState('');
 
   if (!data) return error ? <Problem text={error} /> : <p role="status">{t('common.loading')}</p>;
 
-  const run = async (work: () => Promise<string | null>): Promise<boolean> => {
-    setBusy(true);
+  const run = async (key: string, work: () => Promise<string | null>): Promise<boolean> => {
+    setBusyKey(key);
     setError(null);
     setNote(null);
     let ok = true;
@@ -1153,17 +1183,17 @@ function PeopleTab({ token, slug, message }: TabProps) {
       setError(message(err));
       ok = false;
     }
-    setBusy(false);
+    setBusyKey(null);
     return ok;
   };
-  const give = (to: string, what: MemberRole) =>
-    run(async () => {
+  const give = (key: string, to: string, what: MemberRole) =>
+    run(key, async () => {
       const { invited } = await addMember(token, slug, to, what);
       return t(invited ? 'panel.people.invited' : 'panel.people.added');
     });
   const add = (e: FormEvent) => {
     e.preventDefault();
-    void give(email.trim(), role).then((ok) => ok && setEmail(''));
+    void give('form', email.trim(), role).then((ok) => ok && setEmail(''));
   };
   // An organiser is not shown the administrators (#264); the server does not send them either.
   const roles = (['ADMIN', 'ORGANIZER', 'REVIEWER'] as MemberRole[]).filter((r) => r !== 'ADMIN' || data.role === 'ADMIN');
@@ -1194,6 +1224,7 @@ function PeopleTab({ token, slug, message }: TabProps) {
         <button className="account__button" type="submit" disabled={busy || !email.trim()}>
           {t('panel.people.add')}
         </button>
+        <Processing when={busyKey === 'form'} />
       </form>
       <p className="reg-form__hint">{t('panel.people.hint')}</p>
       <ul className="panel__meta" data-testid="role-legend">
@@ -1222,11 +1253,12 @@ function PeopleTab({ token, slug, message }: TabProps) {
                     type="button"
                     disabled={busy}
                     aria-label={t('panel.people.takeFor', { role: t(`panel.roles.${i.role}`), name: i.email })}
-                    onClick={() => void run(async () => (await removeMember(token, slug, i.email, i.role), null))}
+                    onClick={() => void run(`invite:${i.email}:${i.role}`, async () => (await removeMember(token, slug, i.email, i.role), null))}
                   >
                     {t('panel.people.remove')}
                   </button>
                 )}
+                <Processing when={busyKey === `invite:${i.email}:${i.role}`} />
               </li>
             ))}
           </ul>
@@ -1260,22 +1292,23 @@ function PeopleTab({ token, slug, message }: TabProps) {
                 canManage={data.canManage}
                 owner={data.owner}
                 busy={busy}
-                onGive={(r) => void give(a.email, r)}
-                onTake={(r) => void run(async () => (await removeMember(token, slug, a.email, r), null))}
+                processing={busyKey === a.userId}
+                onGive={(r) => void give(a.userId, a.email, r)}
+                onTake={(r) => void run(a.userId, async () => (await removeMember(token, slug, a.email, r), null))}
                 onSave={(changes) =>
-                  run(async () => {
+                  run(a.userId, async () => {
                     await updateAccount(token, slug, a.userId, changes);
                     return t('panel.people.updated');
                   })
                 }
                 onPasswordSet={(password) =>
-                  run(async () => {
+                  run(a.userId, async () => {
                     await setAccountPassword(token, slug, a.userId, password);
                     return t('panel.people.passwordSetDone', { name: a.fullName || a.email });
                   })
                 }
                 onPasswordLink={() =>
-                  void run(async () => {
+                  void run(a.userId, async () => {
                     await sendPasswordLink(token, slug, a.userId);
                     return t('panel.people.passwordLinkSent', { email: a.email });
                   })
@@ -1297,11 +1330,12 @@ function RequestsTab({ token, slug, message }: TabProps) {
   const locale = useLocale();
   const load = useCallback(() => fetchPanelRequests(token, slug), [token, slug]);
   const { data, error, setError, reload } = useLoad<{ requests: PanelRequest[] }>(load, message);
-  const [busy, setBusy] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const busy = busyId !== null;
 
   if (!data) return error ? <Problem text={error} /> : <p role="status">{t('common.loading')}</p>;
   const decide = async (id: string, approve: boolean) => {
-    setBusy(true);
+    setBusyId(id);
     setError(null);
     try {
       await decideRequest(token, slug, id, approve);
@@ -1309,7 +1343,7 @@ function RequestsTab({ token, slug, message }: TabProps) {
     } catch (err) {
       setError(message(err));
     }
-    setBusy(false);
+    setBusyId(null);
   };
   return (
     <>
@@ -1334,6 +1368,7 @@ function RequestsTab({ token, slug, message }: TabProps) {
             <button className="account__button account__button--quiet" type="button" disabled={busy} onClick={() => void decide(r.id, false)}>
               {t('panel.requests.refuse')}
             </button>
+            <Processing when={busyId === r.id} />
           </span>
         </div>
       ))}
@@ -1428,6 +1463,7 @@ function AnnouncementsTab({ token, slug, message }: TabProps) {
               <button className="account__button account__button--quiet" type="button" onClick={() => setConfirming(false)}>
                 {t('common.cancel')}
               </button>
+              <Processing when={busy} />
             </span>
           </div>
         ) : (
