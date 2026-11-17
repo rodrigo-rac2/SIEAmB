@@ -167,6 +167,11 @@ export class FakeOutbox implements OutboxStore {
     this.rows.push(row);
     return { ...row };
   }
+  async enqueueOutboxBulk(mails: OutboxMail[]) {
+    let recorded = 0;
+    for (const mail of mails) if (await this.enqueueOutbox(mail)) recorded += 1;
+    return recorded;
+  }
   async listDueOutbox(now: Date, limit: number) {
     return this.rows
       .filter((r) => r.status === 'PENDING' && r.attempts < 6 && (r.lockedUntil === null || r.lockedUntil < now.getTime()))

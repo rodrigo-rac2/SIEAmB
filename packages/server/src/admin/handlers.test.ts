@@ -3,6 +3,7 @@ import { REASON_MIN, announceRegistration, handleAdmin, paymentState, type Admin
 import { ADMIN, EVENT, NOBODY, NOW, ORGANISER, OTHER_EVENT, REVIEWER, call, setup } from './testing';
 
 interface Answer {
+  announcements: Record<string, unknown>[];
   registrations: Record<string, unknown>[];
   submissions: Record<string, unknown>[];
   members: Record<string, unknown>[];
@@ -583,5 +584,139 @@ describe('telling the organisers of a new registration', () => {
     await announceRegistration({ ...registration, eventId: OTHER_EVENT.id, eventSlug: '2025' }, deps, NOW);
     expect(sent).toEqual([]);
     expect(outbox.notifications).toEqual([]);
+  });
+});
+
+describe('announcements (#221)', () => {
+  const start = () => {
+    const ctx = setup();
+    ctx.store.groups = {
+      registered: [
+        { email: 'paula@outlook.com', fullName: 'Paula Nunes' },
+        { email: NOBODY.email, fullName: 'Pessoa Comum' },
+      ],
+      authors: [
+        { email: NOBODY.email, fullName: '' },
+        { email: 'autora@ufrn.br', fullName: 'Autora Sem Conta' },
+      ],
+      reviewers: [{ email: REVIEWER.email, fullName: 'Avaliador Um' }],
+      organisers: [{ email: ORGANISER.email, fullName: 'Viviane Farias' }],
+    };
+    const send = (token: string, data: Record<string, unknown>) =>
+      post(ctx.deps, 'announce', token, { audience: 'all', subject: 'Prazo prorrogado', body: 'As submissões foram prorrogadas.\n\nNovo prazo: 15/02/2027.', ...data });
+    return { ...ctx, send };
+  };
+
+  it('says how many people each group has, counting a person once', async () => {
+    const { deps, tokens } = start();
+    const data = await body(await get(deps, 'audiences', tokens.organiser));
+    expect(data.counts).toEqual({ all: 5, registered: 2, authors: 2, reviewers: 1, organisers: 1 });
+  });
+
+  it('records it, queues one e-mail per person without sending in the request, and leaves a notice for accounts', async () => {
+    const { send, tokens, store, outbox, sent } = start();
+    const response = await send(tokens.organiser, {});
+    expect(response.status).toBe(201);
+    expect(await body(response)).toEqual({ ok: true, recipients: 5 });
+    expect(store.announcements[0]).toMatchObject({ senderId: ORGANISER.id, audience: 'all', subject: 'Prazo prorrogado', recipients: 5 });
+    expect(store.announcements[0]!.emails.sort()).toEqual(['autora@ufrn.br', REVIEWER.email, 'paula@outlook.com', NOBODY.email, ORGANISER.email].sort());
+    // Queued for the background job: a few hundred e-mails do not fit in one request.
+    expect(sent).toEqual([]);
+    expect(outbox.rows).toHaveLength(5);
+    expect(outbox.rows.every((r) => r.status === 'PENDING')).toBe(true);
+    const mail = outbox.rows.find((r) => r.to === NOBODY.email)!;
+    expect(mail.subject).toBe('Prazo prorrogado (II SIEAmB)');
+    // The entry with a name wins over the one without.
+    expect(mail.text).toContain('Olá, Pessoa.');
+    expect(mail.text).toContain('As submissões foram prorrogadas.\n\nNovo prazo: 15/02/2027.');
+    expect(mail.text).toContain('Você recebe este comunicado porque');
+    expect(mail.text).toContain('https://dev.sieamb.org/2027/notificacoes');
+    // In the site: only the people who have an account.
+    expect(outbox.notifications.map((n) => n.userId).sort()).toEqual([NOBODY.id, ORGANISER.id, REVIEWER.id].sort());
+    expect(outbox.notifications[0]).toMatchObject({ kind: 'announcement', eventId: EVENT.id, data: { subject: 'Prazo prorrogado' } });
+    expect(store.audits[0]).toMatchObject({ actorId: ORGANISER.id, action: 'announcement.send', meta: { audience: 'all', recipients: 5 } });
+  });
+
+  it.each([
+    ['registered', ['paula@outlook.com', NOBODY.email]],
+    ['authors', [NOBODY.email, 'autora@ufrn.br']],
+    ['reviewers', [REVIEWER.email]],
+    ['organisers', [ORGANISER.email]],
+  ] as const)('sends to %s only', async (audience, emails) => {
+    const { send, tokens, outbox } = start();
+    await send(tokens.admin, { audience });
+    expect(outbox.rows.map((r) => r.to).sort()).toEqual([...emails].sort());
+  });
+
+  it('does not put the administrator in any group by role alone', async () => {
+    const { send, tokens, outbox } = start();
+    await send(tokens.admin, { audience: 'all' });
+    expect(outbox.rows.some((r) => r.to === ADMIN.email)).toBe(false);
+  });
+
+  it('escapes what the organiser typed', async () => {
+    const { send, tokens, outbox } = start();
+    await send(tokens.admin, { audience: 'reviewers', body: 'Vejam <script>alert(1)</script> este aviso.' });
+    expect(outbox.rows[0]!.html).toContain('&lt;script&gt;');
+    expect(outbox.rows[0]!.html).not.toContain('<script>');
+  });
+
+  it.each([
+    ['an unknown group', { audience: 'everyone-on-earth' }, 'invalid_audience'],
+    ['a four-letter subject', { subject: 'Oi!!' }, 'invalid_subject'],
+    ['a subject over 150 characters', { subject: 'x'.repeat(151) }, 'invalid_subject'],
+    ['a nine-character message', { body: 'curtinho.' }, 'invalid_body'],
+    ['a message over 5000 characters', { body: 'x'.repeat(5001) }, 'invalid_body'],
+    ['a message that is not text', { body: 42 }, 'invalid_body'],
+  ])('refuses %s', async (_name, data, error) => {
+    const { send, tokens, store, outbox } = start();
+    const response = await send(tokens.admin, data);
+    expect(response.status).toBe(400);
+    expect(await body(response)).toEqual({ error });
+    expect(store.announcements).toEqual([]);
+    expect(outbox.rows).toEqual([]);
+  });
+
+  it('refuses to send to a group with nobody in it', async () => {
+    const { send, tokens, store } = start();
+    store.groups.reviewers = [];
+    const response = await send(tokens.admin, { audience: 'reviewers' });
+    expect(response.status).toBe(400);
+    expect(await body(response)).toEqual({ error: 'no_recipients' });
+  });
+
+  it(`stops one sender after ${10} announcements in an hour`, async () => {
+    const { send, tokens } = start();
+    for (let i = 0; i < 10; i += 1) expect((await send(tokens.admin, { subject: `Aviso número ${i}` })).status).toBe(201);
+    expect((await send(tokens.admin, {})).status).toBe(429);
+    // Another sender is not held back.
+    expect((await send(tokens.organiser, {})).status).toBe(201);
+  });
+
+  it('is still recorded when the e-mails cannot be queued', async () => {
+    const { send, tokens, store, outbox, logs } = start();
+    outbox.enqueueOutboxBulk = async () => {
+      throw new Error('db down');
+    };
+    expect((await send(tokens.admin, {})).status).toBe(201);
+    expect(store.announcements).toHaveLength(1);
+    expect(logs.some((l) => l.event === 'announcement_delivery_failed')).toBe(true);
+  });
+
+  it.each(['reviewer', 'nobody'] as const)('cannot be sent or read by a %s', async (who) => {
+    const { send, tokens, deps, store } = start();
+    expect((await send(tokens[who], {})).status).toBe(404);
+    expect((await get(deps, 'announcements', tokens[who])).status).toBe(404);
+    expect((await get(deps, 'audiences', tokens[who])).status).toBe(404);
+    expect(store.announcements).toEqual([]);
+  });
+
+  it('keeps the history: who sent what, to which group, to how many and when', async () => {
+    const { send, tokens, deps } = start();
+    await send(tokens.organiser, { audience: 'authors', subject: 'Primeiro aviso' });
+    const data = await body(await get(deps, 'announcements', tokens.admin));
+    expect(data.announcements).toEqual([
+      { id: expect.any(String), audience: 'authors', subject: 'Primeiro aviso', body: 'As submissões foram prorrogadas.\n\nNovo prazo: 15/02/2027.', recipients: 2, senderName: 'Viviane Farias', createdAt: NOW.toISOString() },
+    ]);
   });
 });

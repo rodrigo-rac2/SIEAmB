@@ -51,6 +51,7 @@ model Event {
   payments         Payment[]
   submissions      Submission[]
   memberInvites    EventMemberInvite[]
+  announcements    Announcement[]
 
   @@map("events")
 }
@@ -597,6 +598,24 @@ model Notification {
 
   @@index([userId, readAt])
   @@map("notifications")
+}
+
+// A message an organiser sent to a group (#221). Kept as the record of who sent
+// what, to whom and when; the copies people read are notifications and e-mails.
+model Announcement {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  eventId    String   @map("event_id") @db.Uuid
+  senderId   String   @map("sender_id") @db.Uuid
+  audience   String // all | registered | authors | reviewers | organisers
+  subject    String
+  body       String
+  recipients String[] @default([]) // the addresses it went to
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  event Event @relation(fields: [eventId], references: [id])
+
+  @@index([eventId, createdAt])
+  @@map("announcements")
 }
 
 // ───────────────────────────── Audit ─────────────────────────────

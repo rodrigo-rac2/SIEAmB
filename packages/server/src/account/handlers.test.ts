@@ -644,3 +644,49 @@ describe('account e-mails', () => {
     expect(maskEmail('@x.com')).toBe('•••');
   });
 });
+
+describe('notifications under the bell (#221)', () => {
+  const notice = (over: Record<string, unknown> = {}) => ({
+    id: `n-${Math.random()}`,
+    userId: USER.id,
+    kind: 'submission.received',
+    data: { number: 12, title: 'Trabalho' },
+    eventSlug: '2027',
+    readAt: null as string | null,
+    createdAt: '2026-11-17T12:00:00.000Z',
+    ...over,
+  });
+
+  it('needs a login', async () => {
+    const { deps } = setup();
+    expect((await handleAccount(call('GET', 'notifications'), 'notifications', deps)).status).toBe(401);
+    expect((await handleAccount(call('POST', 'notifications-read', { body: {} }), 'notifications-read', deps)).status).toBe(401);
+  });
+
+  it('shows a person their own notices, newest first, with how many are unread', async () => {
+    const { deps, auth, store } = setup();
+    const token = auth.login(USER);
+    store.notices.push(
+      notice({ id: 'old', createdAt: '2026-11-16T12:00:00.000Z', readAt: '2026-11-16T13:00:00.000Z' }),
+      notice({ id: 'new', kind: 'announcement', data: { subject: 'Prazo', body: 'Texto' }, createdAt: '2026-11-17T15:00:00.000Z' }),
+      notice({ id: 'mid' }),
+      notice({ id: 'not-mine', userId: 'someone-else' }),
+    );
+    const data = await body(await handleAccount(call('GET', 'notifications', { token }), 'notifications', deps));
+    expect(data.unread).toBe(2);
+    expect((data.items as { id: string }[]).map((n) => n.id)).toEqual(['new', 'mid', 'old']);
+    expect((data.items as Record<string, unknown>[])[0]).toEqual({ id: 'new', kind: 'announcement', data: { subject: 'Prazo', body: 'Texto' }, eventSlug: '2027', readAt: null, createdAt: '2026-11-17T15:00:00.000Z' });
+    expect(JSON.stringify(data)).not.toContain('not-mine');
+  });
+
+  it('marks only that person’s notices as read', async () => {
+    const { deps, auth, store } = setup();
+    const token = auth.login(USER);
+    store.notices.push(notice({ id: 'a' }), notice({ id: 'b' }), notice({ id: 'other', userId: 'someone-else' }));
+    expect((await handleAccount(call('POST', 'notifications-read', { token, body: {} }), 'notifications-read', deps)).status).toBe(200);
+    expect(store.notices.filter((n) => n.userId === USER.id).every((n) => n.readAt === NOW.toISOString())).toBe(true);
+    expect(store.notices.find((n) => n.id === 'other')!.readAt).toBeNull();
+    const data = await body(await handleAccount(call('GET', 'notifications', { token }), 'notifications', deps));
+    expect(data.unread).toBe(0);
+  });
+});

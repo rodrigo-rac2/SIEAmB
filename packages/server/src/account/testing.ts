@@ -4,6 +4,7 @@ import type { AuthGateway, AuthUser, SignupStart } from './auth';
 import type { AccountDeps } from './handlers';
 import {
   DocumentInUseError,
+  type AccountNotification,
   type AccountStore,
   type DocumentQuery,
   type EventRef,
@@ -165,6 +166,20 @@ export class FakeAccountStore implements AccountStore {
   async updateLinkRequest(id: string, status: LinkRequestStatus) {
     const link = this.links.find((l) => l.id === id);
     if (link) link.status = status;
+  }
+  notices: (AccountNotification & { userId: string })[] = [];
+  async listNotifications(userId: string, limit: number) {
+    return this.notices
+      .filter((n) => n.userId === userId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .slice(0, limit)
+      .map(({ userId: _owner, ...n }) => n);
+  }
+  async countUnreadNotifications(userId: string) {
+    return this.notices.filter((n) => n.userId === userId && !n.readAt).length;
+  }
+  async markNotificationsRead(userId: string, now: Date) {
+    for (const n of this.notices) if (n.userId === userId && !n.readAt) n.readAt = now.toISOString();
   }
   invitesApplied: string[] = [];
   panels = { platformAdmin: false, slugs: [] as string[] };

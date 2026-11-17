@@ -75,6 +75,15 @@ export class DocumentInUseError extends Error {
   }
 }
 
+export interface AccountNotification {
+  id: string;
+  kind: string;
+  data: Record<string, unknown>;
+  eventSlug: string | null;
+  readAt: string | null;
+  createdAt: string;
+}
+
 export interface AccountStore {
   findEvent(slug: string): Promise<EventRef | null>;
   currentEvent(): Promise<EventRef | null>;
@@ -114,6 +123,11 @@ export interface AccountStore {
   applyRoleInvites(userId: string, email: string): Promise<void>;
   /** The editions whose organisation area this account may open. */
   listPanels(userId: string): Promise<{ platformAdmin: boolean; slugs: string[] }>;
+
+  /** The latest notices of an account, newest first (#221). */
+  listNotifications(userId: string, limit: number): Promise<AccountNotification[]>;
+  countUnreadNotifications(userId: string): Promise<number>;
+  markNotificationsRead(userId: string, now: Date): Promise<void>;
 
   /** Counts one more attempt under `key`; false once the window is over `max`. */
   hitRateLimit(key: string, windowSeconds: number, max: number): Promise<boolean>;

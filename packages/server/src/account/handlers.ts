@@ -282,6 +282,25 @@ async function me(request: Request, deps: AccountDeps): Promise<Response> {
   return json(200, await describe(auth.user, deps));
 }
 
+export const NOTIFICATIONS_SHOWN = 50;
+
+/** What is under the bell: the latest notices and how many are unread (#221). */
+async function notifications(request: Request, deps: AccountDeps): Promise<Response> {
+  const auth = await authenticate(request, deps);
+  if ('response' in auth) return auth.response;
+  return json(200, {
+    unread: await deps.store.countUnreadNotifications(auth.user.id),
+    items: await deps.store.listNotifications(auth.user.id, NOTIFICATIONS_SHOWN),
+  });
+}
+
+async function notificationsRead(request: Request, deps: AccountDeps): Promise<Response> {
+  const auth = await authenticate(request, deps);
+  if ('response' in auth) return auth.response;
+  await deps.store.markNotificationsRead(auth.user.id, deps.now());
+  return json(200, { ok: true });
+}
+
 const PASSPORT = /^[A-Z0-9]{5,20}$/;
 const COUNTRY = /^[A-Z]{2}$/;
 
@@ -468,6 +487,8 @@ const ROUTES: Record<string, Partial<Record<string, Handler>>> = {
   'link-request': { POST: requestLink },
   'link-confirm': { POST: confirmLink },
   'registration-check': { POST: checkRegistration },
+  notifications: { GET: notifications },
+  'notifications-read': { POST: notificationsRead },
 };
 
 /** One Vercel function serves every account action: `/api/v1/account/<action>`. */

@@ -6,8 +6,11 @@ import { json, readJsonObject, type Log } from '../payments/http';
 import { firstName } from '../payments/notifications';
 import { isValidCpf } from '../payments/payer';
 import {
+  AUDIENCES,
   RegistrationExistsError,
   type AdminRegistration,
+  type Audience,
+  type Person,
   type AdminStore,
   type ManualStatus,
   type MemberRole,
@@ -357,6 +360,100 @@ async function linkDecide(request: Request, deps: AdminDeps): Promise<Response> 
   return json(200, { ok: true });
 }
 
+// ───────────────────────────── Announcements (#221) ─────────────────────────────
+
+export const ANNOUNCEMENTS_PER_HOUR = 10;
+const SUBJECT = { min: 5, max: 150 };
+const BODY = { min: 10, max: 5000 };
+
+/** The people of a group, once each, by e-mail. "all" is every group together. */
+function audienceOf(groups: Record<Exclude<Audience, 'all'>, Person[]>, audience: Audience): Person[] {
+  const lists = audience === 'all' ? Object.values(groups) : [groups[audience]];
+  const seen = new Map<string, Person>();
+  for (const person of lists.flat()) {
+    const known = seen.get(person.email);
+    // Keep the entry that has a name.
+    if (!known || (!known.fullName && person.fullName)) seen.set(person.email, person);
+  }
+  return [...seen.values()];
+}
+
+/** How many people each group has right now, so the screen can say it before sending. */
+async function audiences(request: Request, deps: AdminDeps): Promise<Response> {
+  const ctx = await context(request, deps, slugOf(request));
+  if ('response' in ctx) return ctx.response;
+  const groups = await deps.store.listAudiences(ctx.event.id);
+  return json(200, {
+    counts: Object.fromEntries(AUDIENCES.map((a) => [a, audienceOf(groups, a).length])),
+  });
+}
+
+async function announce(request: Request, deps: AdminDeps): Promise<Response> {
+  const body = await readJsonObject(request);
+  const ctx = await context(request, deps, body.eventSlug);
+  if ('response' in ctx) return ctx.response;
+  const audience = AUDIENCES.find((a) => a === body.audience);
+  if (!audience) return json(400, { error: 'invalid_audience' });
+  const subject = text(body.subject, SUBJECT.max + 1);
+  if (subject.length < SUBJECT.min || subject.length > SUBJECT.max) return json(400, { error: 'invalid_subject' });
+  const message = typeof body.body === 'string' ? body.body.replace(/\r\n/g, '\n').trim() : '';
+  if (message.length < BODY.min || message.length > BODY.max) return json(400, { error: 'invalid_body' });
+  const now = deps.now();
+  if ((await deps.store.countAnnouncementsSince(ctx.user.id, new Date(now.getTime() - 3600_000))) >= ANNOUNCEMENTS_PER_HOUR) {
+    return json(429, { error: 'too_many_attempts' });
+  }
+  const people = audienceOf(await deps.store.listAudiences(ctx.event.id), audience);
+  if (people.length === 0) return json(400, { error: 'no_recipients' });
+
+  const id = await deps.store.insertAnnouncement({
+    eventId: ctx.event.id,
+    senderId: ctx.user.id,
+    audience,
+    subject,
+    body: message,
+    recipients: people.map((p) => p.email),
+    now,
+  });
+  await audit(deps, ctx, 'announcement.send', 'announcement', id, { audience, recipients: people.length });
+
+  // From here on nothing fails the request: the announcement is recorded, and the
+  // e-mails wait in the outbox for the background job, which sends them in batches.
+  try {
+    const url = `${deps.siteUrl.replace(/\/+$/, '')}/${encodeURIComponent(ctx.event.slug)}/notificacoes`;
+    const paragraphs = message.split(/\n{2,}/).map((p) => p.replace(/\s*\n\s*/g, ' ').trim()).filter(Boolean);
+    const mails: OutboxMail[] = people.map((person) => ({
+      to: person.email,
+      dedupeKey: `announcement:${id}:${person.email}`,
+      subject: `${subject} (${ctx.event.name})`,
+      ...layoutEmail({
+        greeting: person.fullName ? `Olá, ${firstName(person.fullName)}.` : 'Olá.',
+        paragraphs: [
+          ...paragraphs,
+          `Você recebe este comunicado porque está inscrito, enviou trabalho ou participa da organização do ${ctx.event.name}.`,
+        ],
+        linkLabel: 'Ver no site',
+        link: url,
+        signature: `Comissão organizadora do ${ctx.event.name}`,
+      }),
+    }));
+    await deps.outbox.enqueueOutboxBulk(mails);
+    const accounts = await deps.store.findAccounts(people.map((p) => p.email));
+    await notifyUsers(
+      accounts.map((a) => ({ userId: a.id, eventId: ctx.event.id, kind: 'announcement', data: { subject, body: message } })),
+      deps,
+    );
+  } catch (error) {
+    deps.log('announcement_delivery_failed', { announcementId: id, error: error instanceof Error ? error.message : 'unknown' });
+  }
+  return json(201, { ok: true, recipients: people.length });
+}
+
+async function announcements(request: Request, deps: AdminDeps): Promise<Response> {
+  const ctx = await context(request, deps, slugOf(request));
+  if ('response' in ctx) return ctx.response;
+  return json(200, { announcements: await deps.store.listAnnouncements(ctx.event.id) });
+}
+
 // ───────────────────────────── Router ─────────────────────────────
 
 type Handler = (request: Request, deps: AdminDeps) => Promise<Response>;
@@ -373,6 +470,9 @@ const ROUTES: Record<string, Partial<Record<string, Handler>>> = {
   'member-remove': { POST: (request, deps) => memberChange(request, deps, false) },
   'link-requests': { GET: linkRequests },
   'link-decide': { POST: linkDecide },
+  audiences: { GET: audiences },
+  announce: { POST: announce },
+  announcements: { GET: announcements },
 };
 
 /** One Vercel function serves the organisation area: `/api/v1/admin/<action>`. */

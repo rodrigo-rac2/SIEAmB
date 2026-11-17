@@ -50,6 +50,28 @@ export class SupabaseOutbox implements OutboxStore {
     }
   }
 
+  async enqueueOutboxBulk(mails: OutboxMail[]): Promise<number> {
+    let recorded = 0;
+    // In slices, so one announcement to a few hundred people is a handful of requests.
+    for (let i = 0; i < mails.length; i += 200) {
+      const rows = await this.rest.request<{ id: string }[]>('outbox_emails?on_conflict=dedupe_key&select=id', {
+        method: 'POST',
+        headers: { Prefer: 'resolution=ignore-duplicates,return=representation' },
+        body: JSON.stringify(
+          mails.slice(i, i + 200).map((mail) => ({
+            to_email: mail.to,
+            subject: mail.subject,
+            body_text: mail.text,
+            body_html: mail.html,
+            dedupe_key: mail.dedupeKey,
+          })),
+        ),
+      });
+      recorded += rows.length;
+    }
+    return recorded;
+  }
+
   async listDueOutbox(now: Date, limit: number): Promise<OutboxJob[]> {
     const iso = q(now.toISOString());
     const rows = await this.rest.request<Row[]>(
