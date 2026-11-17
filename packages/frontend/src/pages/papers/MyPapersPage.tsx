@@ -224,8 +224,6 @@ export function MyPapersPage() {
           {!papers && !error && <p role="status">{t('common.loading')}</p>}
           {papers && (
             <>
-              <RegistrationNotice registration={registration} hasPapers={papers.submissions.length > 0} slug={event.slug} />
-
               <p className="papers__limits" data-testid="paper-limits">
                 {t(`papers.window.${papers.state === 'open' && papers.pastDeadline ? 'open_late' : papers.state}`, {
                   // Closed by the organisers: the day they closed it, not the published date.
@@ -253,6 +251,9 @@ export function MyPapersPage() {
                   onWithdraw={() => withdraw(paper)}
                 />
               ))}
+
+              {/* The registration comes after the papers, always: this page is about the papers (#257). */}
+              <RegistrationNotice registration={registration} hasPapers={papers.submissions.length > 0} slug={event.slug} />
               <p className="account__links">
                 <Link to={`/${event.slug}/minha-area`}>{t('account.nav.myArea')}</Link>
                 <Link to={`/${event.slug}/submissoes`}>{t('submissions.rulesTitle')}</Link>

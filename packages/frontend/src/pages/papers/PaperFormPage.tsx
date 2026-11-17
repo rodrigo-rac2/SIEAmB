@@ -255,6 +255,13 @@ export function PaperFormPage() {
 
             <AuthorList rows={authors} max={rules.maxAuthors} onChange={setAuthors} search={search} />
 
+            {/* What the paper has now, in plain sight above the field that replaces it (#257). */}
+            {existing && (
+              <p className="papers__current-file" data-testid="current-file">
+                {t('papers.form.fileCurrent', { name: existing.fileName })}
+                {existing.filePages !== null && ` ${t('papers.pages', { count: existing.filePages })}.`}
+              </p>
+            )}
             <div className="reg-form__field">
               <label htmlFor="paper-file">{t(editing ? 'papers.form.fileReplace' : 'papers.form.file')}</label>
               <input
@@ -263,10 +270,7 @@ export function PaperFormPage() {
                 accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                 onChange={(e) => setFile(e.target.files?.[0] ?? null)}
               />
-              <p className="reg-form__hint">
-                {t('papers.form.fileHint', { maxMb: rules.maxFileMb })}
-                {existing && ` ${t('papers.form.fileCurrent', { name: existing.fileName })}`}
-              </p>
+              <p className="reg-form__hint">{t('papers.form.fileHint', { maxMb: rules.maxFileMb })}</p>
             </div>
 
             {error && (

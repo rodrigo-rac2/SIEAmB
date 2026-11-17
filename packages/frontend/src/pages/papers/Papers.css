@@ -145,6 +145,11 @@
   white-space: pre-wrap;
 }
 
+.papers__current-file {
+  margin: var(--space-5) 0 var(--space-2);
+  font-weight: 600;
+}
+
 .papers__limits {
   margin: var(--space-4) 0;
 }
