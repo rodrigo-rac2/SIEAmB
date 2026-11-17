@@ -163,16 +163,71 @@ test.describe('organisation panel @panel', () => {
 
     // 5. A role for an address without an account waits for the account.
     await page.getByRole('link', { name: 'Pessoas e papéis' }).click();
-    // The tab has loaded when its role lists are there; the form of the previous tab is gone by then.
-    await expect(page.getByTestId('role-REVIEWER')).toBeVisible();
+    // The tab has loaded when the accounts are listed; the form of the previous tab is gone by then.
+    await expect(page.getByTestId('account-row').first()).toBeVisible();
     await page.getByLabel('E-mail').fill(reviewerEmail);
-    await page.getByLabel('Papel').selectOption('REVIEWER');
-    await page.getByRole('button', { name: 'Dar o papel' }).click();
+    await page.getByLabel('Papel', { exact: true }).selectOption('REVIEWER');
+    await page.getByRole('button', { name: 'Dar o papel', exact: true }).click();
     await expect(page.getByRole('status')).toContainText('Essa pessoa ainda não tem conta.');
-    await expect(page.getByTestId('role-REVIEWER')).toContainText(`${reviewerEmail} (ainda sem conta)`);
-    // Removing one's own administrator role is refused.
-    await page.getByTestId('role-ADMIN').getByRole('listitem').filter({ hasText: adminEmail }).getByRole('button', { name: 'Remover' }).click();
-    await expect(page.getByRole('alert')).toContainText('Você não pode remover o seu próprio papel de administrador.');
+    await expect(page.getByTestId('pending-invites')).toContainText(`${reviewerEmail} (Avaliador)`);
+
+    // 5a. An administrator gives Organizador and Avaliador, never Administrador: that is the owner's (#268).
+    await expect(page.getByLabel('Papel', { exact: true }).getByRole('option')).toHaveText(['Organizador', 'Avaliador']);
+    await page.getByLabel('Buscar').fill(adminEmail);
+    const own = page.getByTestId('account-row');
+    await expect(own).toHaveCount(1);
+    await expect(own.getByTestId('account-roles')).toContainText('Administrador');
+    await expect(own.getByRole('button', { name: /Tirar o papel de Administrador/ })).toHaveCount(0);
+    const asAdmin = { authorization: `Bearer ${await tokenOf(page)}` };
+    const selfRemoval = await page.request.post('/api/v1/admin/member-remove', { headers: asAdmin, data: { eventSlug: EVENT, email: adminEmail, role: 'ADMIN' } });
+    expect(selfRemoval.status()).toBe(409);
+    expect(await selfRemoval.json()).toEqual({ error: 'cannot_remove_self' });
+    const makeAdmin = await page.request.post('/api/v1/admin/member-add', { headers: asAdmin, data: { eventSlug: EVENT, email: reviewerEmail, role: 'ADMIN' } });
+    expect(makeAdmin.status()).toBe(403);
+    expect(await makeAdmin.json()).toEqual({ error: 'owner_only' });
+
+    // 5b. A role on the line of the person, and off again (#268).
+    const listedEmail = unique('pessoa');
+    made.push(listedEmail);
+    const personId = await createAccount(listedEmail, 'Pessoa Da Lista E2E');
+    await page.reload();
+    await page.getByLabel('Buscar').fill(listedEmail);
+    const person = page.getByTestId('account-row');
+    await expect(person).toHaveCount(1);
+    await expect(person.getByTestId('account-roles')).toContainText('Sem papel');
+    await person.getByRole('combobox', { name: 'Papel para Pessoa Da Lista E2E' }).selectOption('REVIEWER');
+    await person.getByRole('button', { name: 'Dar o papel escolhido a Pessoa Da Lista E2E' }).click();
+    await expect(person.getByTestId('account-roles')).toContainText('Avaliador');
+    await person.getByRole('button', { name: 'Tirar o papel de Avaliador de Pessoa Da Lista E2E' }).click();
+    await expect(person.getByTestId('account-roles')).toContainText('Sem papel');
+
+    // 5c. The administrator corrects the person's name and institution; the e-mail is not on offer (#269).
+    await person.getByRole('button', { name: 'Editar os dados de Pessoa Da Lista E2E' }).click();
+    await expect(person.getByRole('textbox')).toHaveCount(2);
+    await person.getByLabel('Nome completo').fill('Pessoa Corrigida E2E');
+    await person.getByLabel('Instituição').fill('UFCG');
+    await person.getByRole('button', { name: 'Salvar' }).click();
+    await expect(page.getByRole('status')).toContainText('Dados atualizados.');
+    await expect(person).toContainText('Pessoa Corrigida E2E');
+    await expect(person).toContainText(`${listedEmail} · UFCG`);
+    const stored = await admin<{ full_name: string; institution: string | null; email: string }[]>(`/rest/v1/users?id=eq.${personId}&select=full_name,institution,email`);
+    expect(stored).toEqual([{ full_name: 'Pessoa Corrigida E2E', institution: 'UFCG', email: listedEmail }]);
+    const told = await admin<{ kind: string }[]>(`/rest/v1/notifications?user_id=eq.${personId}&select=kind`);
+    expect(told.map((n) => n.kind)).toContain('account.updated');
+
+    // 5d. A new-password link goes to the person's own address, after one more click (#270).
+    await person.getByRole('button', { name: 'Enviar link de nova senha a Pessoa Corrigida E2E' }).click();
+    await expect(person).toContainText(`Enviar a ${listedEmail} um link para escolher uma nova senha?`);
+    await person.getByRole('button', { name: 'Sim, enviar' }).click();
+    await expect(page.getByRole('status')).toContainText(`Link enviado para ${listedEmail}.`);
+    const queued = await admin<{ subject: string }[]>(`/rest/v1/outbox_emails?to_email=eq.${encodeURIComponent(listedEmail)}&select=subject`);
+    expect(queued.map((q) => q.subject).filter((subject) => subject.startsWith('Escolha uma nova senha'))).toHaveLength(1);
+    // Not for another administrator: that one is the owner's to do.
+    const otherAdmin = await admin<{ user_id: string }[]>(`/rest/v1/event_members?event_id=eq.${await eventId()}&role=eq.ADMIN&user_id=neq.${adminId}&select=user_id&limit=1`);
+    if (otherAdmin[0]) {
+      const refused = await page.request.post('/api/v1/admin/account-update', { headers: asAdmin, data: { eventSlug: EVENT, userId: otherAdmin[0].user_id, fullName: 'Nome Trocado E2E' } });
+      expect(refused.status()).toBe(403);
+    }
 
     // 6. Every change left a line in the audit log, with who did it.
     const audit = await admin<{ action: string }[]>(`/rest/v1/audit_logs?actor_id=eq.${adminId}&select=action&order=created_at.asc`);
@@ -184,6 +239,10 @@ test.describe('organisation panel @panel', () => {
       'registration.restore',
       'registration.create',
       'member.add',
+      'member.add',
+      'member.remove',
+      'account.update',
+      'account.password_link',
     ]);
     await admin(`/rest/v1/audit_logs?actor_id=eq.${adminId}`, { method: 'DELETE' }).catch(() => undefined);
   });
@@ -224,13 +283,25 @@ test.describe('organisation panel @panel', () => {
 
     // People and roles: an organiser manages reviewers and is not told who the administrators are (#264).
     await page.goto(`/${EVENT}/painel/pessoas`);
-    await expect(page.getByTestId('role-REVIEWER')).toBeVisible();
-    await expect(page.getByTestId('role-ORGANIZER')).toContainText(email);
-    await expect(page.getByTestId('role-ADMIN')).toHaveCount(0);
+    await expect(page.getByTestId('account-row').first()).toBeVisible();
+    await expect(page.getByTestId('role-legend')).not.toContainText('Administrador:');
+    await expect(page.getByLabel('Papel', { exact: true }).getByRole('option')).toHaveText(['Avaliador']);
+    await expect(page.getByRole('button', { name: /Editar os dados|Enviar link de nova senha/ })).toHaveCount(0);
+    await page.getByLabel('Buscar').fill(email);
+    await expect(page.getByTestId('account-row')).toHaveCount(1);
+    await expect(page.getByTestId('account-row').getByTestId('account-roles')).toContainText('Organizador');
     const people = await (await page.request.get(`/api/v1/admin/members?eventSlug=${EVENT}`, { headers })).json();
     expect(people.members.length).toBeGreaterThan(0);
     expect(people.members.filter((m: { role: string }) => m.role === 'ADMIN')).toEqual([]);
     expect(people.invites.filter((i: { role: string }) => i.role === 'ADMIN')).toEqual([]);
+    // Nor in the list of every account, and nothing there is theirs to edit (#268).
+    expect(people.accounts.length).toBeGreaterThan(0);
+    expect(people.accounts.filter((a: { roles: string[]; owner: boolean; canEdit: boolean }) => a.roles.includes('ADMIN') || a.owner || a.canEdit)).toEqual([]);
+    const someone = people.accounts.find((a: { email: string }) => a.email !== email)!;
+    const edit = await page.request.post('/api/v1/admin/account-update', { headers, data: { eventSlug: EVENT, userId: someone.userId, fullName: 'Trocado Pela Organizadora' } });
+    expect(edit.status()).toBe(403);
+    const link = await page.request.post('/api/v1/admin/account-password-link', { headers, data: { eventSlug: EVENT, userId: someone.userId } });
+    expect(link.status()).toBe(403);
   });
 
   test('someone with no role finds no panel, in the site or in the server', async ({ page }) => {

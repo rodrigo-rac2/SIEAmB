@@ -20,6 +20,8 @@ import {
   fetchAnnouncements,
   fetchAudiences,
   fetchPanelMembers,
+  sendPasswordLink,
+  updateAccount,
   fetchPanelPapers,
   fetchPanelRegistrations,
   fetchPanelRequests,
@@ -877,6 +879,178 @@ function PapersTab({ token, slug, message }: TabProps) {
 
 // ───────────────────────────── People and roles ─────────────────────────────
 
+type PanelAccount = PanelMembers['accounts'][number];
+
+/** One account of the list: its roles, and what the person looking may do about it (#268, #269, #270). */
+function AccountRow({
+  account,
+  canManage,
+  busy,
+  onGive,
+  onTake,
+  onSave,
+  onPasswordLink,
+}: {
+  account: PanelAccount;
+  canManage: MemberRole[];
+  busy: boolean;
+  onGive: (role: MemberRole) => void;
+  onTake: (role: MemberRole) => void;
+  onSave: (fullName: string, institution: string) => Promise<boolean>;
+  onPasswordLink: () => void;
+}) {
+  const { t } = useTranslation();
+  const [mode, setMode] = useState<'view' | 'edit' | 'password'>('view');
+  const [chosen, setChosen] = useState<MemberRole | ''>('');
+  const [fullName, setFullName] = useState(account.fullName);
+  const [institution, setInstitution] = useState(account.institution ?? '');
+  const name = account.fullName || account.email;
+  const free = canManage.filter((r) => !account.roles.includes(r));
+  const startEdit = () => {
+    setFullName(account.fullName);
+    setInstitution(account.institution ?? '');
+    setMode('edit');
+  };
+  return (
+    <tr data-testid="account-row">
+      <td>
+        {mode === 'edit' ? (
+          <form
+            className="panel__edit"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void onSave(fullName.trim(), institution.trim()).then((ok) => ok && setMode('view'));
+            }}
+          >
+            <label>
+              {t('registration.fullName')}
+              <input value={fullName} onChange={(e) => setFullName(e.target.value)} maxLength={150} />
+            </label>
+            <label>
+              {t('registration.institution')}
+              <input value={institution} onChange={(e) => setInstitution(e.target.value)} maxLength={200} />
+            </label>
+            <span className="panel__meta">{account.email}</span>
+            <span>
+              <button className="account__button" type="submit" disabled={busy || fullName.trim().length < 3}>
+                {t('common.save')}
+              </button>{' '}
+              <button className="account__button account__button--quiet" type="button" onClick={() => setMode('view')}>
+                {t('common.cancel')}
+              </button>
+            </span>
+          </form>
+        ) : (
+          <>
+            <strong>{name}</strong>
+            <br />
+            <span className="panel__meta">
+              {account.email}
+              {account.institution ? ` · ${account.institution}` : ''}
+            </span>
+          </>
+        )}
+      </td>
+      <td data-testid="account-roles">
+        {account.owner && (
+          <span className="panel__role">
+            {t('panel.people.owner')}
+            <br />
+          </span>
+        )}
+        {account.roles.length === 0 && !account.owner && <span className="panel__meta">{t('panel.people.noRole')}</span>}
+        {account.roles.map((r) => (
+          <span key={r} className="panel__role">
+            {t(`panel.roles.${r}`)}
+            {canManage.includes(r) && (
+              <>
+                {' '}
+                <button
+                  className="account__button account__button--quiet"
+                  type="button"
+                  disabled={busy}
+                  aria-label={t('panel.people.takeFor', { role: t(`panel.roles.${r}`), name })}
+                  onClick={() => onTake(r)}
+                >
+                  ×
+                </button>
+              </>
+            )}
+            <br />
+          </span>
+        ))}
+      </td>
+      <td>
+        {free.length > 0 && (
+          <span className="panel__assign">
+            <select aria-label={t('panel.people.chooseFor', { name })} value={chosen} onChange={(e) => setChosen(e.target.value as MemberRole | '')}>
+              <option value="">{t('panel.papers.choose')}</option>
+              {free.map((r) => (
+                <option key={r} value={r}>
+                  {t(`panel.roles.${r}`)}
+                </option>
+              ))}
+            </select>{' '}
+            <button
+              className="account__button account__button--quiet"
+              type="button"
+              disabled={busy || !chosen}
+              aria-label={t('panel.people.giveFor', { name })}
+              onClick={() => {
+                if (chosen) onGive(chosen);
+                setChosen('');
+              }}
+            >
+              {t('panel.people.give')}
+            </button>
+          </span>
+        )}
+      </td>
+      <td>
+        {account.canEdit && mode === 'view' && (
+          <>
+            <button
+              className="account__button account__button--quiet"
+              type="button"
+              aria-label={t('panel.people.editFor', { name })}
+              onClick={startEdit}
+            >
+              {t('panel.people.edit')}
+            </button>{' '}
+            <button
+              className="account__button account__button--quiet"
+              type="button"
+              aria-label={t('panel.people.passwordLinkFor', { name })}
+              onClick={() => setMode('password')}
+            >
+              {t('panel.people.passwordLink')}
+            </button>
+          </>
+        )}
+        {mode === 'password' && (
+          <>
+            <span>{t('panel.people.passwordLinkConfirm', { email: account.email })}</span>{' '}
+            <button
+              className="account__button"
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                onPasswordLink();
+                setMode('view');
+              }}
+            >
+              {t('panel.people.passwordLinkYes')}
+            </button>{' '}
+            <button className="account__button account__button--quiet" type="button" onClick={() => setMode('view')}>
+              {t('common.cancel')}
+            </button>
+          </>
+        )}
+      </td>
+    </tr>
+  );
+}
+
 function PeopleTab({ token, slug, message }: TabProps) {
   const { t } = useTranslation();
   const load = useCallback(() => fetchPanelMembers(token, slug), [token, slug]);
@@ -885,30 +1059,38 @@ function PeopleTab({ token, slug, message }: TabProps) {
   const [role, setRole] = useState<MemberRole>('REVIEWER');
   const [note, setNote] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [search, setSearch] = useState('');
 
   if (!data) return error ? <Problem text={error} /> : <p role="status">{t('common.loading')}</p>;
 
-  const run = async (work: () => Promise<string | null>) => {
+  const run = async (work: () => Promise<string | null>): Promise<boolean> => {
     setBusy(true);
     setError(null);
     setNote(null);
+    let ok = true;
     try {
       setNote(await work());
       await reload();
     } catch (err) {
       setError(message(err));
+      ok = false;
     }
     setBusy(false);
+    return ok;
   };
-  const add = (e: FormEvent) => {
-    e.preventDefault();
-    void run(async () => {
-      const { invited } = await addMember(token, slug, email.trim(), role);
-      setEmail('');
+  const give = (to: string, what: MemberRole) =>
+    run(async () => {
+      const { invited } = await addMember(token, slug, to, what);
       return t(invited ? 'panel.people.invited' : 'panel.people.added');
     });
+  const add = (e: FormEvent) => {
+    e.preventDefault();
+    void give(email.trim(), role).then((ok) => ok && setEmail(''));
   };
-  const roles: MemberRole[] = ['ADMIN', 'ORGANIZER', 'REVIEWER'];
+  // An organiser is not shown the administrators (#264); the server does not send them either.
+  const roles = (['ADMIN', 'ORGANIZER', 'REVIEWER'] as MemberRole[]).filter((r) => r !== 'ADMIN' || data.role === 'ADMIN');
+  const needle = search.trim().toLowerCase();
+  const accounts = data.accounts.filter((a) => !needle || `${a.fullName} ${a.email} ${a.institution ?? ''}`.toLowerCase().includes(needle));
 
   return (
     <>
@@ -919,7 +1101,7 @@ function PeopleTab({ token, slug, message }: TabProps) {
         </label>
         <label>
           {t('panel.people.role')}
-          <select value={role} onChange={(e) => setRole(e.target.value as MemberRole)}>
+          <select value={data.canManage.includes(role) ? role : data.canManage[0]} onChange={(e) => setRole(e.target.value as MemberRole)}>
             {data.canManage.map((r) => (
               <option key={r} value={r}>
                 {t(`panel.roles.${r}`)}
@@ -932,47 +1114,89 @@ function PeopleTab({ token, slug, message }: TabProps) {
         </button>
       </form>
       <p className="reg-form__hint">{t('panel.people.hint')}</p>
+      <ul className="panel__meta" data-testid="role-legend">
+        {roles.map((r) => (
+          <li key={r}>
+            <strong>{t(`panel.roles.${r}`)}</strong>: {t(`panel.roleDescription.${r}`)}
+          </li>
+        ))}
+      </ul>
       <Problem text={error} />
       {note && (
         <p className="account__notice account__notice--ok" role="status">
           {note}
         </p>
       )}
-      {/* An organiser is not shown the administrators (#264); the server does not send them either. */}
-      {roles.filter((r) => r !== 'ADMIN' || data.role === 'ADMIN').map((r) => {
-        const people = data.members.filter((m) => m.role === r);
-        const waiting = data.invites.filter((i) => i.role === r);
-        const mine = data.canManage.includes(r);
-        return (
-          <section key={r} data-testid={`role-${r}`}>
-            <h3>{t(`panel.roles.${r}`)}</h3>
-            <p className="panel__meta">{t(`panel.roleDescription.${r}`)}</p>
-            {people.length === 0 && waiting.length === 0 && <p>{t('panel.people.nobody')}</p>}
-            <ul className="panel__people">
-              {people.map((m) => (
-                <li key={m.userId}>
-                  {m.fullName || m.email} <span className="panel__meta">({m.email})</span>{' '}
-                  {mine && (
-                    <button className="account__button account__button--quiet" type="button" disabled={busy} onClick={() => void run(async () => (await removeMember(token, slug, m.email, r), null))}>
-                      {t('panel.people.remove')}
-                    </button>
-                  )}
-                </li>
-              ))}
-              {waiting.map((i) => (
-                <li key={i.email}>
-                  {i.email} <span className="panel__meta">({t('panel.people.waiting')})</span>{' '}
-                  {mine && (
-                    <button className="account__button account__button--quiet" type="button" disabled={busy} onClick={() => void run(async () => (await removeMember(token, slug, i.email, r), null))}>
-                      {t('panel.people.remove')}
-                    </button>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </section>
-        );
-      })}
+      {data.invites.length > 0 && (
+        <section data-testid="pending-invites">
+          <h3>{t('panel.people.pending')}</h3>
+          <ul className="panel__people">
+            {data.invites.map((i) => (
+              <li key={`${i.email}:${i.role}`}>
+                {i.email} <span className="panel__meta">({t(`panel.roles.${i.role}`)})</span>{' '}
+                {data.canManage.includes(i.role) && (
+                  <button
+                    className="account__button account__button--quiet"
+                    type="button"
+                    disabled={busy}
+                    aria-label={t('panel.people.takeFor', { role: t(`panel.roles.${i.role}`), name: i.email })}
+                    onClick={() => void run(async () => (await removeMember(token, slug, i.email, i.role), null))}
+                  >
+                    {t('panel.people.remove')}
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+      <h3>{t('panel.people.accounts')}</h3>
+      <div className="panel__filters">
+        <label>
+          {t('panel.search')}
+          <input type="search" value={search} onChange={(e) => setSearch(e.target.value)} />
+        </label>
+        <span className="panel__meta" data-testid="account-count">
+          {t('panel.people.count', { count: accounts.length })}
+        </span>
+      </div>
+      <div className="panel__table">
+        <table>
+          <thead>
+            <tr>
+              <th>{t('panel.people.person')}</th>
+              <th>{t('panel.people.roles')}</th>
+              <th>{t('panel.people.giveRole')}</th>
+              <th>{t('common.actions')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {accounts.map((a) => (
+              <AccountRow
+                key={a.userId}
+                account={a}
+                canManage={data.canManage}
+                busy={busy}
+                onGive={(r) => void give(a.email, r)}
+                onTake={(r) => void run(async () => (await removeMember(token, slug, a.email, r), null))}
+                onSave={(fullName, institution) =>
+                  run(async () => {
+                    await updateAccount(token, slug, a.userId, { fullName, institution });
+                    return t('panel.people.updated');
+                  })
+                }
+                onPasswordLink={() =>
+                  void run(async () => {
+                    await sendPasswordLink(token, slug, a.userId);
+                    return t('panel.people.passwordLinkSent', { email: a.email });
+                  })
+                }
+              />
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {accounts.length === 0 && <p>{t('panel.empty')}</p>}
     </>
   );
 }

@@ -66,6 +66,18 @@ export interface PanelMembers {
   canManage: MemberRole[];
   members: { userId: string; email: string; fullName: string; role: MemberRole }[];
   invites: { email: string; role: MemberRole }[];
+  /** The person looking is the owner of the site (the platform administrator). */
+  owner: boolean;
+  /** Every account, with its roles in the edition and whether the person looking may change it (#268). */
+  accounts: {
+    userId: string;
+    email: string;
+    fullName: string;
+    institution: string | null;
+    owner: boolean;
+    roles: MemberRole[];
+    canEdit: boolean;
+  }[];
 }
 
 export interface PanelRequest {
@@ -107,6 +119,9 @@ const KNOWN_ERRORS = [
   'reviewer_is_author',
   'submission_not_found',
   'reviewer_not_found',
+  'owner_only',
+  'account_not_found',
+  'account_without_login',
 ] as const;
 
 export type AdminErrorCode = (typeof KNOWN_ERRORS)[number] | 'generic';
@@ -198,3 +213,10 @@ export function toCsv(rows: (string | number | null | undefined)[][]): string {
   // The byte-order mark makes Excel read the accents right.
   return `${String.fromCharCode(0xfeff)}${rows.map((row) => row.map(cell).join(';')).join('\r\n')}`;
 }
+
+/** An administrator corrects someone's name and institution (#269). */
+export const updateAccount = (token: string, slug: string, userId: string, data: { fullName: string; institution: string }) =>
+  request<{ ok: true; changed: boolean }>('POST', 'account-update', token, slug, { userId, ...data });
+/** Sends the person the e-mail to choose a new password (#270). */
+export const sendPasswordLink = (token: string, slug: string, userId: string) =>
+  request<{ ok: true; queued: boolean }>('POST', 'account-password-link', token, slug, { userId });

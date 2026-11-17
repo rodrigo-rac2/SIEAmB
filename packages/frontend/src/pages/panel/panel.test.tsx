@@ -93,17 +93,42 @@ const registration = (over: Partial<PanelRegistration> = {}): PanelRegistration 
   ...over,
 });
 
-const members = (role: 'ADMIN' | 'ORGANIZER' = 'ADMIN') => ({
-  body: {
-    role,
-    canManage: role === 'ADMIN' ? ['ADMIN', 'ORGANIZER', 'REVIEWER'] : ['REVIEWER'],
-    members: [
-      { userId: 'u1', email: 'najara@ufcg.edu.br', fullName: 'Najara Escarião', role: 'ADMIN' },
-      { userId: 'u2', email: 'viviane@ufcg.edu.br', fullName: 'Viviane Farias', role: 'ORGANIZER' },
-    ],
-    invites: [{ email: 'futuro@ufpb.br', role: 'REVIEWER' }],
-  },
-});
+const members = (role: 'ADMIN' | 'ORGANIZER' = 'ADMIN', owner = false) => {
+  const admin = role === 'ADMIN';
+  const account = (userId: string, fullName: string, email: string, roles: string[], more: Record<string, unknown> = {}) => ({
+    userId,
+    fullName,
+    email,
+    institution: null,
+    owner: false,
+    roles,
+    canEdit: admin,
+    ...more,
+  });
+  return {
+    body: {
+      role,
+      owner,
+      // An organiser gives reviewers; an administrator organisers and reviewers; the owner all three (#268).
+      canManage: owner ? ['ADMIN', 'ORGANIZER', 'REVIEWER'] : admin ? ['ORGANIZER', 'REVIEWER'] : ['REVIEWER'],
+      members: [
+        ...(admin ? [{ userId: 'u1', email: 'najara@ufcg.edu.br', fullName: 'Najara Escarião', role: 'ADMIN' }] : []),
+        { userId: 'u2', email: 'viviane@ufcg.edu.br', fullName: 'Viviane Farias', role: 'ORGANIZER' },
+      ],
+      invites: [{ email: 'futuro@ufpb.br', role: 'REVIEWER' }],
+      accounts: [
+        ...(admin
+          ? [
+              account('u1', 'Najara Escarião', 'najara@ufcg.edu.br', ['ADMIN'], { canEdit: true }),
+              account('u0', 'Rodrigo Dono', 'rodrigo@sieamb.org', [], { owner: true, canEdit: owner }),
+            ]
+          : []),
+        account('u2', 'Viviane Farias', 'viviane@ufcg.edu.br', ['ORGANIZER'], { institution: 'UFCG' }),
+        account('u5', 'Pessoa Comum', 'pessoa@ufrn.br', []),
+      ],
+    },
+  };
+};
 
 const list = (rows: PanelRegistration[], role: 'ADMIN' | 'ORGANIZER' = 'ADMIN') => ({
   body: {
@@ -660,13 +685,35 @@ describe('papers tab', () => {
 });
 
 describe('people tab', () => {
-  it('lists who has each role and who is still without an account', async () => {
+  const row = async (name: string) => {
+    const rows = await screen.findAllByTestId('account-row');
+    return rows.find((r) => within(r).queryByText(name))!;
+  };
+
+  it('lists every account with its roles, the owner marked, and the roles kept for people without an account (#268)', async () => {
     stubApi({ members: members() });
     panel('people');
-    expect(within(await screen.findByTestId('role-ADMIN')).getByText(/Najara Escarião/)).toBeInTheDocument();
-    expect(within(screen.getByTestId('role-ORGANIZER')).getByText(/Viviane Farias/)).toBeInTheDocument();
-    const reviewers = screen.getByTestId('role-REVIEWER');
-    expect(reviewers).toHaveTextContent('futuro@ufpb.br (ainda sem conta)');
+    expect(within(await row('Najara Escarião')).getByTestId('account-roles')).toHaveTextContent('Administrador');
+    const viviane = await row('Viviane Farias');
+    expect(viviane).toHaveTextContent('viviane@ufcg.edu.br · UFCG');
+    expect(within(viviane).getByTestId('account-roles')).toHaveTextContent('Organizador');
+    expect(within(await row('Pessoa Comum')).getByTestId('account-roles')).toHaveTextContent('Sem papel');
+    expect(within(await row('Rodrigo Dono')).getByTestId('account-roles')).toHaveTextContent('Dono(a) do site');
+    expect(screen.getByTestId('account-count')).toHaveTextContent('4 contas');
+    expect(screen.getByTestId('pending-invites')).toHaveTextContent('futuro@ufpb.br (Avaliador)');
+  });
+
+  it('searches the accounts by name, e-mail or institution', async () => {
+    stubApi({ members: members() });
+    panel('people');
+    await screen.findAllByTestId('account-row');
+    await userEvent.type(screen.getByLabelText('Buscar'), 'ufrn');
+    expect(screen.getAllByTestId('account-row')).toHaveLength(1);
+    expect(screen.getByTestId('account-row')).toHaveTextContent('Pessoa Comum');
+    expect(screen.getByTestId('account-count')).toHaveTextContent('1 conta');
+    await userEvent.clear(screen.getByLabelText('Buscar'));
+    await userEvent.type(screen.getByLabelText('Buscar'), 'ninguém assim');
+    expect(screen.queryAllByTestId('account-row')).toHaveLength(0);
   });
 
   it('gives a role by e-mail and says when the person still has to create the account', async () => {
@@ -680,26 +727,119 @@ describe('people tab', () => {
     expect(screen.getByLabelText('E-mail')).toHaveValue('');
   });
 
-  it('lets an organiser manage reviewers only', async () => {
+  it('an administrator gives and takes Organizador and Avaliador on the line of the person, never Administrador (#268)', async () => {
+    const calls = stubApi({ members: members(), 'member-add': { body: { ok: true, invited: false } }, 'member-remove': { body: { ok: true } } });
+    panel('people');
+    expect(within(await screen.findByLabelText('Papel')).getAllByRole('option').map((o) => o.textContent)).toEqual(['Organizador', 'Avaliador']);
+    const pessoa = await row('Pessoa Comum');
+    const choose = within(pessoa).getByRole('combobox', { name: 'Papel para Pessoa Comum' });
+    expect(within(choose).getAllByRole('option').map((o) => o.textContent)).toEqual(['Escolha', 'Organizador', 'Avaliador']);
+    const giveButton = within(pessoa).getByRole('button', { name: 'Dar o papel escolhido a Pessoa Comum' });
+    expect(giveButton).toBeDisabled();
+    await userEvent.selectOptions(choose, 'REVIEWER');
+    await userEvent.click(giveButton);
+    await waitFor(() => expect(calls.find((c) => c.url.endsWith('member-add'))?.body).toEqual({ eventSlug: '2027', email: 'pessoa@ufrn.br', role: 'REVIEWER' }));
+    // Someone who already is an organiser is only offered what they are not yet.
+    const viviane = await row('Viviane Farias');
+    expect(within(within(viviane).getByRole('combobox')).getAllByRole('option').map((o) => o.textContent)).toEqual(['Escolha', 'Avaliador']);
+    await userEvent.click(within(viviane).getByRole('button', { name: 'Tirar o papel de Organizador de Viviane Farias' }));
+    await waitFor(() => expect(calls.find((c) => c.url.endsWith('member-remove'))?.body).toEqual({ eventSlug: '2027', email: 'viviane@ufcg.edu.br', role: 'ORGANIZER' }));
+    // The Administrador role has no remove button for an administrator.
+    expect(within(await row('Najara Escarião')).queryByRole('button', { name: /Tirar o papel/ })).not.toBeInTheDocument();
+  });
+
+  it('the owner gives and takes the three roles', async () => {
+    stubApi({ members: members('ADMIN', true) });
+    panel('people');
+    expect(within(await screen.findByLabelText('Papel')).getAllByRole('option').map((o) => o.textContent)).toEqual(['Administrador', 'Organizador', 'Avaliador']);
+    expect(within(await row('Najara Escarião')).getByRole('button', { name: 'Tirar o papel de Administrador de Najara Escarião' })).toBeInTheDocument();
+    expect(within(await row('Rodrigo Dono')).getByRole('button', { name: 'Editar os dados de Rodrigo Dono' })).toBeInTheDocument();
+  });
+
+  it('lets an organiser manage reviewers only, without the administrators and without editing anyone (#264)', async () => {
     const calls = stubApi({ members: members('ORGANIZER'), 'member-remove': { body: { ok: true } } });
     panel('people');
     const role = await screen.findByLabelText('Papel');
     expect(within(role).getAllByRole('option').map((o) => o.textContent)).toEqual(['Avaliador']);
-    // The administrators are not shown to an organiser, even if the answer carried them (#264).
-    expect(screen.queryByTestId('role-ADMIN')).not.toBeInTheDocument();
     expect(screen.queryByText(/najara@ufcg\.edu\.br/)).not.toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Administrador' })).not.toBeInTheDocument();
-    expect(within(screen.getByTestId('role-ORGANIZER')).queryByRole('button', { name: 'Remover' })).not.toBeInTheDocument();
-    await userEvent.click(within(screen.getByTestId('role-REVIEWER')).getByRole('button', { name: 'Remover' }));
+    expect(screen.getByTestId('role-legend')).not.toHaveTextContent('Administrador:');
+    expect(screen.getByTestId('role-legend')).toHaveTextContent('Avaliador: Avalia os trabalhos que receber.');
+    const viviane = await row('Viviane Farias');
+    expect(within(viviane).queryByRole('button', { name: /Tirar o papel/ })).not.toBeInTheDocument();
+    expect(within(within(viviane).getByRole('combobox')).getAllByRole('option').map((o) => o.textContent)).toEqual(['Escolha', 'Avaliador']);
+    expect(screen.queryByRole('button', { name: /Editar os dados/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Enviar link de nova senha/ })).not.toBeInTheDocument();
+    await userEvent.click(within(screen.getByTestId('pending-invites')).getByRole('button', { name: 'Tirar o papel de Avaliador de futuro@ufpb.br' }));
     await waitFor(() => expect(calls.some((c) => c.url.endsWith('member-remove'))).toBe(true));
     expect(calls.find((c) => c.url.endsWith('member-remove'))!.body).toEqual({ eventSlug: '2027', email: 'futuro@ufpb.br', role: 'REVIEWER' });
   });
 
   it('explains a refusal', async () => {
-    stubApi({ members: members(), 'member-remove': { status: 409, body: { error: 'cannot_remove_self' } } });
+    stubApi({ members: members('ADMIN', true), 'member-remove': { status: 409, body: { error: 'cannot_remove_self' } } });
     panel('people');
-    await userEvent.click(within(await screen.findByTestId('role-ADMIN')).getByRole('button', { name: 'Remover' }));
+    await userEvent.click(within(await row('Najara Escarião')).getByRole('button', { name: /Tirar o papel de Administrador/ }));
     expect(await screen.findByRole('alert')).toHaveTextContent('Você não pode remover o seu próprio papel de administrador.');
+  });
+
+  it('an administrator corrects the name and institution of someone, and cancelling sends nothing (#269)', async () => {
+    const calls = stubApi({ members: members(), 'account-update': { body: { ok: true, changed: true } } });
+    panel('people');
+    const pessoa = await row('Pessoa Comum');
+    await userEvent.click(within(pessoa).getByRole('button', { name: 'Editar os dados de Pessoa Comum' }));
+    const name = within(pessoa).getByLabelText('Nome completo');
+    expect(name).toHaveValue('Pessoa Comum');
+    // The e-mail is shown and cannot be typed over.
+    expect(within(pessoa).queryByRole('textbox', { name: 'E-mail' })).not.toBeInTheDocument();
+    await userEvent.clear(name);
+    await userEvent.type(name, 'Ab');
+    expect(within(pessoa).getByRole('button', { name: 'Salvar' })).toBeDisabled();
+    await userEvent.click(within(pessoa).getByRole('button', { name: 'Cancelar' }));
+    expect(calls.some((c) => c.url.endsWith('account-update'))).toBe(false);
+    expect(within(pessoa).getByText('Pessoa Comum')).toBeInTheDocument();
+
+    await userEvent.click(within(pessoa).getByRole('button', { name: 'Editar os dados de Pessoa Comum' }));
+    await userEvent.clear(within(pessoa).getByLabelText('Nome completo'));
+    await userEvent.type(within(pessoa).getByLabelText('Nome completo'), ' Pessoa Corrigida ');
+    await userEvent.type(within(pessoa).getByLabelText('Instituição'), 'UFRN');
+    await userEvent.click(within(pessoa).getByRole('button', { name: 'Salvar' }));
+    expect(await screen.findByRole('status')).toHaveTextContent('Dados atualizados.');
+    expect(calls.find((c) => c.url.endsWith('account-update'))!.body).toEqual({ eventSlug: '2027', userId: 'u5', fullName: 'Pessoa Corrigida', institution: 'UFRN' });
+  });
+
+  it('keeps the edit form open and says why when the server refuses', async () => {
+    stubApi({ members: members(), 'account-update': { status: 403, body: { error: 'owner_only' } } });
+    panel('people');
+    const pessoa = await row('Pessoa Comum');
+    await userEvent.click(within(pessoa).getByRole('button', { name: 'Editar os dados de Pessoa Comum' }));
+    await userEvent.click(within(pessoa).getByRole('button', { name: 'Salvar' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Só o dono do site pode fazer isso.');
+    expect(within(pessoa).getByLabelText('Nome completo')).toBeInTheDocument();
+  });
+
+  it('sends a new-password link only after confirming, and offers none for the owner to an administrator (#270)', async () => {
+    const calls = stubApi({ members: members(), 'account-password-link': { body: { ok: true, queued: true } } });
+    panel('people');
+    const pessoa = await row('Pessoa Comum');
+    await userEvent.click(within(pessoa).getByRole('button', { name: 'Enviar link de nova senha a Pessoa Comum' }));
+    expect(calls.some((c) => c.url.endsWith('account-password-link'))).toBe(false);
+    expect(pessoa).toHaveTextContent('Enviar a pessoa@ufrn.br um link para escolher uma nova senha?');
+    await userEvent.click(within(pessoa).getByRole('button', { name: 'Cancelar' }));
+    expect(calls.some((c) => c.url.endsWith('account-password-link'))).toBe(false);
+    await userEvent.click(within(pessoa).getByRole('button', { name: 'Enviar link de nova senha a Pessoa Comum' }));
+    await userEvent.click(within(pessoa).getByRole('button', { name: 'Sim, enviar' }));
+    expect(await screen.findByRole('status')).toHaveTextContent('Link enviado para pessoa@ufrn.br.');
+    expect(calls.find((c) => c.url.endsWith('account-password-link'))!.body).toEqual({ eventSlug: '2027', userId: 'u5' });
+    const dono = await row('Rodrigo Dono');
+    expect(within(dono).queryByRole('button', { name: /Editar os dados|Enviar link/ })).not.toBeInTheDocument();
+  });
+
+  it('says so when the account has no login yet', async () => {
+    stubApi({ members: members(), 'account-password-link': { status: 409, body: { error: 'account_without_login' } } });
+    panel('people');
+    const pessoa = await row('Pessoa Comum');
+    await userEvent.click(within(pessoa).getByRole('button', { name: 'Enviar link de nova senha a Pessoa Comum' }));
+    await userEvent.click(within(pessoa).getByRole('button', { name: 'Sim, enviar' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Essa conta ainda não tem acesso ao site.');
   });
 });
 

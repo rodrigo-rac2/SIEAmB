@@ -80,6 +80,20 @@ export interface Member {
   role: MemberRole;
 }
 
+/** An account of the site, whatever its roles. `owner` is the platform administrator. */
+export interface Account {
+  id: string;
+  email: string;
+  fullName: string;
+  institution: string | null;
+  owner: boolean;
+}
+
+export interface AccountPatch {
+  fullName?: string;
+  institution?: string | null;
+}
+
 export interface Invite {
   email: string;
   role: MemberRole;
@@ -146,6 +160,11 @@ export interface AdminStore {
   /** Takes a person off every paper of the edition; the ids of the papers they were on. */
   unassignReviewerEverywhere(eventId: string, userId: string): Promise<string[]>;
   setSubmissionStatus(id: string, status: 'SUBMITTED' | 'UNDER_REVIEW', now: Date): Promise<void>;
+
+  /** Every account of the site, by name (#268). */
+  listAccounts(): Promise<Account[]>;
+  findAccount(id: string): Promise<Account | null>;
+  updateAccount(id: string, patch: AccountPatch, now: Date): Promise<void>;
 
   listMembers(eventId: string): Promise<Member[]>;
   listInvites(eventId: string): Promise<Invite[]>;
