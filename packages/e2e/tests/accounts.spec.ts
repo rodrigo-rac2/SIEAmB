@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { expect as baseExpect, test, type Page } from '@playwright/test';
+import { randomCpf } from './helpers';
 
 // Each step waits on a real server and a real database, some on a cold start.
 const expect = baseExpect.configure({ timeout: 25_000 });
@@ -31,20 +32,6 @@ async function admin<T>(path: string, init: RequestInit = {}): Promise<T> {
   const text = await response.text();
   if (!response.ok) throw new Error(`admin ${init.method ?? 'GET'} ${path}: ${response.status} ${text.slice(0, 200)}`);
   return (text ? JSON.parse(text) : null) as T;
-}
-
-/** A CPF with valid check digits, different on every run. */
-function randomCpf(): string {
-  const digits = Array.from({ length: 9 }, () => Math.floor(Math.random() * 10));
-  if (new Set(digits).size === 1) digits[0] = (digits[0]! + 1) % 10;
-  const check = (base: number[]) => {
-    const sum = base.reduce((acc, d, i) => acc + d * (base.length + 1 - i), 0);
-    const rest = (sum * 10) % 11;
-    return rest === 10 ? 0 : rest;
-  };
-  const d1 = check(digits);
-  const d2 = check([...digits, d1]);
-  return [...digits, d1, d2].join('');
 }
 
 const unique = (label: string) => `e2e+${label}-${Date.now()}-${randomBytes(3).toString('hex')}@sieamb.org`;
