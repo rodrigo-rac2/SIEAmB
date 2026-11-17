@@ -13,6 +13,7 @@ import {
   AdminError,
   addMember,
   assignReviewer,
+  closeSubmissions,
   createPanelRegistration,
   decideRequest,
   deleteRegistration,
@@ -25,6 +26,7 @@ import {
   remindRegistration,
   remindRegistrations,
   removeMember,
+  reopenSubmissions,
   restoreRegistration,
   sendAnnouncement,
   setRegistrationStatus,
@@ -627,6 +629,60 @@ function PaperReviewers({
   );
 }
 
+/** The organisers' switch: close submissions, or reopen them (#236). Closing asks once more. */
+function SubmissionsSwitch({
+  closed,
+  onClose,
+  onReopen,
+}: {
+  closed: PanelPapers['closed'];
+  onClose: () => Promise<void>;
+  onReopen: () => Promise<void>;
+}) {
+  const { t } = useTranslation();
+  const locale = useLocale();
+  const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const run = async (action: () => Promise<void>) => {
+    setBusy(true);
+    await action();
+    setBusy(false);
+    setConfirming(false);
+  };
+  return (
+    <div className="account__notice" data-testid="submissions-switch">
+      <p>
+        {closed
+          ? t('panel.papers.window.closed', { date: day(closed.closedAt, locale), name: closed.closedBy })
+          : t('panel.papers.window.open')}
+      </p>
+      <div className="account__actions">
+        {closed && (
+          <button className="account__button" type="button" disabled={busy} onClick={() => void run(onReopen)}>
+            {t('panel.papers.window.reopen')}
+          </button>
+        )}
+        {!closed && !confirming && (
+          <button className="account__button account__button--quiet" type="button" onClick={() => setConfirming(true)}>
+            {t('panel.papers.window.close')}
+          </button>
+        )}
+        {!closed && confirming && (
+          <>
+            <span>{t('panel.papers.window.closeConfirm')}</span>
+            <button className="account__button" type="button" disabled={busy} onClick={() => void run(onClose)}>
+              {t('panel.papers.window.closeYes')}
+            </button>
+            <button className="account__button account__button--quiet" type="button" onClick={() => setConfirming(false)}>
+              {t('common.cancel')}
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function PapersTab({ token, slug, message }: TabProps) {
   const { t } = useTranslation();
   const locale = useLocale();
@@ -670,6 +726,11 @@ function PapersTab({ token, slug, message }: TabProps) {
   return (
     <>
       <p data-testid="panel-counts">{t('panel.papers.counts', data.counts)}</p>
+      <SubmissionsSwitch
+        closed={data.closed ?? null}
+        onClose={() => change(() => closeSubmissions(token, slug))}
+        onReopen={() => change(() => reopenSubmissions(token, slug))}
+      />
       <p className="panel__meta">{t('panel.papers.reviewersHint')}</p>
       {people && reviewers.length === 0 && (
         <p className="account__notice" data-testid="no-reviewers">

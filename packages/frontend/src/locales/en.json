@@ -586,7 +586,15 @@
       "assignFor": "Assign to paper no. {{number}}",
       "removeReviewer": "Take {{name}} off paper no. {{number}}",
       "noReviewers": "Nobody has the Reviewer role in this edition. Give that role in People and roles.",
-      "reviewersHint": "Each paper needs at least one reviewer, and you can assign as many as you want. With a reviewer assigned, the paper is under review and its authors can no longer change it. Reviewers see the file with the authors' names."
+      "reviewersHint": "Each paper needs at least one reviewer, and you can assign as many as you want. With a reviewer assigned, the paper is under review and its authors can no longer change it. Reviewers see the file with the authors' names.",
+      "window": {
+        "open": "Submissions are open.",
+        "closed": "Submissions closed on {{date}} by {{name}}. Nobody can send, change or withdraw papers.",
+        "close": "Close submissions",
+        "closeConfirm": "Close submissions? Nobody will be able to send, change or withdraw papers until they are reopened.",
+        "closeYes": "Yes, close",
+        "reopen": "Reopen submissions"
+      }
     },
     "people": {
       "role": "Role",

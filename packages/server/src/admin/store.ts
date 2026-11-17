@@ -134,6 +134,10 @@ export interface AdminStore {
   patchRegistration(id: string, patch: RegistrationPatch): Promise<void>;
 
   listSubmissions(eventId: string): Promise<AdminSubmission[]>;
+  /** Whether the organisers have submissions closed by hand (#236), since when and by whom. */
+  submissionsClosed(eventId: string): Promise<{ closedAt: string; closedBy: string } | null>;
+  /** Closes (a date and who) or reopens (null). False when it was already that way. */
+  setSubmissionsClosed(eventId: string, closed: { at: Date; by: string } | null): Promise<boolean>;
   findSubmission(id: string): Promise<(AdminSubmission & { eventId: string }) | null>;
   /** False when that person already reviews the paper. */
   assignReviewer(submissionId: string, userId: string, by: string, now: Date): Promise<boolean>;

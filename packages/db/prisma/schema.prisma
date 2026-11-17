@@ -16,27 +16,30 @@ datasource db {
 // ───────────────────────────── Events (multi-event core) ─────────────────────────────
 
 model Event {
-  id           String   @id @default(uuid()) @db.Uuid
-  slug         String   @unique // "2027"
-  legacySlugs  String[] @default([]) @map("legacy_slugs") // old slugs that redirect here
-  name         String // "II SIEAmB"
-  fullName     String   @map("full_name")
-  edition      Int
-  aboutMd      Json?    @map("about_md") // LocalizedText, markdown
-  startsAt     DateTime @map("starts_at")
-  endsAt       DateTime @map("ends_at")
-  venue        Json? // LocalizedText
-  isOnline     Boolean  @default(false) @map("is_online")
-  venueUrl     String?  @map("venue_url")
-  isCurrent    Boolean  @default(false) @map("is_current") // exactly one true (partial unique index in migration SQL)
-  isArchived   Boolean  @default(false) @map("is_archived")
-  heroImageUrl String?  @map("hero_image_url")
-  logoUrl      String?  @map("logo_url")
-  lockupUrl    String?  @map("lockup_url")
-  theme        Json? // EventTheme (ADR-001)
-  settings     Json     @default("{}") // registrationOpen, submissionsOpen, showProgram…
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id                  String    @id @default(uuid()) @db.Uuid
+  slug                String    @unique // "2027"
+  legacySlugs         String[]  @default([]) @map("legacy_slugs") // old slugs that redirect here
+  name                String // "II SIEAmB"
+  fullName            String    @map("full_name")
+  edition             Int
+  aboutMd             Json?     @map("about_md") // LocalizedText, markdown
+  startsAt            DateTime  @map("starts_at")
+  endsAt              DateTime  @map("ends_at")
+  venue               Json? // LocalizedText
+  isOnline            Boolean   @default(false) @map("is_online")
+  venueUrl            String?   @map("venue_url")
+  isCurrent           Boolean   @default(false) @map("is_current") // exactly one true (partial unique index in migration SQL)
+  isArchived          Boolean   @default(false) @map("is_archived")
+  heroImageUrl        String?   @map("hero_image_url")
+  logoUrl             String?   @map("logo_url")
+  lockupUrl           String?   @map("lockup_url")
+  theme               Json? // EventTheme (ADR-001)
+  settings            Json      @default("{}") // registrationOpen, submissionsOpen, showProgram…
+  // Set while the organisers have submissions closed by hand (#236); null when open.
+  submissionsClosedAt DateTime? @map("submissions_closed_at")
+  submissionsClosedBy String?   @map("submissions_closed_by") @db.Uuid
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
 
   importantDates   ImportantDate[]
   thematicAreas    ThematicArea[]

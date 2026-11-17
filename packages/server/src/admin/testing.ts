@@ -100,6 +100,20 @@ export class FakeAdminStore implements AdminStore {
     if (patch.deletedAt === null && this.clash(registration)) throw new RegistrationExistsError();
     Object.assign(registration, patch);
   }
+  closed = new Map<string, { closedAt: string; closedBy: string }>();
+  async submissionsClosed(eventId: string) {
+    return this.closed.get(eventId) ?? null;
+  }
+  async setSubmissionsClosed(eventId: string, closed: { at: Date; by: string } | null) {
+    if (Boolean(closed) === this.closed.has(eventId)) return false;
+    if (closed) {
+      const user = this.users.find((u) => u.id === closed.by);
+      this.closed.set(eventId, { closedAt: closed.at.toISOString(), closedBy: user?.fullName ?? '' });
+    } else {
+      this.closed.delete(eventId);
+    }
+    return true;
+  }
   async listSubmissions(eventId: string) {
     return this.submissions.filter((s) => s.eventId === eventId);
   }

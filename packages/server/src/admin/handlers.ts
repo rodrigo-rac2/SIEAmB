@@ -317,6 +317,8 @@ async function submissions(request: Request, deps: AdminDeps): Promise<Response>
   const isConfirmed = (email: string) => ['PAID', 'CONFIRMED', 'EXEMPT'].includes(states.get(email) ?? '');
   return json(200, {
     role: ctx.role,
+    // Closed by hand (#236): since when and by whom; null while open.
+    closed: await deps.store.submissionsClosed(ctx.event.id),
     counts: { total: all.filter((s) => !s.deletedAt).length, withdrawn: all.filter((s) => s.deletedAt).length },
     submissions: all.map((s) => ({
       ...s,
@@ -325,6 +327,20 @@ async function submissions(request: Request, deps: AdminDeps): Promise<Response>
       authorRegistered: s.authors.some((a) => isConfirmed(a.email)),
     })),
   });
+}
+
+/**
+ * The organisers' switch (#236): closed, nobody sends, changes or withdraws a paper,
+ * whatever the published date says; reopened, everything works again.
+ */
+async function submissionsSwitch(request: Request, deps: AdminDeps, close: boolean): Promise<Response> {
+  const body = await readJsonObject(request);
+  const ctx = await context(request, deps, body.eventSlug);
+  if ('response' in ctx) return ctx.response;
+  const changed = await deps.store.setSubmissionsClosed(ctx.event.id, close ? { at: deps.now(), by: ctx.user.id } : null);
+  // Two organisers pressing the same button: the second one changes nothing and is told how things stand.
+  if (changed) await audit(deps, ctx, close ? 'submissions.close' : 'submissions.reopen', 'event', ctx.event.id);
+  return json(200, { ok: true, changed, closed: await deps.store.submissionsClosed(ctx.event.id) });
 }
 
 // ───────────────────────────── Reviewers of a paper (#232) ─────────────────────────────
@@ -612,6 +628,8 @@ const ROUTES: Record<string, Partial<Record<string, Handler>>> = {
   'registration-restore': { POST: registrationRestore },
   remind: { POST: remind },
   submissions: { GET: submissions },
+  'submissions-close': { POST: (request, deps) => submissionsSwitch(request, deps, true) },
+  'submissions-reopen': { POST: (request, deps) => submissionsSwitch(request, deps, false) },
   'reviewer-assign': { POST: (request, deps) => reviewerChange(request, deps, true) },
   'reviewer-unassign': { POST: (request, deps) => reviewerChange(request, deps, false) },
   members: { GET: members },

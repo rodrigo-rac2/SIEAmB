@@ -25,6 +25,8 @@ const WRITES = [
   'registration-status',
   'registration-delete',
   'registration-restore',
+  'submissions-close',
+  'submissions-reopen',
   'reviewer-assign',
   'reviewer-unassign',
   'member-add',
@@ -1014,5 +1016,62 @@ describe('reviewers of a paper (#232)', () => {
     expect(second.status).toBe('UNDER_REVIEW');
     // Another edition is another matter.
     expect(elsewhere.reviewers).toHaveLength(1);
+  });
+});
+
+describe('closing and reopening submissions (#236)', () => {
+  it.each(['organiser', 'admin', 'platform'] as const)('lets the %s close them and reopen them, on the record', async (who) => {
+    const { deps, tokens, store } = setup();
+    const actor = { organiser: ORGANISER, admin: ADMIN, platform: { id: 'user-root' } }[who];
+    const before = await body(await get(deps, 'submissions', tokens[who]));
+    expect(before.closed).toBeNull();
+
+    const closed = await post(deps, 'submissions-close', tokens[who], {});
+    expect(closed.status).toBe(200);
+    const answer = await body(closed);
+    expect(answer).toMatchObject({ ok: true, changed: true, closed: { closedAt: NOW.toISOString() } });
+    expect(store.closed.has(EVENT.id)).toBe(true);
+    expect(store.audits.at(-1)).toMatchObject({ actorId: actor.id, action: 'submissions.close', entity: 'event', entityId: EVENT.id });
+    expect((await body(await get(deps, 'submissions', tokens[who]))).closed).toEqual(answer.closed);
+
+    const reopened = await post(deps, 'submissions-reopen', tokens[who], {});
+    expect(await body(reopened)).toEqual({ ok: true, changed: true, closed: null });
+    expect(store.closed.has(EVENT.id)).toBe(false);
+    expect(store.audits.at(-1)).toMatchObject({ action: 'submissions.reopen' });
+  });
+
+  it('says who closed them', async () => {
+    const { deps, tokens } = setup();
+    await post(deps, 'submissions-close', tokens.organiser, {});
+    const list = await body(await get(deps, 'submissions', tokens.admin));
+    expect(list.closed).toEqual({ closedAt: NOW.toISOString(), closedBy: 'Viviane Farias' });
+  });
+
+  it('pressed twice, keeps the first closing and writes one line in the record', async () => {
+    const { deps, tokens, store } = setup();
+    await post(deps, 'submissions-close', tokens.organiser, {});
+    const again = await post(deps, 'submissions-close', tokens.admin, {});
+    expect(again.status).toBe(200);
+    expect(await body(again)).toMatchObject({ changed: false, closed: { closedBy: 'Viviane Farias' } });
+    expect(store.audits.filter((a) => a.action === 'submissions.close')).toHaveLength(1);
+    // Reopening what is open changes nothing either.
+    await post(deps, 'submissions-reopen', tokens.admin, {});
+    expect(await body(await post(deps, 'submissions-reopen', tokens.admin, {}))).toEqual({ ok: true, changed: false, closed: null });
+    expect(store.audits.filter((a) => a.action === 'submissions.reopen')).toHaveLength(1);
+  });
+
+  it.each(['reviewer', 'nobody'] as const)('is not for a %s', async (who) => {
+    const { deps, tokens, store } = setup();
+    expect((await post(deps, 'submissions-close', tokens[who], {})).status).toBe(404);
+    store.closed.set(EVENT.id, { closedAt: NOW.toISOString(), closedBy: 'Viviane Farias' });
+    expect((await post(deps, 'submissions-reopen', tokens[who], {})).status).toBe(404);
+    expect(store.closed.has(EVENT.id)).toBe(true);
+    expect(store.audits).toEqual([]);
+  });
+
+  it('closes one edition and leaves the others alone', async () => {
+    const { deps, tokens, store } = setup();
+    await post(deps, 'submissions-close', tokens.organiser, {});
+    expect([...store.closed.keys()]).toEqual([EVENT.id]);
   });
 });

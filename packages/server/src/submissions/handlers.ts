@@ -82,7 +82,7 @@ function view(submission: Submission, user: AuthUser, open: boolean) {
 
 interface Context {
   user: AuthUser;
-  event: { id: string; slug: string; name: string };
+  event: { id: string; slug: string; name: string; closedAt: string | null };
   rules: SubmissionRules;
   open: boolean;
   state: ReturnType<typeof windowState>;
@@ -100,8 +100,17 @@ async function context(
   const event = slug ? await deps.store.findEvent(slug) : null;
   const rules = event ? rulesFor(event.slug, deps.rules) : null;
   if (!event || !rules) return { response: json(404, { error: 'event_not_found' }) };
-  const state = windowState(rules, deps.windowNow());
+  const state = stateOf(rules, event.closedAt, deps.windowNow());
   return { user: auth.user, event, rules, state, open: state === 'open' };
+}
+
+/**
+ * Open or not: the dates of the rules, and over them the organisers' own switch (#236).
+ * Closed by hand is closed whatever the dates say; before the opening date nothing is open.
+ */
+function stateOf(rules: SubmissionRules, closedAt: string | null, now: Date): ReturnType<typeof windowState> {
+  const byDate = windowState(rules, now);
+  return closedAt && byDate === 'open' ? 'closed' : byDate;
 }
 
 const closedResponse = (state: Context['state']): Response =>
@@ -113,12 +122,15 @@ const closedResponse = (state: Context['state']): Response =>
 async function rules(request: Request, deps: SubmissionDeps): Promise<Response> {
   const slug = text(new URL(request.url).searchParams.get('eventSlug'), 40);
   const found = rulesFor(slug, deps.rules);
-  if (!found) return json(404, { error: 'event_not_found' });
+  const event = found ? await deps.store.findEvent(slug) : null;
+  if (!found || !event) return json(404, { error: 'event_not_found' });
   return json(200, {
-    state: windowState(found, deps.windowNow()),
+    state: stateOf(found, event.closedAt, deps.windowNow()),
     opensAt: found.opensAt,
     closesAt: found.closesAt,
     pastDeadline: pastDeadline(found, deps.windowNow()),
+    // When the organisers closed submissions by hand; null otherwise.
+    closedAt: event.closedAt,
   });
 }
 
@@ -134,6 +146,7 @@ async function mine(request: Request, deps: SubmissionDeps): Promise<Response> {
     state: ctx.state,
     closesAt: r.closesAt,
     pastDeadline: pastDeadline(r, deps.windowNow()),
+    closedAt: event.closedAt,
     // The edital's two limits, read by the place in the author list: first, or any other.
     limits: {
       asMain: all.filter((s) => positionOf(s, user.email) === 1).length,

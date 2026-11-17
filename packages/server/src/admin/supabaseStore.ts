@@ -238,6 +238,33 @@ export class SupabaseAdminStore implements AdminStore {
     }));
   }
 
+  async submissionsClosed(eventId: string): Promise<{ closedAt: string; closedBy: string } | null> {
+    const rows = await this.rest.request<
+      { submissions_closed_at: string | null; submissions_closed_by: string | null }[]
+    >(`events?id=eq.${q(eventId)}&select=submissions_closed_at,submissions_closed_by&limit=1`);
+    const row = rows[0];
+    if (!row?.submissions_closed_at) return null;
+    const who = row.submissions_closed_by
+      ? await this.rest.request<{ full_name: string; email: string }[]>(
+          `users?id=eq.${q(row.submissions_closed_by)}&select=full_name,email&limit=1`,
+        )
+      : [];
+    return { closedAt: row.submissions_closed_at, closedBy: who[0]?.full_name || who[0]?.email || '' };
+  }
+
+  async setSubmissionsClosed(eventId: string, closed: { at: Date; by: string } | null): Promise<boolean> {
+    // Only a row in the other state is changed, so two clicks do not move the date or the name.
+    const from = closed ? 'submissions_closed_at=is.null' : 'submissions_closed_at=not.is.null';
+    const rows = await this.rest.request<{ id: string }[]>(`events?id=eq.${q(eventId)}&${from}&select=id`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        submissions_closed_at: closed ? closed.at.toISOString() : null,
+        submissions_closed_by: closed ? closed.by : null,
+      }),
+    });
+    return rows.length > 0;
+  }
+
   listSubmissions(eventId: string): Promise<AdminSubmission[]> {
     return this.readSubmissions(`event_id=eq.${q(eventId)}`);
   }

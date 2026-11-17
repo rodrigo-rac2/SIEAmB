@@ -252,6 +252,15 @@ describe('MyPapersPage', () => {
     expect(screen.getByRole('link', { name: 'Enviar trabalho' })).toBeInTheDocument();
   });
 
+  it('closed by the organisers: names the day they closed it, not the published date', async () => {
+    stubApi({ mine: { body: mine({ state: 'closed', closedAt: '2026-12-10T18:00:00.000Z', submissions: [paper({ canEdit: false })] }) }, me: account(null) });
+    mount(...LIST, <MyPapersPage />);
+    const line = await screen.findByTestId('paper-limits');
+    expect(line).toHaveTextContent('As submissões foram encerradas em 10 de dezembro de 2026.');
+    expect(line).not.toHaveTextContent('janeiro');
+    expect(screen.queryByRole('link', { name: 'Enviar trabalho' })).not.toBeInTheDocument();
+  });
+
   it.each([
     ['closed', /foram encerradas em 18 de janeiro de 2027/],
     ['not_open', 'As submissões ainda não abriram.'],

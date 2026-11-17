@@ -43,6 +43,8 @@ export interface MyPapers {
   closesAt: string;
   /** The published date has passed; sending may still be open. */
   pastDeadline?: boolean;
+  /** When the organisers closed submissions by hand (#236); absent or null otherwise. */
+  closedAt?: string | null;
   limits: { asMain: number; maxAsMain: number; asCoauthor: number; maxAsCoauthor: number };
   submissions: Paper[];
 }
