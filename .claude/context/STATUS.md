@@ -37,8 +37,15 @@
   - **Functions**: `api/v1/account.ts`, `submissions.ts`, `admin.ts`, each reached by a rewrite in `vercel.json` (9 functions in all; the Hobby plan allows 12).
   - **Migrations on sieamb-dev only**: `20261117010000_accounts`, `20261117020000_submissions`, `20261117030000_organisation`, `20261117040000_announcements`.
   - **To release to production**: backup, the four migrations on sieamb-prod, `VITE_ACCOUNTS_ENABLED` and `ACCOUNTS_ENABLED` on Vercel Production, redeploy, give the first Administrador role (an invitation row for the address, or `users.is_platform_admin`), and upgrade the Resend plan before announcements are used (the free plan allows about 100 e-mails a day).
-  - **Not built**: review (distribution to reviewers, the form, opinions, divergence), results, the reviewers' screens, a blind version of the file, an unsubscribe link, merging two registrations of the same person (delete one instead).
-  - Decisions in `docs/adr/008-submissions-and-organisation.md`.
+  - **Not built**: the review form (scores, recommendation, opinions), results, an unsubscribe link, merging two registrations of the same person (delete one instead).
+  - **Changes asked by the committee and Rodrigo on 2026-11-17 (#230 to #233, #236)**, on dev only:
+    - **Any author sends a paper** (#230): one ordered author list, no main author or co-author; whoever sends is in the list in any place; any listed author with an account changes or withdraws; the edital's limits are counted by place in the list (3 as first author, 5 elsewhere).
+    - **Name suggestions** (#231): typing an author's name suggests people already in the system, with a masked e-mail; the page never gets the address (`search_people`, sealed reference).
+    - **Review is not blind, one reviewer or more** (#232): organisers assign reviewers per paper in the panel; reviewers have `/:event/avaliacoes` with their papers and the file. A paper with a reviewer is "em avaliação" and locked for its authors. The review form is not built.
+    - **The closing date does not lock** (#233): 18/01/2027 is only what the site shows (`locksAtClose: false`); the committee will postpone it and announce later. Until then the site says nothing about an extension.
+    - **Close and reopen by button** (#236): organisers close submissions for the edition in the papers tab, and reopen them.
+    - **Migrations on sieamb-dev only, added**: `20261117050000_people_search`, `20261117051000_people_search_institution`, `20261117060000_submission_reviewers`, `20261117061000_submission_reviewers_created_at`, `20261117070000_submissions_closed`.
+  - Decisions in `docs/adr/008-submissions-and-organisation.md` (and the note at the top of ADR-003).
 - **Still waiting on the committee**: II SIEAmB presentation text (with Prof. Viviane for approval, #12), edital text (#11), 2027 thematic areas (#37), Rodrigo's own team entry (#12), Mayra's photo (#12). **Waiting on Rodrigo**: Supabase/Resend accounts (#13, #14, #15, #18), the Mercado Pago Pix key (#16), the refund of the test payments (#166) and the Vercel upgrade (#168). **Waiting on the committee too**: answers to the nine open questions of the submission system proposal (shared document, private until Rodrigo shares it; submissions are not built and the edital says they opened on 15/11/2026), `.env.local` template ready.
 
 ## What works today
