@@ -1,3 +1,4 @@
+import { parseRows } from '../core/rest';
 import type { PaymentStatus } from '../payments/status';
 import {
   DocumentInUseError,
@@ -122,8 +123,7 @@ export class SupabaseAccountStore implements AccountStore {
       const problem = (await response.json().catch(() => ({}))) as { code?: string };
       throw new StoreError(response.status, problem.code ?? '');
     }
-    const answer = await response.text();
-    return (answer ? JSON.parse(answer) : null) as T;
+    return parseRows<T>(await response.text());
   }
 
   private async event(filter: string): Promise<EventRef | null> {
