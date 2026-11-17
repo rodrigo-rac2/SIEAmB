@@ -33,8 +33,8 @@ const paper = (over: Record<string, unknown> = {}) => ({
 });
 
 /** A context with a 5-page PDF already uploaded by the main author. */
-async function ready(pages = 5) {
-  const ctx = setup();
+async function ready(pages = 5, options: Parameters<typeof setup>[0] = {}) {
+  const ctx = setup(options);
   ctx.files.objects.set(PATH, await pdf(pages));
   const save = (data: Record<string, unknown>, token = ctx.tokens.main) =>
     handleSubmissions(call('POST', 'save', { token, body: data }), 'save', ctx.deps);
@@ -59,7 +59,13 @@ describe('rules of the edital', () => {
     expect(windowState(R, new Date('2026-11-14T23:59:59-03:00'))).toBe('not_open');
     expect(windowState(R, new Date('2026-11-15T00:00:00-03:00'))).toBe('open');
     expect(windowState(R, new Date('2027-01-18T23:59:59-03:00'))).toBe('open');
-    expect(windowState(R, new Date('2027-01-19T00:00:00-03:00'))).toBe('closed');
+    // The edital's date is what the site shows; it locks nothing unless the switch is on (#233).
+    expect(R.locksAtClose).toBe(false);
+    expect(windowState(R, new Date('2027-01-19T00:00:00-03:00'))).toBe('open');
+    expect(windowState(R, new Date('2027-06-01T00:00:00-03:00'))).toBe('open');
+    const locking = { ...R, locksAtClose: true };
+    expect(windowState(locking, new Date('2027-01-18T23:59:59-03:00'))).toBe('open');
+    expect(windowState(locking, new Date('2027-01-19T00:00:00-03:00'))).toBe('closed');
   });
 
   it('has rules and areas for the 2027 edition only', () => {
@@ -102,10 +108,14 @@ describe('router', () => {
 
   it('says when submissions open and close without a login', async () => {
     const { deps, clock } = setup();
-    const get = () => handleSubmissions(call('GET', 'rules', { query: '?eventSlug=2027' }), 'rules', deps);
-    expect(await body(await get())).toEqual({ state: 'open', opensAt: R.opensAt, closesAt: R.closesAt });
+    const get = (d = deps) => handleSubmissions(call('GET', 'rules', { query: '?eventSlug=2027' }), 'rules', d);
+    expect(await body(await get())).toEqual({ state: 'open', opensAt: R.opensAt, closesAt: R.closesAt, pastDeadline: false });
     clock.window = new Date('2027-01-19T00:00:01-03:00');
-    expect((await body(await get())).state).toBe('closed');
+    // Past the published date and still open: the date is postponed by announcement, not by the clock.
+    expect(await body(await get())).toMatchObject({ state: 'open', pastDeadline: true });
+    const locking = setup({ locksAtClose: true });
+    locking.clock.window = new Date('2027-01-19T00:00:01-03:00');
+    expect(await body(await get(locking.deps))).toMatchObject({ state: 'closed', pastDeadline: true });
     expect((await handleSubmissions(call('GET', 'rules', { query: '?eventSlug=2025' }), 'rules', deps)).status).toBe(404);
   });
 });
@@ -188,9 +198,9 @@ describe('upload-url', () => {
 
   it.each([
     ['before they open', '2026-11-14T23:00:00-03:00', 'submissions_not_open'],
-    ['after they close', '2027-01-19T00:00:01-03:00', 'submissions_closed'],
+    ['after they close, when the date locks', '2027-01-19T00:00:01-03:00', 'submissions_closed'],
   ])('hands out nothing %s', async (_name, when, error) => {
-    const { deps, tokens, clock, files } = setup();
+    const { deps, tokens, clock, files } = setup({ locksAtClose: true });
     clock.window = new Date(when);
     const response = await ask(deps, tokens.main, { fileName: 'x.pdf', size: 10 });
     expect(response.status).toBe(409);
@@ -462,8 +472,8 @@ describe('limits of the edital', () => {
 });
 
 describe('changing a paper', () => {
-  const sent = async () => {
-    const ctx = await ready();
+  const sent = async (options: Parameters<typeof setup>[0] = {}) => {
+    const ctx = await ready(5, options);
     const first = await body(await ctx.save(paper()));
     ctx.sent.length = 0;
     ctx.outbox.notifications.length = 0;
@@ -523,8 +533,19 @@ describe('changing a paper', () => {
     expect((await save(paper({ id, filePath: undefined }))).status).toBe(404);
   });
 
-  it('is locked once submissions close, and once it is under review', async () => {
-    const closed = await sent();
+  it('can still be changed after the published date, which locks nothing', async () => {
+    const late = await sent();
+    late.clock.window = new Date('2027-02-10T12:00:00-03:00');
+    const response = await late.save(paper({ id: late.id, filePath: undefined, title: 'Governança da água: depois do prazo' }));
+    expect(response.status).toBe(200);
+    expect(late.store.submissions[0]!.title).toBe('Governança da água: depois do prazo');
+    // And a new paper can be sent too.
+    late.files.objects.set(PATH, await pdf(5));
+    expect((await late.save(paper({ title: 'Outro trabalho, enviado depois do prazo' }))).status).toBe(201);
+  });
+
+  it('is locked once submissions close (when the date locks), and once it is under review', async () => {
+    const closed = await sent({ locksAtClose: true });
     closed.clock.window = new Date('2027-01-19T00:00:01-03:00');
     const afterClose = await closed.save(paper({ id: closed.id, filePath: undefined }));
     expect(afterClose.status).toBe(409);
@@ -539,8 +560,8 @@ describe('changing a paper', () => {
 });
 
 describe('withdrawing a paper', () => {
-  const sent = async () => {
-    const ctx = await ready();
+  const sent = async (options: Parameters<typeof setup>[0] = {}) => {
+    const ctx = await ready(5, options);
     ctx.store.organisers = [{ userId: ORGANISER.id, email: ORGANISER.email, fullName: 'Viviane' }];
     const first = await body(await ctx.save(paper({ coauthors: [{ fullName: 'João Lima', email: OTHER.email }] })));
     ctx.sent.length = 0;
@@ -570,11 +591,18 @@ describe('withdrawing a paper', () => {
     expect(store.submissions[0]!.deletedAt).toBeNull();
   });
 
-  it('cannot be done after submissions close', async () => {
-    const { withdraw, tokens, clock, store } = await sent();
+  it('cannot be done after submissions close, when the date locks', async () => {
+    const { withdraw, tokens, clock, store } = await sent({ locksAtClose: true });
     clock.window = new Date('2027-01-19T00:00:01-03:00');
     expect((await withdraw(tokens.main)).status).toBe(409);
     expect(store.submissions[0]!.deletedAt).toBeNull();
+  });
+
+  it('can be done after the published date, which locks nothing', async () => {
+    const { withdraw, tokens, clock, store } = await sent();
+    clock.window = new Date('2027-02-10T12:00:00-03:00');
+    expect((await withdraw(tokens.main)).status).toBe(200);
+    expect(store.submissions[0]!.deletedAt).not.toBeNull();
   });
 });
 
@@ -609,12 +637,21 @@ describe('Meus trabalhos', () => {
   });
 
   it('shows the papers as locked after submissions close', async () => {
-    const { deps, tokens, store, clock } = setup();
+    const { deps, tokens, store, clock } = setup({ locksAtClose: true });
     store.seed();
     clock.window = new Date('2027-01-19T00:00:01-03:00');
     const data = await body(await mine(deps, tokens.main));
     expect(data.state).toBe('closed');
     expect(data.submissions[0]!.canEdit).toBe(false);
+  });
+
+  it('keeps the papers open after the published date, and says the date has passed', async () => {
+    const { deps, tokens, store, clock } = setup();
+    store.seed();
+    clock.window = new Date('2027-01-19T00:00:01-03:00');
+    const data = await body(await mine(deps, tokens.main));
+    expect(data).toMatchObject({ state: 'open', pastDeadline: true, closesAt: R.closesAt });
+    expect(data.submissions[0]!.canEdit).toBe(true);
   });
 });
 

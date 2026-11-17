@@ -417,6 +417,7 @@
     "limitReached": "Você já enviou os {{maxAsMain}} trabalhos permitidos como autor principal.",
     "window": {
       "open": "As submissões estão abertas até {{date}}.",
+      "open_late": "As submissões estão abertas.",
       "not_open": "As submissões ainda não abriram.",
       "closed": "As submissões foram encerradas em {{date}}. Os trabalhos não podem mais ser alterados."
     },

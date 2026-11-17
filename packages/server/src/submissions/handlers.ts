@@ -16,6 +16,7 @@ import {
   MODALITIES,
   areaName,
   areaRefs,
+  pastDeadline,
   rulesFor,
   windowState,
   type Modality,
@@ -38,6 +39,8 @@ export interface SubmissionDeps extends OutboxDeps {
   /** The clock the submission window is judged by (can be moved outside production). */
   windowNow: () => Date;
   pepper: string;
+  /** The rules to judge by; the edital's file when absent. */
+  rules?: SubmissionRules[];
 }
 
 export const UPLOADS_PER_HOUR = 30;
@@ -91,7 +94,7 @@ async function context(
   if ('response' in auth) return auth;
   const slug = text(eventSlug, 40);
   const event = slug ? await deps.store.findEvent(slug) : null;
-  const rules = event ? rulesFor(event.slug) : null;
+  const rules = event ? rulesFor(event.slug, deps.rules) : null;
   if (!event || !rules) return { response: json(404, { error: 'event_not_found' }) };
   const state = windowState(rules, deps.windowNow());
   return { user: auth.user, event, rules, state, open: state === 'open' };
@@ -105,12 +108,13 @@ const closedResponse = (state: Context['state']): Response =>
 /** Public: when submissions open and close, as the server's clock sees it. */
 async function rules(request: Request, deps: SubmissionDeps): Promise<Response> {
   const slug = text(new URL(request.url).searchParams.get('eventSlug'), 40);
-  const found = rulesFor(slug);
+  const found = rulesFor(slug, deps.rules);
   if (!found) return json(404, { error: 'event_not_found' });
   return json(200, {
     state: windowState(found, deps.windowNow()),
     opensAt: found.opensAt,
     closesAt: found.closesAt,
+    pastDeadline: pastDeadline(found, deps.windowNow()),
   });
 }
 
@@ -122,6 +126,7 @@ async function mine(request: Request, deps: SubmissionDeps): Promise<Response> {
   return json(200, {
     state: ctx.state,
     closesAt: r.closesAt,
+    pastDeadline: pastDeadline(r, deps.windowNow()),
     limits: {
       asMain: all.filter((s) => s.userId === user.id).length,
       maxAsMain: r.maxAsMainAuthor,

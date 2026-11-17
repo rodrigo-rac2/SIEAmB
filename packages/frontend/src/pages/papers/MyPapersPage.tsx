@@ -223,7 +223,9 @@ export function MyPapersPage() {
               <RegistrationNotice registration={registration} hasPapers={papers.submissions.length > 0} slug={event.slug} />
 
               <p className="papers__limits" data-testid="paper-limits">
-                {t(`papers.window.${papers.state}`, { date: day(papers.closesAt, locale) })}{' '}
+                {t(`papers.window.${papers.state === 'open' && papers.pastDeadline ? 'open_late' : papers.state}`, {
+                  date: day(papers.closesAt, locale),
+                })}{' '}
                 {t('papers.limits', papers.limits)}
               </p>
               {canSend && (

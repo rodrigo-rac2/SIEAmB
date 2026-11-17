@@ -9,6 +9,11 @@ export interface SubmissionRules {
   eventId: string;
   opensAt: string;
   closesAt: string;
+  /**
+   * Whether the closing date stops sending, changing and withdrawing. When false the
+   * date is only what the site shows: the organisers postpone it by announcing a new one.
+   */
+  locksAtClose: boolean;
   /** Main author included. */
   maxAuthors: number;
   maxAsMainAuthor: number;
@@ -52,9 +57,13 @@ export type WindowState = 'not_open' | 'open' | 'closed';
 export function windowState(rules: SubmissionRules, now: Date): WindowState {
   const at = now.getTime();
   if (at < Date.parse(rules.opensAt)) return 'not_open';
-  if (at > Date.parse(rules.closesAt)) return 'closed';
+  if (at > Date.parse(rules.closesAt) && rules.locksAtClose) return 'closed';
   return 'open';
 }
+
+/** The published date is behind us (whether or not it locks anything). */
+export const pastDeadline = (rules: SubmissionRules, now: Date): boolean =>
+  now.getTime() > Date.parse(rules.closesAt);
 
 /**
  * `SUBMISSIONS_NOW` moves the clock of the submission window, and only that, so

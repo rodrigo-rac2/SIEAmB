@@ -6,6 +6,7 @@ import { FakeAuth } from '../account/testing';
 import type { NewNotification, OutboxJob, OutboxMail, OutboxStore } from '../core/outbox';
 import type { Mailer, OutgoingMail } from '../payments/notifications';
 import type { SubmissionDeps } from './handlers';
+import { RULES } from './rules';
 import type { Author, FileStorage, Organiser, Submission, SubmissionInput, SubmissionStore } from './store';
 
 export const NOW = new Date('2026-12-01T15:00:00-03:00');
@@ -204,7 +205,7 @@ export class FakeOutbox implements OutboxStore {
   }
 }
 
-export function setup(options: { failSends?: boolean; noMailer?: boolean } = {}) {
+export function setup(options: { failSends?: boolean; noMailer?: boolean; locksAtClose?: boolean } = {}) {
   const store = new FakeSubmissionStore();
   const files = new FakeFiles();
   const outbox = new FakeOutbox();
@@ -236,6 +237,7 @@ export function setup(options: { failSends?: boolean; noMailer?: boolean } = {})
     now: () => NOW,
     windowNow: () => clock.window,
     pepper: 'test-pepper',
+    ...(options.locksAtClose ? { rules: RULES.map((r) => ({ ...r, locksAtClose: true })) } : {}),
   };
   const tokens = {
     main: auth.login(MAIN),

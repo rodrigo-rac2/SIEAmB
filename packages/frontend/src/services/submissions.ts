@@ -39,6 +39,8 @@ export interface Paper {
 export interface MyPapers {
   state: WindowState;
   closesAt: string;
+  /** The published date has passed; sending may still be open. */
+  pastDeadline?: boolean;
   limits: { asMain: number; maxAsMain: number; asCoauthor: number; maxAsCoauthor: number };
   submissions: Paper[];
 }
@@ -60,6 +62,7 @@ export interface SubmissionRules {
   eventId: string;
   opensAt: string;
   closesAt: string;
+  locksAtClose: boolean;
   maxAuthors: number;
   maxAsMainAuthor: number;
   maxAsCoauthor: number;
