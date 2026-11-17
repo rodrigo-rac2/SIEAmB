@@ -7,6 +7,7 @@ import { AccountError, startRecovery, startSignup } from '../../services/account
 import { NotFoundPage } from '../NotFoundPage';
 import '../../components/registration/RegistrationForm.css';
 import './Account.css';
+import { rememberNext } from './nextPage';
 import { useAccountPaths } from './useAccountPaths';
 
 /**
@@ -27,6 +28,7 @@ export function SignupPage({ mode }: { mode: 'signup' | 'recover' }) {
 
   if (!auth.enabled) return <NotFoundPage />;
   if (!paths.ready) return null;
+  rememberNext(params.get('next'));
 
   const signup = mode === 'signup';
   const key = signup ? 'account.signup' : 'account.recover';
@@ -37,7 +39,10 @@ export function SignupPage({ mode }: { mode: 'signup' | 'recover' }) {
     setBusy(true);
     try {
       const common = { email: email.trim(), locale: i18n.language, eventSlug: paths.slug };
-      await (signup ? startSignup({ ...common, fullName: fullName.trim() }) : startRecovery(common));
+      const next = params.get('next');
+      await (signup
+        ? startSignup({ ...common, fullName: fullName.trim(), ...(next ? { next } : {}) })
+        : startRecovery(common));
       setSent(true);
     } catch (err) {
       const code = err instanceof AccountError ? err.code : 'generic';

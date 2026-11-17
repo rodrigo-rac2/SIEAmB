@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactElement } from 'react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
@@ -12,6 +12,7 @@ import { LinkPage } from './LinkPage';
 import { LoginPage, safeNext } from './LoginPage';
 import { MyAreaPage } from './MyAreaPage';
 import { PasswordPage } from './PasswordPage';
+import { rememberNext, takeNext } from './nextPage';
 import { SignupPage } from './SignupPage';
 
 const auth = (over: Partial<AuthState> = {}): AuthState => ({
@@ -107,6 +108,7 @@ const registration = (over: Partial<Account['registrations'][number]> = {}) => (
 });
 
 afterEach(() => {
+  localStorage.clear();
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();
 });
@@ -178,6 +180,42 @@ describe('LoginPage', () => {
     expect(await screen.findByTestId('where')).toHaveTextContent('/2027/submissoes');
   });
 
+  it('hands the page that asked for the login on to "Criar conta", and remembers it for the e-mail link (#246)', async () => {
+    mount('/2027/conta/entrar?next=%2F2027%2Fmeus-trabalhos%2Fnovo', <LoginPage />);
+    expect(await screen.findByRole('link', { name: 'Criar conta' })).toHaveAttribute(
+      'href',
+      '/2027/conta/criar?next=%2F2027%2Fmeus-trabalhos%2Fnovo',
+    );
+    expect(takeNext('/2027/minha-area')).toBe('/2027/meus-trabalhos/novo');
+    // Read once, then forgotten.
+    expect(takeNext('/2027/minha-area')).toBe('/2027/minha-area');
+  });
+
+  it('remembers nothing without a next, nor one that leaves the site, nor one older than a day', async () => {
+    const plain = mount('/2027/conta/entrar', <LoginPage />);
+    await screen.findByRole('link', { name: 'Criar conta' });
+    expect(screen.getByRole('link', { name: 'Criar conta' })).toHaveAttribute('href', '/2027/conta/criar');
+    expect(takeNext('/fallback')).toBe('/fallback');
+    plain.unmount();
+    for (const evil of ['//evil.example', 'https://evil.example', 'javascript:alert(1)']) {
+      rememberNext(evil);
+      expect(takeNext('/fallback'), evil).toBe('/fallback');
+    }
+    localStorage.setItem('sieamb-next', JSON.stringify({ next: '//evil.example/x', at: Date.now() }));
+    expect(takeNext('/fallback')).toBe('/fallback');
+    localStorage.setItem('sieamb-next', JSON.stringify({ next: '/2027/meus-trabalhos/novo', at: Date.now() - 25 * 60 * 60 * 1000 }));
+    expect(takeNext('/fallback')).toBe('/fallback');
+    localStorage.setItem('sieamb-next', 'not json');
+    expect(takeNext('/fallback')).toBe('/fallback');
+  });
+
+  it('logging in forgets a page remembered for someone else’s sign-up', async () => {
+    rememberNext('/2027/meus-trabalhos/novo');
+    mount('/2027/conta/entrar', <LoginPage />, auth(LOGGED_IN));
+    expect(await screen.findByTestId('where')).toHaveTextContent('/2027/minha-area');
+    expect(takeNext('/fallback')).toBe('/fallback');
+  });
+
   it('never follows a next that leaves the site', () => {
     const fallback = '/2027/minha-area';
     expect(safeNext('/2027/submissoes?x=1', fallback)).toBe('/2027/submissoes?x=1');
@@ -203,6 +241,16 @@ describe('SignupPage', () => {
         body: { email: 'maria@ufcg.edu.br', fullName: 'Maria Clara', locale: 'pt-BR', eventSlug: '2027' },
       }),
     ]);
+  });
+
+  it('tells the server where the person was going, so the e-mail link leads on there (#246)', async () => {
+    const calls = stubApi({ signup: { status: 202, body: { ok: true } } });
+    mount('/2027/conta/criar?next=%2F2027%2Fmeus-trabalhos%2Fnovo', <SignupPage mode="signup" />);
+    await userEvent.type(await screen.findByLabelText('Nome completo'), 'Maria Clara');
+    await userEvent.type(screen.getByLabelText('E-mail'), 'maria@ufcg.edu.br');
+    await userEvent.click(screen.getByRole('button', { name: 'Enviar link de confirmação' }));
+    await screen.findByRole('heading', { name: 'Confira seu e-mail' });
+    expect(calls[0]!.body).toEqual({ email: 'maria@ufcg.edu.br', fullName: 'Maria Clara', locale: 'pt-BR', eventSlug: '2027', next: '/2027/meus-trabalhos/novo' });
   });
 
   it('starts with the e-mail of the registration just made', async () => {
@@ -253,6 +301,32 @@ describe('PasswordPage', () => {
     expect(calls).toEqual([
       expect.objectContaining({ url: '/api/v1/account/password', method: 'POST', authorization: 'Bearer access-token-1', body: { password: 'uma-senha-bem-longa' } }),
     ]);
+  });
+
+  it('goes on to the page the person was heading to when they had to create the account (#246)', async () => {
+    stubApi({ password: { body: { ok: true } } });
+    rememberNext('/2027/meus-trabalhos/novo');
+    open(auth(LOGGED_IN));
+    await userEvent.type(await screen.findByLabelText('Nova senha'), 'uma-senha-bem-longa');
+    await userEvent.type(screen.getByLabelText('Repita a senha'), 'uma-senha-bem-longa');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar senha' }));
+    expect(await screen.findByTestId('where')).toHaveTextContent('/2027/meus-trabalhos/novo');
+  });
+
+  it('follows the page named in the e-mail link, in a browser that remembers nothing, and never one outside the site', async () => {
+    stubApi({ password: { body: { ok: true } } });
+    const fill = async () => {
+      await userEvent.type(await screen.findByLabelText('Nova senha'), 'uma-senha-bem-longa');
+      await userEvent.type(screen.getByLabelText('Repita a senha'), 'uma-senha-bem-longa');
+      await userEvent.click(screen.getByRole('button', { name: 'Salvar senha' }));
+    };
+    const good = mount('/2027/conta/confirmar?token_hash=abc123&type=signup&next=%2F2027%2Fmeus-trabalhos%2Fnovo', <PasswordPage type="signup" />, auth(LOGGED_IN));
+    await fill();
+    expect(await screen.findByTestId('where')).toHaveTextContent('/2027/meus-trabalhos/novo');
+    good.unmount();
+    mount('/2027/conta/confirmar?token_hash=abc123&type=signup&next=%2F%2Fevil.example', <PasswordPage type="signup" />, auth(LOGGED_IN));
+    await fill();
+    expect(await screen.findByTestId('where')).toHaveTextContent('/2027/minha-area');
   });
 
   it('uses the recovery kind for a forgotten password', async () => {
@@ -352,6 +426,38 @@ describe('MyAreaPage', () => {
     );
     expect(calls[0]).toMatchObject({ url: '/api/v1/account/me', authorization: 'Bearer access-token-1' });
     expect(screen.queryByTestId('no-registration')).not.toBeInTheDocument();
+  });
+
+  it('opens with the papers: send a new one, or see them (#246)', async () => {
+    const calls = stubApi({ me: { body: account() }, 'rules?eventSlug=2027': { body: { state: 'open', opensAt: '', closesAt: '' } } });
+    mount('/2027/minha-area', <MyAreaPage />, auth(LOGGED_IN));
+    const papers = await screen.findByTestId('area-papers');
+    expect(within(papers).getByRole('link', { name: 'Enviar novo trabalho' })).toHaveAttribute('href', '/2027/meus-trabalhos/novo');
+    expect(within(papers).getByRole('link', { name: 'Meus trabalhos' })).toHaveAttribute('href', '/2027/meus-trabalhos');
+    // In page order: papers, the person's data, and only then the reminder that they are not registered.
+    const order = ['area-papers', 'no-registration'].map((id) => screen.getByTestId(id));
+    const profile = screen.getByRole('heading', { name: 'Meus dados' });
+    expect(order[0]!.compareDocumentPosition(profile) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(profile.compareDocumentPosition(order[1]!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(calls.some((c) => c.url === '/api/v1/submissions/rules?eventSlug=2027')).toBe(true);
+  });
+
+  it('keeps an existing registration, with its pay link, above the person’s data', async () => {
+    stubApi({ me: { body: account({ registrations: [registration()] }) } });
+    mount('/2027/minha-area', <MyAreaPage />, auth(LOGGED_IN));
+    const card = await screen.findByTestId('registration-card');
+    const profile = screen.getByRole('heading', { name: 'Meus dados' });
+    expect(screen.getByTestId('area-papers').compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(card.compareDocumentPosition(profile) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getAllByRole('heading', { name: 'Minha inscrição' })).toHaveLength(1);
+  });
+
+  it.each(['closed', 'not_open'])('does not offer to send a paper while submissions are %s', async (state) => {
+    stubApi({ me: { body: account() }, 'rules?eventSlug=2027': { body: { state, opensAt: '', closesAt: '' } } });
+    mount('/2027/minha-area', <MyAreaPage />, auth(LOGGED_IN));
+    const papers = await screen.findByTestId('area-papers');
+    await waitFor(() => expect(within(papers).queryByRole('link', { name: 'Enviar novo trabalho' })).not.toBeInTheDocument());
+    expect(within(papers).getByRole('link', { name: 'Meus trabalhos' })).toBeInTheDocument();
   });
 
   it('shows a paid registration as confirmed, with the amount and no link to pay', async () => {

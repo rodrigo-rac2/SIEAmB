@@ -6,11 +6,11 @@ import { useAuth } from '../../contexts/AuthContext';
 import { NotFoundPage } from '../NotFoundPage';
 import '../../components/registration/RegistrationForm.css';
 import './Account.css';
+import { forgetNext, rememberNext, safeNext } from './nextPage';
 import { useAccountPaths } from './useAccountPaths';
 
 /** Only paths inside the site are followed after logging in. */
-export const safeNext = (next: string | null, fallback: string): string =>
-  next && /^\/(?!\/)[^\s\\]*$/.test(next) ? next : fallback;
+export { safeNext } from './nextPage';
 
 /** `/:event/conta/entrar` */
 export function LoginPage() {
@@ -25,7 +25,13 @@ export function LoginPage() {
 
   if (!auth.enabled) return <NotFoundPage />;
   if (!paths.ready) return null;
-  if (auth.accessToken) return <Navigate to={safeNext(params.get('next'), paths.area)} replace />;
+  const next = params.get('next');
+  if (auth.accessToken) {
+    forgetNext();
+    return <Navigate to={safeNext(next, paths.area)} replace />;
+  }
+  // Kept for the person who creates an account instead: the e-mail link comes back without it.
+  rememberNext(next);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -75,7 +81,7 @@ export function LoginPage() {
           </form>
           <p className="account__links">
             <Link to={paths.recover}>{t('account.login.forgot')}</Link>
-            <Link to={paths.signup}>{t('account.login.create')}</Link>
+            <Link to={next ? `${paths.signup}?next=${encodeURIComponent(next)}` : paths.signup}>{t('account.login.create')}</Link>
           </p>
         </div>
       </section>

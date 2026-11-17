@@ -132,6 +132,8 @@ test.describe('accounts @accounts', () => {
 
     // 4. Minha área: no registration yet.
     await expect(page).toHaveURL(new RegExp(`/${EVENT}/minha-area$`));
+    // Papers come first; the reminder that the person is not registered sits at the end (#246).
+    await expect(page.getByTestId('area-papers').getByRole('link', { name: 'Enviar novo trabalho' })).toHaveAttribute('href', `/${EVENT}/meus-trabalhos/novo`);
     await expect(page.getByTestId('no-registration')).toBeVisible();
     await expect(page.getByLabel('Nome completo')).toHaveValue('Conta de Teste E2E');
 

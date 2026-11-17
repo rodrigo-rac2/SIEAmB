@@ -375,7 +375,9 @@
       "sendAgain": "重新发送链接",
       "noAccess": "我已无法使用该邮箱",
       "requestSent": "我们已向 {{email}} 发送确认链接。请打开该邮件并确认，以将注册关联到此账户。",
-      "requestOrganiser": "您的请求已转交组委会，他们会核实并回复。"
+      "requestOrganiser": "您的请求已转交组委会，他们会核实并回复。",
+      "papersBody": "提交论文，或查看您已提交以及您被列为作者的论文。",
+      "sendNew": "提交新论文"
     },
     "errors": {
       "generic": "出了点问题。请稍后重试。",

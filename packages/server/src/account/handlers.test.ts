@@ -85,6 +85,32 @@ describe('signup', () => {
     );
   });
 
+  it('carries the page the person was going to inside the link, so another browser or phone still gets there (#246)', async () => {
+    const { deps, sent } = setup();
+    await handleAccount(signup({ next: '/2027/meus-trabalhos/novo' }), 'signup', deps);
+    expect(sent[0]!.text).toContain(
+      'https://dev.sieamb.org/2027/conta/confirmar?token_hash=hash-for-nova.pessoa%40ufcg.edu.br&type=signup&next=%2F2027%2Fmeus-trabalhos%2Fnovo',
+    );
+  });
+
+  it.each([
+    ['another site', 'https://evil.example/2027/x'],
+    ['a protocol-relative address', '//evil.example/2027/x'],
+    ['a page of another edition', '/2025/meus-trabalhos/novo'],
+    ['a path that climbs out', '/2027/../admin'],
+    ['a path with a query', '/2027/meus-trabalhos?x=1'],
+    ['a path with a line break', '/2027/meus-trabalhos\nBcc: x'],
+    ['the edition alone', '/2027'],
+    ['something that is not text', { path: '/2027/x' }],
+    ['a very long path', `/2027/${'a'.repeat(250)}`],
+  ])('leaves %s out of the link', async (_name, next) => {
+    const { deps, sent } = setup();
+    await handleAccount(signup({ next }), 'signup', deps);
+    expect(sent[0]!.text).toContain('type=signup');
+    expect(sent[0]!.text).not.toContain('next=');
+    expect(sent[0]!.text).not.toContain('evil');
+  });
+
   it('never asks for or forwards a password', async () => {
     const { deps, auth } = setup();
     await handleAccount(signup({ password: 'chosen-by-someone-else' }), 'signup', deps);

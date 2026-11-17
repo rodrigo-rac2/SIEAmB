@@ -375,7 +375,9 @@
       "sendAgain": "Send the link again",
       "noAccess": "I no longer have access to that e-mail",
       "requestSent": "We sent a confirmation link to {{email}}. Open that e-mail and confirm to add the registration to this account.",
-      "requestOrganiser": "Your request was sent to the organisers, who will check it and answer."
+      "requestOrganiser": "Your request was sent to the organisers, who will check it and answer.",
+      "papersBody": "Send a paper, or follow the ones you sent and those where you are listed as an author.",
+      "sendNew": "Send a new paper"
     },
     "errors": {
       "generic": "Something went wrong. Try again in a moment.",
