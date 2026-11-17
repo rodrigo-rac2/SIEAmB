@@ -142,6 +142,8 @@ test.describe('organisation panel @panel', () => {
 
     // 5. A role for an address without an account waits for the account.
     await page.getByRole('link', { name: 'Pessoas e papéis' }).click();
+    // The tab has loaded when its role lists are there; the form of the previous tab is gone by then.
+    await expect(page.getByTestId('role-REVIEWER')).toBeVisible();
     await page.getByLabel('E-mail').fill(reviewerEmail);
     await page.getByLabel('Papel').selectOption('REVIEWER');
     await page.getByRole('button', { name: 'Dar o papel' }).click();
