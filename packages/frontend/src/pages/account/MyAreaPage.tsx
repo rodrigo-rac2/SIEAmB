@@ -348,7 +348,7 @@ export function MyAreaPage() {
               )}
 
               <h2 className="account__section">{t('account.area.profileTitle')}</h2>
-              <ProfileForm key={account.user.documentLocked ? 'locked' : 'open'} account={account} onSave={save} />
+              <ProfileForm account={account} onSave={save} />
 
               <p className="account__links account__section">
                 <button

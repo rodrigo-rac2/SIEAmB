@@ -154,7 +154,13 @@ test.describe('accounts @accounts', () => {
       new RegExp(`/${EVENT}/inscricoes/pagar\\?t=[0-9a-f-]{36}$`),
     );
 
-    // 7. The used link is spent.
+    // 7. The used link is spent, and opening it again does not log the person out.
+    await page.goto(`/${EVENT}/conta/confirmar?token_hash=${link.hashed_token}&type=signup`);
+    await expect(page.getByRole('heading', { name: 'Este link não vale mais' })).toBeVisible();
+    await page.goto(`/${EVENT}/minha-area`);
+    await expect(page.getByTestId('registration-card')).toBeVisible();
+    // Nothing scrolls sideways, on a phone least of all.
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
     await page.getByRole('button', { name: 'Sair' }).click();
     await expect(page).toHaveURL(new RegExp(`/${EVENT}/conta/entrar`));
     await page.goto(`/${EVENT}/conta/confirmar?token_hash=${link.hashed_token}&type=signup`);
