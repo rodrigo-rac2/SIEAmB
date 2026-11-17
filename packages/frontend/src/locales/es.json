@@ -709,8 +709,10 @@
       "confirm": "Este comunicado va a {{count}} personas ({{audience}}), por correo y en las notificaciones del sitio. Una vez enviado, no se puede deshacer.",
       "sendYes_one": "Enviar a {{count}} persona",
       "sendYes_other": "Enviar a {{count}} personas",
-      "sent_one": "Comunicado registrado para {{count}} persona. Los correos salen en los próximos minutos.",
-      "sent_other": "Comunicado registrado para {{count}} personas. Los correos salen de a poco, en los próximos minutos.",
+      "sent_one": "Comunicado registrado para {{count}} persona.",
+      "sent_other": "Comunicado registrado para {{count}} personas.",
+      "sentNow": " {{sent}} correo(s) enviado(s) ahora.",
+      "sentWaiting": " {{waiting}} aún en la cola: salen en la próxima pasada del sistema, lo que puede tardar algunas horas.",
       "history": "Comunicados enviados",
       "none": "Ningún comunicado enviado todavía.",
       "sentLine": "{{sender}} · {{audience}} · {{count}} personas · {{date}}"

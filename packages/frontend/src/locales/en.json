@@ -709,8 +709,10 @@
       "confirm": "This announcement goes to {{count}} people ({{audience}}), by e-mail and in the site notifications. Once sent, it cannot be undone.",
       "sendYes_one": "Send to {{count}} person",
       "sendYes_other": "Send to {{count}} people",
-      "sent_one": "Announcement recorded for {{count}} person. The e-mails go out in the next minutes.",
-      "sent_other": "Announcement recorded for {{count}} people. The e-mails go out gradually, in the next minutes.",
+      "sent_one": "Announcement recorded for {{count}} person.",
+      "sent_other": "Announcement recorded for {{count}} people.",
+      "sentNow": " {{sent}} e-mail(s) sent now.",
+      "sentWaiting": " {{waiting}} still queued: they go out on the system's next pass, which can take a few hours.",
       "history": "Announcements sent",
       "none": "No announcement sent yet.",
       "sentLine": "{{sender}} · {{audience}} · {{count}} people · {{date}}"

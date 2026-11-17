@@ -212,7 +212,7 @@ describe('announcements tab', () => {
       }),
       announce: () => {
         sent = true;
-        return { status: 201, body: { ok: true, recipients: 2 } };
+        return { status: 201, body: { ok: true, recipients: 2, sentNow: 1, waiting: 1 } };
       },
     });
     open();
@@ -233,7 +233,10 @@ describe('announcements tab', () => {
     expect(calls.some((c) => c.url.endsWith('announce'))).toBe(false);
     expect(screen.getByRole('alert')).toHaveTextContent('Este comunicado vai para 2 pessoas (Só os autores)');
     await userEvent.click(screen.getByRole('button', { name: 'Enviar para 2 pessoas' }));
-    expect(await screen.findByRole('status')).toHaveTextContent('Comunicado registrado para 2 pessoas.');
+    // How many left now, and how many are still queued (#281).
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Comunicado registrado para 2 pessoas. 1 e-mail(s) enviado(s) agora. 1 ainda na fila: saem na próxima passada do sistema, o que pode levar algumas horas.',
+    );
     expect(calls.find((c) => c.url.endsWith('announce'))!.body).toEqual({ eventSlug: '2027', audience: 'authors', subject: 'Prazo prorrogado', body: 'Novo prazo.' });
     const card = await screen.findByTestId('announcement-card');
     expect(card).toHaveTextContent('Viviane Farias · Só os autores · 2 pessoas');
