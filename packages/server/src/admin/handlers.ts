@@ -3,7 +3,7 @@ import type { AuthGateway, AuthUser } from '../account/auth';
 import { notifyUsers, sendThroughOutbox, type OutboxDeps, type OutboxMail } from '../core/outbox';
 import { emailLocale, layoutEmail } from '../payments/emailTemplates';
 import { json, readJsonObject, type Log } from '../payments/http';
-import { firstName } from '../payments/notifications';
+import { audienceFor, firstName, isTestAddress } from '../payments/notifications';
 import { isValidCpf } from '../payments/payer';
 import {
   AUDIENCES,
@@ -571,7 +571,9 @@ async function announce(request: Request, deps: AdminDeps): Promise<Response> {
   if ((await deps.store.countAnnouncementsSince(ctx.user.id, new Date(now.getTime() - 3600_000))) >= ANNOUNCEMENTS_PER_HOUR) {
     return json(429, { error: 'too_many_attempts' });
   }
-  const people = audienceOf(await deps.store.listAudiences(ctx.event.id), audience);
+  // An announcement written by a test account only reaches test addresses (#255).
+  const everyone = audienceOf(await deps.store.listAudiences(ctx.event.id), audience);
+  const people = isTestAddress(ctx.user.email) ? everyone.filter((p) => isTestAddress(p.email)) : everyone;
   if (people.length === 0) return json(400, { error: 'no_recipients' });
 
   const id = await deps.store.insertAnnouncement({
@@ -669,11 +671,15 @@ export async function handleAdmin(request: Request, action: string, deps: AdminD
  * the site (#219). Called once per registration, by the form's own notice.
  */
 export async function announceRegistration(
-  registration: { id: string; eventId: string; eventSlug: string; fullName: string; category: string },
+  registration: { id: string; eventId: string; eventSlug: string; fullName: string; category: string; email?: string },
   deps: Pick<AdminDeps, 'store' | 'outbox' | 'mailer' | 'log' | 'siteUrl'>,
   now: Date,
 ): Promise<void> {
-  const organisers = (await deps.store.listMembers(registration.eventId)).filter((m) => m.role !== 'REVIEWER');
+  // A test registration is announced to test organisers only (#255).
+  const organisers = audienceFor(
+    registration.email ? [registration.email] : [],
+    (await deps.store.listMembers(registration.eventId)).filter((m) => m.role !== 'REVIEWER'),
+  );
   const unique = [...new Map(organisers.map((o) => [o.userId, o])).values()];
   if (unique.length === 0) return;
   const event = await deps.store.findEvent(registration.eventSlug);

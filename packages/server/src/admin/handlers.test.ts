@@ -1084,3 +1084,55 @@ describe('closing and reopening submissions (#236)', () => {
     expect([...store.closed.keys()]).toEqual([EVENT.id]);
   });
 });
+
+describe('what is about test data stays among test accounts (#255)', () => {
+  const TEST_ORG = { id: 'user-test-org', email: 'e2e+r1a1-organizadora-x1@sieamb.org' };
+  const withTestOrganiser = () => {
+    const ctx = setup();
+    ctx.store.users.push({ id: TEST_ORG.id, email: TEST_ORG.email, fullName: 'Organizadora E2E' });
+    ctx.store.members.push({ eventId: EVENT.id, userId: TEST_ORG.id, email: TEST_ORG.email, fullName: 'Organizadora E2E', role: 'ORGANIZER' });
+    return ctx;
+  };
+  const registration = { id: 'reg-t', eventId: EVENT.id, eventSlug: '2027', fullName: 'Conta de Teste E2E', category: 'ESTUDANTE_POS' };
+
+  it('does not tell the real organisers of a test registration, by e-mail or in the site', async () => {
+    const { deps, sent, outbox } = withTestOrganiser();
+    await announceRegistration({ ...registration, email: 'e2e+r1a1-inscrita-ab12@sieamb.org' }, deps, NOW);
+    expect(sent).toEqual([]);
+    // The test organiser still gets the notice, which is what the browser tests look for.
+    expect(outbox.notifications.map((n) => n.userId)).toEqual([TEST_ORG.id]);
+  });
+
+  it.each(['maria@ufcg.edu.br', 'e2e@sieamb.org', 'e2e+x@gmail.com', undefined])(
+    'tells every organiser of a real registration (%s)',
+    async (email) => {
+      const { deps, sent, outbox } = withTestOrganiser();
+      await announceRegistration({ ...registration, ...(email ? { email } : {}) }, deps, NOW);
+      expect(sent.map((m) => m.to).sort()).toEqual([ADMIN.email, ORGANISER.email].sort());
+      expect(outbox.notifications.map((n) => n.userId).sort()).toEqual([ADMIN.id, ORGANISER.id, TEST_ORG.id].sort());
+    },
+  );
+
+  it('keeps an announcement written by a test account among test addresses', async () => {
+    const ctx = withTestOrganiser();
+    ctx.store.groups = {
+      registered: [{ email: 'paula@outlook.com', fullName: 'Paula Nunes' }, { email: 'e2e+r1a1-inscrita-ab12@sieamb.org', fullName: 'Conta de Teste' }],
+      authors: [],
+      reviewers: [{ email: REVIEWER.email, fullName: 'Avaliador Um' }, { email: 'e2e+r1a1-avaliadora-cd34@sieamb.org', fullName: 'Avaliadora E2E' }],
+      organisers: [{ email: ORGANISER.email, fullName: 'Viviane Farias' }],
+    };
+    const token = ctx.auth.login({ id: TEST_ORG.id, email: TEST_ORG.email, emailConfirmed: true }, 'tok-test-org');
+    const send = (who: string, audience: string) =>
+      post(ctx.deps, 'announce', who, { audience, subject: 'Comunicado de teste', body: 'Texto de um comunicado de teste, com tamanho suficiente.' });
+    const response = await send(token, 'all');
+    expect(response.status).toBe(201);
+    expect(ctx.store.announcements.at(-1)!.emails.sort()).toEqual(['e2e+r1a1-avaliadora-cd34@sieamb.org', 'e2e+r1a1-inscrita-ab12@sieamb.org']);
+    // A group with no test address has nobody for a test sender.
+    const none = await send(token, 'organisers');
+    expect(none.status).toBe(400);
+    expect(await body(none)).toEqual({ error: 'no_recipients' });
+    // A real organiser reaches everyone, test addresses included (they are simply never mailed).
+    await send(ctx.tokens.organiser, 'all');
+    expect(ctx.store.announcements.at(-1)!.emails).toHaveLength(5);
+  });
+});

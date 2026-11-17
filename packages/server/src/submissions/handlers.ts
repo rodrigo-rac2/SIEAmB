@@ -4,7 +4,7 @@ import type { AuthGateway, AuthUser } from '../account/auth';
 import { notifyUsers, sendThroughOutbox, type OutboxDeps, type OutboxMail } from '../core/outbox';
 import { emailLocale } from '../payments/emailTemplates';
 import { json, readJsonObject, type Log } from '../payments/http';
-import { firstName } from '../payments/notifications';
+import { audienceFor, firstName } from '../payments/notifications';
 import {
   MODALITY_NAMES,
   renderOrganiserEmail,
@@ -492,7 +492,11 @@ async function announce(
         url: `${site(deps)}/${encodeURIComponent(event.slug)}/meus-trabalhos`,
       }),
     }));
-    const organisers = await deps.store.listOrganisers(event.id);
+    // A paper of test accounts is announced to test organisers only (#255).
+    const organisers = audienceFor(
+      submission.authors.map((a) => a.email),
+      await deps.store.listOrganisers(event.id),
+    );
     for (const organiser of organisers) {
       mails.push({
         to: organiser.email,
