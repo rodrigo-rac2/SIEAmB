@@ -1,6 +1,6 @@
 import { authenticate, isEmail, isWeakPassword, text } from '../account/handlers';
 import type { AuthGateway, AuthUser } from '../account/auth';
-import { notifyUsers, sendThroughOutbox, type OutboxDeps, type OutboxMail } from '../core/outbox';
+import { deliverWithin, notifyUsers, sendThroughOutbox, type OutboxDeps, type OutboxMail } from '../core/outbox';
 import { emailLocale, layoutEmail } from '../payments/emailTemplates';
 import { json, readJsonObject, type Log } from '../payments/http';
 import { audienceFor, firstName, isTestAddress } from '../payments/notifications';
@@ -34,7 +34,12 @@ export interface AdminDeps extends OutboxDeps {
   siteUrl: string;
   log: Log;
   now: () => Date;
+  /** Milliseconds on a real clock, to bound how long a request keeps sending. Tests replace it. */
+  clock?: () => number;
 }
+
+/** How long the request that sends an announcement keeps delivering its e-mails before leaving the rest to the background job. */
+export const ANNOUNCEMENT_SEND_MS = 40_000;
 
 const CATEGORIES = ['ESTUDANTE_GRADUACAO', 'ESTUDANTE_POS', 'PROFISSIONAL'];
 const MANUAL: ManualStatus[] = ['CONFIRMED', 'EXEMPT', 'CANCELLED'];
@@ -800,6 +805,8 @@ async function announce(request: Request, deps: AdminDeps): Promise<Response> {
 
   // From here on nothing fails the request: the announcement is recorded, and the
   // e-mails wait in the outbox for the background job, which sends them in batches.
+  let sentNow = 0;
+  let settled = 0;
   try {
     const url = `${deps.siteUrl.replace(/\/+$/, '')}/${encodeURIComponent(ctx.event.slug)}/notificacoes`;
     const paragraphs = message.split(/\n{2,}/).map((p) => p.replace(/\s*\n\s*/g, ' ').trim()).filter(Boolean);
@@ -824,10 +831,16 @@ async function announce(request: Request, deps: AdminDeps): Promise<Response> {
       accounts.map((a) => ({ userId: a.id, eventId: ctx.event.id, kind: 'announcement', data: { subject, body: message } })),
       deps,
     );
+    // Sent now, while the person waits (#281): the background job seldom runs (#273), and an
+    // announcement that leaves hours later is not what "send" means. What does not fit stays queued.
+    const delivered = await deliverWithin(deps, deps.now, ANNOUNCEMENT_SEND_MS, deps.clock);
+    sentNow = delivered.sent;
+    settled = delivered.sent + delivered.skipped;
   } catch (error) {
     deps.log('announcement_delivery_failed', { announcementId: id, error: error instanceof Error ? error.message : 'unknown' });
   }
-  return json(201, { ok: true, recipients: people.length });
+  // `waiting`: still in the queue for the background job (or never mailed, like a test address, when 0).
+  return json(201, { ok: true, recipients: people.length, sentNow, waiting: Math.max(0, people.length - settled) });
 }
 
 async function announcements(request: Request, deps: AdminDeps): Promise<Response> {

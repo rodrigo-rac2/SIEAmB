@@ -206,7 +206,7 @@ export const fetchAudiences = (token: string, slug: string) =>
 export const fetchAnnouncements = (token: string, slug: string) =>
   request<{ announcements: SentAnnouncement[] }>('GET', 'announcements', token, slug);
 export const sendAnnouncement = (token: string, slug: string, audience: Audience, subject: string, body: string) =>
-  request<{ recipients: number }>('POST', 'announce', token, slug, { audience, subject, body });
+  request<{ recipients: number; sentNow: number; waiting: number }>('POST', 'announce', token, slug, { audience, subject, body });
 
 /** A spreadsheet of what is on screen. Values that start like a formula are neutralised. */
 export function toCsv(rows: (string | number | null | undefined)[][]): string {

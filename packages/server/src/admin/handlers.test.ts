@@ -652,6 +652,16 @@ describe('telling the organisers of a new registration', () => {
   });
 });
 
+/** A registered group of `count` people, for announcements bigger than one batch. */
+function ctxGroups(deps: AdminDeps, count: number) {
+  (deps.store as unknown as { groups: Record<string, { email: string; fullName: string }[]> }).groups = {
+    registered: Array.from({ length: count }, (_, i) => ({ email: `pessoa${i}@ufcg.edu.br`, fullName: `Pessoa ${i}` })),
+    authors: [],
+    reviewers: [],
+    organisers: [],
+  };
+}
+
 describe('announcements (#221)', () => {
   const start = () => {
     const ctx = setup();
@@ -678,18 +688,18 @@ describe('announcements (#221)', () => {
     expect(data.counts).toEqual({ all: 5, registered: 2, authors: 2, reviewers: 1, organisers: 1 });
   });
 
-  it('records it, queues one e-mail per person without sending in the request, and leaves a notice for accounts', async () => {
+  it('records it, sends one e-mail per person in the same request, and leaves a notice for accounts (#281)', async () => {
     const { send, tokens, store, outbox, sent } = start();
     const response = await send(tokens.organiser, {});
     expect(response.status).toBe(201);
-    expect(await body(response)).toEqual({ ok: true, recipients: 5 });
+    expect(await body(response)).toEqual({ ok: true, recipients: 5, sentNow: 5, waiting: 0 });
     expect(store.announcements[0]).toMatchObject({ senderId: ORGANISER.id, audience: 'all', subject: 'Prazo prorrogado', recipients: 5 });
     expect(store.announcements[0]!.emails.sort()).toEqual(['autora@ufrn.br', REVIEWER.email, 'paula@outlook.com', NOBODY.email, ORGANISER.email].sort());
-    // Queued for the background job: a few hundred e-mails do not fit in one request.
-    expect(sent).toEqual([]);
+    // Sent while the person waits: the background job seldom runs (#273).
+    expect(sent.map((m) => m.to).sort()).toEqual(['autora@ufrn.br', REVIEWER.email, 'paula@outlook.com', NOBODY.email, ORGANISER.email].sort());
     expect(outbox.rows).toHaveLength(5);
-    expect(outbox.rows.every((r) => r.status === 'PENDING')).toBe(true);
-    const mail = outbox.rows.find((r) => r.to === NOBODY.email)!;
+    expect(outbox.rows.every((r) => r.status === 'SENT')).toBe(true);
+    const mail = sent.find((m) => m.to === NOBODY.email)!;
     expect(mail.subject).toBe('Prazo prorrogado (II SIEAmB)');
     // The entry with a name wins over the one without.
     expect(mail.text).toContain('Olá, Pessoa.');
@@ -700,6 +710,41 @@ describe('announcements (#221)', () => {
     expect(outbox.notifications.map((n) => n.userId).sort()).toEqual([NOBODY.id, ORGANISER.id, REVIEWER.id].sort());
     expect(outbox.notifications[0]).toMatchObject({ kind: 'announcement', eventId: EVENT.id, data: { subject: 'Prazo prorrogado' } });
     expect(store.audits[0]).toMatchObject({ actorId: ORGANISER.id, action: 'announcement.send', meta: { audience: 'all', recipients: 5 } });
+  });
+
+  it('leaves for the background job what does not fit in the time it has, and says how many (#281)', async () => {
+    const { send, tokens, outbox, sent, deps } = start();
+    // A clock that jumps 30 seconds each time it is read: the first batch runs, the second does not start.
+    let ticks = 0;
+    deps.clock = () => (ticks += 1) * 30_000;
+    ctxGroups(deps, 25);
+    const response = await send(tokens.organiser, { audience: 'registered' });
+    const answer = await body(response);
+    expect(answer).toMatchObject({ ok: true, recipients: 25, sentNow: 10, waiting: 15 });
+    expect(sent).toHaveLength(10);
+    expect(outbox.rows.filter((r) => r.status === 'PENDING')).toHaveLength(15);
+  });
+
+  it('gives up on sending now when the sender is down, keeps everything queued, and still records the announcement', async () => {
+    const ctx = setup({ failSends: true });
+    ctx.store.groups = { registered: [{ email: 'paula@outlook.com', fullName: 'Paula Nunes' }, { email: NOBODY.email, fullName: 'Pessoa Comum' }], authors: [], reviewers: [], organisers: [] };
+    const response = await post(ctx.deps, 'announce', ctx.tokens.organiser, { audience: 'registered', subject: 'Prazo prorrogado', body: 'As submissões foram prorrogadas.' });
+    expect(response.status).toBe(201);
+    expect(await body(response)).toEqual({ ok: true, recipients: 2, sentNow: 0, waiting: 2 });
+    expect(ctx.sent).toEqual([]);
+    // One try each, not a loop until the attempts run out: the background job has the rest.
+    expect(ctx.outbox.rows.map((r) => `${r.status}:${r.attempts}`)).toEqual(['PENDING:1', 'PENDING:1']);
+    expect(ctx.store.announcements).toHaveLength(1);
+  });
+
+  it('counts an address that is never mailed as dealt with, not as waiting', async () => {
+    const { send, tokens, store, sent } = start();
+    store.groups.reviewers = [
+      { email: REVIEWER.email, fullName: 'Avaliador Um' },
+      { email: 'demo.helena@example.com', fullName: 'Helena Demo' },
+    ];
+    expect(await body(await send(tokens.organiser, { audience: 'reviewers' }))).toEqual({ ok: true, recipients: 2, sentNow: 1, waiting: 0 });
+    expect(sent.map((m) => m.to)).toEqual([REVIEWER.email]);
   });
 
   it.each([
@@ -720,10 +765,10 @@ describe('announcements (#221)', () => {
   });
 
   it('escapes what the organiser typed', async () => {
-    const { send, tokens, outbox } = start();
+    const { send, tokens, sent } = start();
     await send(tokens.admin, { audience: 'reviewers', body: 'Vejam <script>alert(1)</script> este aviso.' });
-    expect(outbox.rows[0]!.html).toContain('&lt;script&gt;');
-    expect(outbox.rows[0]!.html).not.toContain('<script>');
+    expect(sent[0]!.html).toContain('&lt;script&gt;');
+    expect(sent[0]!.html).not.toContain('<script>');
   });
 
   it.each([

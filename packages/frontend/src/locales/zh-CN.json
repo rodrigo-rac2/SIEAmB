@@ -709,8 +709,10 @@
       "confirm": "此公告将通过邮件和网站通知发送给 {{count}} 人（{{audience}}）。发送后无法撤销。",
       "sendYes_one": "发送给 {{count}} 人",
       "sendYes_other": "发送给 {{count}} 人",
-      "sent_one": "公告已为 {{count}} 人登记。邮件将在几分钟内发出。",
-      "sent_other": "公告已为 {{count}} 人登记。邮件将在接下来的几分钟内陆续发出。",
+      "sent_one": "公告已为 {{count}} 人登记。",
+      "sent_other": "公告已为 {{count}} 人登记。",
+      "sentNow": " 已发送 {{sent}} 封邮件。",
+      "sentWaiting": " 仍有 {{waiting}} 封在队列中：将在系统下一次处理时发出，可能需要几个小时。",
       "history": "已发送的公告",
       "none": "尚未发送任何公告。",
       "sentLine": "{{sender}} · {{audience}} · {{count}} 人 · {{date}}"

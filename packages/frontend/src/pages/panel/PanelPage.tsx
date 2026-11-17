@@ -1404,8 +1404,13 @@ function AnnouncementsTab({ token, slug, message }: TabProps) {
     setError(null);
     setNote(null);
     try {
-      const { recipients } = await sendAnnouncement(token, slug, audience, subject, body);
-      setNote(t('panel.announcements.sent', { count: recipients }));
+      const { recipients, sentNow, waiting } = await sendAnnouncement(token, slug, audience, subject, body);
+      // What went out while the person waited, and what is still queued (#281).
+      setNote(
+        t('panel.announcements.sent', { count: recipients }) +
+          t('panel.announcements.sentNow', { sent: sentNow }) +
+          (waiting > 0 ? t('panel.announcements.sentWaiting', { waiting }) : ''),
+      );
       setSubject('');
       setBody('');
       setConfirming(false);

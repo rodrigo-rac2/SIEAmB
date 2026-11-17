@@ -120,6 +120,25 @@ export async function deliverDueOutbox(deps: OutboxDeps, now: Date, limit = 20):
   return result;
 }
 
+/**
+ * Delivers what is owed, batch after batch, for as long as the time allows (#281): for what
+ * someone is waiting to see leave, like an announcement. Stops when nothing is due, when the
+ * time is up, or when a whole batch got nowhere (the sender is down: the sweep tries later).
+ */
+export async function deliverWithin(deps: OutboxDeps, now: () => Date, budgetMs: number, clock: () => number = Date.now): Promise<OutboxSweep> {
+  const total: OutboxSweep = { due: 0, sent: 0, skipped: 0, failed: 0 };
+  const started = clock();
+  while (clock() - started < budgetMs) {
+    const batch = await deliverDueOutbox(deps, now(), 10);
+    total.due += batch.due;
+    total.sent += batch.sent;
+    total.skipped += batch.skipped;
+    total.failed += batch.failed;
+    if (batch.due === 0 || batch.sent + batch.skipped === 0) break;
+  }
+  return total;
+}
+
 /** In-site notices are a convenience: failing to record one never fails the request. */
 export async function notifyUsers(notifications: NewNotification[], deps: OutboxDeps): Promise<void> {
   if (notifications.length === 0) return;
