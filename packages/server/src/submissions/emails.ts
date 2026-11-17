@@ -1,0 +1,219 @@
+import { emailLocale, layoutEmail, type Email } from '../payments/emailTemplates';
+
+export type SubmissionEmailKind = 'received' | 'updated' | 'withdrawn';
+
+export interface SubmissionEmailData {
+  firstName: string;
+  eventName: string;
+  number: number;
+  title: string;
+  /** Who sent or changed the paper. */
+  mainAuthor: string;
+  url: string;
+}
+
+interface Copy {
+  subject: (d: SubmissionEmailData) => string;
+  body: (d: SubmissionEmailData) => string[];
+  linkLabel: string;
+}
+
+interface LocaleCopy {
+  greeting: (name: string) => string;
+  signature: (eventName: string) => string;
+  kinds: Record<SubmissionEmailKind, Copy>;
+}
+
+const COPY: Record<'pt-BR' | 'en' | 'es' | 'zh-CN', LocaleCopy> = {
+  'pt-BR': {
+    greeting: (name) => (name ? `Olá, ${name}.` : 'Olá.'),
+    signature: (event) => `Comissão organizadora do ${event}`,
+    kinds: {
+      received: {
+        subject: (d) => `Trabalho nº ${d.number} recebido (${d.eventName})`,
+        body: (d) => [
+          `Recebemos o trabalho "${d.title}", enviado por ${d.mainAuthor} ao ${d.eventName}. Ele recebeu o número ${d.number}.`,
+          'Você recebe este aviso porque consta como autor ou autora. O trabalho aparece na área Meus trabalhos de quem tiver conta no site com este e-mail.',
+          'Até o encerramento das submissões, o autor principal pode alterar o trabalho ou retirá-lo.',
+        ],
+        linkLabel: 'Ver meus trabalhos',
+      },
+      updated: {
+        subject: (d) => `Trabalho nº ${d.number} alterado (${d.eventName})`,
+        body: (d) => [
+          `O trabalho nº ${d.number}, "${d.title}", foi alterado por ${d.mainAuthor}.`,
+          'Você recebe este aviso porque consta como autor ou autora. A versão atual aparece na área Meus trabalhos.',
+        ],
+        linkLabel: 'Ver meus trabalhos',
+      },
+      withdrawn: {
+        subject: (d) => `Trabalho nº ${d.number} retirado (${d.eventName})`,
+        body: (d) => [
+          `O trabalho nº ${d.number}, "${d.title}", foi retirado por ${d.mainAuthor} e não será avaliado.`,
+          'Você recebe este aviso porque constava como autor ou autora. Se foi um engano, o autor principal pode enviá-lo de novo enquanto as submissões estiverem abertas.',
+        ],
+        linkLabel: 'Ver meus trabalhos',
+      },
+    },
+  },
+  en: {
+    greeting: (name) => (name ? `Hello, ${name}.` : 'Hello.'),
+    signature: (event) => `${event} organising committee`,
+    kinds: {
+      received: {
+        subject: (d) => `Paper no. ${d.number} received (${d.eventName})`,
+        body: (d) => [
+          `We received the paper "${d.title}", sent by ${d.mainAuthor} to the ${d.eventName}. Its number is ${d.number}.`,
+          'You receive this notice because you are listed as an author. The paper shows under My papers for anyone with an account on the website with this e-mail.',
+          'Until submissions close, the main author can change the paper or withdraw it.',
+        ],
+        linkLabel: 'See my papers',
+      },
+      updated: {
+        subject: (d) => `Paper no. ${d.number} changed (${d.eventName})`,
+        body: (d) => [
+          `Paper no. ${d.number}, "${d.title}", was changed by ${d.mainAuthor}.`,
+          'You receive this notice because you are listed as an author. The current version shows under My papers.',
+        ],
+        linkLabel: 'See my papers',
+      },
+      withdrawn: {
+        subject: (d) => `Paper no. ${d.number} withdrawn (${d.eventName})`,
+        body: (d) => [
+          `Paper no. ${d.number}, "${d.title}", was withdrawn by ${d.mainAuthor} and will not be reviewed.`,
+          'You receive this notice because you were listed as an author. If it was a mistake, the main author can send it again while submissions are open.',
+        ],
+        linkLabel: 'See my papers',
+      },
+    },
+  },
+  es: {
+    greeting: (name) => (name ? `Hola, ${name}.` : 'Hola.'),
+    signature: (event) => `Comisión organizadora del ${event}`,
+    kinds: {
+      received: {
+        subject: (d) => `Trabajo n.º ${d.number} recibido (${d.eventName})`,
+        body: (d) => [
+          `Recibimos el trabajo "${d.title}", enviado por ${d.mainAuthor} al ${d.eventName}. Recibió el número ${d.number}.`,
+          'Usted recibe este aviso porque figura como autor o autora. El trabajo aparece en Mis trabajos para quien tenga cuenta en el sitio con este correo.',
+          'Hasta el cierre de los envíos, el autor principal puede modificar el trabajo o retirarlo.',
+        ],
+        linkLabel: 'Ver mis trabajos',
+      },
+      updated: {
+        subject: (d) => `Trabajo n.º ${d.number} modificado (${d.eventName})`,
+        body: (d) => [
+          `El trabajo n.º ${d.number}, "${d.title}", fue modificado por ${d.mainAuthor}.`,
+          'Usted recibe este aviso porque figura como autor o autora. La versión actual aparece en Mis trabajos.',
+        ],
+        linkLabel: 'Ver mis trabajos',
+      },
+      withdrawn: {
+        subject: (d) => `Trabajo n.º ${d.number} retirado (${d.eventName})`,
+        body: (d) => [
+          `El trabajo n.º ${d.number}, "${d.title}", fue retirado por ${d.mainAuthor} y no será evaluado.`,
+          'Usted recibe este aviso porque figuraba como autor o autora. Si fue un error, el autor principal puede enviarlo de nuevo mientras los envíos estén abiertos.',
+        ],
+        linkLabel: 'Ver mis trabajos',
+      },
+    },
+  },
+  'zh-CN': {
+    greeting: (name) => (name ? `${name}，您好。` : '您好。'),
+    signature: (event) => `${event} 组委会`,
+    kinds: {
+      received: {
+        subject: (d) => `已收到第 ${d.number} 号论文（${d.eventName}）`,
+        body: (d) => [
+          `我们已收到 ${d.mainAuthor} 向 ${d.eventName} 提交的论文“${d.title}”，编号为 ${d.number}。`,
+          '您收到此通知是因为您被列为作者。使用此邮箱在网站注册账户后，可在“我的论文”中查看该论文。',
+          '在投稿截止之前，第一作者可以修改或撤回论文。',
+        ],
+        linkLabel: '查看我的论文',
+      },
+      updated: {
+        subject: (d) => `第 ${d.number} 号论文已修改（${d.eventName}）`,
+        body: (d) => [
+          `第 ${d.number} 号论文“${d.title}”已由 ${d.mainAuthor} 修改。`,
+          '您收到此通知是因为您被列为作者。当前版本显示在“我的论文”中。',
+        ],
+        linkLabel: '查看我的论文',
+      },
+      withdrawn: {
+        subject: (d) => `第 ${d.number} 号论文已撤回（${d.eventName}）`,
+        body: (d) => [
+          `第 ${d.number} 号论文“${d.title}”已由 ${d.mainAuthor} 撤回，将不再评审。`,
+          '您收到此通知是因为您曾被列为作者。如果是误操作，第一作者可以在投稿开放期间重新提交。',
+        ],
+        linkLabel: '查看我的论文',
+      },
+    },
+  },
+};
+
+export function renderSubmissionEmail(kind: SubmissionEmailKind, locale: string, data: SubmissionEmailData): Email {
+  const copy = COPY[emailLocale(locale)];
+  const part = copy.kinds[kind];
+  return {
+    subject: part.subject(data),
+    ...layoutEmail({
+      greeting: copy.greeting(data.firstName),
+      paragraphs: part.body(data),
+      linkLabel: part.linkLabel,
+      link: data.url,
+      signature: copy.signature(data.eventName),
+    }),
+  };
+}
+
+const ORGANISER_COPY: Record<SubmissionEmailKind, (d: OrganiserEmailData) => { subject: string; body: string[] }> = {
+  received: (d) => ({
+    subject: `Novo trabalho nº ${d.number}: ${d.title}`,
+    body: [
+      `${d.mainAuthor} enviou um trabalho ao ${d.eventName}.`,
+      `Nº ${d.number} · ${d.modality} · ${d.area}`,
+      `Título: ${d.title}`,
+      `Autores: ${d.authors}`,
+    ],
+  }),
+  updated: (d) => ({
+    subject: `Trabalho nº ${d.number} alterado: ${d.title}`,
+    body: [
+      `${d.mainAuthor} alterou o trabalho nº ${d.number} do ${d.eventName}.`,
+      `${d.modality} · ${d.area}`,
+      `Título: ${d.title}`,
+      `Autores: ${d.authors}`,
+    ],
+  }),
+  withdrawn: (d) => ({
+    subject: `Trabalho nº ${d.number} retirado: ${d.title}`,
+    body: [`${d.mainAuthor} retirou o trabalho nº ${d.number}, "${d.title}", do ${d.eventName}.`],
+  }),
+};
+
+export interface OrganiserEmailData extends SubmissionEmailData {
+  modality: string;
+  area: string;
+  /** "Maria Souza; João Lima" */
+  authors: string;
+}
+
+/** The notice to the organisers, in Portuguese: the committee's working language. */
+export function renderOrganiserEmail(kind: SubmissionEmailKind, data: OrganiserEmailData): Email {
+  const part = ORGANISER_COPY[kind](data);
+  return {
+    subject: part.subject,
+    ...layoutEmail({
+      greeting: data.firstName ? `Olá, ${data.firstName}.` : 'Olá.',
+      paragraphs: part.body,
+      linkLabel: 'Abrir a área da organização',
+      link: data.url,
+      signature: `Sistema de submissões do ${data.eventName}`,
+    }),
+  };
+}
+
+export const MODALITY_NAMES: Record<string, string> = {
+  ARTIGO: 'Artigo científico',
+  RESUMO_EXPANDIDO: 'Resumo expandido',
+};

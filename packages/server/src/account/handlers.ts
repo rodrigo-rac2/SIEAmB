@@ -46,10 +46,10 @@ export const PASSWORD_MIN = 10;
 export const PASSWORD_MAX = 200;
 
 const EMAIL = /^[^\s@<>,;"]+@[^\s@<>,;"]+\.[^\s@<>,;"]+$/;
-const isEmail = (value: unknown): value is string =>
+export const isEmail = (value: unknown): value is string =>
   typeof value === 'string' && value.length <= 200 && EMAIL.test(value);
 
-const text = (value: unknown, max: number): string =>
+export const text = (value: unknown, max: number): string =>
   typeof value === 'string' ? value.replace(/\s+/g, ' ').trim().slice(0, max) : '';
 
 // Not imported from @sieamb/shared: that package is an ES module and the Vercel
@@ -179,9 +179,9 @@ const bearer = (request: Request): string | null => {
 };
 
 /** The logged-in person with a confirmed e-mail, or the response that says why not. */
-async function authenticate(
+export async function authenticate(
   request: Request,
-  deps: AccountDeps,
+  deps: Pick<AccountDeps, 'auth'>,
 ): Promise<{ user: AuthUser } | { response: Response }> {
   const token = bearer(request);
   if (!token) return { response: json(401, { error: 'not_logged_in' }) };
@@ -489,11 +489,11 @@ export async function handleAccount(
  * The action of `/api/v1/account/<action>`. The rewrite hands it over as
  * `?action=`; when the platform passes the original address, it is the last segment.
  */
-export function actionOf(request: Request): string {
+export function actionOf(request: Request, base = 'account'): string {
   const url = new URL(request.url);
   const fromQuery = url.searchParams.get('action');
   if (fromQuery) return fromQuery;
   const path = url.pathname.replace(/\/+$/, '');
   const last = decodeURIComponent(path.slice(path.lastIndexOf('/') + 1));
-  return last === 'account' ? '' : last;
+  return last === base ? '' : last;
 }
