@@ -133,7 +133,7 @@ test.describe('notifications and announcements @notifications', () => {
 
   test('the bell is not there for a logged-out visitor, and the server keeps notices private', async ({ page, request }) => {
     await page.goto(`/${EVENT}/`);
-    await expect(page.getByRole('link', { name: 'Entrar' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Entrar ou criar conta' })).toBeVisible();
     await expect(page.getByTestId('bell')).toHaveCount(0);
     expect((await request.get('/api/v1/account/notifications')).status()).toBe(401);
     expect((await request.post('/api/v1/account/notifications-read', { data: {} })).status()).toBe(401);
