@@ -191,6 +191,8 @@ describe('NotificationsPage', () => {
   it('leads nowhere for a notice with no edition', () => {
     expect(noticeLink(notice({ eventSlug: null }))).toBeNull();
     expect(noticeLink(notice({ kind: 'link.approved' }))).toBe('/2027/minha-area');
+    expect(noticeLink(notice({ kind: 'review.assigned' }))).toBe('/2027/avaliacoes');
+    expect(noticeLink(notice({ kind: 'review.unassigned' }))).toBe('/2027/avaliacoes');
     expect(noticeLink(notice({ kind: 'announcement' }))).toBeNull();
   });
 });

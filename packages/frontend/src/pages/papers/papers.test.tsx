@@ -5,10 +5,11 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AuthContext, type AuthState } from '../../contexts/AuthContext';
 import { EventProvider } from '../../contexts/EventContext';
-import { browser, type MyPapers, type Paper } from '../../services/submissions';
+import { browser, type MyPapers, type Paper, type ReviewPaper } from '../../services/submissions';
 import { SubmissionsPage } from '../SubmissionsPage';
 import { MyPapersPage } from './MyPapersPage';
 import { PaperFormPage } from './PaperFormPage';
+import { ReviewingPage } from './ReviewingPage';
 
 const auth = (over: Partial<AuthState> = {}): AuthState => ({
   enabled: true,
@@ -733,5 +734,73 @@ describe('SubmissionsPage', () => {
     const box = await screen.findByTestId('submissions-open');
     expect(box).toHaveTextContent('Submissões encerradas');
     expect(within(box).queryByRole('link', { name: 'Enviar trabalho' })).not.toBeInTheDocument();
+  });
+});
+
+describe('ReviewingPage (#232)', () => {
+  const REVIEW = ['/2027/avaliacoes', '/:eventSlug/avaliacoes'] as const;
+  const toReview = (over: Partial<ReviewPaper> = {}): ReviewPaper => ({
+    id: 'paper-9',
+    number: 9,
+    title: 'Sensoriamento remoto da caatinga',
+    titleEn: 'Remote sensing of the caatinga',
+    modality: 'ARTIGO',
+    areaRef: 'a1',
+    abstract: 'Primeira linha do resumo.\nSegunda linha.',
+    keywords: ['caatinga', 'satélite'],
+    keywordsEn: ['remote sensing'],
+    fileName: 'artigo.pdf',
+    filePages: 14,
+    status: 'UNDER_REVIEW',
+    createdAt: '2026-12-01T15:00:00.000Z',
+    authors: [
+      { position: 1, fullName: 'Prof. Carlos Meira' },
+      { position: 2, fullName: 'Luana Dias' },
+    ],
+    ...over,
+  });
+
+  it('does not exist where the submission system is off, and asks for a login otherwise', async () => {
+    const calls = stubApi({});
+    const off = mount(...REVIEW, <ReviewingPage />, auth({ enabled: false }));
+    expect(await screen.findByRole('heading', { name: /não encontrada|404/i })).toBeInTheDocument();
+    off.unmount();
+    mount(...REVIEW, <ReviewingPage />, auth({ accessToken: null }));
+    expect(await screen.findByTestId('where')).toHaveTextContent('/2027/conta/entrar?next=%2F2027%2Favaliacoes');
+    expect(calls).toEqual([]);
+  });
+
+  it('shows each paper to review with its authors by name, in order, and the abstract', async () => {
+    const calls = stubApi({ reviewing: { body: { submissions: [toReview(), toReview({ id: 'paper-10', number: 10, title: 'Outro', filePages: null })] } } });
+    mount(...REVIEW, <ReviewingPage />);
+    const [card, second] = await screen.findAllByTestId('review-card');
+    expect(card).toHaveTextContent('Trabalho nº 9 · Artigo científico · Governança, Políticas Públicas e Direito Ambiental');
+    expect(card).toHaveTextContent('Sensoriamento remoto da caatinga');
+    expect(within(card!).getAllByRole('listitem').map((li) => li.textContent)).toEqual(['Prof. Carlos Meira', 'Luana Dias']);
+    expect(card).toHaveTextContent('Primeira linha do resumo.');
+    expect(card).toHaveTextContent('Palavras-chave: caatinga; satélite; remote sensing');
+    expect(card).toHaveTextContent('artigo.pdf · 14 páginas');
+    expect(second).not.toHaveTextContent('páginas');
+    expect(calls[0]).toMatchObject({ url: '/api/v1/submissions/reviewing?eventSlug=2027', authorization: 'Bearer access-token-1' });
+  });
+
+  it('downloads the file through a link asked from the server at that moment', async () => {
+    const calls = stubApi({ reviewing: { body: { submissions: [toReview()] } }, file: { body: { url: 'https://storage.example/signed-review' } } });
+    const open = vi.spyOn(browser, 'open').mockImplementation(() => undefined);
+    mount(...REVIEW, <ReviewingPage />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Baixar o arquivo' }));
+    await waitFor(() => expect(open).toHaveBeenCalledWith('https://storage.example/signed-review'));
+    expect(calls.find((c) => c.url.includes('/file'))!.url).toBe('/api/v1/submissions/file?id=paper-9');
+  });
+
+  it('says so when there is nothing to review, and when the paper is no longer theirs to open', async () => {
+    stubApi({ reviewing: { body: { submissions: [] } } });
+    const empty = mount(...REVIEW, <ReviewingPage />);
+    expect(await screen.findByTestId('nothing-to-review')).toHaveTextContent('Nenhum trabalho foi indicado para você avaliar.');
+    empty.unmount();
+    stubApi({ reviewing: { body: { submissions: [toReview()] } }, file: { status: 404, body: { error: 'submission_not_found' } } });
+    mount(...REVIEW, <ReviewingPage />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Baixar o arquivo' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Não encontramos esse trabalho');
   });
 });

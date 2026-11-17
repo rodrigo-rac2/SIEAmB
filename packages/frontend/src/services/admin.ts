@@ -49,6 +49,8 @@ export interface PanelPaper {
   /** `registration` is the state of that author's registration, or null when they have none (#225). */
   authors: { position: number; fullName: string; email: string; registration?: PanelState | null }[];
   authorRegistered: boolean;
+  /** Who reviews it (#232). */
+  reviewers: { userId: string; fullName: string; email: string }[];
 }
 
 export interface PanelPapers {
@@ -99,6 +101,10 @@ const KNOWN_ERRORS = [
   'not_remindable',
   'already_reminded',
   'reminders_unavailable',
+  'not_a_reviewer',
+  'reviewer_is_author',
+  'submission_not_found',
+  'reviewer_not_found',
 ] as const;
 
 export type AdminErrorCode = (typeof KNOWN_ERRORS)[number] | 'generic';
@@ -151,6 +157,10 @@ export const addMember = (token: string, slug: string, email: string, role: Memb
   request<{ invited: boolean }>('POST', 'member-add', token, slug, { email, role });
 export const removeMember = (token: string, slug: string, email: string, role: MemberRole) =>
   request<unknown>('POST', 'member-remove', token, slug, { email, role });
+export const assignReviewer = (token: string, slug: string, submissionId: string, userId: string) =>
+  request<{ already?: boolean }>('POST', 'reviewer-assign', token, slug, { submissionId, userId });
+export const unassignReviewer = (token: string, slug: string, submissionId: string, userId: string) =>
+  request<unknown>('POST', 'reviewer-unassign', token, slug, { submissionId, userId });
 export const decideRequest = (token: string, slug: string, id: string, approve: boolean) =>
   request<unknown>('POST', 'link-decide', token, slug, { id, approve });
 

@@ -193,10 +193,11 @@ export class SupabaseAdminStore implements AdminStore {
     );
   }
 
-  async listSubmissions(eventId: string): Promise<AdminSubmission[]> {
+  private async readSubmissions(filter: string): Promise<(AdminSubmission & { eventId: string })[]> {
     const rows = await this.rest.request<
       {
         id: string;
+        event_id: string;
         number: number;
         title: string;
         modality: string;
@@ -209,12 +210,14 @@ export class SupabaseAdminStore implements AdminStore {
         deleted_at: string | null;
         deleted_reason: string | null;
         submission_authors: { position: number; full_name: string; email: string }[];
+        submission_reviewers: { created_at: string; user: { id: string; email: string; full_name: string } | null }[];
       }[]
     >(
-      `submissions?event_id=eq.${q(eventId)}&select=id,number,title,modality,area_ref,status,file_name,file_pages,created_at,updated_at,deleted_at,deleted_reason,submission_authors(position,full_name,email)&order=number.asc&limit=5000`,
+      `submissions?${filter}&select=id,event_id,number,title,modality,area_ref,status,file_name,file_pages,created_at,updated_at,deleted_at,deleted_reason,submission_authors(position,full_name,email),submission_reviewers(created_at,user:users(id,email,full_name))&order=number.asc&limit=5000`,
     );
     return rows.map((row) => ({
       id: row.id,
+      eventId: row.event_id,
       number: row.number,
       title: row.title,
       modality: row.modality,
@@ -229,7 +232,58 @@ export class SupabaseAdminStore implements AdminStore {
       authors: row.submission_authors
         .map((a) => ({ position: a.position, fullName: a.full_name, email: a.email }))
         .sort((a, b) => a.position - b.position),
+      reviewers: [...row.submission_reviewers]
+        .sort((a, b) => a.created_at.localeCompare(b.created_at))
+        .flatMap((r) => (r.user ? [{ userId: r.user.id, fullName: r.user.full_name, email: r.user.email }] : [])),
     }));
+  }
+
+  listSubmissions(eventId: string): Promise<AdminSubmission[]> {
+    return this.readSubmissions(`event_id=eq.${q(eventId)}`);
+  }
+
+  async findSubmission(id: string): Promise<(AdminSubmission & { eventId: string }) | null> {
+    return (await this.readSubmissions(`id=eq.${q(id)}`))[0] ?? null;
+  }
+
+  async assignReviewer(submissionId: string, userId: string, by: string, now: Date): Promise<boolean> {
+    try {
+      await this.rest.request<unknown[]>('submission_reviewers?select=id', {
+        method: 'POST',
+        body: JSON.stringify({ submission_id: submissionId, user_id: userId, assigned_by: by, created_at: now.toISOString() }),
+      });
+      return true;
+    } catch (error) {
+      if (error instanceof RestError && error.code === UNIQUE_VIOLATION) return false;
+      throw error;
+    }
+  }
+
+  async unassignReviewer(submissionId: string, userId: string): Promise<boolean> {
+    const rows = await this.rest.request<{ id: string }[]>(
+      `submission_reviewers?submission_id=eq.${q(submissionId)}&user_id=eq.${q(userId)}&select=id`,
+      { method: 'DELETE', headers: { Prefer: 'return=representation' } },
+    );
+    return rows.length > 0;
+  }
+
+  async unassignReviewerEverywhere(eventId: string, userId: string): Promise<string[]> {
+    const rows = await this.rest.request<{ id: string; submission_id: string; submission: { event_id: string } | null }[]>(
+      `submission_reviewers?user_id=eq.${q(userId)}&select=id,submission_id,submission:submissions(event_id)`,
+    );
+    const mine = rows.filter((r) => r.submission?.event_id === eventId);
+    if (mine.length === 0) return [];
+    await this.rest.request<unknown>(`submission_reviewers?id=in.(${mine.map((r) => q(r.id)).join(',')})`, {
+      method: 'DELETE',
+    });
+    return mine.map((r) => r.submission_id);
+  }
+
+  async setSubmissionStatus(id: string, status: 'SUBMITTED' | 'UNDER_REVIEW', now: Date): Promise<void> {
+    await this.rest.request<unknown>(`submissions?id=eq.${q(id)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status, updated_at: now.toISOString() }),
+    });
   }
 
   async listMembers(eventId: string): Promise<Member[]> {

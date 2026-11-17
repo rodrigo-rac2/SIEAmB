@@ -177,6 +177,27 @@ export const searchPeople = (token: string, eventSlug: string, query: string): P
     .then((data) => data.people ?? [])
     .catch(() => []);
 
+/** A paper as the person chosen to review it sees it: the authors by name, no e-mails. */
+export interface ReviewPaper {
+  id: string;
+  number: number;
+  title: string;
+  titleEn: string;
+  modality: Modality;
+  areaRef: string;
+  abstract: string;
+  keywords: string[];
+  keywordsEn: string[];
+  fileName: string;
+  filePages: number | null;
+  status: SubmissionStatus;
+  createdAt: string;
+  authors: { position: number; fullName: string }[];
+}
+
+export const fetchReviewing = (token: string, eventSlug: string): Promise<{ submissions: ReviewPaper[] }> =>
+  request('GET', 'reviewing', { token, query: slugQuery(eventSlug) });
+
 export const fetchMyPapers = (token: string, eventSlug: string): Promise<MyPapers> =>
   request('GET', 'mine', { token, query: slugQuery(eventSlug) });
 

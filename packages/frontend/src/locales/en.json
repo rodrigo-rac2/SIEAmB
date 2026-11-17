@@ -505,6 +505,14 @@
     "count_one": "{{count}} paper",
     "count_other": "{{count}} papers"
   },
+  "reviewing": {
+    "title": "Papers to review",
+    "link": "Papers to review ({{count}})",
+    "none": "No paper has been assigned to you for review.",
+    "intro": "These are the papers the organising committee assigned to you. Download each file; the committee will say how to send your review.",
+    "abstract": "Abstract",
+    "keywords": "Keywords"
+  },
   "panel": {
     "title": "Organisers' panel",
     "search": "Search",
@@ -569,7 +577,16 @@
       "withdrawn": "Withdrawn by the author",
       "authorRegistered": "An author has a confirmed registration.",
       "noAuthorRegistered": "No author has a confirmed registration.",
-      "notRegistered": "not registered"
+      "notRegistered": "not registered",
+      "reviewers": "Reviewers",
+      "noReviewer": "No reviewer",
+      "chooseReviewer": "Choose a reviewer for paper no. {{number}}",
+      "choose": "Choose",
+      "assign": "Assign",
+      "assignFor": "Assign to paper no. {{number}}",
+      "removeReviewer": "Take {{name}} off paper no. {{number}}",
+      "noReviewers": "Nobody has the Reviewer role in this edition. Give that role in People and roles.",
+      "reviewersHint": "Each paper needs at least one reviewer, and you can assign as many as you want. With a reviewer assigned, the paper is under review and its authors can no longer change it. Reviewers see the file with the authors' names."
     },
     "people": {
       "role": "Role",
@@ -614,7 +631,11 @@
       "too_many_attempts": "Too many announcements in a short time. Wait a little.",
       "not_remindable": "This registration has no payment to remind about.",
       "already_reminded": "This person already received a reminder today.",
-      "reminders_unavailable": "Reminders are not available in this environment."
+      "reminders_unavailable": "Reminders are not available in this environment.",
+      "not_a_reviewer": "That person does not have the Reviewer role in this edition.",
+      "reviewer_is_author": "That person is one of the paper's authors and cannot review it.",
+      "submission_not_found": "Paper not found, or already withdrawn.",
+      "reviewer_not_found": "That person no longer reviews this paper."
     },
     "announcements": {
       "audience": "Who receives it",
@@ -673,7 +694,9 @@
       "organiser.registration.new": "New registration: {{fullName}}.",
       "member.added": "You were given the role of {{role}}.",
       "link.approved": "The organisers approved your request: the registration now shows in your account.",
-      "link.rejected": "The organisers did not approve your request to bring the registration into your account. If in doubt, contact the organisers."
+      "link.rejected": "The organisers did not approve your request to bring the registration into your account. If in doubt, contact the organisers.",
+      "review.assigned": "You were chosen to review paper no. {{number}}, \"{{title}}\".",
+      "review.unassigned": "You no longer review paper no. {{number}}, \"{{title}}\"."
     }
   }
 }

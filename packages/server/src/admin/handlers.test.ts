@@ -25,6 +25,8 @@ const WRITES = [
   'registration-status',
   'registration-delete',
   'registration-restore',
+  'reviewer-assign',
+  'reviewer-unassign',
   'member-add',
   'member-remove',
   'link-decide',
@@ -345,7 +347,7 @@ describe('deleting and restoring a registration', () => {
 describe('papers list', () => {
   it('shows every paper of the edition, withdrawn ones marked, and whether an author is registered', async () => {
     const { deps, tokens, store } = setup();
-    const base = { eventId: EVENT.id, modality: 'ARTIGO', areaRef: 'a1', status: 'SUBMITTED', fileName: 'a.pdf', filePages: 13, createdAt: NOW.toISOString(), updatedAt: NOW.toISOString(), deletedAt: null, deletedReason: null };
+    const base = { eventId: EVENT.id, modality: 'ARTIGO', areaRef: 'a1', status: 'SUBMITTED', fileName: 'a.pdf', filePages: 13, createdAt: NOW.toISOString(), updatedAt: NOW.toISOString(), deletedAt: null, deletedReason: null, reviewers: [] };
     store.submissions.push(
       { ...base, id: 's1', number: 1, title: 'Com autor inscrito', authors: [{ position: 1, fullName: 'A', email: 'a@x.org' }, { position: 2, fullName: 'B', email: 'paga@x.org' }] },
       { ...base, id: 's2', number: 2, title: 'Sem autor inscrito', authors: [{ position: 1, fullName: 'C', email: 'naopaga@x.org' }] },
@@ -367,7 +369,7 @@ describe('papers list', () => {
 
   it('counts an author as registered when an administrator confirmed or exempted them, not when cancelled or deleted', async () => {
     const { deps, tokens, store } = setup();
-    const base = { eventId: EVENT.id, modality: 'ARTIGO', areaRef: 'a1', status: 'SUBMITTED', fileName: 'a.pdf', filePages: 13, createdAt: NOW.toISOString(), updatedAt: NOW.toISOString(), deletedAt: null, deletedReason: null };
+    const base = { eventId: EVENT.id, modality: 'ARTIGO', areaRef: 'a1', status: 'SUBMITTED', fileName: 'a.pdf', filePages: 13, createdAt: NOW.toISOString(), updatedAt: NOW.toISOString(), deletedAt: null, deletedReason: null, reviewers: [] };
     const paper = (n: number, email: string) => ({ ...base, id: `s${n}`, number: n, title: email, authors: [{ position: 1, fullName: 'X', email }] });
     store.submissions.push(paper(1, 'isento@x.org'), paper(2, 'cancelado@x.org'), paper(3, 'apagado@x.org'));
     store.seed({ email: 'isento@x.org', manualStatus: 'EXEMPT' });
@@ -725,6 +727,7 @@ describe('registration and papers side by side (#225)', () => {
   const paper = (n: number, emails: string[], over: Record<string, unknown> = {}) => ({
     eventId: EVENT.id, id: `p${n}`, number: n, title: `Trabalho ${n}`, modality: 'ARTIGO', areaRef: 'a1', status: 'SUBMITTED',
     fileName: 'a.pdf', filePages: 13, createdAt: NOW.toISOString(), updatedAt: NOW.toISOString(), deletedAt: null as string | null, deletedReason: null,
+    reviewers: [] as { userId: string; fullName: string; email: string }[],
     authors: emails.map((email, i) => ({ position: i + 1, fullName: `Autor ${i + 1}`, email })),
     ...over,
   });
@@ -858,5 +861,158 @@ describe('payment reminders at the click of a button (#225)', () => {
     const response = await remind(deps, tokens.admin, { id: store.seed().id });
     expect(response.status).toBe(503);
     expect(await body(response)).toEqual({ error: 'reminders_unavailable' });
+  });
+});
+
+describe('reviewers of a paper (#232)', () => {
+  const ready = () => {
+    const ctx = setup();
+    const paper = {
+      eventId: EVENT.id, id: 'p1', number: 7, title: 'Governança da água', modality: 'ARTIGO', areaRef: 'a1', status: 'SUBMITTED',
+      fileName: 'a.pdf', filePages: 13, createdAt: NOW.toISOString(), updatedAt: NOW.toISOString(), deletedAt: null as string | null, deletedReason: null,
+      authors: [{ position: 1, fullName: 'Maria', email: 'maria@x.org' }],
+      reviewers: [] as { userId: string; fullName: string; email: string }[],
+    };
+    ctx.store.submissions.push(paper);
+    // A second person with the Avaliador role.
+    ctx.store.members.push({ eventId: EVENT.id, userId: NOBODY.id, email: NOBODY.email, fullName: 'Pessoa Comum', role: 'REVIEWER' });
+    const assign = (userId: string, token = ctx.tokens.organiser, submissionId = 'p1') =>
+      post(ctx.deps, 'reviewer-assign', token, { submissionId, userId });
+    const unassign = (userId: string, token = ctx.tokens.organiser, submissionId = 'p1') =>
+      post(ctx.deps, 'reviewer-unassign', token, { submissionId, userId });
+    return { ...ctx, paper, assign, unassign };
+  };
+
+  it('lets an organiser give a paper its one reviewer: under review, the reviewer is told, the list shows it', async () => {
+    const { assign, paper, sent, outbox, store, deps, tokens } = ready();
+    const response = await assign(REVIEWER.id);
+    expect(response.status).toBe(200);
+    expect(await body(response)).toEqual({ ok: true });
+    expect(paper.reviewers).toEqual([{ userId: REVIEWER.id, fullName: 'Avaliador Um', email: REVIEWER.email }]);
+    // One reviewer is enough for the paper to be under review.
+    expect(paper.status).toBe('UNDER_REVIEW');
+    expect(sent).toHaveLength(1);
+    expect(sent[0]).toMatchObject({ to: REVIEWER.email, subject: 'Trabalho nº 7 para avaliar' });
+    expect(sent[0]!.text).toContain('https://dev.sieamb.org/2027/avaliacoes');
+    expect(outbox.notifications).toEqual([
+      { userId: REVIEWER.id, eventId: EVENT.id, kind: 'review.assigned', data: { number: 7, title: 'Governança da água' } },
+    ]);
+    expect(store.audits.at(-1)).toMatchObject({ actorId: ORGANISER.id, action: 'reviewer.assign', entity: 'submission', entityId: 'p1' });
+    const list = await body(await get(deps, 'submissions', tokens.admin));
+    expect(list.submissions[0]).toMatchObject({ status: 'UNDER_REVIEW', reviewers: [{ userId: REVIEWER.id, fullName: 'Avaliador Um' }] });
+  });
+
+  it('takes as many reviewers as the organiser wants, and goes back to "enviado" only when the last one leaves', async () => {
+    const { assign, unassign, paper, tokens, outbox } = ready();
+    expect((await assign(REVIEWER.id)).status).toBe(200);
+    expect((await assign(NOBODY.id, tokens.admin)).status).toBe(200);
+    expect(paper.reviewers.map((r) => r.userId)).toEqual([REVIEWER.id, NOBODY.id]);
+    expect((await unassign(REVIEWER.id)).status).toBe(200);
+    expect(paper.reviewers.map((r) => r.userId)).toEqual([NOBODY.id]);
+    expect(paper.status).toBe('UNDER_REVIEW');
+    expect((await unassign(NOBODY.id)).status).toBe(200);
+    expect(paper.reviewers).toEqual([]);
+    expect(paper.status).toBe('SUBMITTED');
+    expect(outbox.notifications.map((n) => [n.userId, n.kind])).toEqual([
+      [REVIEWER.id, 'review.assigned'],
+      [NOBODY.id, 'review.assigned'],
+      [REVIEWER.id, 'review.unassigned'],
+      [NOBODY.id, 'review.unassigned'],
+    ]);
+  });
+
+  it('asked twice for the same person, keeps one reviewer and sends one e-mail', async () => {
+    const { assign, paper, sent, store } = ready();
+    await assign(REVIEWER.id);
+    const again = await assign(REVIEWER.id);
+    expect(again.status).toBe(200);
+    expect(await body(again)).toEqual({ ok: true, already: true });
+    expect(paper.reviewers).toHaveLength(1);
+    expect(sent).toHaveLength(1);
+    expect(store.audits.filter((a) => a.action === 'reviewer.assign')).toHaveLength(1);
+  });
+
+  it.each([
+    ['an organiser', ORGANISER.id],
+    ['an administrator', ADMIN.id],
+    ['someone with no role', 'user-unknown'],
+    ['nobody at all', ''],
+  ])('refuses %s as a reviewer: only who holds the Avaliador role', async (_name, userId) => {
+    const { assign, paper, sent } = ready();
+    const response = await assign(userId);
+    expect(response.status).toBe(400);
+    expect(await body(response)).toEqual({ error: 'not_a_reviewer' });
+    expect(paper.reviewers).toEqual([]);
+    expect(paper.status).toBe('SUBMITTED');
+    expect(sent).toEqual([]);
+  });
+
+  it('refuses a reviewer who is one of the paper’s authors, whatever the case of the e-mail', async () => {
+    const { assign, paper, sent, store } = ready();
+    paper.authors.push({ position: 2, fullName: 'Avaliador Um', email: REVIEWER.email });
+    store.members.find((m) => m.userId === REVIEWER.id)!.email = REVIEWER.email.toUpperCase();
+    const response = await assign(REVIEWER.id);
+    expect(response.status).toBe(409);
+    expect(await body(response)).toEqual({ error: 'reviewer_is_author' });
+    expect(paper.reviewers).toEqual([]);
+    expect(sent).toEqual([]);
+  });
+
+  it.each([
+    ['a paper that does not exist', (p: { id: string }) => { p.id = 'gone'; }],
+    ['a paper of another edition', (p: { eventId: string }) => { p.eventId = OTHER_EVENT.id; }],
+    ['a withdrawn paper', (p: { deletedAt: string | null }) => { p.deletedAt = NOW.toISOString(); }],
+  ])('does not find %s', async (_name, change) => {
+    const { assign, unassign, paper } = ready();
+    paper.reviewers.push({ userId: REVIEWER.id, fullName: 'Avaliador Um', email: REVIEWER.email });
+    change(paper);
+    for (const response of [await assign(NOBODY.id), await unassign(REVIEWER.id)]) {
+      expect(response.status).toBe(404);
+      expect(await body(response)).toEqual({ error: 'submission_not_found' });
+    }
+    expect(paper.reviewers).toHaveLength(1);
+  });
+
+  it('says so when asked to take off someone who does not review the paper', async () => {
+    const { unassign, store } = ready();
+    const response = await unassign(REVIEWER.id);
+    expect(response.status).toBe(404);
+    expect(await body(response)).toEqual({ error: 'reviewer_not_found' });
+    expect(store.audits).toEqual([]);
+  });
+
+  it.each(['reviewer', 'nobody'] as const)('is not for a %s: the organisation area does not exist for them', async (who) => {
+    const { assign, unassign, tokens, paper } = ready();
+    expect((await assign(NOBODY.id, tokens[who])).status).toBe(404);
+    paper.reviewers.push({ userId: REVIEWER.id, fullName: 'Avaliador Um', email: REVIEWER.email });
+    expect((await unassign(REVIEWER.id, tokens[who])).status).toBe(404);
+    expect(paper.reviewers).toHaveLength(1);
+  });
+
+  it('leaves a decided paper as it is when its reviewers change', async () => {
+    const { assign, unassign, paper } = ready();
+    paper.status = 'APPROVED';
+    await assign(REVIEWER.id);
+    expect(paper.status).toBe('APPROVED');
+    await unassign(REVIEWER.id);
+    expect(paper.status).toBe('APPROVED');
+  });
+
+  it('takes a person off every paper when they stop being a reviewer', async () => {
+    const { assign, paper, deps, tokens, store } = ready();
+    const second = { ...paper, id: 'p2', number: 8, reviewers: [] as typeof paper.reviewers, status: 'SUBMITTED' };
+    const elsewhere = { ...paper, id: 'p3', number: 9, eventId: OTHER_EVENT.id, status: 'UNDER_REVIEW', reviewers: [{ userId: REVIEWER.id, fullName: 'Avaliador Um', email: REVIEWER.email }] };
+    store.submissions.push(second, elsewhere);
+    await assign(REVIEWER.id);
+    await assign(REVIEWER.id, tokens.organiser, 'p2');
+    await assign(NOBODY.id, tokens.organiser, 'p2');
+    const response = await post(deps, 'member-remove', tokens.organiser, { email: REVIEWER.email, role: 'REVIEWER' });
+    expect(response.status).toBe(200);
+    // Alone on the first paper: it goes back to "enviado". The second keeps its other reviewer.
+    expect(paper).toMatchObject({ reviewers: [], status: 'SUBMITTED' });
+    expect(second.reviewers.map((r) => r.userId)).toEqual([NOBODY.id]);
+    expect(second.status).toBe('UNDER_REVIEW');
+    // Another edition is another matter.
+    expect(elsewhere.reviewers).toHaveLength(1);
   });
 });

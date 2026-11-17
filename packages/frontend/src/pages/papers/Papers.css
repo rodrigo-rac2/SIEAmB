@@ -96,6 +96,10 @@
   resize: vertical;
 }
 
+.papers__abstract {
+  white-space: pre-wrap;
+}
+
 .papers__limits {
   margin: var(--space-4) 0;
 }

@@ -12,6 +12,7 @@ import {
   AUDIENCES,
   AdminError,
   addMember,
+  assignReviewer,
   createPanelRegistration,
   decideRequest,
   deleteRegistration,
@@ -28,10 +29,12 @@ import {
   sendAnnouncement,
   setRegistrationStatus,
   toCsv,
+  unassignReviewer,
   type Audience,
   type ManualStatus,
   type MemberRole,
   type PanelMembers,
+  type PanelPaper,
   type PanelPapers,
   type PanelRegistration,
   type PanelRegistrations,
@@ -541,13 +544,99 @@ function RegistrationsTab(props: TabProps) {
 
 // ───────────────────────────── Papers ─────────────────────────────
 
+/** Who reviews one paper, and the way to choose more or take one off (#232). */
+function PaperReviewers({
+  paper,
+  candidates,
+  onAssign,
+  onUnassign,
+}: {
+  paper: PanelPaper;
+  candidates: PanelMembers['members'];
+  onAssign: (userId: string) => Promise<void>;
+  onUnassign: (userId: string) => Promise<void>;
+}) {
+  const { t } = useTranslation();
+  const [chosen, setChosen] = useState('');
+  const [busy, setBusy] = useState(false);
+  const run = async (action: () => Promise<void>) => {
+    setBusy(true);
+    await action();
+    setBusy(false);
+  };
+  // Not someone already on the paper, and never one of its authors.
+  const free = candidates.filter(
+    (c) =>
+      !paper.reviewers.some((r) => r.userId === c.userId) &&
+      !paper.authors.some((a) => a.email === c.email.toLowerCase()),
+  );
+  return (
+    <>
+      {paper.reviewers.length === 0 && <span className="panel__meta">{t('panel.papers.noReviewer')}</span>}
+      {paper.reviewers.map((r) => (
+        <span key={r.userId}>
+          {r.fullName || r.email}
+          {!paper.deletedAt && (
+            <>
+              {' '}
+              <button
+                className="account__button account__button--quiet"
+                type="button"
+                disabled={busy}
+                aria-label={t('panel.papers.removeReviewer', { name: r.fullName || r.email, number: paper.number })}
+                onClick={() => void run(() => onUnassign(r.userId))}
+              >
+                ×
+              </button>
+            </>
+          )}
+          <br />
+        </span>
+      ))}
+      {!paper.deletedAt && free.length > 0 && (
+        <span className="panel__assign">
+          <select
+            aria-label={t('panel.papers.chooseReviewer', { number: paper.number })}
+            value={chosen}
+            onChange={(e) => setChosen(e.target.value)}
+          >
+            <option value="">{t('panel.papers.choose')}</option>
+            {free.map((c) => (
+              <option key={c.userId} value={c.userId}>
+                {c.fullName || c.email}
+              </option>
+            ))}
+          </select>{' '}
+          <button
+            className="account__button account__button--quiet"
+            type="button"
+            disabled={busy || !chosen}
+            aria-label={t('panel.papers.assignFor', { number: paper.number })}
+            onClick={() =>
+              void run(async () => {
+                await onAssign(chosen);
+                setChosen('');
+              })
+            }
+          >
+            {t('panel.papers.assign')}
+          </button>
+        </span>
+      )}
+    </>
+  );
+}
+
 function PapersTab({ token, slug, message }: TabProps) {
   const { t } = useTranslation();
   const locale = useLocale();
   const l = useLocalized();
   const { event } = useEvent();
   const load = useCallback(() => fetchPanelPapers(token, slug), [token, slug]);
-  const { data, error, setError } = useLoad<PanelPapers>(load, message);
+  const { data, error, setError, reload } = useLoad<PanelPapers>(load, message);
+  // Who can be chosen to review: the people with the Avaliador role in the edition (#232).
+  const loadMembers = useCallback(() => fetchPanelMembers(token, slug), [token, slug]);
+  const { data: people } = useLoad<PanelMembers>(loadMembers, message);
   const [areas, setAreas] = useState<ThematicArea[]>([]);
   // `?autor=<e-mail>` comes from the registrations list: the papers of that one person (#225).
   const [params] = useSearchParams();
@@ -569,9 +658,24 @@ function PapersTab({ token, slug, message }: TabProps) {
       setError(message(err));
     }
   };
+  const reviewers = [...new Map((people?.members ?? []).filter((m) => m.role === 'REVIEWER').map((m) => [m.userId, m])).values()];
+  const change = async (action: () => Promise<unknown>) => {
+    try {
+      await action();
+      await reload();
+    } catch (err) {
+      setError(message(err));
+    }
+  };
   return (
     <>
       <p data-testid="panel-counts">{t('panel.papers.counts', data.counts)}</p>
+      <p className="panel__meta">{t('panel.papers.reviewersHint')}</p>
+      {people && reviewers.length === 0 && (
+        <p className="account__notice" data-testid="no-reviewers">
+          {t('panel.papers.noReviewers')} <Link to={`/${slug}/painel/pessoas`}>{t('panel.tabs.people')}</Link>
+        </p>
+      )}
       <div className="panel__filters">
         <label>
           {t('panel.search')}
@@ -587,6 +691,7 @@ function PapersTab({ token, slug, message }: TabProps) {
               <th>{t('panel.papers.paper')}</th>
               <th>{t('panel.papers.authors')}</th>
               <th>{t('panel.registrations.state')}</th>
+              <th>{t('panel.papers.reviewers')}</th>
               <th>{t('panel.papers.file')}</th>
             </tr>
           </thead>
@@ -621,6 +726,14 @@ function PapersTab({ token, slug, message }: TabProps) {
                   </span>
                 </td>
                 <td>{s.deletedAt ? t('panel.papers.withdrawn') : t(`papers.status.${s.status}`, { defaultValue: s.status })}</td>
+                <td data-testid="paper-reviewers">
+                  <PaperReviewers
+                    paper={s}
+                    candidates={reviewers}
+                    onAssign={(userId) => change(() => assignReviewer(token, slug, s.id, userId))}
+                    onUnassign={(userId) => change(() => unassignReviewer(token, slug, s.id, userId))}
+                  />
+                </td>
                 <td>
                   <button className="account__button account__button--quiet" type="button" onClick={() => void open(s.id)}>
                     {s.fileName}

@@ -64,6 +64,9 @@ export interface SubmissionStore {
   /** Papers of the edition, withdrawn ones left out, where the e-mail is any of the authors. */
   listByAuthorEmail(eventId: string, email: string): Promise<Submission[]>;
   findById(id: string): Promise<Submission | null>;
+  /** Papers of the edition this person was chosen to review (#232), withdrawn ones left out. */
+  listAssignedTo(eventId: string, userId: string): Promise<Submission[]>;
+  isReviewerOf(submissionId: string, userId: string): Promise<boolean>;
   /**
    * People whose name contains the text, ignoring case and accents: accounts,
    * registrations of the edition and authors of its papers, one row per e-mail.

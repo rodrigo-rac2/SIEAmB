@@ -106,6 +106,25 @@ export class SupabaseSubmissionStore implements SubmissionStore {
     return rows[0] ? toSubmission(rows[0]) : null;
   }
 
+  async listAssignedTo(eventId: string, userId: string): Promise<Submission[]> {
+    const links = await this.rest.request<{ submission_id: string }[]>(
+      `submission_reviewers?user_id=eq.${q(userId)}&select=submission_id&limit=1000`,
+    );
+    if (links.length === 0) return [];
+    const ids = [...new Set(links.map((l) => l.submission_id))].map(q).join(',');
+    const rows = await this.rest.request<Row[]>(
+      `submissions?id=in.(${ids})&event_id=eq.${q(eventId)}&deleted_at=is.null&select=${WITH_AUTHORS}&order=number.asc`,
+    );
+    return rows.map(toSubmission);
+  }
+
+  async isReviewerOf(submissionId: string, userId: string): Promise<boolean> {
+    const rows = await this.rest.request<{ id: string }[]>(
+      `submission_reviewers?submission_id=eq.${q(submissionId)}&user_id=eq.${q(userId)}&select=id&limit=1`,
+    );
+    return rows.length > 0;
+  }
+
   async searchPeople(eventId: string, query: string, limit: number): Promise<Person[]> {
     const rows = await this.rest.request<{ full_name: string; email: string; institution: string | null }[]>(
       'rpc/search_people',

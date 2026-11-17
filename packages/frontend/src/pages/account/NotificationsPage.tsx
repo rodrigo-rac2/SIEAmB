@@ -15,6 +15,7 @@ export function noticeLink(notice: SiteNotification): string | null {
   const base = `/${notice.eventSlug}`;
   if (notice.kind.startsWith('submission.')) return `${base}/meus-trabalhos`;
   if (notice.kind.startsWith('organiser.submission.')) return `${base}/painel/trabalhos`;
+  if (notice.kind.startsWith('review.')) return `${base}/avaliacoes`;
   if (notice.kind === 'organiser.registration.new') return `${base}/painel`;
   if (notice.kind === 'member.added' || notice.kind.startsWith('link.')) return `${base}/minha-area`;
   return null;
