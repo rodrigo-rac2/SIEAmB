@@ -1,5 +1,5 @@
 import type { ThematicArea } from '@sieamb/shared';
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { PageHeader } from '../../components/shared/PageHeader';
@@ -55,6 +55,8 @@ export function PaperFormPage() {
   const [error, setError] = useState<string | null>(null);
   const [duplicate, setDuplicate] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
+  // The name of the account, on its way: someone quick to press Send must not lose their own name.
+  const ownName = useRef<Promise<string>>(Promise.resolve(''));
 
   useEffect(() => {
     if (!event) return;
@@ -98,14 +100,13 @@ export function PaperFormPage() {
     let active = true;
     const email = auth.email.toLowerCase();
     setAuthors((current) => (current.length ? current : [newAuthorRow({ email, self: true })]));
-    fetchAccount(accessToken)
-      .then((account) => {
-        if (!active || !account.user.fullName) return;
-        setAuthors((current) =>
-          current.map((row) => (row.self && !row.fullName ? { ...row, fullName: account.user.fullName } : row)),
-        );
-      })
-      .catch(() => undefined);
+    ownName.current = fetchAccount(accessToken)
+      .then((account) => account.user.fullName)
+      .catch(() => '');
+    void ownName.current.then((fullName) => {
+      if (!active || !fullName) return;
+      setAuthors((current) => current.map((row) => (row.self && !row.fullName ? { ...row, fullName } : row)));
+    });
     return () => {
       active = false;
     };
@@ -150,6 +151,15 @@ export function PaperFormPage() {
       return setError(t('papers.errors.file_too_large', { maxMb: rules.maxFileMb }));
     }
     setBusy(true);
+    const accountName = await ownName.current;
+    const authorList = toAuthorInput(
+      authors.map((row) => (row.self && !row.fullName.trim() ? { ...row, fullName: accountName } : row)),
+    );
+    // A name is missing: say so before the file goes anywhere.
+    if (authorList.some((author) => author.fullName.length < 3)) {
+      setBusy(false);
+      return setError(t('papers.errors.invalid_author'));
+    }
     try {
       const uploaded = file
         ? { path: await uploadPaperFile(accessToken, event.slug, file), name: file.name }
@@ -167,7 +177,7 @@ export function PaperFormPage() {
           abstract,
           keywords,
           keywordsEn,
-          authors: toAuthorInput(authors),
+          authors: authorList,
           confirmDuplicate,
         },
         uploaded,
