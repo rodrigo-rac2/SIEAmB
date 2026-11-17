@@ -2,7 +2,7 @@ import type { ThematicArea } from '@sieamb/shared';
 import { formatCpf, maskCpf } from '@sieamb/shared';
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, Navigate, useLocation } from 'react-router-dom';
+import { Link, Navigate, useLocation, useSearchParams } from 'react-router-dom';
 import { PageHeader } from '../../components/shared/PageHeader';
 import { useAuth } from '../../contexts/AuthContext';
 import { useEvent } from '../../contexts/EventContext';
@@ -21,6 +21,8 @@ import {
   fetchPanelPapers,
   fetchPanelRegistrations,
   fetchPanelRequests,
+  remindRegistration,
+  remindRegistrations,
   removeMember,
   restoreRegistration,
   sendAnnouncement,
@@ -187,6 +189,43 @@ function RegistrationActions({
   );
 }
 
+/** Owes the fee and nothing was decided by hand: the only ones a reminder makes sense for. */
+const owes = (r: PanelRegistration): boolean => !r.deleted && !r.manual && (r.state === 'UNPAID' || r.state === 'PENDING');
+
+function RemindButton({ registration, token, slug, message }: TabProps & { registration: PanelRegistration }) {
+  const { t } = useTranslation();
+  const [note, setNote] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  if (!owes(registration)) return null;
+  const send = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const { outcome } = await remindRegistration(token, slug, registration.id);
+      setNote(t(`panel.reminders.outcome.${outcome}`));
+    } catch (err) {
+      setError(message(err));
+    }
+    setBusy(false);
+  };
+  return (
+    <>
+      {!note && (
+        <button className="account__button account__button--quiet" type="button" disabled={busy} onClick={() => void send()}>
+          {t('panel.reminders.send')}
+        </button>
+      )}
+      {note && (
+        <span className="panel__meta" role="status">
+          {note}
+        </span>
+      )}
+      <Problem text={error} />
+    </>
+  );
+}
+
 function NewRegistration({ token, slug, message, onDone }: TabProps & { onDone: () => Promise<void> }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -309,6 +348,9 @@ function RegistrationsTab(props: TabProps) {
   const [search, setSearch] = useState('');
   const [state, setState] = useState('');
   const [showDeleted, setShowDeleted] = useState(false);
+  const [bulk, setBulk] = useState<'idle' | 'confirm' | 'busy'>('idle');
+  const [bulkNote, setBulkNote] = useState<string | null>(null);
+  const [bulkError, setBulkError] = useState<string | null>(null);
 
   if (!data) return error ? <Problem text={error} /> : <p role="status">{t('common.loading')}</p>;
   const admin = data.role === 'ADMIN';
@@ -319,6 +361,20 @@ function RegistrationsTab(props: TabProps) {
       (!state || r.state === state) &&
       (!needle || `${r.fullName} ${r.email} ${r.institution ?? ''}`.toLowerCase().includes(needle)),
   );
+
+  // The reminder goes to who still owes the fee among the rows on screen.
+  const owing = rows.filter(owes);
+  const remindAll = async () => {
+    setBulk('busy');
+    setBulkError(null);
+    try {
+      const result = await remindRegistrations(token, slug, owing.map((r) => r.id));
+      setBulkNote(t('panel.reminders.bulkDone', result));
+    } catch (err) {
+      setBulkError(message(err));
+    }
+    setBulk('idle');
+  };
 
   const download = () => {
     const header = [
@@ -383,7 +439,31 @@ function RegistrationsTab(props: TabProps) {
         <button className="account__button account__button--quiet" type="button" onClick={download}>
           {t('panel.download')}
         </button>
+        {owing.length > 0 && bulk === 'idle' && (
+          <button className="account__button account__button--quiet" type="button" onClick={() => { setBulkNote(null); setBulk('confirm'); }}>
+            {t('panel.reminders.sendAll', { count: owing.length })}
+          </button>
+        )}
       </div>
+      {bulk !== 'idle' && (
+        <div className="account__notice" role="alert">
+          <p>{t('panel.reminders.confirm', { count: owing.length })}</p>
+          <span className="panel__row-actions">
+            <button className="account__button" type="button" disabled={bulk === 'busy'} onClick={() => void remindAll()}>
+              {t('panel.reminders.sendAllYes', { count: owing.length })}
+            </button>
+            <button className="account__button account__button--quiet" type="button" onClick={() => setBulk('idle')}>
+              {t('common.cancel')}
+            </button>
+          </span>
+        </div>
+      )}
+      {bulkNote && (
+        <p className="account__notice account__notice--ok" role="status">
+          {bulkNote}
+        </p>
+      )}
+      <Problem text={bulkError} />
       <Problem text={error} />
       <div className="panel__table">
         <table>
@@ -393,7 +473,8 @@ function RegistrationsTab(props: TabProps) {
               <th>{t('panel.registrations.state')}</th>
               <th>{t('panel.registrations.payment')}</th>
               <th>{t('panel.registrations.date')}</th>
-              {admin && <th>{t('common.actions')}</th>}
+              <th>{t('panel.tabs.papers')}</th>
+              <th>{t('common.actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -435,11 +516,19 @@ function RegistrationsTab(props: TabProps) {
                   {r.paidCents !== null && ` · ${money(r.paidCents, locale)}`}
                 </td>
                 <td>{day(r.createdAt, locale)}</td>
-                {admin && (
-                  <td>
-                    <RegistrationActions {...props} registration={r} onDone={reload} />
-                  </td>
-                )}
+                <td>
+                  {r.papers ? (
+                    <Link to={`/${slug}/painel/trabalhos?autor=${encodeURIComponent(r.email)}`}>
+                      {t('papers.count', { count: r.papers })}
+                    </Link>
+                  ) : (
+                    <span className="panel__meta">{t('panel.registrations.noPapers')}</span>
+                  )}
+                </td>
+                <td>
+                  <RemindButton {...props} registration={r} />
+                  {admin && <RegistrationActions {...props} registration={r} onDone={reload} />}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -460,7 +549,9 @@ function PapersTab({ token, slug, message }: TabProps) {
   const load = useCallback(() => fetchPanelPapers(token, slug), [token, slug]);
   const { data, error, setError } = useLoad<PanelPapers>(load, message);
   const [areas, setAreas] = useState<ThematicArea[]>([]);
-  const [search, setSearch] = useState('');
+  // `?autor=<e-mail>` comes from the registrations list: the papers of that one person (#225).
+  const [params] = useSearchParams();
+  const [search, setSearch] = useState(params.get('autor') ?? '');
 
   useEffect(() => {
     if (event) void getDataProvider().getThematicAreas(event.id).then(setAreas);
@@ -518,7 +609,10 @@ function PapersTab({ token, slug, message }: TabProps) {
                 <td>
                   {s.authors.map((a) => (
                     <span key={a.position}>
-                      {a.fullName} <span className="panel__meta">({a.email})</span>
+                      {a.fullName} <span className="panel__meta">({a.email})</span>{' '}
+                      <span className="panel__meta" data-testid="author-registration">
+                        {a.registration ? t(`panel.states.${a.registration}`) : t('panel.papers.notRegistered')}
+                      </span>
                       <br />
                     </span>
                   ))}

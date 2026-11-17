@@ -23,6 +23,8 @@ export interface PanelRegistration {
   payment: 'PAID' | 'PENDING' | 'UNPAID';
   paidCents: number | null;
   paidAt: string | null;
+  /** Standing papers this person is an author of (#225). */
+  papers?: number;
   manual: { status: ManualStatus; reason: string | null; by: string | null; at: string | null } | null;
   deleted: { at: string; by: string | null; reason: string | null } | null;
 }
@@ -44,7 +46,8 @@ export interface PanelPaper {
   filePages: number | null;
   createdAt: string;
   deletedAt: string | null;
-  authors: { position: number; fullName: string; email: string }[];
+  /** `registration` is the state of that author's registration, or null when they have none (#225). */
+  authors: { position: number; fullName: string; email: string; registration?: PanelState | null }[];
   authorRegistered: boolean;
 }
 
@@ -93,6 +96,9 @@ const KNOWN_ERRORS = [
   'invalid_body',
   'no_recipients',
   'too_many_attempts',
+  'not_remindable',
+  'already_reminded',
+  'reminders_unavailable',
 ] as const;
 
 export type AdminErrorCode = (typeof KNOWN_ERRORS)[number] | 'generic';
@@ -135,6 +141,12 @@ export const deleteRegistration = (token: string, slug: string, id: string, reas
   request<unknown>('POST', 'registration-delete', token, slug, { id, reason, confirmPaid });
 export const restoreRegistration = (token: string, slug: string, id: string) =>
   request<unknown>('POST', 'registration-restore', token, slug, { id });
+/** One payment reminder, sent on the spot (#225). */
+export const remindRegistration = (token: string, slug: string, id: string) =>
+  request<{ outcome: 'sent' | 'queued' | 'skipped' | 'failed' }>('POST', 'remind', token, slug, { id });
+/** A reminder to each of these registrations that still owes the fee; the background job sends them. */
+export const remindRegistrations = (token: string, slug: string, ids: string[]) =>
+  request<{ queued: number; already: number }>('POST', 'remind', token, slug, { ids });
 export const addMember = (token: string, slug: string, email: string, role: MemberRole) =>
   request<{ invited: boolean }>('POST', 'member-add', token, slug, { email, role });
 export const removeMember = (token: string, slug: string, email: string, role: MemberRole) =>

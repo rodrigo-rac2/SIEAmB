@@ -720,3 +720,143 @@ describe('announcements (#221)', () => {
     ]);
   });
 });
+
+describe('registration and papers side by side (#225)', () => {
+  const paper = (n: number, emails: string[], over: Record<string, unknown> = {}) => ({
+    eventId: EVENT.id, id: `p${n}`, number: n, title: `Trabalho ${n}`, modality: 'ARTIGO', areaRef: 'a1', status: 'SUBMITTED',
+    fileName: 'a.pdf', filePages: 13, createdAt: NOW.toISOString(), updatedAt: NOW.toISOString(), deletedAt: null as string | null, deletedReason: null,
+    authors: emails.map((email, i) => ({ position: i + 1, fullName: `Autor ${i + 1}`, email })),
+    ...over,
+  });
+
+  it('counts the standing papers of each registered person, as main author or co-author', async () => {
+    const { deps, tokens, store } = setup();
+    store.seed({ email: 'duas@x.org' });
+    store.seed({ email: 'uma@x.org' });
+    store.seed({ email: 'nenhuma@x.org' });
+    store.submissions.push(
+      paper(1, ['duas@x.org', 'uma@x.org']),
+      paper(2, ['outro@x.org', 'duas@x.org']),
+      paper(3, ['duas@x.org'], { deletedAt: NOW.toISOString() }),
+      paper(4, ['duas@x.org'], { eventId: OTHER_EVENT.id }),
+    );
+    const data = await body(await get(deps, 'registrations', tokens.organiser));
+    expect(Object.fromEntries(data.registrations.map((r) => [r.email, r.papers]))).toEqual({ 'duas@x.org': 2, 'uma@x.org': 1, 'nenhuma@x.org': 0 });
+  });
+
+  it('shows beside each author the state of their registration, or none', async () => {
+    const { deps, tokens, store } = setup();
+    store.seed({ email: 'paga@x.org', payments: [{ status: 'APPROVED', amountCents: 5000, paidAt: null }] });
+    store.seed({ email: 'deve@x.org' });
+    store.seed({ email: 'isenta@x.org', manualStatus: 'EXEMPT' });
+    store.seed({ email: 'apagada@x.org', deletedAt: NOW.toISOString() });
+    store.submissions.push(paper(1, ['paga@x.org', 'deve@x.org', 'isenta@x.org', 'apagada@x.org', 'semnada@x.org']));
+    const data = await body(await get(deps, 'submissions', tokens.organiser));
+    const authors = data.submissions[0]!.authors as { email: string; registration: string | null }[];
+    expect(Object.fromEntries(authors.map((a) => [a.email, a.registration]))).toEqual({
+      'paga@x.org': 'PAID',
+      'deve@x.org': 'UNPAID',
+      'isenta@x.org': 'EXEMPT',
+      'apagada@x.org': null,
+      'semnada@x.org': null,
+    });
+    expect(data.submissions[0]!.authorRegistered).toBe(true);
+  });
+});
+
+describe('payment reminders at the click of a button (#225)', () => {
+  const remind = (deps: AdminDeps, token: string | undefined, data: Record<string, unknown> = {}) => post(deps, 'remind', token, data);
+
+  it('needs a login and a role in the edition', async () => {
+    const { deps, tokens, store, reminders } = setup();
+    const r = store.seed();
+    expect((await remind(deps, undefined, { id: r.id })).status).toBe(401);
+    expect((await remind(deps, tokens.nobody, { id: r.id })).status).toBe(404);
+    expect((await remind(deps, tokens.reviewer, { id: r.id })).status).toBe(404);
+    expect(reminders).toEqual([]);
+  });
+
+  it.each(['admin', 'organiser'] as const)('lets an %s remind one unpaid person on the spot, and logs it', async (who) => {
+    const { deps, tokens, store, reminders } = setup();
+    const r = store.seed();
+    const response = await remind(deps, tokens[who], { id: r.id });
+    expect(response.status).toBe(200);
+    expect(await body(response)).toEqual({ ok: true, outcome: 'sent' });
+    // 2026-12-01 15:00 in Brazil: the key carries the Brazilian day.
+    expect(reminders).toEqual([{ id: r.id, key: `manual:${r.id}:2026-12-01`, deliver: true }]);
+    expect(store.audits[0]).toMatchObject({ action: 'registration.remind', entityId: r.id, meta: { outcome: 'sent' } });
+  });
+
+  it('reminds someone whose boleto is still waiting', async () => {
+    const { deps, tokens, store, reminders } = setup();
+    const r = store.seed({ payments: [{ status: 'PENDING', amountCents: 5000, paidAt: null }] });
+    expect((await remind(deps, tokens.organiser, { id: r.id })).status).toBe(200);
+    expect(reminders).toHaveLength(1);
+  });
+
+  it('sends only one a day to the same person, whoever clicks', async () => {
+    const { deps, tokens, store, reminders } = setup();
+    const r = store.seed();
+    await remind(deps, tokens.admin, { id: r.id });
+    const again = await remind(deps, tokens.organiser, { id: r.id });
+    expect(again.status).toBe(409);
+    expect(await body(again)).toEqual({ error: 'already_reminded' });
+    expect(reminders).toHaveLength(1);
+    // The next day in Brazil it can go again; 23:30 in Brazil is still the same day although UTC has moved on.
+    deps.now = () => new Date('2026-12-01T23:30:00-03:00');
+    expect((await remind(deps, tokens.admin, { id: r.id })).status).toBe(409);
+    deps.now = () => new Date('2026-12-02T00:30:00-03:00');
+    expect((await remind(deps, tokens.admin, { id: r.id })).status).toBe(200);
+    expect(reminders.map((x) => x.key)).toEqual([`manual:${r.id}:2026-12-01`, `manual:${r.id}:2026-12-02`]);
+  });
+
+  it.each([
+    ['who paid', { payments: [{ status: 'APPROVED' as const, amountCents: 5000, paidAt: null }] }, 409, 'not_remindable'],
+    ['confirmed by hand', { manualStatus: 'CONFIRMED' as const }, 409, 'not_remindable'],
+    ['exempt', { manualStatus: 'EXEMPT' as const }, 409, 'not_remindable'],
+    ['cancelled', { manualStatus: 'CANCELLED' as const }, 409, 'not_remindable'],
+    ['deleted', { deletedAt: NOW.toISOString() }, 404, 'registration_not_found'],
+    ['of another edition', { eventId: OTHER_EVENT.id }, 404, 'registration_not_found'],
+  ])('never reminds someone %s', async (_name, over, status, error) => {
+    const { deps, tokens, store, reminders } = setup();
+    const r = store.seed(over);
+    const response = await remind(deps, tokens.admin, { id: r.id });
+    expect(response.status).toBe(status);
+    expect(await body(response)).toEqual({ error });
+    expect(reminders).toEqual([]);
+  });
+
+  it('reminds everyone who still owes the fee in one go, queued for the background job', async () => {
+    const { deps, tokens, store, reminders } = setup();
+    const unpaid = store.seed();
+    const boleto = store.seed({ payments: [{ status: 'PENDING', amountCents: 5000, paidAt: null }] });
+    store.seed({ payments: [{ status: 'APPROVED', amountCents: 5000, paidAt: null }] });
+    store.seed({ manualStatus: 'EXEMPT' });
+    store.seed({ deletedAt: NOW.toISOString() });
+    store.seed({ eventId: OTHER_EVENT.id });
+    const response = await remind(deps, tokens.organiser);
+    expect(await body(response)).toEqual({ ok: true, queued: 2, already: 0 });
+    expect(reminders.map((r) => [r.id, r.deliver]).sort()).toEqual([[unpaid.id, false], [boleto.id, false]].sort());
+    // Clicking again the same day sends nothing more.
+    expect(await body(await remind(deps, tokens.admin))).toEqual({ ok: true, queued: 0, already: 2 });
+    expect(reminders).toHaveLength(2);
+    expect(store.audits.at(-1)).toMatchObject({ action: 'registration.remind_all', meta: { queued: 0, already: 2 } });
+  });
+
+  it('with a list, reminds only those of the list who still owe', async () => {
+    const { deps, tokens, store, reminders } = setup();
+    const a = store.seed();
+    store.seed();
+    const paid = store.seed({ payments: [{ status: 'APPROVED', amountCents: 5000, paidAt: null }] });
+    expect(await body(await remind(deps, tokens.admin, { ids: [a.id, paid.id, 'reg-none'] }))).toEqual({ ok: true, queued: 1, already: 0 });
+    expect(reminders.map((r) => r.id)).toEqual([a.id]);
+  });
+
+  it('says so where payments are not set up', async () => {
+    const { deps, tokens, store } = setup();
+    deps.remind = undefined;
+    const response = await remind(deps, tokens.admin, { id: store.seed().id });
+    expect(response.status).toBe(503);
+    expect(await body(response)).toEqual({ error: 'reminders_unavailable' });
+  });
+});

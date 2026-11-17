@@ -493,7 +493,9 @@
       "coauthor_limit": "{{email}} já consta como coautor em {{max}} trabalhos, o limite do edital.",
       "duplicate_title": "Um dos autores já enviou um trabalho com este título (nº {{number}}). Cada trabalho deve ser enviado uma única vez.",
       "upload_failed": "Não foi possível enviar o arquivo. Confira sua conexão e tente de novo."
-    }
+    },
+    "count_one": "{{count}} trabalho",
+    "count_other": "{{count}} trabalhos"
   },
   "panel": {
     "title": "Painel da organização",
@@ -547,7 +549,8 @@
       "byOrganiser": "cadastrada pela organização",
       "hasAccount": "tem conta",
       "manualNote": "Motivo: {{reason}} ({{date}})",
-      "deletedNote": "Apagada em {{date}}: {{reason}}"
+      "deletedNote": "Apagada em {{date}}: {{reason}}",
+      "noPapers": "nenhum"
     },
     "papers": {
       "counts": "{{total}} trabalhos enviados, {{withdrawn}} retirados.",
@@ -557,7 +560,8 @@
       "file": "Arquivo",
       "withdrawn": "Retirado pelo autor",
       "authorRegistered": "Há autor com inscrição confirmada.",
-      "noAuthorRegistered": "Nenhum autor com inscrição confirmada."
+      "noAuthorRegistered": "Nenhum autor com inscrição confirmada.",
+      "notRegistered": "sem inscrição"
     },
     "people": {
       "role": "Papel",
@@ -599,7 +603,10 @@
       "invalid_subject": "O assunto precisa ter entre 5 e 150 caracteres.",
       "invalid_body": "A mensagem precisa ter entre 10 e 5000 caracteres.",
       "no_recipients": "Esse grupo não tem ninguém no momento.",
-      "too_many_attempts": "Muitos comunicados em pouco tempo. Aguarde um pouco."
+      "too_many_attempts": "Muitos comunicados em pouco tempo. Aguarde um pouco.",
+      "not_remindable": "Esta inscrição não tem pagamento a lembrar.",
+      "already_reminded": "Esta pessoa já recebeu um lembrete hoje.",
+      "reminders_unavailable": "Os lembretes não estão disponíveis neste ambiente."
     },
     "announcements": {
       "audience": "Quem recebe",
@@ -622,6 +629,22 @@
       "history": "Comunicados enviados",
       "none": "Nenhum comunicado enviado ainda.",
       "sentLine": "{{sender}} · {{audience}} · {{count}} pessoas · {{date}}"
+    },
+    "reminders": {
+      "send": "Enviar lembrete",
+      "sendAll_one": "Enviar lembrete a {{count}} pessoa sem pagamento",
+      "sendAll_other": "Enviar lembrete às {{count}} pessoas sem pagamento",
+      "confirm_one": "O lembrete de pagamento, com o link para pagar, vai para {{count}} pessoa da lista. Quem já recebeu um lembrete seu hoje não recebe outro.",
+      "confirm_other": "O lembrete de pagamento, com o link para pagar, vai para as {{count}} pessoas da lista que ainda não pagaram. Quem já recebeu um lembrete seu hoje não recebe outro.",
+      "sendAllYes_one": "Enviar para {{count}} pessoa",
+      "sendAllYes_other": "Enviar para {{count}} pessoas",
+      "bulkDone": "{{queued}} lembretes a caminho; saem nos próximos minutos. {{already}} pessoas já tinham recebido um hoje.",
+      "outcome": {
+        "sent": "Lembrete enviado agora.",
+        "queued": "Lembrete a caminho; sai nos próximos minutos.",
+        "skipped": "Não enviado: este endereço não recebe e-mails ou a inscrição já foi paga.",
+        "failed": "O envio falhou agora; o sistema tenta de novo em alguns minutos."
+      }
     }
   },
   "notifications": {

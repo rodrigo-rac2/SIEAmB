@@ -493,7 +493,9 @@
       "coauthor_limit": "{{email}} is already a co-author in {{max}} papers, the limit of the call.",
       "duplicate_title": "One of the authors already sent a paper with this title (no. {{number}}). Each paper must be sent only once.",
       "upload_failed": "The file could not be sent. Check your connection and try again."
-    }
+    },
+    "count_one": "{{count}} paper",
+    "count_other": "{{count}} papers"
   },
   "panel": {
     "title": "Organisers' panel",
@@ -547,7 +549,8 @@
       "byOrganiser": "registered by the organisers",
       "hasAccount": "has an account",
       "manualNote": "Reason: {{reason}} ({{date}})",
-      "deletedNote": "Deleted on {{date}}: {{reason}}"
+      "deletedNote": "Deleted on {{date}}: {{reason}}",
+      "noPapers": "none"
     },
     "papers": {
       "counts": "{{total}} papers sent, {{withdrawn}} withdrawn.",
@@ -557,7 +560,8 @@
       "file": "File",
       "withdrawn": "Withdrawn by the author",
       "authorRegistered": "An author has a confirmed registration.",
-      "noAuthorRegistered": "No author has a confirmed registration."
+      "noAuthorRegistered": "No author has a confirmed registration.",
+      "notRegistered": "not registered"
     },
     "people": {
       "role": "Role",
@@ -599,7 +603,10 @@
       "invalid_subject": "The subject needs between 5 and 150 characters.",
       "invalid_body": "The message needs between 10 and 5000 characters.",
       "no_recipients": "That group has nobody at the moment.",
-      "too_many_attempts": "Too many announcements in a short time. Wait a little."
+      "too_many_attempts": "Too many announcements in a short time. Wait a little.",
+      "not_remindable": "This registration has no payment to remind about.",
+      "already_reminded": "This person already received a reminder today.",
+      "reminders_unavailable": "Reminders are not available in this environment."
     },
     "announcements": {
       "audience": "Who receives it",
@@ -622,6 +629,22 @@
       "history": "Announcements sent",
       "none": "No announcement sent yet.",
       "sentLine": "{{sender}} · {{audience}} · {{count}} people · {{date}}"
+    },
+    "reminders": {
+      "send": "Send reminder",
+      "sendAll_one": "Send a reminder to {{count}} unpaid person",
+      "sendAll_other": "Send a reminder to the {{count}} unpaid people",
+      "confirm_one": "The payment reminder, with the link to pay, goes to {{count}} person on the list. Whoever already got a reminder today does not get another.",
+      "confirm_other": "The payment reminder, with the link to pay, goes to the {{count}} people on the list who have not paid yet. Whoever already got a reminder today does not get another.",
+      "sendAllYes_one": "Send to {{count}} person",
+      "sendAllYes_other": "Send to {{count}} people",
+      "bulkDone": "{{queued}} reminders on their way; they go out in the next minutes. {{already}} people had already received one today.",
+      "outcome": {
+        "sent": "Reminder sent now.",
+        "queued": "Reminder on its way; it goes out in the next minutes.",
+        "skipped": "Not sent: this address does not receive e-mails or the registration is already paid.",
+        "failed": "Sending failed just now; the system tries again in a few minutes."
+      }
     }
   },
   "notifications": {

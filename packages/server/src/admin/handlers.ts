@@ -17,7 +17,15 @@ import {
   type PanelRole,
 } from './store';
 
+/** What became of a reminder asked for by hand. */
+export type RemindOutcome = 'sent' | 'queued' | 'duplicate' | 'skipped' | 'failed';
+
 export interface AdminDeps extends OutboxDeps {
+  /**
+   * Owes one payment reminder to a registration under `key` (#225). With `deliver`, tries to
+   * send it right away; otherwise the background job sends it. Absent where payments are not set up.
+   */
+  remind?: (registrationId: string, key: string, now: Date, deliver: boolean) => Promise<RemindOutcome>;
   store: AdminStore;
   auth: AuthGateway;
   siteUrl: string;
@@ -110,6 +118,12 @@ async function registrations(request: Request, deps: AdminDeps): Promise<Respons
   const ctx = await context(request, deps, slugOf(request));
   if ('response' in ctx) return ctx.response;
   const all = await deps.store.listRegistrations(ctx.event.id);
+  // How many standing papers each address is an author of: the registration and the papers side by side (#225).
+  const papers = new Map<string, number>();
+  for (const paper of await deps.store.listSubmissions(ctx.event.id)) {
+    if (paper.deletedAt) continue;
+    for (const author of paper.authors) papers.set(author.email, (papers.get(author.email) ?? 0) + 1);
+  }
   const live = all.filter((r) => !r.deletedAt);
   const count = (state: RegistrationState) => live.filter((r) => (r.manualStatus ?? paymentState(r)) === state).length;
   return json(200, {
@@ -122,7 +136,7 @@ async function registrations(request: Request, deps: AdminDeps): Promise<Respons
       cancelled: count('CANCELLED'),
       deleted: all.length - live.length,
     },
-    registrations: all.map((r) => viewRegistration(r, ctx.role)),
+    registrations: all.map((r) => ({ ...viewRegistration(r, ctx.role), papers: papers.get(r.email) ?? 0 })),
   });
 }
 
@@ -245,6 +259,49 @@ async function registrationRestore(request: Request, deps: AdminDeps): Promise<R
   return json(200, { ok: true });
 }
 
+// ───────────────────────────── Payment reminders by hand (#225) ─────────────────────────────
+
+/** The Brazilian calendar day: one reminder by hand per registration per day, whoever clicks. */
+const brDay = (now: Date): string => new Date(now.getTime() - 3 * 3600_000).toISOString().slice(0, 10);
+
+/** Only someone who still owes the fee is reminded: not paid, and nothing decided by hand. */
+const remindable = (r: AdminRegistration): boolean =>
+  !r.deletedAt && !r.manualStatus && paymentState(r) !== 'PAID';
+
+async function remind(request: Request, deps: AdminDeps): Promise<Response> {
+  const body = await readJsonObject(request);
+  const ctx = await context(request, deps, body.eventSlug);
+  if ('response' in ctx) return ctx.response;
+  if (!deps.remind) return json(503, { error: 'reminders_unavailable' });
+  const now = deps.now();
+  const key = (id: string) => `manual:${id}:${brDay(now)}`;
+
+  // One registration: sent on the spot, so the organiser sees what happened.
+  if (body.id !== undefined) {
+    const registration = await target(body, deps, ctx);
+    if (!registration || registration.deletedAt) return json(404, { error: 'registration_not_found' });
+    if (!remindable(registration)) return json(409, { error: 'not_remindable' });
+    const outcome = await deps.remind(registration.id, key(registration.id), now, true);
+    await audit(deps, ctx, 'registration.remind', 'pre_registration', registration.id, { outcome });
+    if (outcome === 'duplicate') return json(409, { error: 'already_reminded' });
+    return json(200, { ok: true, outcome });
+  }
+
+  // Everyone who still owes the fee: queued, and sent by the background job.
+  const all = (await deps.store.listRegistrations(ctx.event.id)).filter(remindable);
+  const wanted = Array.isArray(body.ids) ? new Set(body.ids.map(String)) : null;
+  const chosen = wanted ? all.filter((r) => wanted.has(r.id)) : all;
+  let queued = 0;
+  let already = 0;
+  for (const registration of chosen) {
+    const outcome = await deps.remind(registration.id, key(registration.id), now, false);
+    if (outcome === 'duplicate') already += 1;
+    else queued += 1;
+  }
+  await audit(deps, ctx, 'registration.remind_all', 'pre_registration', null, { queued, already });
+  return json(200, { ok: true, queued, already });
+}
+
 // ───────────────────────────── Papers ─────────────────────────────
 
 async function submissions(request: Request, deps: AdminDeps): Promise<Response> {
@@ -252,17 +309,20 @@ async function submissions(request: Request, deps: AdminDeps): Promise<Response>
   if ('response' in ctx) return ctx.response;
   const all = await deps.store.listSubmissions(ctx.event.id);
   // For each paper: is at least one of its authors registered and confirmed? (the edital's condition)
-  const confirmed = new Set(
+  const states = new Map<string, RegistrationState>(
     (await deps.store.listRegistrations(ctx.event.id))
-      .filter((r) => !r.deletedAt && ['PAID', 'CONFIRMED', 'EXEMPT'].includes(r.manualStatus ?? paymentState(r)))
-      .map((r) => r.email),
+      .filter((r) => !r.deletedAt)
+      .map((r) => [r.email, (r.manualStatus ?? paymentState(r)) as RegistrationState]),
   );
+  const isConfirmed = (email: string) => ['PAID', 'CONFIRMED', 'EXEMPT'].includes(states.get(email) ?? '');
   return json(200, {
     role: ctx.role,
     counts: { total: all.filter((s) => !s.deletedAt).length, withdrawn: all.filter((s) => s.deletedAt).length },
     submissions: all.map((s) => ({
       ...s,
-      authorRegistered: s.authors.some((a) => confirmed.has(a.email)),
+      // Each author with the state of their registration, or null when they have none (#225).
+      authors: s.authors.map((a) => ({ ...a, registration: states.get(a.email) ?? null })),
+      authorRegistered: s.authors.some((a) => isConfirmed(a.email)),
     })),
   });
 }
@@ -464,6 +524,7 @@ const ROUTES: Record<string, Partial<Record<string, Handler>>> = {
   'registration-status': { POST: registrationStatus },
   'registration-delete': { POST: registrationDelete },
   'registration-restore': { POST: registrationRestore },
+  remind: { POST: remind },
   submissions: { GET: submissions },
   members: { GET: members },
   'member-add': { POST: (request, deps) => memberChange(request, deps, true) },

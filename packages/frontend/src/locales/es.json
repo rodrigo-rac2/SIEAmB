@@ -493,7 +493,9 @@
       "coauthor_limit": "{{email}} ya figura como coautor en {{max}} trabajos, el límite de la convocatoria.",
       "duplicate_title": "Uno de los autores ya envió un trabajo con este título (n.º {{number}}). Cada trabajo debe enviarse una sola vez.",
       "upload_failed": "No fue posible enviar el archivo. Revise su conexión e intente de nuevo."
-    }
+    },
+    "count_one": "{{count}} trabajo",
+    "count_other": "{{count}} trabajos"
   },
   "panel": {
     "title": "Panel de la organización",
@@ -547,7 +549,8 @@
       "byOrganiser": "registrada por la organización",
       "hasAccount": "tiene cuenta",
       "manualNote": "Motivo: {{reason}} ({{date}})",
-      "deletedNote": "Borrada el {{date}}: {{reason}}"
+      "deletedNote": "Borrada el {{date}}: {{reason}}",
+      "noPapers": "ninguno"
     },
     "papers": {
       "counts": "{{total}} trabajos enviados, {{withdrawn}} retirados.",
@@ -557,7 +560,8 @@
       "file": "Archivo",
       "withdrawn": "Retirado por el autor",
       "authorRegistered": "Hay un autor con inscripción confirmada.",
-      "noAuthorRegistered": "Ningún autor con inscripción confirmada."
+      "noAuthorRegistered": "Ningún autor con inscripción confirmada.",
+      "notRegistered": "sin inscripción"
     },
     "people": {
       "role": "Rol",
@@ -599,7 +603,10 @@
       "invalid_subject": "El asunto debe tener entre 5 y 150 caracteres.",
       "invalid_body": "El mensaje debe tener entre 10 y 5000 caracteres.",
       "no_recipients": "Ese grupo no tiene a nadie en este momento.",
-      "too_many_attempts": "Demasiados comunicados en poco tiempo. Espere un poco."
+      "too_many_attempts": "Demasiados comunicados en poco tiempo. Espere un poco.",
+      "not_remindable": "Esta inscripción no tiene pago que recordar.",
+      "already_reminded": "Esta persona ya recibió un recordatorio hoy.",
+      "reminders_unavailable": "Los recordatorios no están disponibles en este entorno."
     },
     "announcements": {
       "audience": "Quién recibe",
@@ -622,6 +629,22 @@
       "history": "Comunicados enviados",
       "none": "Ningún comunicado enviado todavía.",
       "sentLine": "{{sender}} · {{audience}} · {{count}} personas · {{date}}"
+    },
+    "reminders": {
+      "send": "Enviar recordatorio",
+      "sendAll_one": "Enviar recordatorio a {{count}} persona sin pago",
+      "sendAll_other": "Enviar recordatorio a las {{count}} personas sin pago",
+      "confirm_one": "El recordatorio de pago, con el enlace para pagar, va a {{count}} persona de la lista. Quien ya recibió un recordatorio hoy no recibe otro.",
+      "confirm_other": "El recordatorio de pago, con el enlace para pagar, va a las {{count}} personas de la lista que todavía no pagaron. Quien ya recibió un recordatorio hoy no recibe otro.",
+      "sendAllYes_one": "Enviar a {{count}} persona",
+      "sendAllYes_other": "Enviar a {{count}} personas",
+      "bulkDone": "{{queued}} recordatorios en camino; salen en los próximos minutos. {{already}} personas ya habían recibido uno hoy.",
+      "outcome": {
+        "sent": "Recordatorio enviado ahora.",
+        "queued": "Recordatorio en camino; sale en los próximos minutos.",
+        "skipped": "No enviado: esta dirección no recibe correos o la inscripción ya fue pagada.",
+        "failed": "El envío falló ahora; el sistema intenta de nuevo en unos minutos."
+      }
     }
   },
   "notifications": {
