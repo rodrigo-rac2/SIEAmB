@@ -38,6 +38,19 @@
   opacity: 1;
 }
 
+.topbar__badge {
+  display: inline-block;
+  min-width: 1.25rem;
+  margin-left: 2px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--color-primary-dark);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-align: center;
+}
+
 @media (max-width: 560px) {
   .topbar__venue {
     display: none;

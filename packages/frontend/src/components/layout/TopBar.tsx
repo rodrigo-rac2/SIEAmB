@@ -6,6 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useEvent } from '../../contexts/EventContext';
 import { showsEditionsLink } from '../../lib/nav';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { NotificationsBell } from './NotificationsBell';
 import './TopBar.css';
 
 export function TopBar() {
@@ -36,6 +37,7 @@ export function TopBar() {
               {auth.accessToken ? t('account.nav.myArea') : t('account.nav.login')}
             </Link>
           )}
+          {event && <NotificationsBell slug={event.slug} />}
           <LanguageSwitcher />
         </div>
       </div>

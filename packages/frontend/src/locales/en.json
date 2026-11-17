@@ -505,7 +505,8 @@
       "registrations": "Registrations",
       "papers": "Papers",
       "people": "People and roles",
-      "requests": "Requests"
+      "requests": "Requests",
+      "announcements": "Announcements"
     },
     "states": {
       "PAID": "Paid",
@@ -593,7 +594,55 @@
       "invalid_role": "Choose the role.",
       "cannot_remove_self": "You cannot remove your own administrator role.",
       "request_not_found": "Request not found.",
-      "cannot_link": "It could not be done: the registration already has an account, was deleted, or the account already has another registration for this edition."
+      "cannot_link": "It could not be done: the registration already has an account, was deleted, or the account already has another registration for this edition.",
+      "invalid_audience": "Choose who receives it.",
+      "invalid_subject": "The subject needs between 5 and 150 characters.",
+      "invalid_body": "The message needs between 10 and 5000 characters.",
+      "no_recipients": "That group has nobody at the moment.",
+      "too_many_attempts": "Too many announcements in a short time. Wait a little."
+    },
+    "announcements": {
+      "audience": "Who receives it",
+      "audienceHint": "The number beside each group is how many people it has now. Administrators are in no group just for being administrators.",
+      "audiences": {
+        "all": "Everyone",
+        "registered": "Only the registered",
+        "authors": "Only the authors",
+        "reviewers": "Only the reviewers",
+        "organisers": "Only the organisers"
+      },
+      "subject": "Subject",
+      "body": "Message",
+      "review": "Review and send",
+      "confirm": "This announcement goes to {{count}} people ({{audience}}), by e-mail and in the site notifications. Once sent, it cannot be undone.",
+      "sendYes_one": "Send to {{count}} person",
+      "sendYes_other": "Send to {{count}} people",
+      "sent_one": "Announcement recorded for {{count}} person. The e-mails go out in the next minutes.",
+      "sent_other": "Announcement recorded for {{count}} people. The e-mails go out gradually, in the next minutes.",
+      "history": "Announcements sent",
+      "none": "No announcement sent yet.",
+      "sentLine": "{{sender}} · {{audience}} · {{count}} people · {{date}}"
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "none": "You have no notifications yet.",
+    "new": "new",
+    "open": "Open",
+    "unknown": "There is something new for you.",
+    "bellUnread_one": "Notifications: {{count}} unread",
+    "bellUnread_other": "Notifications: {{count}} unread",
+    "kinds": {
+      "submission.received": "Paper no. {{number}}, \"{{title}}\", was received.",
+      "submission.updated": "Paper no. {{number}}, \"{{title}}\", was changed by {{mainAuthor}}.",
+      "submission.withdrawn": "Paper no. {{number}}, \"{{title}}\", was withdrawn by {{mainAuthor}}.",
+      "organiser.submission.received": "New paper no. {{number}}: \"{{title}}\", sent by {{mainAuthor}}.",
+      "organiser.submission.updated": "Paper no. {{number}}, \"{{title}}\", was changed by {{mainAuthor}}.",
+      "organiser.submission.withdrawn": "Paper no. {{number}}, \"{{title}}\", was withdrawn by {{mainAuthor}}.",
+      "organiser.registration.new": "New registration: {{fullName}}.",
+      "member.added": "You were given the role of {{role}}.",
+      "link.approved": "The organisers approved your request: the registration now shows in your account.",
+      "link.rejected": "The organisers did not approve your request to bring the registration into your account. If in doubt, contact the organisers."
     }
   }
 }

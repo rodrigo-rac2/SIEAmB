@@ -41,7 +41,7 @@ function mount(path: string, element: ReactElement, state: AuthState = auth()) {
 }
 
 const panel = (tab: PanelTab, state?: AuthState) =>
-  mount({ registrations: '/2027/painel', papers: '/2027/painel/trabalhos', people: '/2027/painel/pessoas', requests: '/2027/painel/pedidos' }[tab], <PanelPage tab={tab} />, state);
+  mount({ registrations: '/2027/painel', papers: '/2027/painel/trabalhos', people: '/2027/painel/pessoas', announcements: '/2027/painel/comunicados', requests: '/2027/painel/pedidos' }[tab], <PanelPage tab={tab} />, state);
 
 interface Call {
   url: string;
