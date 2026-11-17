@@ -27,7 +27,7 @@ function Where() {
 }
 
 function mount(path: string, element: ReactElement, state: AuthState = auth()) {
-  const pattern = path.replace(/^\/[^/]+/, '/:eventSlug');
+  const pattern = path.split('?')[0]!.replace(/^\/[^/]+/, '/:eventSlug');
   return render(
     <AuthContext.Provider value={state}>
       <MemoryRouter initialEntries={[path]}>
@@ -462,5 +462,106 @@ describe('requests tab', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Recusar' }));
     expect(await screen.findByRole('alert')).toHaveTextContent(/Não foi possível reunir/);
     expect(calls.find((c) => c.url.endsWith('link-decide'))!.body).toMatchObject({ approve: false });
+  });
+});
+
+describe('registration and papers side by side, and reminders (#225)', () => {
+  it('links each registration to the papers of that person, and says "nenhum" when there are none', async () => {
+    stubApi({ members: members('ORGANIZER'), registrations: list([registration({ papers: 2 }), registration({ id: 'reg-2', email: 'sem@x.org', papers: 0 })], 'ORGANIZER') });
+    panel('registrations');
+    const [first, second] = await screen.findAllByTestId('registration-row');
+    expect(within(first!).getByRole('link', { name: '2 trabalhos' })).toHaveAttribute('href', '/2027/painel/trabalhos?autor=paula%40outlook.com');
+    expect(within(second!).queryByRole('link', { name: /trabalho/ })).not.toBeInTheDocument();
+    expect(second).toHaveTextContent('nenhum');
+  });
+
+  it('says "1 trabalho" for one', async () => {
+    stubApi({ members: members(), registrations: list([registration({ papers: 1 })]) });
+    panel('registrations');
+    expect(await screen.findByRole('link', { name: '1 trabalho' })).toBeInTheDocument();
+  });
+
+  it('opens the papers list already filtered to the person, with each author’s registration beside the name', async () => {
+    stubApi({
+      members: members('ORGANIZER'),
+      submissions: {
+        body: {
+          role: 'ORGANIZER',
+          counts: { total: 2, withdrawn: 0 },
+          submissions: [
+            { id: 'p1', number: 1, title: 'Da Paula', modality: 'ARTIGO', areaRef: 'a1', status: 'SUBMITTED', fileName: 'a.pdf', filePages: 13, createdAt: '2026-12-01T12:00:00Z', deletedAt: null, authorRegistered: true, authors: [{ position: 1, fullName: 'Paula Nunes', email: 'paula@outlook.com', registration: 'PAID' }, { position: 2, fullName: 'Sem Inscrição', email: 'sem@x.org', registration: null }] },
+            { id: 'p2', number: 2, title: 'De outra pessoa', modality: 'ARTIGO', areaRef: 'a1', status: 'SUBMITTED', fileName: 'b.pdf', filePages: 12, createdAt: '2026-12-01T12:00:00Z', deletedAt: null, authorRegistered: false, authors: [{ position: 1, fullName: 'Outra', email: 'outra@x.org', registration: 'UNPAID' }] },
+          ],
+        },
+      },
+    });
+    mount('/2027/painel/trabalhos?autor=paula%40outlook.com', <PanelPage tab="papers" />);
+    const rows = await screen.findAllByTestId('paper-row');
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toHaveTextContent('Da Paula');
+    expect(screen.getByLabelText('Buscar')).toHaveValue('paula@outlook.com');
+    expect(within(rows[0]!).getAllByTestId('author-registration').map((e) => e.textContent)).toEqual(['Paga', 'sem inscrição']);
+    // Clearing the filter shows everything again.
+    await userEvent.clear(screen.getByLabelText('Buscar'));
+    expect(screen.getAllByTestId('paper-row')).toHaveLength(2);
+  });
+
+  it('lets an organiser send one reminder, and shows what happened in place of the button', async () => {
+    const calls = stubApi({ members: members('ORGANIZER'), registrations: list([registration()], 'ORGANIZER'), remind: { body: { ok: true, outcome: 'sent' } } });
+    panel('registrations');
+    await userEvent.click(await screen.findByRole('button', { name: 'Enviar lembrete' }));
+    expect(await screen.findByText('Lembrete enviado agora.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Enviar lembrete' })).not.toBeInTheDocument();
+    expect(calls.find((c) => c.url.endsWith('/remind'))).toMatchObject({ method: 'POST', authorization: 'Bearer access-token-1', body: { eventSlug: '2027', id: 'reg-1' } });
+  });
+
+  it('explains when the person already got one today', async () => {
+    stubApi({ members: members(), registrations: list([registration()]), remind: { status: 409, body: { error: 'already_reminded' } } });
+    panel('registrations');
+    await userEvent.click(await screen.findByRole('button', { name: 'Enviar lembrete' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Esta pessoa já recebeu um lembrete hoje.');
+  });
+
+  it('offers no reminder for someone who paid, was decided by hand or was deleted', async () => {
+    stubApi({
+      members: members(),
+      registrations: list([
+        registration({ id: 'a', fullName: 'Paga', state: 'PAID', payment: 'PAID' }),
+        registration({ id: 'b', fullName: 'Isenta', state: 'EXEMPT', manual: { status: 'EXEMPT', reason: 'x', by: null, at: null } }),
+        registration({ id: 'c', fullName: 'Cancelada', state: 'CANCELLED', manual: { status: 'CANCELLED', reason: 'x', by: null, at: null } }),
+      ]),
+    });
+    panel('registrations');
+    await screen.findAllByTestId('registration-row');
+    expect(screen.queryByRole('button', { name: 'Enviar lembrete' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Enviar lembrete (a|às)/ })).not.toBeInTheDocument();
+  });
+
+  it('reminds everyone unpaid among the rows on screen, after a confirmation with the number', async () => {
+    const rows = [
+      registration({ id: 'u1', fullName: 'Deve Um' }),
+      registration({ id: 'u2', fullName: 'Boleto', state: 'PENDING', payment: 'PENDING' }),
+      registration({ id: 'p1', fullName: 'Paga', state: 'PAID', payment: 'PAID' }),
+      registration({ id: 'u3', fullName: 'Outra Pessoa', email: 'outra@x.org' }),
+    ];
+    const calls = stubApi({ members: members('ORGANIZER'), registrations: list(rows, 'ORGANIZER'), remind: { body: { ok: true, queued: 2, already: 1 } } });
+    panel('registrations');
+    await userEvent.click(await screen.findByRole('button', { name: 'Enviar lembrete às 3 pessoas sem pagamento' }));
+    expect(calls.some((c) => c.url.endsWith('/remind'))).toBe(false);
+    expect(screen.getByRole('alert')).toHaveTextContent('vai para as 3 pessoas da lista que ainda não pagaram');
+    await userEvent.click(screen.getByRole('button', { name: 'Enviar para 3 pessoas' }));
+    expect(await screen.findByRole('status')).toHaveTextContent('2 lembretes a caminho; saem nos próximos minutos. 1 pessoas já tinham recebido um hoje.');
+    expect(calls.find((c) => c.url.endsWith('/remind'))!.body).toEqual({ eventSlug: '2027', ids: ['u1', 'u2', 'u3'] });
+  });
+
+  it('with a filter on, the bulk reminder goes only to the rows shown', async () => {
+    const rows = [registration({ id: 'u1', fullName: 'Deve Um' }), registration({ id: 'u3', fullName: 'Outra Pessoa', email: 'outra@x.org' })];
+    const calls = stubApi({ members: members(), registrations: list(rows), remind: { body: { ok: true, queued: 1, already: 0 } } });
+    panel('registrations');
+    await userEvent.type(await screen.findByLabelText('Buscar'), 'outra@');
+    await userEvent.click(screen.getByRole('button', { name: 'Enviar lembrete a 1 pessoa sem pagamento' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Enviar para 1 pessoa' }));
+    await waitFor(() => expect(calls.some((c) => c.url.endsWith('/remind'))).toBe(true));
+    expect(calls.find((c) => c.url.endsWith('/remind'))!.body).toEqual({ eventSlug: '2027', ids: ['u3'] });
   });
 });

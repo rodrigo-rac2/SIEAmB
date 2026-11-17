@@ -224,7 +224,14 @@ export function setup(options: { failSends?: boolean } = {}) {
       sent.push(mail);
     },
   };
+  // Reminders asked for by hand: one per key, like the unique key of the payment outbox.
+  const reminders: { id: string; key: string; deliver: boolean }[] = [];
   const deps: AdminDeps = {
+    remind: async (id, key, _now, deliver) => {
+      if (reminders.some((r) => r.key === key)) return 'duplicate';
+      reminders.push({ id, key, deliver });
+      return deliver ? 'sent' : 'queued';
+    },
     store,
     outbox,
     auth,
@@ -240,7 +247,7 @@ export function setup(options: { failSends?: boolean } = {}) {
     nobody: auth.login(NOBODY),
     platform: auth.login(PLATFORM),
   };
-  return { store, outbox, auth, sent, logs, deps, tokens };
+  return { store, outbox, auth, sent, logs, deps, tokens, reminders };
 }
 
 export function call(

@@ -493,7 +493,9 @@
       "coauthor_limit": "{{email}} 已作为合作者参与 {{max}} 篇论文，达到上限。",
       "duplicate_title": "其中一位作者已提交过同名论文（第 {{number}} 号）。每篇论文只能提交一次。",
       "upload_failed": "无法上传文件。请检查网络连接后重试。"
-    }
+    },
+    "count_one": "{{count}} 篇论文",
+    "count_other": "{{count}} 篇论文"
   },
   "panel": {
     "title": "组委会面板",
@@ -547,7 +549,8 @@
       "byOrganiser": "由组委会登记",
       "hasAccount": "有账户",
       "manualNote": "原因：{{reason}}（{{date}}）",
-      "deletedNote": "删除于 {{date}}：{{reason}}"
+      "deletedNote": "删除于 {{date}}：{{reason}}",
+      "noPapers": "无"
     },
     "papers": {
       "counts": "已提交 {{total}} 篇论文，撤回 {{withdrawn}} 篇。",
@@ -557,7 +560,8 @@
       "file": "文件",
       "withdrawn": "作者已撤回",
       "authorRegistered": "有作者的注册已确认。",
-      "noAuthorRegistered": "没有作者的注册已确认。"
+      "noAuthorRegistered": "没有作者的注册已确认。",
+      "notRegistered": "未注册"
     },
     "people": {
       "role": "角色",
@@ -599,7 +603,10 @@
       "invalid_subject": "主题需要 5 至 150 个字符。",
       "invalid_body": "内容需要 10 至 5000 个字符。",
       "no_recipients": "该群组目前没有人。",
-      "too_many_attempts": "短时间内公告过多。请稍等。"
+      "too_many_attempts": "短时间内公告过多。请稍等。",
+      "not_remindable": "此注册没有需要提醒的付款。",
+      "already_reminded": "此人今天已收到过提醒。",
+      "reminders_unavailable": "此环境不提供提醒功能。"
     },
     "announcements": {
       "audience": "接收对象",
@@ -622,6 +629,22 @@
       "history": "已发送的公告",
       "none": "尚未发送任何公告。",
       "sentLine": "{{sender}} · {{audience}} · {{count}} 人 · {{date}}"
+    },
+    "reminders": {
+      "send": "发送提醒",
+      "sendAll_one": "向 {{count}} 位未付款者发送提醒",
+      "sendAll_other": "向 {{count}} 位未付款者发送提醒",
+      "confirm_one": "带有付款链接的付款提醒将发送给列表中的 {{count}} 人。今天已收到提醒的人不会再收到。",
+      "confirm_other": "带有付款链接的付款提醒将发送给列表中尚未付款的 {{count}} 人。今天已收到提醒的人不会再收到。",
+      "sendAllYes_one": "发送给 {{count}} 人",
+      "sendAllYes_other": "发送给 {{count}} 人",
+      "bulkDone": "{{queued}} 条提醒正在发送，将在几分钟内发出。{{already}} 人今天已收到过提醒。",
+      "outcome": {
+        "sent": "提醒已发送。",
+        "queued": "提醒正在发送，将在几分钟内发出。",
+        "skipped": "未发送：该地址不接收邮件，或该注册已付款。",
+        "failed": "刚才发送失败；系统将在几分钟后重试。"
+      }
     }
   },
   "notifications": {

@@ -91,6 +91,24 @@ test.describe('organisation panel @panel', () => {
     await expect(row).toContainText(personEmail);
     await expect(row).toContainText('Não paga');
 
+    // 1b. A reminder at the click of a button (#225). Our test addresses are never mailed, so the
+    // screen says it was not sent; the reminder is still owed once, and a second one today is refused.
+    await expect(row).toContainText('nenhum');
+    await row.getByRole('button', { name: 'Enviar lembrete' }).click();
+    await expect(row.getByRole('status')).toContainText('Não enviado: este endereço não recebe e-mails');
+    const owed = await admin<{ kind: string; dedupe_key: string; status: string }[]>(
+      `/rest/v1/payment_emails?pre_registration_id=eq.${registrationId}&kind=eq.REMINDER&select=kind,dedupe_key,status`,
+    );
+    expect(owed).toHaveLength(1);
+    expect(owed[0]!.dedupe_key).toMatch(new RegExp(`^manual:${registrationId}:\\d{4}-\\d{2}-\\d{2}$`));
+    expect(owed[0]!.status).toBe('SKIPPED');
+    const again = await page.request.post('/api/v1/admin/remind', {
+      headers: { authorization: `Bearer ${await tokenOf(page)}` },
+      data: { eventSlug: EVENT, id: registrationId },
+    });
+    expect(again.status()).toBe(409);
+    expect(await again.json()).toEqual({ error: 'already_reminded' });
+
     // 2. A change without a reason is refused; with one, it is applied and shown.
     await row.getByRole('button', { name: 'Alterar situação' }).click();
     await row.getByRole('button', { name: 'Salvar' }).click();
@@ -102,6 +120,9 @@ test.describe('organisation panel @panel', () => {
     await expect(row).toContainText('Motivo: palestrante convidada (teste E2E)');
     // The payment is still shown as it is.
     await expect(row.locator('td').nth(2)).toContainText('Não paga');
+
+    // Once exempt, there is nothing to remind about.
+    await expect(row.getByRole('button', { name: 'Enviar lembrete' })).toHaveCount(0);
 
     // 3. Delete: hidden from the list, kept in the database, shown again on request, restored as it was.
     await row.getByRole('button', { name: 'Apagar' }).click();
@@ -156,6 +177,8 @@ test.describe('organisation panel @panel', () => {
     // 6. Every change left a line in the audit log, with who did it.
     const audit = await admin<{ action: string }[]>(`/rest/v1/audit_logs?actor_id=eq.${adminId}&select=action&order=created_at.asc`);
     expect(audit.map((a) => a.action)).toEqual([
+      'registration.remind',
+      'registration.remind',
       'registration.status',
       'registration.delete',
       'registration.restore',
