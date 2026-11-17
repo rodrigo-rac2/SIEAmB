@@ -248,6 +248,115 @@ test.describe('submissions @submissions', () => {
     expect(untouched[0]!.deleted_at).toBeNull();
   });
 
+  test('an organiser gives a paper a reviewer, who sees and downloads it; taken off, the reviewer loses it', async ({ page, browser }) => {
+    const stamp = Date.now().toString(36);
+    const authorEmail = unique('autora-av');
+    const organiserEmail = unique('organizadora-av');
+    const reviewerEmail = unique('avaliadora');
+    made.push(authorEmail, organiserEmail, reviewerEmail);
+    const reviewerName = `Avaliadora E2E ${stamp}`;
+    await createAccount(authorEmail, 'Autora Avaliada E2E');
+    const organiserId = await createAccount(organiserEmail, 'Organizadora E2E');
+    const reviewerId = await createAccount(reviewerEmail, reviewerName);
+    const eventId = (await admin<{ id: string }[]>(`/rest/v1/events?slug=eq.${EVENT}&select=id`))[0]!.id;
+    for (const [userId, role] of [[organiserId, 'ORGANIZER'], [reviewerId, 'REVIEWER']] as const) {
+      await admin('/rest/v1/event_members', {
+        method: 'POST',
+        body: JSON.stringify({ id: crypto.randomUUID(), event_id: eventId, user_id: userId, role }),
+      });
+    }
+    const title = `Trabalho para avaliar E2E ${stamp}`;
+
+    // 1. The author sends a paper.
+    const authorContext = await browser.newContext();
+    const authorPage = await authorContext.newPage();
+    await logIn(authorPage, authorEmail);
+    await authorPage.goto(`/${EVENT}/meus-trabalhos/novo`);
+    await expect(authorPage.getByLabel('Nome do autor 1 (você)')).toHaveValue('Autora Avaliada E2E');
+    await authorPage.getByLabel('Título em português').fill(title);
+    await authorPage.getByLabel('Título em inglês').fill('E2E paper to review');
+    await authorPage.getByLabel('Área temática').selectOption({ label: 'Saúde e Meio Ambiente' });
+    await authorPage.getByLabel('Resumo').fill('Resumo de um trabalho de teste, com mais de cinquenta caracteres para passar na conferência.');
+    await authorPage.getByLabel('Palavras-chave').fill('teste; avaliação');
+    await authorPage.getByLabel('Arquivo do trabalho').setInputFiles(await pdfFile(5, 'Para avaliar E2E.pdf'));
+    await authorPage.getByRole('button', { name: 'Enviar trabalho' }).click();
+    await expect(authorPage.getByTestId('paper-card')).toContainText(title);
+    const number = Number((await authorPage.getByTestId('paper-card').textContent())!.match(/Trabalho nº (\d+)/)![1]);
+
+    // 2. The reviewer has nothing yet: no link in Minha área, an empty list.
+    const reviewerContext = await browser.newContext();
+    const reviewerPage = await reviewerContext.newPage();
+    await logIn(reviewerPage, reviewerEmail);
+    await expect(reviewerPage.getByLabel('Nome completo')).toBeVisible();
+    await expect(reviewerPage.getByTestId('reviewing-link')).toHaveCount(0);
+    await reviewerPage.goto(`/${EVENT}/avaliacoes`);
+    await expect(reviewerPage.getByTestId('nothing-to-review')).toBeVisible();
+
+    // 3. The organiser chooses the reviewer for that paper: one is enough.
+    await logIn(page, organiserEmail);
+    await page.goto(`/${EVENT}/painel/trabalhos`);
+    await page.getByLabel('Buscar').fill(title);
+    const row = page.getByTestId('paper-row');
+    await expect(row).toHaveCount(1);
+    await expect(row.getByTestId('paper-reviewers')).toContainText('Sem avaliador');
+    await expect(row).toContainText('Enviado');
+    await row.getByRole('combobox', { name: `Indicar avaliador para o trabalho nº ${number}` }).selectOption({ label: reviewerName });
+    await row.getByRole('button', { name: `Indicar para o trabalho nº ${number}` }).click();
+    await expect(row.getByTestId('paper-reviewers')).toContainText(reviewerName);
+    await expect(row).toContainText('Em avaliação');
+    // The author is not offered as a reviewer of her own paper, whatever her roles: the server says so.
+    await admin('/rest/v1/event_members', {
+      method: 'POST',
+      body: JSON.stringify({ id: crypto.randomUUID(), event_id: eventId, user_id: (await admin<{ id: string }[]>(`/rest/v1/users?email=eq.${encodeURIComponent(authorEmail)}&select=id`))[0]!.id, role: 'REVIEWER' }),
+    });
+    const organiserToken = await page.evaluate(() => JSON.parse(localStorage.getItem('sieamb-auth')!).access_token as string);
+    const paperId = (await admin<{ id: string }[]>(`/rest/v1/submissions?title=eq.${encodeURIComponent(title)}&select=id`))[0]!.id;
+    const authorId = (await admin<{ id: string }[]>(`/rest/v1/users?email=eq.${encodeURIComponent(authorEmail)}&select=id`))[0]!.id;
+    const own = await page.request.post('/api/v1/admin/reviewer-assign', {
+      headers: { authorization: `Bearer ${organiserToken}` },
+      data: { eventSlug: EVENT, submissionId: paperId, userId: authorId },
+    });
+    expect(own.status()).toBe(409);
+    expect(await own.json()).toEqual({ error: 'reviewer_is_author' });
+
+    // 4. The reviewer is told in the site, finds the paper with the authors' names, and downloads it.
+    await reviewerPage.goto(`/${EVENT}/minha-area`);
+    await expect(reviewerPage.getByTestId('reviewing-link')).toContainText('Trabalhos para avaliar (1)');
+    await reviewerPage.getByTestId('reviewing-link').click();
+    const review = reviewerPage.getByTestId('review-card');
+    await expect(review).toHaveCount(1);
+    await expect(review).toContainText(title);
+    await expect(review.getByRole('listitem')).toHaveText(['Autora Avaliada E2E']);
+    expect(await reviewerPage.content()).not.toContain(authorEmail);
+    const [download] = await Promise.all([reviewerPage.waitForEvent('download'), review.getByRole('button', { name: 'Baixar o arquivo' }).click()]);
+    expect(download.suggestedFilename()).toBe('Para avaliar E2E.pdf');
+    const notices = await admin<{ kind: string }[]>(`/rest/v1/notifications?user_id=eq.${reviewerId}&select=kind`);
+    expect(notices.map((n) => n.kind)).toContain('review.assigned');
+
+    // 5. The author sees it under review and can no longer change or withdraw it.
+    await authorPage.reload();
+    const card = authorPage.getByTestId('paper-card');
+    await expect(card).toContainText('Em avaliação');
+    await expect(card.getByRole('link', { name: 'Alterar' })).toHaveCount(0);
+    await expect(card.getByRole('button', { name: 'Retirar o trabalho' })).toHaveCount(0);
+
+    // 6. Taken off the paper, the reviewer loses the paper and the way into its file; the paper is "enviado" again.
+    await row.getByRole('button', { name: `Tirar ${reviewerName} do trabalho nº ${number}` }).click();
+    await expect(row.getByTestId('paper-reviewers')).toContainText('Sem avaliador');
+    await expect(row).toContainText('Enviado');
+    await reviewerPage.reload();
+    await expect(reviewerPage.getByTestId('nothing-to-review')).toBeVisible();
+    const reviewerToken = await reviewerPage.evaluate(() => JSON.parse(localStorage.getItem('sieamb-auth')!).access_token as string);
+    const file = await reviewerPage.request.get(`/api/v1/submissions/file?id=${paperId}`, { headers: { authorization: `Bearer ${reviewerToken}` } });
+    expect(file.status()).toBe(404);
+    await authorPage.reload();
+    await expect(authorPage.getByTestId('paper-card').getByRole('link', { name: 'Alterar' })).toBeVisible();
+
+    await admin(`/rest/v1/audit_logs?actor_id=eq.${organiserId}`, { method: 'DELETE' }).catch(() => undefined);
+    await authorContext.close();
+    await reviewerContext.close();
+  });
+
   test('the submissions page offers to send a paper while they are open', async ({ page }) => {
     await page.goto(`/${EVENT}/submissoes`);
     const box = page.getByTestId('submissions-open');
