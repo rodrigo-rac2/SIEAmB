@@ -321,10 +321,15 @@ export function MyAreaPage() {
           {!account && !error && <p role="status">{t('common.loading')}</p>}
           {account && (
             <>
-              <p>
+              <p className="account__actions">
                 <Link className="account__button" to={`/${event?.slug ?? ''}/meus-trabalhos`}>
                   {t('papers.title')}
                 </Link>
+                {event && (account.panels?.platformAdmin || account.panels?.slugs.includes(event.slug)) && (
+                  <Link className="account__button" to={`/${event.slug}/painel`} data-testid="panel-link">
+                    {t('panel.title')}
+                  </Link>
+                )}
               </p>
               <h2>{t('account.area.registrationTitle')}</h2>
               {here.map((r) => (

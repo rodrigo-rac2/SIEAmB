@@ -31,7 +31,7 @@ export function getAuthClient(): SupabaseClient | null {
   return client;
 }
 
-export type RegistrationState = 'PAID' | 'PENDING' | 'UNPAID';
+export type RegistrationState = 'PAID' | 'PENDING' | 'UNPAID' | 'CANCELLED';
 export type LinkRequestState = 'PENDING' | 'NEEDS_ORGANISER' | null;
 
 export interface AccountUser {
@@ -67,6 +67,8 @@ export interface AccountSuggestion {
 }
 
 export interface Account {
+  /** Where this person may open the organisation area (#219). */
+  panels?: { platformAdmin: boolean; slugs: string[] };
   user: AccountUser;
   registrations: AccountRegistration[];
   suggestions: AccountSuggestion[];

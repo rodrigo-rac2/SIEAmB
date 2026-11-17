@@ -353,12 +353,14 @@
       "states": {
         "PAID": "Inscripción confirmada",
         "PENDING": "Pago en proceso",
-        "UNPAID": "Esperando el pago"
+        "UNPAID": "Esperando el pago",
+        "CANCELLED": "Inscripción cancelada"
       },
       "stateBody": {
         "PAID": "Pago recibido. Nada más que hacer.",
         "PENDING": "Recibimos su solicitud de pago y esperamos la confirmación. Los boletos pueden tardar algunos días.",
-        "UNPAID": "La inscripción solo se completa con el pago de la tasa."
+        "UNPAID": "La inscripción solo se completa con el pago de la tasa.",
+        "CANCELLED": "La organización canceló esta inscripción. En caso de duda, hable con la organización."
       },
       "payCta": "Pagar la inscripción",
       "followPayment": "Ver el pago",
@@ -434,7 +436,8 @@
       "noneWithPapers": "Usted todavía no está inscrito. Un trabajo aprobado solo entra en la programación si al menos uno de los autores está inscrito.",
       "UNPAID": "Falta el pago de la tasa para completar la inscripción.",
       "PENDING": "Estamos esperando la confirmación del pago.",
-      "PAID": "Nada más que hacer en cuanto a la inscripción."
+      "PAID": "Nada más que hacer en cuanto a la inscripción.",
+      "CANCELLED": "La organización canceló esta inscripción. En caso de duda, hable con la organización."
     },
     "form": {
       "title": "Título en portugués",
@@ -490,6 +493,107 @@
       "coauthor_limit": "{{email}} ya figura como coautor en {{max}} trabajos, el límite de la convocatoria.",
       "duplicate_title": "Uno de los autores ya envió un trabajo con este título (n.º {{number}}). Cada trabajo debe enviarse una sola vez.",
       "upload_failed": "No fue posible enviar el archivo. Revise su conexión e intente de nuevo."
+    }
+  },
+  "panel": {
+    "title": "Panel de la organización",
+    "search": "Buscar",
+    "all": "Todas",
+    "download": "Descargar planilla",
+    "empty": "Nada que mostrar con esos filtros.",
+    "tabs": {
+      "registrations": "Inscripciones",
+      "papers": "Trabajos",
+      "people": "Personas y roles",
+      "requests": "Solicitudes"
+    },
+    "states": {
+      "PAID": "Pagada",
+      "PENDING": "Pago en proceso",
+      "UNPAID": "No pagada",
+      "CONFIRMED": "Confirmada por la organización",
+      "EXEMPT": "Exenta",
+      "CANCELLED": "Cancelada"
+    },
+    "roles": {
+      "ADMIN": "Administrador",
+      "ORGANIZER": "Organizador",
+      "REVIEWER": "Evaluador"
+    },
+    "roleDescription": {
+      "ADMIN": "Ve y hace todo: registra personas, modifica inscripciones y define los roles.",
+      "ORGANIZER": "Sigue inscripciones y trabajos, define evaluadores y envía comunicados.",
+      "REVIEWER": "Evalúa los trabajos que reciba."
+    },
+    "registrations": {
+      "counts": "{{total}} inscripciones: {{confirmed}} confirmadas, {{pending}} con pago en proceso, {{unpaid}} sin pago, {{cancelled}} canceladas.",
+      "state": "Situación",
+      "payment": "Pago",
+      "paid": "Valor pagado",
+      "date": "Fecha",
+      "reason": "Motivo",
+      "new": "Registrar inscripción",
+      "create": "Registrar",
+      "newHint": "La persona recibe el correo de inscripción con el enlace de pago, salvo que la inscripción ya quede confirmada o exenta.",
+      "newStatus": "Situación",
+      "followPayment": "Seguir el pago",
+      "changeStatus": "Cambiar situación",
+      "delete": "Borrar",
+      "deleteYes": "Borrar inscripción",
+      "restore": "Restaurar",
+      "confirmPaid": "Esta inscripción fue pagada. Borrar de todos modos.",
+      "showDeleted": "Mostrar las borradas ({{count}})",
+      "byOrganiser": "registrada por la organización",
+      "hasAccount": "tiene cuenta",
+      "manualNote": "Motivo: {{reason}} ({{date}})",
+      "deletedNote": "Borrada el {{date}}: {{reason}}"
+    },
+    "papers": {
+      "counts": "{{total}} trabajos enviados, {{withdrawn}} retirados.",
+      "number": "N.º",
+      "paper": "Trabajo",
+      "authors": "Autores",
+      "file": "Archivo",
+      "withdrawn": "Retirado por el autor",
+      "authorRegistered": "Hay un autor con inscripción confirmada.",
+      "noAuthorRegistered": "Ningún autor con inscripción confirmada."
+    },
+    "people": {
+      "role": "Rol",
+      "add": "Dar el rol",
+      "remove": "Quitar",
+      "hint": "Informe el correo de la persona. Si todavía no tiene cuenta, el rol queda guardado y vale en cuanto la cuenta sea creada con ese correo.",
+      "added": "Rol otorgado. La persona fue avisada por correo.",
+      "invited": "Esa persona todavía no tiene cuenta. El rol queda guardado y fue avisada por correo para crear la cuenta.",
+      "waiting": "todavía sin cuenta",
+      "nobody": "Nadie con este rol."
+    },
+    "requests": {
+      "intro": "Personas que pidieron unir a su cuenta una inscripción hecha con otro correo, al que ya no tienen acceso. Verifique con la persona antes de aprobar.",
+      "none": "Ninguna solicitud en espera.",
+      "body": "{{accountName}} ({{accountEmail}}) pide la inscripción hecha a nombre de {{registrationName}} con el correo {{registrationEmail}}. Solicitud del {{date}}.",
+      "approve": "Aprobar",
+      "refuse": "Rechazar"
+    },
+    "errors": {
+      "generic": "Algo salió mal. Intente de nuevo en un momento.",
+      "not_logged_in": "Su sesión terminó. Entre de nuevo.",
+      "not_found": "Página no encontrada.",
+      "admin_only": "Solo un administrador puede hacer eso.",
+      "invalid_name": "Informe el nombre completo.",
+      "invalid_email": "Informe un correo válido.",
+      "invalid_cpf": "CPF inválido.",
+      "document_required": "Informe el CPF o el pasaporte.",
+      "invalid_category": "Elija la categoría.",
+      "invalid_status": "Elija la situación.",
+      "reason_required": "Escriba el motivo (al menos 5 letras).",
+      "registration_exists": "Ya existe una inscripción con ese correo en esta edición.",
+      "registration_not_found": "Inscripción no encontrada.",
+      "registration_paid": "Esta inscripción fue pagada. Marque la confirmación para borrarla de todos modos.",
+      "invalid_role": "Elija el rol.",
+      "cannot_remove_self": "Usted no puede quitar su propio rol de administrador.",
+      "request_not_found": "Solicitud no encontrada.",
+      "cannot_link": "No fue posible unir: la inscripción ya tiene cuenta, fue borrada, o la cuenta ya tiene otra inscripción en esta edición."
     }
   }
 }
