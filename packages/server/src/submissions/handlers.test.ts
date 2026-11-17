@@ -239,7 +239,7 @@ describe('sending a paper', () => {
     expect(toOrganiser.subject).toContain('Novo trabalho nº');
     expect(toOrganiser.text).toContain('Resumo expandido · Governança, Políticas Públicas e Direito Ambiental');
     expect(toOrganiser.text).toContain('Autores: Maria Clara de Souza; João Lima; Sem Conta');
-    expect(toOrganiser.text).toContain('https://dev.sieamb.org/2027/organizacao/trabalhos');
+    expect(toOrganiser.text).toContain('https://dev.sieamb.org/2027/painel/trabalhos');
     // In the site: the authors who have an account, and the organiser.
     expect(outbox.notifications.map((n) => `${n.userId}:${n.kind}`).sort()).toEqual(
       [`${MAIN.id}:submission.received`, `${OTHER.id}:submission.received`, `${ORGANISER.id}:organiser.submission.received`].sort(),

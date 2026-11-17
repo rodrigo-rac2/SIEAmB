@@ -182,6 +182,11 @@ export class SupabaseSubmissionStore implements SubmissionStore {
   }
 
   async isOrganiser(eventId: string, userId: string): Promise<boolean> {
+    // A platform administrator stands as an administrator in every edition.
+    const users = await this.rest.request<{ is_platform_admin: boolean }[]>(
+      `users?id=eq.${q(userId)}&select=is_platform_admin&limit=1`,
+    );
+    if (users[0]?.is_platform_admin) return true;
     const rows = await this.rest.request<{ id: string }[]>(
       `event_members?event_id=eq.${q(eventId)}&user_id=eq.${q(userId)}&role=in.(ADMIN,ORGANIZER)&select=id&limit=1`,
     );

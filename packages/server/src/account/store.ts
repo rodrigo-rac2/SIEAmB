@@ -33,6 +33,8 @@ export interface OwnRegistration {
   modality: string;
   createdAt: string;
   payToken: string;
+  /** Set by an administrator, whatever the payment says (#219); null when the payment decides. */
+  manualStatus: 'CONFIRMED' | 'EXEMPT' | 'CANCELLED' | null;
   payments: { id: string; status: PaymentStatus; mpStatus: string | null; amountCents: number }[];
 }
 
@@ -104,6 +106,14 @@ export interface AccountStore {
   findLinkRequestByTokenHash(tokenHash: string): Promise<LinkRequest | null>;
   listLinkRequests(userId: string): Promise<LinkRequest[]>;
   updateLinkRequest(id: string, status: LinkRequestStatus, now: Date): Promise<void>;
+
+  /**
+   * Turns the roles that were given to this address before it had an account into
+   * real ones (#219). Only called for a confirmed e-mail.
+   */
+  applyRoleInvites(userId: string, email: string): Promise<void>;
+  /** The editions whose organisation area this account may open. */
+  listPanels(userId: string): Promise<{ platformAdmin: boolean; slugs: string[] }>;
 
   /** Counts one more attempt under `key`; false once the window is over `max`. */
   hitRateLimit(key: string, windowSeconds: number, max: number): Promise<boolean>;

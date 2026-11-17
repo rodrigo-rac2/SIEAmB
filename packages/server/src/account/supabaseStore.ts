@@ -121,7 +121,8 @@ export class SupabaseAccountStore implements AccountStore {
       const problem = (await response.json().catch(() => ({}))) as { code?: string };
       throw new StoreError(response.status, problem.code ?? '');
     }
-    return (await response.json()) as T;
+    const answer = await response.text();
+    return (answer ? JSON.parse(answer) : null) as T;
   }
 
   private async event(filter: string): Promise<EventRef | null> {
@@ -168,7 +169,7 @@ export class SupabaseAccountStore implements AccountStore {
 
   async linkRegistrationsByEmail(userId: string, email: string): Promise<number> {
     const rows = await this.request<{ id: string }[]>(
-      `pre_registrations?email=eq.${q(email.toLowerCase())}&user_id=is.null&select=id`,
+      `pre_registrations?email=eq.${q(email.toLowerCase())}&user_id=is.null&deleted_at=is.null&select=id`,
     );
     let linked = 0;
     for (const row of rows) {
@@ -185,6 +186,7 @@ export class SupabaseAccountStore implements AccountStore {
         modality: string;
         created_at: string;
         pay_token: string;
+        manual_status: OwnRegistration['manualStatus'];
         event: { slug: string; name: string } | null;
         payments: {
           id: string;
@@ -195,7 +197,7 @@ export class SupabaseAccountStore implements AccountStore {
         }[];
       }[]
     >(
-      `pre_registrations?user_id=eq.${q(userId)}&select=id,category,modality,created_at,pay_token,event:events(slug,name),payments(id,status,mp_status,amount_cents,created_at)&order=created_at.desc`,
+      `pre_registrations?user_id=eq.${q(userId)}&deleted_at=is.null&select=id,category,modality,created_at,pay_token,manual_status,event:events(slug,name),payments(id,status,mp_status,amount_cents,created_at)&order=created_at.desc`,
     );
     return rows.map((row) => ({
       id: row.id,
@@ -205,6 +207,7 @@ export class SupabaseAccountStore implements AccountStore {
       modality: row.modality,
       createdAt: row.created_at,
       payToken: row.pay_token,
+      manualStatus: row.manual_status,
       payments: [...row.payments]
         .sort((a, b) => a.created_at.localeCompare(b.created_at))
         .map((p) => ({
@@ -228,14 +231,14 @@ export class SupabaseAccountStore implements AccountStore {
     if (filters.length === 0) return [];
     const scope = eventId ? `&event_id=eq.${q(eventId)}` : '';
     const rows = await this.request<MatchRow[]>(
-      `pre_registrations?or=(${filters.join(',')})${scope}&select=${MATCH_COLUMNS}&order=created_at.asc&limit=20`,
+      `pre_registrations?or=(${filters.join(',')})${scope}&deleted_at=is.null&select=${MATCH_COLUMNS}&order=created_at.asc&limit=20`,
     );
     return rows.map(toMatch);
   }
 
   async findRegistration(id: string): Promise<RegistrationMatch | null> {
     const rows = await this.request<MatchRow[]>(
-      `pre_registrations?id=eq.${q(id)}&select=${MATCH_COLUMNS}&limit=1`,
+      `pre_registrations?id=eq.${q(id)}&deleted_at=is.null&select=${MATCH_COLUMNS}&limit=1`,
     );
     return rows[0] ? toMatch(rows[0]) : null;
   }
@@ -244,7 +247,7 @@ export class SupabaseAccountStore implements AccountStore {
     try {
       // `user_id=is.null` makes this a compare-and-swap: a registration is never taken from an account.
       const rows = await this.request<{ id: string }[]>(
-        `pre_registrations?id=eq.${q(preRegistrationId)}&user_id=is.null&select=id`,
+        `pre_registrations?id=eq.${q(preRegistrationId)}&user_id=is.null&deleted_at=is.null&select=id`,
         { method: 'PATCH', body: JSON.stringify({ user_id: userId }) },
       );
       return rows.length === 1;
@@ -297,6 +300,43 @@ export class SupabaseAccountStore implements AccountStore {
       method: 'PATCH',
       body: JSON.stringify({ status, decided_at: now.toISOString() }),
     });
+  }
+
+  async applyRoleInvites(userId: string, email: string): Promise<void> {
+    const invites = await this.request<{ id: string; event_id: string; role: string; invited_by: string | null }[]>(
+      `event_member_invites?email=eq.${q(email.toLowerCase())}&select=id,event_id,role,invited_by`,
+    );
+    for (const invite of invites) {
+      try {
+        await this.request<unknown[]>('event_members?select=id', {
+          method: 'POST',
+          body: JSON.stringify({
+            id: crypto.randomUUID(),
+            event_id: invite.event_id,
+            user_id: userId,
+            role: invite.role,
+            invited_by: invite.invited_by,
+          }),
+        });
+      } catch (error) {
+        // The role is already there: the invitation is simply spent.
+        if (!(error instanceof StoreError && error.code === UNIQUE_VIOLATION)) throw error;
+      }
+      await this.request<unknown>(`event_member_invites?id=eq.${q(invite.id)}`, { method: 'DELETE' });
+    }
+  }
+
+  async listPanels(userId: string): Promise<{ platformAdmin: boolean; slugs: string[] }> {
+    const users = await this.request<{ is_platform_admin: boolean }[]>(
+      `users?id=eq.${q(userId)}&select=is_platform_admin&limit=1`,
+    );
+    const rows = await this.request<{ event: { slug: string } | null }[]>(
+      `event_members?user_id=eq.${q(userId)}&role=in.(ADMIN,ORGANIZER)&select=event:events(slug)`,
+    );
+    return {
+      platformAdmin: Boolean(users[0]?.is_platform_admin),
+      slugs: [...new Set(rows.flatMap((r) => (r.event ? [r.event.slug] : [])))],
+    };
   }
 
   async hitRateLimit(key: string, windowSeconds: number, max: number): Promise<boolean> {

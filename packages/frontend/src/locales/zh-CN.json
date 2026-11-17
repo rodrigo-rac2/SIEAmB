@@ -353,12 +353,14 @@
       "states": {
         "PAID": "注册已确认",
         "PENDING": "付款处理中",
-        "UNPAID": "等待付款"
+        "UNPAID": "等待付款",
+        "CANCELLED": "注册已取消"
       },
       "stateBody": {
         "PAID": "已收到付款。无需其他操作。",
         "PENDING": "我们已收到您的付款请求，正在等待确认。Boleto 可能需要几天时间。",
-        "UNPAID": "支付注册费后注册才算完成。"
+        "UNPAID": "支付注册费后注册才算完成。",
+        "CANCELLED": "组委会已取消此注册。如有疑问，请联系组委会。"
       },
       "payCta": "支付注册费",
       "followPayment": "查看付款",
@@ -434,7 +436,8 @@
       "noneWithPapers": "您尚未注册。只有至少一位作者注册，被录用的论文才会进入会议日程。",
       "UNPAID": "还需支付注册费才能完成注册。",
       "PENDING": "我们正在等待付款确认。",
-      "PAID": "注册方面无需其他操作。"
+      "PAID": "注册方面无需其他操作。",
+      "CANCELLED": "组委会已取消此注册。如有疑问，请联系组委会。"
     },
     "form": {
       "title": "葡萄牙语标题",
@@ -490,6 +493,107 @@
       "coauthor_limit": "{{email}} 已作为合作者参与 {{max}} 篇论文，达到上限。",
       "duplicate_title": "其中一位作者已提交过同名论文（第 {{number}} 号）。每篇论文只能提交一次。",
       "upload_failed": "无法上传文件。请检查网络连接后重试。"
+    }
+  },
+  "panel": {
+    "title": "组委会面板",
+    "search": "搜索",
+    "all": "全部",
+    "download": "下载表格",
+    "empty": "在这些筛选条件下没有内容。",
+    "tabs": {
+      "registrations": "注册",
+      "papers": "论文",
+      "people": "人员与角色",
+      "requests": "申请"
+    },
+    "states": {
+      "PAID": "已付款",
+      "PENDING": "付款处理中",
+      "UNPAID": "未付款",
+      "CONFIRMED": "组委会已确认",
+      "EXEMPT": "免费",
+      "CANCELLED": "已取消"
+    },
+    "roles": {
+      "ADMIN": "管理员",
+      "ORGANIZER": "组织者",
+      "REVIEWER": "评审人"
+    },
+    "roleDescription": {
+      "ADMIN": "可查看并执行所有操作：登记人员、修改注册并设置角色。",
+      "ORGANIZER": "跟进注册和论文，指定评审人并发送通知。",
+      "REVIEWER": "评审收到的论文。"
+    },
+    "registrations": {
+      "counts": "{{total}} 条注册：{{confirmed}} 条已确认，{{pending}} 条付款处理中，{{unpaid}} 条未付款，{{cancelled}} 条已取消。",
+      "state": "状态",
+      "payment": "付款",
+      "paid": "已付金额",
+      "date": "日期",
+      "reason": "原因",
+      "new": "登记注册",
+      "create": "登记",
+      "newHint": "对方会收到包含付款链接的注册邮件，除非该注册已被确认或免费。",
+      "newStatus": "状态",
+      "followPayment": "以付款为准",
+      "changeStatus": "修改状态",
+      "delete": "删除",
+      "deleteYes": "删除注册",
+      "restore": "恢复",
+      "confirmPaid": "此注册已付款。仍然删除。",
+      "showDeleted": "显示已删除的（{{count}}）",
+      "byOrganiser": "由组委会登记",
+      "hasAccount": "有账户",
+      "manualNote": "原因：{{reason}}（{{date}}）",
+      "deletedNote": "删除于 {{date}}：{{reason}}"
+    },
+    "papers": {
+      "counts": "已提交 {{total}} 篇论文，撤回 {{withdrawn}} 篇。",
+      "number": "编号",
+      "paper": "论文",
+      "authors": "作者",
+      "file": "文件",
+      "withdrawn": "作者已撤回",
+      "authorRegistered": "有作者的注册已确认。",
+      "noAuthorRegistered": "没有作者的注册已确认。"
+    },
+    "people": {
+      "role": "角色",
+      "add": "授予角色",
+      "remove": "移除",
+      "hint": "请填写对方的邮箱。如果对方还没有账户，角色会被保留，并在使用该邮箱创建账户后生效。",
+      "added": "角色已授予。已通过邮件通知对方。",
+      "invited": "此人还没有账户。角色已保留，并已通过邮件通知其创建账户。",
+      "waiting": "尚无账户",
+      "nobody": "没有人拥有此角色。"
+    },
+    "requests": {
+      "intro": "这些人申请将使用另一个（已无法访问的）邮箱所做的注册关联到自己的账户。批准前请先与本人核实。",
+      "none": "没有待处理的申请。",
+      "body": "{{accountName}}（{{accountEmail}}）申请关联以 {{registrationName}} 的名义、使用邮箱 {{registrationEmail}} 所做的注册。申请日期：{{date}}。",
+      "approve": "批准",
+      "refuse": "拒绝"
+    },
+    "errors": {
+      "generic": "出了点问题。请稍后重试。",
+      "not_logged_in": "您的会话已结束。请重新登录。",
+      "not_found": "页面未找到。",
+      "admin_only": "只有管理员可以执行此操作。",
+      "invalid_name": "请填写全名。",
+      "invalid_email": "请填写有效的邮箱。",
+      "invalid_cpf": "CPF 无效。",
+      "document_required": "请填写 CPF 或护照。",
+      "invalid_category": "请选择类别。",
+      "invalid_status": "请选择状态。",
+      "reason_required": "请填写原因（至少 5 个字符）。",
+      "registration_exists": "本届会议已有使用该邮箱的注册。",
+      "registration_not_found": "未找到注册。",
+      "registration_paid": "此注册已付款。请勾选确认后再删除。",
+      "invalid_role": "请选择角色。",
+      "cannot_remove_self": "您不能移除自己的管理员角色。",
+      "request_not_found": "未找到申请。",
+      "cannot_link": "无法关联：该注册已有账户、已被删除，或该账户在本届会议已有另一条注册。"
     }
   }
 }

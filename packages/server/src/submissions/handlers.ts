@@ -382,7 +382,7 @@ async function announce(
           modality: MODALITY_NAMES[submission.modality] ?? submission.modality,
           area: areaName(event.slug, submission.areaRef),
           authors: submission.authors.map((a) => a.fullName).join('; '),
-          url: `${site(deps)}/${encodeURIComponent(event.slug)}/organizacao/trabalhos`,
+          url: `${site(deps)}/${encodeURIComponent(event.slug)}/painel/trabalhos`,
         }),
       });
     }

@@ -353,12 +353,14 @@
       "states": {
         "PAID": "Registration confirmed",
         "PENDING": "Payment being processed",
-        "UNPAID": "Waiting for payment"
+        "UNPAID": "Waiting for payment",
+        "CANCELLED": "Registration cancelled"
       },
       "stateBody": {
         "PAID": "Payment received. Nothing else to do.",
         "PENDING": "We received your payment request and are waiting for the confirmation. Boletos can take a few days.",
-        "UNPAID": "The registration is only complete once the fee is paid."
+        "UNPAID": "The registration is only complete once the fee is paid.",
+        "CANCELLED": "The organisers cancelled this registration. If in doubt, contact the organisers."
       },
       "payCta": "Pay the registration",
       "followPayment": "See the payment",
@@ -434,7 +436,8 @@
       "noneWithPapers": "You are not registered yet. An approved paper only enters the programme if at least one of its authors is registered.",
       "UNPAID": "The fee still has to be paid to complete the registration.",
       "PENDING": "We are waiting for the payment to be confirmed.",
-      "PAID": "Nothing else to do about the registration."
+      "PAID": "Nothing else to do about the registration.",
+      "CANCELLED": "The organisers cancelled this registration. If in doubt, contact the organisers."
     },
     "form": {
       "title": "Title in Portuguese",
@@ -490,6 +493,107 @@
       "coauthor_limit": "{{email}} is already a co-author in {{max}} papers, the limit of the call.",
       "duplicate_title": "One of the authors already sent a paper with this title (no. {{number}}). Each paper must be sent only once.",
       "upload_failed": "The file could not be sent. Check your connection and try again."
+    }
+  },
+  "panel": {
+    "title": "Organisers' panel",
+    "search": "Search",
+    "all": "All",
+    "download": "Download spreadsheet",
+    "empty": "Nothing to show with these filters.",
+    "tabs": {
+      "registrations": "Registrations",
+      "papers": "Papers",
+      "people": "People and roles",
+      "requests": "Requests"
+    },
+    "states": {
+      "PAID": "Paid",
+      "PENDING": "Payment being processed",
+      "UNPAID": "Not paid",
+      "CONFIRMED": "Confirmed by the organisers",
+      "EXEMPT": "Exempt",
+      "CANCELLED": "Cancelled"
+    },
+    "roles": {
+      "ADMIN": "Administrator",
+      "ORGANIZER": "Organiser",
+      "REVIEWER": "Reviewer"
+    },
+    "roleDescription": {
+      "ADMIN": "Sees and does everything: registers people, changes registrations and sets the roles.",
+      "ORGANIZER": "Follows registrations and papers, sets reviewers and sends announcements.",
+      "REVIEWER": "Reviews the papers they receive."
+    },
+    "registrations": {
+      "counts": "{{total}} registrations: {{confirmed}} confirmed, {{pending}} with a payment being processed, {{unpaid}} unpaid, {{cancelled}} cancelled.",
+      "state": "Status",
+      "payment": "Payment",
+      "paid": "Amount paid",
+      "date": "Date",
+      "reason": "Reason",
+      "new": "Register someone",
+      "create": "Register",
+      "newHint": "The person receives the registration e-mail with the payment link, unless the registration is already confirmed or exempt.",
+      "newStatus": "Status",
+      "followPayment": "Follow the payment",
+      "changeStatus": "Change status",
+      "delete": "Delete",
+      "deleteYes": "Delete registration",
+      "restore": "Restore",
+      "confirmPaid": "This registration was paid. Delete it anyway.",
+      "showDeleted": "Show the deleted ones ({{count}})",
+      "byOrganiser": "registered by the organisers",
+      "hasAccount": "has an account",
+      "manualNote": "Reason: {{reason}} ({{date}})",
+      "deletedNote": "Deleted on {{date}}: {{reason}}"
+    },
+    "papers": {
+      "counts": "{{total}} papers sent, {{withdrawn}} withdrawn.",
+      "number": "No.",
+      "paper": "Paper",
+      "authors": "Authors",
+      "file": "File",
+      "withdrawn": "Withdrawn by the author",
+      "authorRegistered": "An author has a confirmed registration.",
+      "noAuthorRegistered": "No author has a confirmed registration."
+    },
+    "people": {
+      "role": "Role",
+      "add": "Give the role",
+      "remove": "Remove",
+      "hint": "Enter the person's e-mail. If they have no account yet, the role is kept and applies as soon as the account is created with that e-mail.",
+      "added": "Role given. The person was told by e-mail.",
+      "invited": "This person has no account yet. The role is kept and they were told by e-mail to create the account.",
+      "waiting": "no account yet",
+      "nobody": "Nobody has this role."
+    },
+    "requests": {
+      "intro": "People who asked to bring into their account a registration made with another e-mail they can no longer read. Check with the person before approving.",
+      "none": "No request waiting.",
+      "body": "{{accountName}} ({{accountEmail}}) asks for the registration made in the name of {{registrationName}} with the e-mail {{registrationEmail}}. Asked on {{date}}.",
+      "approve": "Approve",
+      "refuse": "Refuse"
+    },
+    "errors": {
+      "generic": "Something went wrong. Try again in a moment.",
+      "not_logged_in": "Your session has ended. Log in again.",
+      "not_found": "Page not found.",
+      "admin_only": "Only an administrator can do that.",
+      "invalid_name": "Enter the full name.",
+      "invalid_email": "Enter a valid e-mail.",
+      "invalid_cpf": "Invalid CPF.",
+      "document_required": "Enter the CPF or the passport.",
+      "invalid_category": "Choose the category.",
+      "invalid_status": "Choose the status.",
+      "reason_required": "Write the reason (at least 5 letters).",
+      "registration_exists": "There is already a registration with that e-mail for this edition.",
+      "registration_not_found": "Registration not found.",
+      "registration_paid": "This registration was paid. Tick the confirmation to delete it anyway.",
+      "invalid_role": "Choose the role.",
+      "cannot_remove_self": "You cannot remove your own administrator role.",
+      "request_not_found": "Request not found.",
+      "cannot_link": "It could not be done: the registration already has an account, was deleted, or the account already has another registration for this edition."
     }
   }
 }
