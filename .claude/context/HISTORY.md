@@ -2,6 +2,13 @@
 
 Append a dated entry per working session. Newest first.
 
+## 2026-11-17 — Accounts on dev (slice 1 of the submission system)
+
+- Plan agreed with Rodrigo: four slices (accounts, sending papers, organisation area, notifications), each finished and tested on dev before the next. Account optional to register, required to submit.
+- Built accounts on dev (#208, #209, #210, ADR-007): create account, confirm e-mail, choose password, log in, forgotten password, Minha área, linking a registration by confirmed e-mail or by a CPF match proved with a link sent to the registration's e-mail, registration form tied to the account.
+- Found by testing against the real login service, not by the unit tests: a password set while the address is unconfirmed survives confirmation (so the password is now chosen after the link); changing an unconfirmed account's password cancels its pending link; saving a password ends the session; a `[action].ts` function loses to the SPA catch-all rewrite; the functions cannot import `@sieamb/shared` (ES module versus CommonJS, fails only on Vercel).
+- Browser tests run against the preview deployment and the dev database, with the confirmation link read from the login service because test addresses are never mailed.
+
 ## 2026-11-16 — Payments live, e-mails, reminders
 
 - Payments released to production (#166): card and boleto through Mercado Pago, wording changed from "pré-inscrição" to "inscrição", "Inscrições abertas" call-out on the home page, CPF mask in the form.

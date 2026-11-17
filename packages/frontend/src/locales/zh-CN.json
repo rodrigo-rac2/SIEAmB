@@ -141,9 +141,13 @@
       "email": "请输入有效的电子邮箱。",
       "duplicate": "该邮箱已在本届会议注册过。",
       "consent_required": "需要同意数据使用后才能提交注册。",
-      "closed": "本届会议的注册尚未开放。"
+      "closed": "本届会议的注册尚未开放。",
+      "duplicateDocument": "本届会议已有使用此证件的注册，注册邮箱为 {{email}}。请登录您的账户或联系组委会。"
     },
-    "lotRange": "{{from}} 至 {{until}}"
+    "lotRange": "{{from}} 至 {{until}}",
+    "accountEmailHint": "注册使用您账户的邮箱。",
+    "accountCta": "如需查看注册情况并提交论文，请使用相同邮箱创建账户：",
+    "goToArea": "在“我的主页”查看我的注册"
   },
   "payment": {
     "title": "注册费支付",
@@ -264,5 +268,117 @@
     "foundersTitle": "发起人",
     "lattes": "Lattes 简历",
     "orcid": "ORCID"
+  },
+  "account": {
+    "email": "电子邮箱",
+    "backToLogin": "返回登录",
+    "sentHint": "如果几分钟内没有收到邮件，请检查垃圾邮件文件夹或重新申请。",
+    "nav": {
+      "login": "登录",
+      "myArea": "我的主页",
+      "logout": "退出"
+    },
+    "login": {
+      "title": "登录",
+      "submit": "登录",
+      "submitting": "正在登录…",
+      "forgot": "忘记密码",
+      "create": "创建账户",
+      "errors": {
+        "invalid_credentials": "邮箱或密码不正确。",
+        "email_not_confirmed": "此邮箱尚未确认。请使用我们发送的链接，或在“创建账户”中重新申请。",
+        "too_many_attempts": "尝试次数过多。请等待几分钟后重试。",
+        "generic": "暂时无法登录。请稍后重试。"
+      }
+    },
+    "signup": {
+      "title": "创建账户",
+      "intro": "请填写您的姓名和邮箱。我们将发送一个链接，用于确认邮箱并设置密码。",
+      "submit": "发送确认链接",
+      "sentTitle": "请查看您的邮箱",
+      "sentBody": "如果 {{email}} 可以创建账户，我们已发送一封包含后续链接的邮件。"
+    },
+    "recover": {
+      "title": "忘记密码",
+      "intro": "请填写您账户的邮箱。我们将发送一个链接，用于设置新密码。",
+      "submit": "发送链接",
+      "sentTitle": "请查看您的邮箱",
+      "sentBody": "如果 {{email}} 已有账户，我们已发送一封包含设置新密码链接的邮件。"
+    },
+    "confirm": {
+      "title": "设置密码",
+      "intro": "邮箱已确认。请设置您账户的密码。"
+    },
+    "newPassword": {
+      "title": "新密码",
+      "intro": "请设置您账户的新密码。"
+    },
+    "password": {
+      "label": "密码",
+      "new": "新密码",
+      "repeat": "再次输入密码",
+      "hint": "至少使用 {{min}} 个字符。",
+      "submit": "保存密码",
+      "mismatch": "两次输入的密码不一致。",
+      "checking": "正在验证链接…",
+      "invalidTitle": "此链接已失效",
+      "invalidBody": "该链接已被使用或已过期。请重新申请以继续。",
+      "askAgain": "重新申请链接"
+    },
+    "link": {
+      "title": "确认注册",
+      "doneTitle": "注册已关联到账户",
+      "doneBody": "该注册及其付款现在显示在提出申请的账户中。"
+    },
+    "area": {
+      "title": "我的主页",
+      "registrationTitle": "我的注册",
+      "otherEditions": "其他届次",
+      "none": "您尚未注册本届会议。",
+      "registerCta": "立即注册",
+      "states": {
+        "PAID": "注册已确认",
+        "PENDING": "付款处理中",
+        "UNPAID": "等待付款"
+      },
+      "stateBody": {
+        "PAID": "已收到付款。无需其他操作。",
+        "PENDING": "我们已收到您的付款请求，正在等待确认。Boleto 可能需要几天时间。",
+        "UNPAID": "支付注册费后注册才算完成。"
+      },
+      "payCta": "支付注册费",
+      "followPayment": "查看付款",
+      "registeredOn": "注册于 {{date}}",
+      "profileTitle": "我的资料",
+      "country": "护照签发国（两位字母代码）",
+      "documentHint": "请填写 CPF；如果没有 CPF，请填写护照。保存后，证件只能由组委会修改。",
+      "documentLockedHint": "如需更正证件，请联系组委会。",
+      "saved": "资料已保存。",
+      "suggestionBody": "我们发现了一条使用您的证件在 {{event}} 的注册，注册邮箱为 {{email}}。这是您的吗？",
+      "yesMine": "是的，是我的",
+      "sendAgain": "重新发送链接",
+      "noAccess": "我已无法使用该邮箱",
+      "requestSent": "我们已向 {{email}} 发送确认链接。请打开该邮件并确认，以将注册关联到此账户。",
+      "requestOrganiser": "您的请求已转交组委会，他们会核实并回复。"
+    },
+    "errors": {
+      "generic": "出了点问题。请稍后重试。",
+      "invalid_email": "请填写有效的邮箱。",
+      "invalid_name": "请填写您的全名。",
+      "invalid_cpf": "CPF 无效。",
+      "invalid_passport": "护照无效。",
+      "invalid_country": "请填写护照签发国的两位字母代码。",
+      "weak_password": "密码至少需要 {{min}} 个字符，且不能包含您的邮箱。",
+      "too_many_attempts": "尝试次数过多。请稍等后重试。",
+      "not_logged_in": "您的会话已结束。请重新登录。",
+      "email_not_confirmed": "请确认您的邮箱以继续。",
+      "document_locked": "证件已填写，只能由组委会修改。",
+      "document_in_use": "此证件已用于另一个账户。如果该账户是您的，请用它登录；否则请联系组委会。",
+      "already_registered": "此账户已有本届会议的注册。",
+      "registration_not_found": "未找到该注册。",
+      "link_not_found": "此链接无效。",
+      "link_expired": "此链接已过期。请在“我的主页”中重新申请。",
+      "cannot_link": "无法将注册关联到该账户。请联系组委会。"
+    }
   }
 }

@@ -4,5 +4,8 @@
   "buildCommand": "npm run build",
   "outputDirectory": "packages/frontend/dist",
   "framework": null,
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    { "source": "/api/v1/account/:action", "destination": "/api/v1/account?action=:action" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }

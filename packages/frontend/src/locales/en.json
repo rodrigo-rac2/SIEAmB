@@ -141,9 +141,13 @@
       "email": "Enter a valid email.",
       "duplicate": "A registration with this email already exists for this event.",
       "consent_required": "You need to authorise the use of your data to send the registration.",
-      "closed": "Registration for this event is not open."
+      "closed": "Registration for this event is not open.",
+      "duplicateDocument": "There is already a registration for this edition with this document, made with the e-mail {{email}}. Log in to your account or contact the organisers."
     },
-    "lotRange": "{{from}} to {{until}}"
+    "lotRange": "{{from}} to {{until}}",
+    "accountEmailHint": "The registration uses the e-mail of your account.",
+    "accountCta": "To follow your registration and submit papers, create your account with the same e-mail:",
+    "goToArea": "See my registration in My area"
   },
   "payment": {
     "title": "Registration payment",
@@ -264,5 +268,117 @@
     "foundersTitle": "Founders",
     "lattes": "Lattes CV",
     "orcid": "ORCID"
+  },
+  "account": {
+    "email": "E-mail",
+    "backToLogin": "Back to log in",
+    "sentHint": "If the message does not arrive in a few minutes, check your spam folder or ask again.",
+    "nav": {
+      "login": "Log in",
+      "myArea": "My area",
+      "logout": "Log out"
+    },
+    "login": {
+      "title": "Log in",
+      "submit": "Log in",
+      "submitting": "Logging in…",
+      "forgot": "Forgot my password",
+      "create": "Create account",
+      "errors": {
+        "invalid_credentials": "Wrong e-mail or password.",
+        "email_not_confirmed": "This e-mail has not been confirmed yet. Use the link we sent, or ask for another one under \"Create account\".",
+        "too_many_attempts": "Too many attempts. Wait a few minutes and try again.",
+        "generic": "We could not log you in right now. Try again in a moment."
+      }
+    },
+    "signup": {
+      "title": "Create account",
+      "intro": "Enter your name and e-mail. We will send a link to confirm the e-mail and choose your password.",
+      "submit": "Send confirmation link",
+      "sentTitle": "Check your e-mail",
+      "sentBody": "If {{email}} can have an account, we sent a message with the link to continue."
+    },
+    "recover": {
+      "title": "Forgot my password",
+      "intro": "Enter the e-mail of your account. We will send a link to create a new password.",
+      "submit": "Send link",
+      "sentTitle": "Check your e-mail",
+      "sentBody": "If {{email}} has an account, we sent a message with the link to create the new password."
+    },
+    "confirm": {
+      "title": "Create password",
+      "intro": "E-mail confirmed. Choose the password of your account."
+    },
+    "newPassword": {
+      "title": "New password",
+      "intro": "Choose the new password of your account."
+    },
+    "password": {
+      "label": "Password",
+      "new": "New password",
+      "repeat": "Repeat the password",
+      "hint": "Use at least {{min}} characters.",
+      "submit": "Save password",
+      "mismatch": "The two passwords are not the same.",
+      "checking": "Checking the link…",
+      "invalidTitle": "This link is no longer valid",
+      "invalidBody": "The link was already used or has expired. Ask for another one to continue.",
+      "askAgain": "Ask for another link"
+    },
+    "link": {
+      "title": "Confirm registration",
+      "doneTitle": "Registration added to the account",
+      "doneBody": "The registration and its payment now show in the account that asked for it."
+    },
+    "area": {
+      "title": "My area",
+      "registrationTitle": "My registration",
+      "otherEditions": "Other editions",
+      "none": "You are not registered for this edition yet.",
+      "registerCta": "Register",
+      "states": {
+        "PAID": "Registration confirmed",
+        "PENDING": "Payment being processed",
+        "UNPAID": "Waiting for payment"
+      },
+      "stateBody": {
+        "PAID": "Payment received. Nothing else to do.",
+        "PENDING": "We received your payment request and are waiting for the confirmation. Boletos can take a few days.",
+        "UNPAID": "The registration is only complete once the fee is paid."
+      },
+      "payCta": "Pay the registration",
+      "followPayment": "See the payment",
+      "registeredOn": "registered on {{date}}",
+      "profileTitle": "My details",
+      "country": "Passport country (2-letter code)",
+      "documentHint": "Enter your CPF, or your passport if you have no CPF. Once saved, the document can only be changed by the organisers.",
+      "documentLockedHint": "To correct the document, contact the organisers.",
+      "saved": "Details saved.",
+      "suggestionBody": "We found a registration for the {{event}} with your document, made with the e-mail {{email}}. Is it yours?",
+      "yesMine": "Yes, it is mine",
+      "sendAgain": "Send the link again",
+      "noAccess": "I no longer have access to that e-mail",
+      "requestSent": "We sent a confirmation link to {{email}}. Open that e-mail and confirm to add the registration to this account.",
+      "requestOrganiser": "Your request was sent to the organisers, who will check it and answer."
+    },
+    "errors": {
+      "generic": "Something went wrong. Try again in a moment.",
+      "invalid_email": "Enter a valid e-mail.",
+      "invalid_name": "Enter your full name.",
+      "invalid_cpf": "Invalid CPF.",
+      "invalid_passport": "Invalid passport.",
+      "invalid_country": "Enter the 2-letter code of the passport country.",
+      "weak_password": "The password needs at least {{min}} characters and cannot contain your e-mail.",
+      "too_many_attempts": "Too many attempts. Wait a little and try again.",
+      "not_logged_in": "Your session has ended. Log in again.",
+      "email_not_confirmed": "Confirm your e-mail to continue.",
+      "document_locked": "The document was already given and can only be changed by the organisers.",
+      "document_in_use": "This document is already in another account. If that account is yours, log in with it; if not, contact the organisers.",
+      "already_registered": "This account already has a registration for this edition.",
+      "registration_not_found": "We could not find that registration.",
+      "link_not_found": "This link is not valid.",
+      "link_expired": "This link has expired. Ask for another one in My area.",
+      "cannot_link": "The registration could not be added to that account. Contact the organisers."
+    }
   }
 }
