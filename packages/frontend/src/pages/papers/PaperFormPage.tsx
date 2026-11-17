@@ -1,5 +1,5 @@
 import type { ThematicArea } from '@sieamb/shared';
-import { useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { PageHeader } from '../../components/shared/PageHeader';
@@ -7,24 +7,22 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useEvent } from '../../contexts/EventContext';
 import { useLocalized } from '../../hooks/useLocale';
 import { getDataProvider } from '../../services';
+import { fetchAccount } from '../../services/account';
 import {
   SubmissionError,
   fetchMyPapers,
   rulesForEvent,
   savePaper,
+  searchPeople,
   uploadPaperFile,
   type Modality,
   type Paper,
 } from '../../services/submissions';
 import { NotFoundPage } from '../NotFoundPage';
+import { AuthorList, newAuthorRow, toAuthorInput, type AuthorRow } from './AuthorList';
 import '../../components/registration/RegistrationForm.css';
 import '../account/Account.css';
 import './Papers.css';
-
-interface Coauthor {
-  fullName: string;
-  email: string;
-}
 
 /**
  * `/:event/meus-trabalhos/novo` and `/:event/meus-trabalhos/:paperId`: send a paper,
@@ -52,11 +50,13 @@ export function PaperFormPage() {
   const [abstract, setAbstract] = useState('');
   const [keywords, setKeywords] = useState('');
   const [keywordsEn, setKeywordsEn] = useState('');
-  const [coauthors, setCoauthors] = useState<Coauthor[]>([]);
+  const [authors, setAuthors] = useState<AuthorRow[]>([]);
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [duplicate, setDuplicate] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
+  // The name of the account, on its way: someone quick to press Send must not lose their own name.
+  const ownName = useRef<Promise<string>>(Promise.resolve(''));
 
   useEffect(() => {
     if (!event) return;
@@ -79,7 +79,11 @@ export function PaperFormPage() {
           setAbstract(paper.abstract);
           setKeywords(paper.keywords.join('; '));
           setKeywordsEn(paper.keywordsEn.join('; '));
-          setCoauthors(paper.authors.filter((a) => a.position > 1).map(({ fullName, email }) => ({ fullName, email })));
+          setAuthors(
+            paper.authors.map(({ fullName, email }) =>
+              newAuthorRow({ fullName, email, self: email === auth.email?.toLowerCase() }),
+            ),
+          );
         }
         setReady(true);
       })
@@ -87,7 +91,32 @@ export function PaperFormPage() {
     return () => {
       active = false;
     };
-  }, [accessToken, event, paperId]);
+  }, [accessToken, event, paperId, auth.email]);
+
+  // A new paper starts with whoever is sending it, by the name in their account.
+  // They can move themselves down: the first author need not be the sender (#230).
+  useEffect(() => {
+    if (!accessToken || editing || !auth.email) return;
+    let active = true;
+    const email = auth.email.toLowerCase();
+    setAuthors((current) => (current.length ? current : [newAuthorRow({ email, self: true })]));
+    ownName.current = fetchAccount(accessToken)
+      .then((account) => account.user.fullName)
+      .catch(() => '');
+    void ownName.current.then((fullName) => {
+      if (!active || !fullName) return;
+      setAuthors((current) => current.map((row) => (row.self && !row.fullName ? { ...row, fullName } : row)));
+    });
+    return () => {
+      active = false;
+    };
+  }, [accessToken, editing, auth.email]);
+
+  const slug = event?.slug;
+  const search = useCallback(
+    (query: string) => (accessToken && slug ? searchPeople(accessToken, slug, query) : Promise.resolve([])),
+    [accessToken, slug],
+  );
 
   if (!auth.enabled) return <NotFoundPage />;
   if (auth.loading || !event) return null;
@@ -113,10 +142,6 @@ export function PaperFormPage() {
   }
 
   const limits = rules.modalities[modality];
-  const maxCoauthors = rules.maxAuthors - 1;
-
-  const setCoauthor = (index: number, patch: Partial<Coauthor>) =>
-    setCoauthors((current) => current.map((c, i) => (i === index ? { ...c, ...patch } : c)));
 
   const submit = async (confirmDuplicate: boolean) => {
     setError(null);
@@ -126,6 +151,15 @@ export function PaperFormPage() {
       return setError(t('papers.errors.file_too_large', { maxMb: rules.maxFileMb }));
     }
     setBusy(true);
+    const accountName = await ownName.current;
+    const authorList = toAuthorInput(
+      authors.map((row) => (row.self && !row.fullName.trim() ? { ...row, fullName: accountName } : row)),
+    );
+    // A name is missing: say so before the file goes anywhere.
+    if (authorList.some((author) => author.fullName.length < 3)) {
+      setBusy(false);
+      return setError(t('papers.errors.invalid_author'));
+    }
     try {
       const uploaded = file
         ? { path: await uploadPaperFile(accessToken, event.slug, file), name: file.name }
@@ -143,7 +177,7 @@ export function PaperFormPage() {
           abstract,
           keywords,
           keywordsEn,
-          coauthors: coauthors.filter((c) => c.fullName.trim() || c.email.trim()),
+          authors: authorList,
           confirmDuplicate,
         },
         uploaded,
@@ -217,48 +251,7 @@ export function PaperFormPage() {
             </div>
             <p className="reg-form__hint">{t('papers.form.keywordsHint', { max: rules.maxKeywords })}</p>
 
-            <h2>{t('papers.form.coauthorsTitle')}</h2>
-            <p className="reg-form__hint">{t('papers.form.coauthorsHint', { max: maxCoauthors })}</p>
-            {coauthors.map((coauthor, index) => (
-              <div className="papers__coauthor" key={index} data-testid="coauthor-row">
-                <div className="reg-form__field">
-                  <label htmlFor={`coauthor-name-${index}`}>{t('papers.form.coauthorName', { n: index + 1 })}</label>
-                  <input
-                    id={`coauthor-name-${index}`}
-                    type="text"
-                    value={coauthor.fullName}
-                    onChange={(e) => setCoauthor(index, { fullName: e.target.value })}
-                  />
-                </div>
-                <div className="reg-form__field">
-                  <label htmlFor={`coauthor-email-${index}`}>{t('papers.form.coauthorEmail', { n: index + 1 })}</label>
-                  <input
-                    id={`coauthor-email-${index}`}
-                    type="email"
-                    value={coauthor.email}
-                    onChange={(e) => setCoauthor(index, { email: e.target.value })}
-                  />
-                </div>
-                <button
-                  className="account__button account__button--quiet"
-                  type="button"
-                  onClick={() => setCoauthors((current) => current.filter((_, i) => i !== index))}
-                >
-                  {t('papers.form.coauthorRemove')}
-                </button>
-              </div>
-            ))}
-            {coauthors.length < maxCoauthors && (
-              <p>
-                <button
-                  className="account__button account__button--quiet"
-                  type="button"
-                  onClick={() => setCoauthors((current) => [...current, { fullName: '', email: '' }])}
-                >
-                  {t('papers.form.coauthorAdd')}
-                </button>
-              </p>
-            )}
+            <AuthorList rows={authors} max={rules.maxAuthors} onChange={setAuthors} search={search} />
 
             <div className="reg-form__field">
               <label htmlFor="paper-file">{t(editing ? 'papers.form.fileReplace' : 'papers.form.file')}</label>

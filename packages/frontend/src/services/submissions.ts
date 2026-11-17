@@ -32,7 +32,9 @@ export interface Paper {
   createdAt: string;
   updatedAt: string;
   authors: PaperAuthor[];
-  role: 'main' | 'coauthor';
+  /** Where the reader stands in the author list, from 1. */
+  position: number | null;
+  sentByMe: boolean;
   canEdit: boolean;
 }
 
@@ -54,7 +56,8 @@ export interface PaperInput {
   abstract: string;
   keywords: string;
   keywordsEn: string;
-  coauthors: { fullName: string; email: string }[];
+  /** Every author, in the order of the paper. A person picked from the suggestions goes as `ref`. */
+  authors: ({ fullName: string; email: string } | { fullName: string; ref: string })[];
   confirmDuplicate?: boolean;
 }
 
@@ -96,7 +99,8 @@ const KNOWN_ERRORS = [
   'invalid_area',
   'invalid_abstract',
   'invalid_keywords',
-  'invalid_coauthor',
+  'invalid_author',
+  'sender_not_listed',
   'duplicate_author',
   'too_many_authors',
   'too_many_as_main',
@@ -154,6 +158,24 @@ const slugQuery = (eventSlug: string) => `?eventSlug=${encodeURIComponent(eventS
 
 export const fetchWindow = (eventSlug: string): Promise<{ state: WindowState; opensAt: string; closesAt: string }> =>
   request('GET', 'rules', { query: slugQuery(eventSlug) });
+
+/** Someone already known to the system, as the author list may suggest them. Never a full e-mail. */
+export interface PersonSuggestion {
+  fullName: string;
+  institution: string | null;
+  emailHint: string;
+  /** What the form sends back instead of the e-mail. */
+  ref: string;
+}
+
+/** People whose name matches what is being typed; empty when nothing matches or on any failure. */
+export const searchPeople = (token: string, eventSlug: string, query: string): Promise<PersonSuggestion[]> =>
+  request<{ people: PersonSuggestion[] }>('GET', 'people', {
+    token,
+    query: `${slugQuery(eventSlug)}&q=${encodeURIComponent(query)}`,
+  })
+    .then((data) => data.people ?? [])
+    .catch(() => []);
 
 export const fetchMyPapers = (token: string, eventSlug: string): Promise<MyPapers> =>
   request('GET', 'mine', { token, query: slugQuery(eventSlug) });

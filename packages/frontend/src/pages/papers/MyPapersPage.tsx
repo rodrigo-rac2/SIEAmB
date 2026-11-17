@@ -97,7 +97,7 @@ function PaperCard({
           {t(`papers.status.${paper.status}`)}
         </span>{' '}
         <span className="papers__meta">
-          {t(paper.role === 'main' ? 'papers.roleMain' : 'papers.roleCoauthor')} ·{' '}
+          {paper.position !== null && `${t('papers.authorPosition', { n: paper.position })} · `}
           {t('papers.sentOn', { date: day(paper.createdAt, locale) })}
         </span>
       </p>
@@ -205,7 +205,10 @@ export function MyPapersPage() {
     const area = areas.find((a) => a.id === ref);
     return area ? l(area.name) : ref;
   };
-  const canSend = papers?.state === 'open' && papers.limits.asMain < papers.limits.maxAsMain;
+  // Room left in either of the edital's limits: as first author, or in any other place.
+  const canSend =
+    papers?.state === 'open' &&
+    (papers.limits.asMain < papers.limits.maxAsMain || papers.limits.asCoauthor < papers.limits.maxAsCoauthor);
 
   return (
     <>
