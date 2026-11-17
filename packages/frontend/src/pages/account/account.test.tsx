@@ -430,6 +430,8 @@ describe('MyAreaPage', () => {
     expect(screen.getByLabelText('CPF')).toHaveValue('529.982.247-25');
     await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
     await waitFor(() => expect(screen.getByLabelText('CPF')).toBeDisabled());
+    // The confirmation must survive the form switching to the locked document (#212).
+    expect(screen.getByText('Dados salvos.')).toBeInTheDocument();
     expect(screen.getByLabelText('CPF')).toHaveValue('529.982.247-25');
     expect(calls.find((c) => c.url.endsWith('profile'))).toMatchObject({
       method: 'PUT',

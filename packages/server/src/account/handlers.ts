@@ -33,7 +33,9 @@ const DAY = 24 * HOUR;
 export const LIMITS = {
   signupPerEmail: { window: HOUR, max: 3 },
   recoverPerEmail: { window: HOUR, max: 3 },
-  perIp: { window: HOUR, max: 20 },
+  // Generous on purpose: a whole campus can sit behind one address. The limits per
+  // e-mail address above are what stop someone hammering one person.
+  perIp: { window: HOUR, max: 120 },
   checkPerIp: { window: HOUR, max: 30 },
   linkPerUser: { window: DAY, max: 5 },
   profilePerUser: { window: HOUR, max: 20 },

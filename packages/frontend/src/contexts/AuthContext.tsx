@@ -78,10 +78,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const key = `${type}:${tokenHash}`;
       let outcome = verified.get(key);
       if (!outcome) {
-        outcome = client.auth
-          .verifyOtp({ token_hash: tokenHash, type })
-          .then(({ data, error }) => !error && Boolean(data.session))
-          .catch(() => false);
+        outcome = (async () => {
+          // Trying a link drops whatever session the browser had. Keep it, so a link
+          // that is already used does not log out someone who was logged in.
+          const { data: before } = await client.auth.getSession();
+          const { data, error } = await client.auth.verifyOtp({ token_hash: tokenHash, type });
+          if (!error && data.session) return true;
+          if (before.session) {
+            await client.auth.setSession({
+              access_token: before.session.access_token,
+              refresh_token: before.session.refresh_token,
+            });
+          }
+          return false;
+        })().catch(() => false);
         verified.set(key, outcome);
       }
       return outcome;
