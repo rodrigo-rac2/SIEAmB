@@ -76,7 +76,7 @@ function view(submission: Submission, user: AuthUser, open: boolean, organiser =
     position: mine?.position ?? null,
     sentByMe: submission.userId === user.id,
     // Whoever sent the paper changes or withdraws it, while submissions are open and it is not
-    // under review; the other authors only see it (#250). The organisers can at any time.
+    // under review; the other authors only see it (#250). An administrator can at any time; an organiser cannot (#265).
     canEdit: organiser || (submission.userId === user.id && open && submission.status === 'SUBMITTED'),
     /** The reader may change it because of their role in the organisation, not as its sender. */
     asOrganiser: organiser && submission.userId !== user.id,
@@ -145,7 +145,7 @@ async function mine(request: Request, deps: SubmissionDeps): Promise<Response> {
   if ('response' in ctx) return ctx.response;
   const { user, event, rules: r } = ctx;
   const all = await deps.store.listByAuthorEmail(event.id, user.email);
-  const organiser = all.length > 0 && (await deps.store.isOrganiser(event.id, user.id));
+  const organiser = all.length > 0 && (await deps.store.isAdmin(event.id, user.id));
   return json(200, {
     state: ctx.state,
     closesAt: r.closesAt,
@@ -174,11 +174,13 @@ async function one(request: Request, deps: SubmissionDeps): Promise<Response> {
   if (!submission || submission.deletedAt || submission.eventId !== ctx.event.id) {
     return json(404, { error: 'submission_not_found' });
   }
-  const organiser = await deps.store.isOrganiser(ctx.event.id, ctx.user.id);
-  if (!organiser && positionOf(submission, ctx.user.email) === null) {
+  // An organiser may look at any paper; only an administrator may change it (#265).
+  const staff = await deps.store.isOrganiser(ctx.event.id, ctx.user.id);
+  if (!staff && positionOf(submission, ctx.user.email) === null) {
     return json(404, { error: 'submission_not_found' });
   }
-  return json(200, { submission: view(submission, ctx.user, ctx.open, organiser) });
+  const admin = staff && (await deps.store.isAdmin(ctx.event.id, ctx.user.id));
+  return json(200, { submission: view(submission, ctx.user, ctx.open, admin) });
 }
 
 /** A short-lived link to the file, for its authors and for the organisers. */
@@ -356,8 +358,8 @@ async function save(request: Request, deps: SubmissionDeps): Promise<Response> {
 
   const id = text(body.id, 40);
   const existing = id ? await deps.store.findById(id) : null;
-  // The organisers change any paper of the edition, at any time (#250).
-  const organiser = Boolean(id) && (await deps.store.isOrganiser(event.id, user.id));
+  // The administrators change any paper of the edition, at any time (#250); an organiser does not (#265).
+  const organiser = Boolean(id) && (await deps.store.isAdmin(event.id, user.id));
   if (!ctx.open && !organiser) return closedResponse(ctx.state);
   // Only whoever sent the paper changes it; to the other authors and to anyone else it does not exist here.
   if (id && (!existing || existing.deletedAt || existing.eventId !== event.id || (existing.userId !== user.id && !organiser))) {
@@ -443,9 +445,9 @@ async function withdraw(request: Request, deps: SubmissionDeps): Promise<Respons
   const ctx = await context(request, deps, body.eventSlug);
   if ('response' in ctx) return ctx.response;
   const submission = await deps.store.findById(text(body.id, 40));
-  const organiser = Boolean(submission) && (await deps.store.isOrganiser(ctx.event.id, ctx.user.id));
+  const organiser = Boolean(submission) && (await deps.store.isAdmin(ctx.event.id, ctx.user.id));
   if (!ctx.open && !organiser) return closedResponse(ctx.state);
-  // Whoever sent it, or the organisers; to the other authors it is not theirs to withdraw (#250).
+  // Whoever sent it, or an administrator; to the other authors and to an organiser it is not theirs to withdraw (#250, #265).
   if (!submission || submission.deletedAt || submission.eventId !== ctx.event.id || (submission.userId !== ctx.user.id && !organiser)) {
     return json(404, { error: 'submission_not_found' });
   }

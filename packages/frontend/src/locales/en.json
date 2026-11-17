@@ -593,6 +593,8 @@
       "assignFor": "Assign to paper no. {{number}}",
       "removeReviewer": "Take {{name}} off paper no. {{number}}",
       "noReviewers": "Nobody has the Reviewer role in this edition. Give that role in People and roles.",
+      "noOtherReviewer": "There is no other reviewer to choose. To have more, give the Reviewer role to other people in People and roles.",
+      "reviewersAreAuthors": "Whoever has the Reviewer role is an author of this paper and cannot review it. Give the Reviewer role to someone else in People and roles.",
       "reviewersHint": "Each paper needs at least one reviewer, and you can assign as many as you want. With a reviewer assigned, the paper is under review and its authors can no longer change it. Reviewers see the file with the authors' names.",
       "window": {
         "open": "Submissions are open.",

@@ -593,6 +593,8 @@
       "assignFor": "Indicar para el trabajo n.º {{number}}",
       "removeReviewer": "Quitar a {{name}} del trabajo n.º {{number}}",
       "noReviewers": "Nadie tiene el papel de Evaluador en esta edición. Otorgue ese papel en Personas y papeles.",
+      "noOtherReviewer": "No hay otro evaluador para indicar. Para tener más, otorgue el papel de Evaluador a otras personas en Personas y papeles.",
+      "reviewersAreAuthors": "Quien tiene el papel de Evaluador es autor de este trabajo y no puede evaluarlo. Otorgue el papel de Evaluador a otra persona en Personas y papeles.",
       "reviewersHint": "Cada trabajo necesita al menos un evaluador, y puede indicar cuantos quiera. Con un evaluador indicado, el trabajo queda en evaluación y los autores ya no pueden modificarlo. Los evaluadores ven el archivo con los nombres de los autores.",
       "window": {
         "open": "Los envíos están abiertos.",

@@ -372,7 +372,7 @@ describe('spreadsheet', () => {
 describe('papers tab', () => {
   const papers = {
     body: {
-      role: 'ORGANIZER',
+      role: 'ADMIN',
       counts: { total: 1, withdrawn: 1 },
       submissions: [
         { id: 'p1', number: 12, title: 'Governança da água', modality: 'ARTIGO', areaRef: 'a1', status: 'SUBMITTED', fileName: 'artigo.pdf', filePages: 13, createdAt: '2026-12-01T12:00:00Z', deletedAt: null, authors: [{ position: 1, fullName: 'Maria Souza', email: 'maria@ufcg.edu.br' }], authorRegistered: false, reviewers: [] },
@@ -393,7 +393,7 @@ describe('papers tab', () => {
     expect(first).toHaveTextContent('Enviado');
     expect(first).toHaveTextContent('13 páginas');
     expect(second).toHaveTextContent('Retirado');
-    // Standing papers can be changed or withdrawn by the organisers; a withdrawn one cannot (#250).
+    // Standing papers can be changed or withdrawn by an administrator; a withdrawn one cannot (#250).
     expect(within(first!).getByRole('link', { name: 'Alterar o trabalho nº 12' })).toHaveAttribute('href', '/2027/meus-trabalhos/p1');
     expect(within(first!).getByRole('button', { name: 'Retirar o trabalho nº 12' })).toBeInTheDocument();
     expect(within(second!).queryByRole('link', { name: /Alterar o trabalho/ })).not.toBeInTheDocument();
@@ -401,7 +401,17 @@ describe('papers tab', () => {
     expect(second).toHaveTextContent('Há autor com inscrição confirmada.');
   });
 
-  it('an organiser withdraws a paper only after confirming, and the list is read again (#250)', async () => {
+  it('an organiser sees the papers and chooses reviewers, but is not offered to change or withdraw one (#265)', async () => {
+    stubApi({ members: members('ORGANIZER'), submissions: { body: { ...papers.body, role: 'ORGANIZER' } } });
+    panel('papers');
+    const [first] = await screen.findAllByTestId('paper-row');
+    expect(first).toHaveTextContent('Governança da água');
+    expect(within(first!).getByRole('button', { name: 'artigo.pdf' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Alterar o trabalho/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Retirar o trabalho/ })).not.toBeInTheDocument();
+  });
+
+  it('an administrator withdraws a paper only after confirming, and the list is read again (#250)', async () => {
     let withdrawn = false;
     const calls = stubApi({
       members: members('ORGANIZER'),
@@ -583,6 +593,39 @@ describe('papers tab', () => {
       expect(screen.queryByRole('combobox', { name: 'Indicar avaliador para o trabalho nº 13' })).not.toBeInTheDocument();
     });
 
+    it('says why nobody can be chosen: the only reviewer is an author, or is already on the paper (#266)', async () => {
+      // Maria has the role and is the author of nº 12: nobody to choose, and the page says so.
+      stubApi({ members: withReviewers(MARIA), submissions: papers });
+      panel('papers');
+      const [first, second] = await screen.findAllByTestId('paper-row');
+      const cell = within(first!).getByTestId('paper-reviewers');
+      expect(await within(cell).findByTestId('no-reviewer-to-choose')).toHaveTextContent(
+        'Quem tem o papel de Avaliador é autor deste trabalho e não pode avaliá-lo.',
+      );
+      expect(cell).toHaveTextContent('Sem avaliador');
+      expect(within(cell).queryByRole('combobox')).not.toBeInTheDocument();
+      // A withdrawn paper gets no such note.
+      expect(within(second!).queryByTestId('no-reviewer-to-choose')).not.toBeInTheDocument();
+    });
+
+    it('says there is no other reviewer when everyone with the role is already on the paper (#266)', async () => {
+      stubApi({ members: withReviewers(ANA), submissions: reviewed(ANA) });
+      panel('papers');
+      const [first] = await screen.findAllByTestId('paper-row');
+      const cell = within(first!).getByTestId('paper-reviewers');
+      expect(await within(cell).findByTestId('no-reviewer-to-choose')).toHaveTextContent('Não há outro avaliador para indicar.');
+      expect(cell).toHaveTextContent('Ana Reis');
+      expect(within(cell).getByRole('button', { name: /Ana Reis/ })).toBeInTheDocument();
+    });
+
+    it('keeps the picker, without the note, while someone can still be chosen', async () => {
+      stubApi({ members: withReviewers(ANA, BRUNO), submissions: reviewed(ANA) });
+      panel('papers');
+      const choose = await screen.findByRole('combobox', { name: 'Indicar avaliador para o trabalho nº 12' });
+      expect(within(choose).getAllByRole('option').map((o) => o.textContent)).toEqual(['Escolha', 'Bruno Sá']);
+      expect(screen.queryByTestId('no-reviewer-to-choose')).not.toBeInTheDocument();
+    });
+
     it('says why when the server refuses, and changes nothing', async () => {
       stubApi({
         members: withReviewers(ANA),
@@ -642,7 +685,10 @@ describe('people tab', () => {
     panel('people');
     const role = await screen.findByLabelText('Papel');
     expect(within(role).getAllByRole('option').map((o) => o.textContent)).toEqual(['Avaliador']);
-    expect(within(screen.getByTestId('role-ADMIN')).queryByRole('button', { name: 'Remover' })).not.toBeInTheDocument();
+    // The administrators are not shown to an organiser, even if the answer carried them (#264).
+    expect(screen.queryByTestId('role-ADMIN')).not.toBeInTheDocument();
+    expect(screen.queryByText(/najara@ufcg\.edu\.br/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Administrador' })).not.toBeInTheDocument();
     expect(within(screen.getByTestId('role-ORGANIZER')).queryByRole('button', { name: 'Remover' })).not.toBeInTheDocument();
     await userEvent.click(within(screen.getByTestId('role-REVIEWER')).getByRole('button', { name: 'Remover' }));
     await waitFor(() => expect(calls.some((c) => c.url.endsWith('member-remove'))).toBe(true));

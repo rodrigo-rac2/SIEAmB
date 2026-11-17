@@ -671,6 +671,13 @@ function PaperReviewers({
           </button>
         </span>
       )}
+      {/* The picker is hidden when nobody can be chosen: say why, so it does not read as a fault (#266). */}
+      {!paper.deletedAt && free.length === 0 && candidates.length > 0 && (
+        <span className="panel__meta" data-testid="no-reviewer-to-choose">
+          {paper.reviewers.length > 0 && <br />}
+          {t(paper.reviewers.length > 0 ? 'panel.papers.noOtherReviewer' : 'panel.papers.reviewersAreAuthors')}
+        </span>
+      )}
     </>
   );
 }
@@ -849,7 +856,8 @@ function PapersTab({ token, slug, message }: TabProps) {
                   {s.filePages !== null && <span className="panel__meta"> · {t('papers.pages', { count: s.filePages })}</span>}
                 </td>
                 <td>
-                  {!s.deletedAt && (
+                  {/* Changing or withdrawing someone's paper is for administrators (#265). */}
+                  {!s.deletedAt && data.role === 'ADMIN' && (
                     <PaperActions
                       paper={s}
                       slug={slug}
@@ -930,7 +938,8 @@ function PeopleTab({ token, slug, message }: TabProps) {
           {note}
         </p>
       )}
-      {roles.map((r) => {
+      {/* An organiser is not shown the administrators (#264); the server does not send them either. */}
+      {roles.filter((r) => r !== 'ADMIN' || data.role === 'ADMIN').map((r) => {
         const people = data.members.filter((m) => m.role === r);
         const waiting = data.invites.filter((i) => i.role === r);
         const mine = data.canManage.includes(r);

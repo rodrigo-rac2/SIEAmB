@@ -432,8 +432,9 @@ async function members(request: Request, deps: AdminDeps): Promise<Response> {
     role: ctx.role,
     // What this person may give or take: an administrator any role, an organiser only reviewers.
     canManage: ctx.role === 'ADMIN' ? ROLES : (['REVIEWER'] as MemberRole[]),
-    members: await deps.store.listMembers(ctx.event.id),
-    invites: await deps.store.listInvites(ctx.event.id),
+    // An organiser is not told who the administrators are, nor who was invited to be one (#264).
+    members: (await deps.store.listMembers(ctx.event.id)).filter((m) => ctx.role === 'ADMIN' || m.role !== 'ADMIN'),
+    invites: (await deps.store.listInvites(ctx.event.id)).filter((i) => ctx.role === 'ADMIN' || i.role !== 'ADMIN'),
   });
 }
 

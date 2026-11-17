@@ -366,7 +366,25 @@ test.describe('submissions @submissions', () => {
     await authorPage.reload();
     await expect(authorPage.getByTestId('paper-card').getByRole('link', { name: 'Alterar' })).toBeVisible();
 
-    // 7. The organisers can change or withdraw any paper (#250): here, withdraw it from the panel.
+    // 7. An organiser is not offered to change or withdraw a paper, and the server refuses both (#265).
+    await expect(row.getByRole('link', { name: `Alterar o trabalho nº ${number}` })).toHaveCount(0);
+    await expect(row.getByRole('button', { name: `Retirar o trabalho nº ${number}` })).toHaveCount(0);
+    const asOrganiser = { authorization: `Bearer ${organiserToken}` };
+    const refused = await page.request.post('/api/v1/submissions/withdraw', { headers: asOrganiser, data: { eventSlug: EVENT, id: paperId } });
+    expect(refused.status()).toBe(404);
+    const seen = await page.request.get(`/api/v1/submissions/one?eventSlug=${EVENT}&id=${paperId}`, { headers: asOrganiser });
+    expect((await seen.json()).submission).toMatchObject({ canEdit: false });
+    const stillThere = await admin<{ deleted_at: string | null }[]>(`/rest/v1/submissions?id=eq.${paperId}&select=deleted_at`);
+    expect(stillThere[0]!.deleted_at).toBeNull();
+
+    // 8. An administrator can change or withdraw any paper (#250): here, withdraw it from the panel.
+    await admin('/rest/v1/event_members', {
+      method: 'POST',
+      body: JSON.stringify({ id: crypto.randomUUID(), event_id: eventId, user_id: organiserId, role: 'ADMIN' }),
+    });
+    await page.reload();
+    await page.getByLabel('Buscar').fill(title);
+    await expect(row).toHaveCount(1);
     await expect(row.getByRole('link', { name: `Alterar o trabalho nº ${number}` })).toHaveAttribute('href', `/${EVENT}/meus-trabalhos/${paperId}`);
     await row.getByRole('button', { name: `Retirar o trabalho nº ${number}` }).click();
     await expect(row).toContainText(`Retirar o trabalho nº ${number}? Os autores serão avisados.`);

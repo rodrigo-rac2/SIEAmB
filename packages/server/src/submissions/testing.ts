@@ -113,6 +113,11 @@ export class FakeSubmissionStore implements SubmissionStore {
   async isOrganiser(_eventId: string, userId: string) {
     return this.organisers.some((o) => o.userId === userId);
   }
+  /** Organisers who are not administrators: they see every paper and change none (#265). */
+  notAdmins = new Set<string>();
+  async isAdmin(_eventId: string, userId: string) {
+    return this.organisers.some((o) => o.userId === userId) && !this.notAdmins.has(userId);
+  }
   async findUsersByEmail(emails: string[]) {
     return this.users.filter((u) => emails.includes(u.email));
   }

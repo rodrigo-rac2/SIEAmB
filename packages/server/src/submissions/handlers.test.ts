@@ -769,6 +769,19 @@ describe('changing a paper', () => {
     expect(toAuthor.text).not.toContain(ORGANISER.email);
   });
 
+  it('does not let an organiser who is not an administrator change a paper (#265)', async () => {
+    const { save, id, store, tokens, sent: mails } = await sent();
+    store.organisers = [{ userId: ORGANISER.id, email: ORGANISER.email, fullName: 'Viviane' }];
+    store.notAdmins.add(ORGANISER.id);
+    const before = JSON.stringify(store.submissions[0]);
+    const response = await save(paper({ id, filePath: undefined, title: 'Alterado por quem não pode' }), tokens.organiser);
+    // The same answer as for a stranger: it is not theirs to change.
+    expect(response.status).toBe(404);
+    expect(await body(response)).toEqual({ error: 'submission_not_found' });
+    expect(JSON.stringify(store.submissions[0])).toBe(before);
+    expect(mails).toEqual([]);
+  });
+
   it('lets an organiser change a paper under review, and after submissions close', async () => {
     const reviewing = await sent();
     reviewing.store.organisers = [{ userId: ORGANISER.id, email: ORGANISER.email, fullName: 'Viviane' }];
@@ -865,6 +878,16 @@ describe('withdrawing a paper', () => {
     expect((await withdraw(tokens.other)).status).toBe(404);
     const stranger = auth.login({ id: 'user-stranger', email: 'estranho@ufrn.br', emailConfirmed: true }, 'tok-stranger');
     expect((await withdraw(stranger)).status).toBe(404);
+    expect(store.submissions[0]!.deletedAt).toBeNull();
+    expect(store.deletions).toEqual([]);
+    expect(mails).toEqual([]);
+  });
+
+  it('cannot be done by an organiser who is not an administrator (#265)', async () => {
+    const { withdraw, tokens, store, sent: mails } = await sent();
+    store.notAdmins.add(ORGANISER.id);
+    const response = await withdraw(tokens.organiser);
+    expect(response.status).toBe(404);
     expect(store.submissions[0]!.deletedAt).toBeNull();
     expect(store.deletions).toEqual([]);
     expect(mails).toEqual([]);
@@ -1142,6 +1165,19 @@ describe('submissions closed by the organisers (#236)', () => {
 describe('one paper, for the form (#250)', () => {
   const one = (deps: SubmissionDeps, token: string | undefined, id: string, slug = '2027') =>
     handleSubmissions(call('GET', 'one', { token, query: `?eventSlug=${slug}&id=${id}` }), 'one', deps);
+
+  it('gives it to an organiser who is not an administrator to look at, not to change (#265)', async () => {
+    const { deps, tokens, store } = setup();
+    const s = store.seed({ authors: [{ position: 1, fullName: 'Maria', email: MAIN.email }] });
+    store.organisers = [{ userId: ORGANISER.id, email: ORGANISER.email, fullName: 'Viviane' }];
+    store.notAdmins.add(ORGANISER.id);
+    const response = await one(deps, tokens.organiser, s.id);
+    expect(response.status).toBe(200);
+    expect((await body(response)).submission).toMatchObject({ id: s.id, sentByMe: false, canEdit: false, asOrganiser: false });
+    // Their own paper is still theirs to change.
+    const own = store.seed({ userId: ORGANISER.id, authors: [{ position: 1, fullName: 'Viviane', email: ORGANISER.email }] });
+    expect((await body(await one(deps, tokens.organiser, own.id))).submission).toMatchObject({ sentByMe: true, canEdit: true });
+  });
 
   it('gives it to the sender to change, to another author to look at, and to an organiser to change', async () => {
     const { deps, tokens, store } = setup();
