@@ -243,6 +243,16 @@ describe('SignupPage', () => {
     ]);
   });
 
+  it('tells the server where the person was going, so the e-mail link leads on there (#246)', async () => {
+    const calls = stubApi({ signup: { status: 202, body: { ok: true } } });
+    mount('/2027/conta/criar?next=%2F2027%2Fmeus-trabalhos%2Fnovo', <SignupPage mode="signup" />);
+    await userEvent.type(await screen.findByLabelText('Nome completo'), 'Maria Clara');
+    await userEvent.type(screen.getByLabelText('E-mail'), 'maria@ufcg.edu.br');
+    await userEvent.click(screen.getByRole('button', { name: 'Enviar link de confirmação' }));
+    await screen.findByRole('heading', { name: 'Confira seu e-mail' });
+    expect(calls[0]!.body).toEqual({ email: 'maria@ufcg.edu.br', fullName: 'Maria Clara', locale: 'pt-BR', eventSlug: '2027', next: '/2027/meus-trabalhos/novo' });
+  });
+
   it('starts with the e-mail of the registration just made', async () => {
     mount('/2027/conta/criar?email=maria%40ufcg.edu.br', <SignupPage mode="signup" />);
     expect(await screen.findByLabelText('E-mail')).toHaveValue('maria@ufcg.edu.br');
@@ -301,6 +311,22 @@ describe('PasswordPage', () => {
     await userEvent.type(screen.getByLabelText('Repita a senha'), 'uma-senha-bem-longa');
     await userEvent.click(screen.getByRole('button', { name: 'Salvar senha' }));
     expect(await screen.findByTestId('where')).toHaveTextContent('/2027/meus-trabalhos/novo');
+  });
+
+  it('follows the page named in the e-mail link, in a browser that remembers nothing, and never one outside the site', async () => {
+    stubApi({ password: { body: { ok: true } } });
+    const fill = async () => {
+      await userEvent.type(await screen.findByLabelText('Nova senha'), 'uma-senha-bem-longa');
+      await userEvent.type(screen.getByLabelText('Repita a senha'), 'uma-senha-bem-longa');
+      await userEvent.click(screen.getByRole('button', { name: 'Salvar senha' }));
+    };
+    const good = mount('/2027/conta/confirmar?token_hash=abc123&type=signup&next=%2F2027%2Fmeus-trabalhos%2Fnovo', <PasswordPage type="signup" />, auth(LOGGED_IN));
+    await fill();
+    expect(await screen.findByTestId('where')).toHaveTextContent('/2027/meus-trabalhos/novo');
+    good.unmount();
+    mount('/2027/conta/confirmar?token_hash=abc123&type=signup&next=%2F%2Fevil.example', <PasswordPage type="signup" />, auth(LOGGED_IN));
+    await fill();
+    expect(await screen.findByTestId('where')).toHaveTextContent('/2027/minha-area');
   });
 
   it('uses the recovery kind for a forgotten password', async () => {

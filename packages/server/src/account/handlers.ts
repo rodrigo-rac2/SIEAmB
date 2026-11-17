@@ -109,6 +109,17 @@ async function send(
  * is new, unconfirmed or already has an account, and whether the e-mail could be
  * sent or not, so the form cannot be used to learn who has an account.
  */
+/**
+ * A page of this edition to go on to after the account exists, or null. Only a plain
+ * path under the edition: no other site, no query, nothing that is not letters,
+ * digits, dashes and slashes.
+ */
+export function nextPath(value: unknown, eventSlug: string | undefined): string | null {
+  if (typeof value !== 'string' || !eventSlug || value.length > 200) return null;
+  if (!/^\/[A-Za-z0-9_-]+(\/[A-Za-z0-9_-]+)*$/.test(value)) return null;
+  return value.startsWith(`/${eventSlug}/`) ? value : null;
+}
+
 async function signup(request: Request, deps: AccountDeps): Promise<Response> {
   const body = await readJsonObject(request);
   const email = text(body.email, 200).toLowerCase();
@@ -126,15 +137,22 @@ async function signup(request: Request, deps: AccountDeps): Promise<Response> {
   const locale = emailLocale(text(body.locale, 10));
   const slug = encodeURIComponent(event?.slug ?? '');
   const base = { firstName: firstName(fullName), eventName: event?.name ?? 'SIEAmB' };
+  // Where the person was going when the site asked for an account (#246): it rides on the link,
+  // so it survives the e-mail being opened in another browser or on another device.
+  const next = nextPath(body.next, event?.slug);
+  const onward = next ? `&next=${encodeURIComponent(next)}` : '';
   try {
     const start = await deps.auth.startSignup(email, fullName);
     if (start.kind === 'link') {
       await send(deps, 'confirm', email, locale, {
         ...base,
-        url: `${site(deps)}/${slug}/conta/confirmar?token_hash=${encodeURIComponent(start.tokenHash)}&type=signup`,
+        url: `${site(deps)}/${slug}/conta/confirmar?token_hash=${encodeURIComponent(start.tokenHash)}&type=signup${onward}`,
       });
     } else {
-      await send(deps, 'exists', email, locale, { ...base, url: `${site(deps)}/${slug}/conta/entrar` });
+      await send(deps, 'exists', email, locale, {
+        ...base,
+        url: `${site(deps)}/${slug}/conta/entrar${next ? `?next=${encodeURIComponent(next)}` : ''}`,
+      });
     }
   } catch (error) {
     deps.log('account_signup_failed', { error: error instanceof Error ? error.message : 'unknown' });

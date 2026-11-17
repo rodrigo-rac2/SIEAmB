@@ -144,6 +144,8 @@ export const startSignup = (input: {
   fullName: string;
   locale: string;
   eventSlug: string;
+  /** The page the person was going to, to continue there after the e-mail link. */
+  next?: string;
 }): Promise<unknown> => request('POST', 'signup', { body: input });
 
 export const startRecovery = (input: {

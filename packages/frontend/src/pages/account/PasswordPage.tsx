@@ -7,7 +7,7 @@ import { AccountError, PASSWORD_MIN, savePassword } from '../../services/account
 import { NotFoundPage } from '../NotFoundPage';
 import '../../components/registration/RegistrationForm.css';
 import './Account.css';
-import { takeNext } from './nextPage';
+import { safeNext, takeNext } from './nextPage';
 import { useAccountPaths } from './useAccountPaths';
 
 /**
@@ -58,7 +58,9 @@ export function PasswordPage({ type }: { type: LinkType }) {
       // Changing the password ends every session of the account, this one included.
       if (auth.email) await auth.signIn(auth.email, password);
       // On to where the person was going before the site asked for an account, if anywhere.
-      navigate(takeNext(paths.area), { replace: true });
+      // The link in the e-mail says it; failing that, what this browser remembers; failing that, Minha área.
+      const remembered = takeNext(paths.area);
+      navigate(safeNext(params.get('next'), remembered), { replace: true });
     } catch (err) {
       const code = err instanceof AccountError ? err.code : 'generic';
       setError(t(`account.errors.${code}`, { min: PASSWORD_MIN }));
