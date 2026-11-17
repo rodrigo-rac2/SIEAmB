@@ -31,6 +31,8 @@ export interface NewNotification {
 export interface OutboxStore {
   /** Null when the key was already recorded. */
   enqueueOutbox(mail: OutboxMail): Promise<OutboxJob | null>;
+  /** Records many at once without trying to send them; returns how many were new. The sweep delivers them. */
+  enqueueOutboxBulk(mails: OutboxMail[]): Promise<number>;
   listDueOutbox(now: Date, limit: number): Promise<OutboxJob[]>;
   /** Compare-and-swap on `attempts`: false when another delivery got there first. */
   claimOutbox(job: OutboxJob, now: Date): Promise<boolean>;

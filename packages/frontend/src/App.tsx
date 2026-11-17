@@ -6,6 +6,7 @@ import { AboutPage } from './pages/AboutPage';
 import { LinkPage } from './pages/account/LinkPage';
 import { LoginPage } from './pages/account/LoginPage';
 import { MyAreaPage } from './pages/account/MyAreaPage';
+import { NotificationsPage } from './pages/account/NotificationsPage';
 import { PasswordPage } from './pages/account/PasswordPage';
 import { SignupPage } from './pages/account/SignupPage';
 import { AnaisPage } from './pages/AnaisPage';
@@ -80,7 +81,9 @@ function AppRoutes() {
           <Route path="conta/nova-senha" element={<PasswordPage type="recovery" />} />
           <Route path="conta/vincular" element={<LinkPage />} />
           <Route path="minha-area" element={<MyAreaPage />} />
+          <Route path="notificacoes" element={<NotificationsPage />} />
           <Route path="painel" element={<PanelPage tab="registrations" />} />
+          <Route path="painel/comunicados" element={<PanelPage tab="announcements" />} />
           <Route path="painel/trabalhos" element={<PanelPage tab="papers" />} />
           <Route path="painel/pessoas" element={<PanelPage tab="people" />} />
           <Route path="painel/pedidos" element={<PanelPage tab="requests" />} />

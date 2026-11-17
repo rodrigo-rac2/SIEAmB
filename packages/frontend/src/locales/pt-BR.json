@@ -505,7 +505,8 @@
       "registrations": "Inscrições",
       "papers": "Trabalhos",
       "people": "Pessoas e papéis",
-      "requests": "Pedidos"
+      "requests": "Pedidos",
+      "announcements": "Comunicados"
     },
     "states": {
       "PAID": "Paga",
@@ -593,7 +594,55 @@
       "invalid_role": "Escolha o papel.",
       "cannot_remove_self": "Você não pode remover o seu próprio papel de administrador.",
       "request_not_found": "Pedido não encontrado.",
-      "cannot_link": "Não foi possível reunir: a inscrição já tem conta, foi apagada, ou a conta já tem outra inscrição nesta edição."
+      "cannot_link": "Não foi possível reunir: a inscrição já tem conta, foi apagada, ou a conta já tem outra inscrição nesta edição.",
+      "invalid_audience": "Escolha quem recebe.",
+      "invalid_subject": "O assunto precisa ter entre 5 e 150 caracteres.",
+      "invalid_body": "A mensagem precisa ter entre 10 e 5000 caracteres.",
+      "no_recipients": "Esse grupo não tem ninguém no momento.",
+      "too_many_attempts": "Muitos comunicados em pouco tempo. Aguarde um pouco."
+    },
+    "announcements": {
+      "audience": "Quem recebe",
+      "audienceHint": "O número ao lado de cada grupo é quantas pessoas ele tem agora. Administradores não entram em nenhum grupo só por serem administradores.",
+      "audiences": {
+        "all": "Todos",
+        "registered": "Só os inscritos",
+        "authors": "Só os autores",
+        "reviewers": "Só os avaliadores",
+        "organisers": "Só os organizadores"
+      },
+      "subject": "Assunto",
+      "body": "Mensagem",
+      "review": "Revisar e enviar",
+      "confirm": "Este comunicado vai para {{count}} pessoas ({{audience}}), por e-mail e nas notificações do site. Depois de enviado, não pode ser desfeito.",
+      "sendYes_one": "Enviar para {{count}} pessoa",
+      "sendYes_other": "Enviar para {{count}} pessoas",
+      "sent_one": "Comunicado registrado para {{count}} pessoa. Os e-mails saem nos próximos minutos.",
+      "sent_other": "Comunicado registrado para {{count}} pessoas. Os e-mails saem aos poucos, nos próximos minutos.",
+      "history": "Comunicados enviados",
+      "none": "Nenhum comunicado enviado ainda.",
+      "sentLine": "{{sender}} · {{audience}} · {{count}} pessoas · {{date}}"
+    }
+  },
+  "notifications": {
+    "title": "Notificações",
+    "none": "Você ainda não tem notificações.",
+    "new": "nova",
+    "open": "Abrir",
+    "unknown": "Há uma novidade para você.",
+    "bellUnread_one": "Notificações: {{count}} não lida",
+    "bellUnread_other": "Notificações: {{count}} não lidas",
+    "kinds": {
+      "submission.received": "O trabalho nº {{number}}, \"{{title}}\", foi recebido.",
+      "submission.updated": "O trabalho nº {{number}}, \"{{title}}\", foi alterado por {{mainAuthor}}.",
+      "submission.withdrawn": "O trabalho nº {{number}}, \"{{title}}\", foi retirado por {{mainAuthor}}.",
+      "organiser.submission.received": "Novo trabalho nº {{number}}: \"{{title}}\", enviado por {{mainAuthor}}.",
+      "organiser.submission.updated": "O trabalho nº {{number}}, \"{{title}}\", foi alterado por {{mainAuthor}}.",
+      "organiser.submission.withdrawn": "O trabalho nº {{number}}, \"{{title}}\", foi retirado por {{mainAuthor}}.",
+      "organiser.registration.new": "Nova inscrição: {{fullName}}.",
+      "member.added": "Você recebeu o papel de {{role}}.",
+      "link.approved": "A organização aprovou seu pedido: a inscrição agora aparece na sua conta.",
+      "link.rejected": "A organização não aprovou seu pedido para reunir a inscrição à sua conta. Em caso de dúvida, fale com a organização."
     }
   }
 }

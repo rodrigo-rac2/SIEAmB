@@ -9,19 +9,24 @@ import { useEvent } from '../../contexts/EventContext';
 import { useLocale, useLocalized } from '../../hooks/useLocale';
 import { getDataProvider } from '../../services';
 import {
+  AUDIENCES,
   AdminError,
   addMember,
   createPanelRegistration,
   decideRequest,
   deleteRegistration,
+  fetchAnnouncements,
+  fetchAudiences,
   fetchPanelMembers,
   fetchPanelPapers,
   fetchPanelRegistrations,
   fetchPanelRequests,
   removeMember,
   restoreRegistration,
+  sendAnnouncement,
   setRegistrationStatus,
   toCsv,
+  type Audience,
   type ManualStatus,
   type MemberRole,
   type PanelMembers,
@@ -29,6 +34,7 @@ import {
   type PanelRegistration,
   type PanelRegistrations,
   type PanelRequest,
+  type SentAnnouncement,
 } from '../../services/admin';
 import { browser, paperFileUrl } from '../../services/submissions';
 import { NotFoundPage } from '../NotFoundPage';
@@ -36,12 +42,13 @@ import '../../components/registration/RegistrationForm.css';
 import '../account/Account.css';
 import './Panel.css';
 
-export type PanelTab = 'registrations' | 'papers' | 'people' | 'requests';
+export type PanelTab = 'registrations' | 'papers' | 'people' | 'announcements' | 'requests';
 
 const TABS: { tab: PanelTab; path: string; adminOnly?: boolean }[] = [
   { tab: 'registrations', path: '' },
   { tab: 'papers', path: '/trabalhos' },
   { tab: 'people', path: '/pessoas' },
+  { tab: 'announcements', path: '/comunicados' },
   { tab: 'requests', path: '/pedidos', adminOnly: true },
 ];
 
@@ -688,7 +695,125 @@ function RequestsTab({ token, slug, message }: TabProps) {
   );
 }
 
-/** `/:event/painel[/trabalhos|/pessoas|/pedidos]`: the organisation area of an edition (#219). */
+// ───────────────────────────── Announcements (#221) ─────────────────────────────
+
+function AnnouncementsTab({ token, slug, message }: TabProps) {
+  const { t } = useTranslation();
+  const locale = useLocale();
+  const load = useCallback(
+    async () => ({
+      counts: (await fetchAudiences(token, slug)).counts,
+      sent: (await fetchAnnouncements(token, slug)).announcements,
+    }),
+    [token, slug],
+  );
+  const { data, error, setError, reload } = useLoad<{ counts: Record<Audience, number>; sent: SentAnnouncement[] }>(load, message);
+  const [audience, setAudience] = useState<Audience>('all');
+  const [subject, setSubject] = useState('');
+  const [body, setBody] = useState('');
+  const [confirming, setConfirming] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  if (!data) return error ? <Problem text={error} /> : <p role="status">{t('common.loading')}</p>;
+  const count = data.counts[audience];
+
+  const send = async () => {
+    setBusy(true);
+    setError(null);
+    setNote(null);
+    try {
+      const { recipients } = await sendAnnouncement(token, slug, audience, subject, body);
+      setNote(t('panel.announcements.sent', { count: recipients }));
+      setSubject('');
+      setBody('');
+      setConfirming(false);
+      await reload();
+    } catch (err) {
+      setError(message(err));
+      setConfirming(false);
+    }
+    setBusy(false);
+  };
+
+  return (
+    <>
+      <form
+        className="reg-form"
+        style={{ maxWidth: 760 }}
+        onSubmit={(e: FormEvent) => {
+          e.preventDefault();
+          setConfirming(true);
+        }}
+        noValidate
+      >
+        <div className="reg-form__field">
+          <label htmlFor="announce-audience">{t('panel.announcements.audience')}</label>
+          <select id="announce-audience" value={audience} onChange={(e) => { setAudience(e.target.value as Audience); setConfirming(false); }}>
+            {AUDIENCES.map((a) => (
+              <option key={a} value={a}>
+                {t(`panel.announcements.audiences.${a}`)} ({data.counts[a]})
+              </option>
+            ))}
+          </select>
+          <p className="reg-form__hint">{t('panel.announcements.audienceHint')}</p>
+        </div>
+        <div className="reg-form__field">
+          <label htmlFor="announce-subject">{t('panel.announcements.subject')}</label>
+          <input id="announce-subject" type="text" value={subject} maxLength={150} onChange={(e) => setSubject(e.target.value)} />
+        </div>
+        <div className="reg-form__field">
+          <label htmlFor="announce-body">{t('panel.announcements.body')}</label>
+          <textarea id="announce-body" className="panel__textarea" value={body} maxLength={5000} onChange={(e) => setBody(e.target.value)} />
+        </div>
+        <Problem text={error} />
+        {note && (
+          <p className="account__notice account__notice--ok" role="status">
+            {note}
+          </p>
+        )}
+        {confirming ? (
+          <div className="account__notice" role="alert">
+            <p>{t('panel.announcements.confirm', { count, audience: t(`panel.announcements.audiences.${audience}`) })}</p>
+            <span className="panel__row-actions">
+              <button className="account__button" type="button" disabled={busy} onClick={() => void send()}>
+                {t('panel.announcements.sendYes', { count })}
+              </button>
+              <button className="account__button account__button--quiet" type="button" onClick={() => setConfirming(false)}>
+                {t('common.cancel')}
+              </button>
+            </span>
+          </div>
+        ) : (
+          <button className="reg-form__submit" type="submit" disabled={count === 0 || !subject.trim() || !body.trim()}>
+            {t('panel.announcements.review')}
+          </button>
+        )}
+      </form>
+
+      <h2 className="account__section">{t('panel.announcements.history')}</h2>
+      {data.sent.length === 0 && <p data-testid="no-announcements">{t('panel.announcements.none')}</p>}
+      {data.sent.map((a) => (
+        <div className="account__card" key={a.id} data-testid="announcement-card">
+          <p className="panel__meta">
+            {t('panel.announcements.sentLine', {
+              sender: a.senderName,
+              audience: t(`panel.announcements.audiences.${a.audience}`),
+              count: a.recipients,
+              date: new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Fortaleza' }).format(new Date(a.createdAt)),
+            })}
+          </p>
+          <h3>{a.subject}</h3>
+          {a.body.split(/\n{2,}/).map((paragraph, i) => (
+            <p key={i}>{paragraph}</p>
+          ))}
+        </div>
+      ))}
+    </>
+  );
+}
+
+/** `/:event/painel[/trabalhos|/pessoas|/comunicados|/pedidos]`: the organisation area of an edition (#219). */
 export function PanelPage({ tab }: { tab: PanelTab }) {
   const { t } = useTranslation();
   const auth = useAuth();
@@ -728,6 +853,7 @@ export function PanelPage({ tab }: { tab: PanelTab }) {
   let content: ReactNode;
   if (tab === 'papers') content = <PapersTab {...props} />;
   else if (tab === 'people') content = <PeopleTab {...props} />;
+  else if (tab === 'announcements') content = <AnnouncementsTab {...props} />;
   else if (tab === 'requests') content = <RequestsTab {...props} />;
   else content = <RegistrationsTab {...props} />;
 

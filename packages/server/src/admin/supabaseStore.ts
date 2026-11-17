@@ -5,6 +5,9 @@ import {
   type AdminRegistration,
   type AdminStore,
   type AdminSubmission,
+  type Audience,
+  type Person,
+  type SentAnnouncement,
   type Invite,
   type ManualStatus,
   type Member,
@@ -339,6 +342,86 @@ export class SupabaseAdminStore implements AdminStore {
       if (error instanceof RestError && error.code === UNIQUE_VIOLATION) return false;
       throw error;
     }
+  }
+
+  async listAudiences(eventId: string) {
+    const event = `event_id=eq.${q(eventId)}`;
+    const [registered, papers, members] = await Promise.all([
+      this.rest.request<{ email: string; full_name: string; manual_status: string | null }[]>(
+        `pre_registrations?${event}&deleted_at=is.null&select=email,full_name,manual_status&limit=5000`,
+      ),
+      this.rest.request<{ submission_authors: { email: string; full_name: string }[] }[]>(
+        `submissions?${event}&deleted_at=is.null&select=submission_authors(email,full_name)&limit=5000`,
+      ),
+      this.rest.request<{ role: string; user: { email: string; full_name: string } | null }[]>(
+        `event_members?${event}&role=in.(ORGANIZER,REVIEWER)&select=role,user:users(email,full_name)`,
+      ),
+    ]);
+    const people = (rows: { email: string; full_name: string }[]): Person[] =>
+      rows.map((r) => ({ email: r.email.toLowerCase(), fullName: r.full_name }));
+    const byRole = (role: string) => people(members.flatMap((m) => (m.role === role && m.user ? [m.user] : [])));
+    return {
+      registered: people(registered.filter((r) => r.manual_status !== 'CANCELLED')),
+      authors: people(papers.flatMap((p) => p.submission_authors)),
+      reviewers: byRole('REVIEWER'),
+      organisers: byRole('ORGANIZER'),
+    };
+  }
+
+  async findAccounts(emails: string[]): Promise<{ id: string; email: string }[]> {
+    const found: { id: string; email: string }[] = [];
+    for (let i = 0; i < emails.length; i += 100) {
+      const list = emails.slice(i, i + 100).map((e) => `"${e.replace(/["\\]/g, '')}"`).join(',');
+      found.push(...(await this.rest.request<{ id: string; email: string }[]>(`users?email=in.(${q(list)})&select=id,email`)));
+    }
+    return found;
+  }
+
+  async insertAnnouncement(input: { eventId: string; senderId: string; audience: Audience; subject: string; body: string; recipients: string[]; now: Date }): Promise<string> {
+    const rows = await this.rest.request<{ id: string }[]>('announcements?select=id', {
+      method: 'POST',
+      body: JSON.stringify({
+        event_id: input.eventId,
+        sender_id: input.senderId,
+        audience: input.audience,
+        subject: input.subject,
+        body: input.body,
+        recipients: input.recipients,
+        created_at: input.now.toISOString(),
+      }),
+    });
+    return rows[0]!.id;
+  }
+
+  async listAnnouncements(eventId: string): Promise<SentAnnouncement[]> {
+    const rows = await this.rest.request<
+      { id: string; audience: Audience; subject: string; body: string; recipients: string[]; sender_id: string; created_at: string }[]
+    >(`announcements?event_id=eq.${q(eventId)}&select=id,audience,subject,body,recipients,sender_id,created_at&order=created_at.desc&limit=200`);
+    const senders = [...new Set(rows.map((r) => r.sender_id))];
+    const names = senders.length
+      ? await this.rest.request<{ id: string; full_name: string; email: string }[]>(
+          `users?id=in.(${senders.map(q).join(',')})&select=id,full_name,email`,
+        )
+      : [];
+    return rows.map((row) => {
+      const sender = names.find((n) => n.id === row.sender_id);
+      return {
+        id: row.id,
+        audience: row.audience,
+        subject: row.subject,
+        body: row.body,
+        recipients: row.recipients.length,
+        senderName: sender?.full_name || sender?.email || '',
+        createdAt: row.created_at,
+      };
+    });
+  }
+
+  async countAnnouncementsSince(senderId: string, since: Date): Promise<number> {
+    const rows = await this.rest.request<{ id: string }[]>(
+      `announcements?sender_id=eq.${q(senderId)}&created_at=gte.${q(since.toISOString())}&select=id&limit=100`,
+    );
+    return rows.length;
   }
 
   async audit(entry: { actorId: string; action: string; entity: string; entityId: string | null; meta: Record<string, unknown> }): Promise<void> {

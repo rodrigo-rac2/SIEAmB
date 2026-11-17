@@ -505,7 +505,8 @@
       "registrations": "Inscripciones",
       "papers": "Trabajos",
       "people": "Personas y roles",
-      "requests": "Solicitudes"
+      "requests": "Solicitudes",
+      "announcements": "Comunicados"
     },
     "states": {
       "PAID": "Pagada",
@@ -593,7 +594,55 @@
       "invalid_role": "Elija el rol.",
       "cannot_remove_self": "Usted no puede quitar su propio rol de administrador.",
       "request_not_found": "Solicitud no encontrada.",
-      "cannot_link": "No fue posible unir: la inscripción ya tiene cuenta, fue borrada, o la cuenta ya tiene otra inscripción en esta edición."
+      "cannot_link": "No fue posible unir: la inscripción ya tiene cuenta, fue borrada, o la cuenta ya tiene otra inscripción en esta edición.",
+      "invalid_audience": "Elija quién recibe.",
+      "invalid_subject": "El asunto debe tener entre 5 y 150 caracteres.",
+      "invalid_body": "El mensaje debe tener entre 10 y 5000 caracteres.",
+      "no_recipients": "Ese grupo no tiene a nadie en este momento.",
+      "too_many_attempts": "Demasiados comunicados en poco tiempo. Espere un poco."
+    },
+    "announcements": {
+      "audience": "Quién recibe",
+      "audienceHint": "El número junto a cada grupo es cuántas personas tiene ahora. Los administradores no entran en ningún grupo solo por ser administradores.",
+      "audiences": {
+        "all": "Todos",
+        "registered": "Solo los inscritos",
+        "authors": "Solo los autores",
+        "reviewers": "Solo los evaluadores",
+        "organisers": "Solo los organizadores"
+      },
+      "subject": "Asunto",
+      "body": "Mensaje",
+      "review": "Revisar y enviar",
+      "confirm": "Este comunicado va a {{count}} personas ({{audience}}), por correo y en las notificaciones del sitio. Una vez enviado, no se puede deshacer.",
+      "sendYes_one": "Enviar a {{count}} persona",
+      "sendYes_other": "Enviar a {{count}} personas",
+      "sent_one": "Comunicado registrado para {{count}} persona. Los correos salen en los próximos minutos.",
+      "sent_other": "Comunicado registrado para {{count}} personas. Los correos salen de a poco, en los próximos minutos.",
+      "history": "Comunicados enviados",
+      "none": "Ningún comunicado enviado todavía.",
+      "sentLine": "{{sender}} · {{audience}} · {{count}} personas · {{date}}"
+    }
+  },
+  "notifications": {
+    "title": "Notificaciones",
+    "none": "Usted todavía no tiene notificaciones.",
+    "new": "nueva",
+    "open": "Abrir",
+    "unknown": "Hay una novedad para usted.",
+    "bellUnread_one": "Notificaciones: {{count}} sin leer",
+    "bellUnread_other": "Notificaciones: {{count}} sin leer",
+    "kinds": {
+      "submission.received": "El trabajo n.º {{number}}, \"{{title}}\", fue recibido.",
+      "submission.updated": "El trabajo n.º {{number}}, \"{{title}}\", fue modificado por {{mainAuthor}}.",
+      "submission.withdrawn": "El trabajo n.º {{number}}, \"{{title}}\", fue retirado por {{mainAuthor}}.",
+      "organiser.submission.received": "Nuevo trabajo n.º {{number}}: \"{{title}}\", enviado por {{mainAuthor}}.",
+      "organiser.submission.updated": "El trabajo n.º {{number}}, \"{{title}}\", fue modificado por {{mainAuthor}}.",
+      "organiser.submission.withdrawn": "El trabajo n.º {{number}}, \"{{title}}\", fue retirado por {{mainAuthor}}.",
+      "organiser.registration.new": "Nueva inscripción: {{fullName}}.",
+      "member.added": "Usted recibió el rol de {{role}}.",
+      "link.approved": "La organización aprobó su solicitud: la inscripción ahora aparece en su cuenta.",
+      "link.rejected": "La organización no aprobó su solicitud para unir la inscripción a su cuenta. En caso de duda, hable con la organización."
     }
   }
 }

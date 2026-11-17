@@ -505,7 +505,8 @@
       "registrations": "注册",
       "papers": "论文",
       "people": "人员与角色",
-      "requests": "申请"
+      "requests": "申请",
+      "announcements": "通知公告"
     },
     "states": {
       "PAID": "已付款",
@@ -593,7 +594,55 @@
       "invalid_role": "请选择角色。",
       "cannot_remove_self": "您不能移除自己的管理员角色。",
       "request_not_found": "未找到申请。",
-      "cannot_link": "无法关联：该注册已有账户、已被删除，或该账户在本届会议已有另一条注册。"
+      "cannot_link": "无法关联：该注册已有账户、已被删除，或该账户在本届会议已有另一条注册。",
+      "invalid_audience": "请选择接收对象。",
+      "invalid_subject": "主题需要 5 至 150 个字符。",
+      "invalid_body": "内容需要 10 至 5000 个字符。",
+      "no_recipients": "该群组目前没有人。",
+      "too_many_attempts": "短时间内公告过多。请稍等。"
+    },
+    "announcements": {
+      "audience": "接收对象",
+      "audienceHint": "每个群组旁的数字是其当前人数。管理员不会仅因为是管理员而被纳入任何群组。",
+      "audiences": {
+        "all": "所有人",
+        "registered": "仅已注册者",
+        "authors": "仅作者",
+        "reviewers": "仅评审人",
+        "organisers": "仅组织者"
+      },
+      "subject": "主题",
+      "body": "内容",
+      "review": "检查并发送",
+      "confirm": "此公告将通过邮件和网站通知发送给 {{count}} 人（{{audience}}）。发送后无法撤销。",
+      "sendYes_one": "发送给 {{count}} 人",
+      "sendYes_other": "发送给 {{count}} 人",
+      "sent_one": "公告已为 {{count}} 人登记。邮件将在几分钟内发出。",
+      "sent_other": "公告已为 {{count}} 人登记。邮件将在接下来的几分钟内陆续发出。",
+      "history": "已发送的公告",
+      "none": "尚未发送任何公告。",
+      "sentLine": "{{sender}} · {{audience}} · {{count}} 人 · {{date}}"
+    }
+  },
+  "notifications": {
+    "title": "通知",
+    "none": "您还没有通知。",
+    "new": "新",
+    "open": "打开",
+    "unknown": "有一条新消息。",
+    "bellUnread_one": "通知：{{count}} 条未读",
+    "bellUnread_other": "通知：{{count}} 条未读",
+    "kinds": {
+      "submission.received": "已收到第 {{number}} 号论文“{{title}}”。",
+      "submission.updated": "第 {{number}} 号论文“{{title}}”已由 {{mainAuthor}} 修改。",
+      "submission.withdrawn": "第 {{number}} 号论文“{{title}}”已由 {{mainAuthor}} 撤回。",
+      "organiser.submission.received": "新论文第 {{number}} 号：“{{title}}”，由 {{mainAuthor}} 提交。",
+      "organiser.submission.updated": "第 {{number}} 号论文“{{title}}”已由 {{mainAuthor}} 修改。",
+      "organiser.submission.withdrawn": "第 {{number}} 号论文“{{title}}”已由 {{mainAuthor}} 撤回。",
+      "organiser.registration.new": "新注册：{{fullName}}。",
+      "member.added": "您被授予了“{{role}}”角色。",
+      "link.approved": "组委会已批准您的申请：该注册现在显示在您的账户中。",
+      "link.rejected": "组委会未批准您将注册关联到账户的申请。如有疑问，请联系组委会。"
     }
   }
 }

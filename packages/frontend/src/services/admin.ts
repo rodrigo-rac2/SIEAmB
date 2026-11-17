@@ -88,6 +88,11 @@ const KNOWN_ERRORS = [
   'cannot_remove_self',
   'request_not_found',
   'cannot_link',
+  'invalid_audience',
+  'invalid_subject',
+  'invalid_body',
+  'no_recipients',
+  'too_many_attempts',
 ] as const;
 
 export type AdminErrorCode = (typeof KNOWN_ERRORS)[number] | 'generic';
@@ -136,6 +141,26 @@ export const removeMember = (token: string, slug: string, email: string, role: M
   request<unknown>('POST', 'member-remove', token, slug, { email, role });
 export const decideRequest = (token: string, slug: string, id: string, approve: boolean) =>
   request<unknown>('POST', 'link-decide', token, slug, { id, approve });
+
+export type Audience = 'all' | 'registered' | 'authors' | 'reviewers' | 'organisers';
+export const AUDIENCES: Audience[] = ['all', 'registered', 'authors', 'reviewers', 'organisers'];
+
+export interface SentAnnouncement {
+  id: string;
+  audience: Audience;
+  subject: string;
+  body: string;
+  recipients: number;
+  senderName: string;
+  createdAt: string;
+}
+
+export const fetchAudiences = (token: string, slug: string) =>
+  request<{ counts: Record<Audience, number> }>('GET', 'audiences', token, slug);
+export const fetchAnnouncements = (token: string, slug: string) =>
+  request<{ announcements: SentAnnouncement[] }>('GET', 'announcements', token, slug);
+export const sendAnnouncement = (token: string, slug: string, audience: Audience, subject: string, body: string) =>
+  request<{ recipients: number }>('POST', 'announce', token, slug, { audience, subject, body });
 
 /** A spreadsheet of what is on screen. Values that start like a formula are neutralised. */
 export function toCsv(rows: (string | number | null | undefined)[][]): string {

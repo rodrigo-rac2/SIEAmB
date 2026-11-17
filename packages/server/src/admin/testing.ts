@@ -9,6 +9,9 @@ import {
   type AdminRegistration,
   type AdminStore,
   type AdminSubmission,
+  type Audience,
+  type Person,
+  type SentAnnouncement,
   type Invite,
   type Member,
   type MemberRole,
@@ -141,6 +144,38 @@ export class FakeAdminStore implements AdminStore {
     registration.userId = userId;
     return true;
   }
+  groups: Record<'registered' | 'authors' | 'reviewers' | 'organisers', Person[]> = { registered: [], authors: [], reviewers: [], organisers: [] };
+  announcements: (SentAnnouncement & { eventId: string; senderId: string; emails: string[] })[] = [];
+  async listAudiences(eventId: string) {
+    return eventId === EVENT.id ? this.groups : { registered: [], authors: [], reviewers: [], organisers: [] };
+  }
+  async findAccounts(emails: string[]) {
+    return this.users.filter((u) => emails.includes(u.email)).map((u) => ({ id: u.id, email: u.email }));
+  }
+  async insertAnnouncement(input: { eventId: string; senderId: string; audience: Audience; subject: string; body: string; recipients: string[]; now: Date }) {
+    seq += 1;
+    const id = `ann-${seq}`;
+    this.announcements.push({
+      id,
+      eventId: input.eventId,
+      senderId: input.senderId,
+      emails: input.recipients,
+      audience: input.audience,
+      subject: input.subject,
+      body: input.body,
+      recipients: input.recipients.length,
+      senderName: this.users.find((u) => u.id === input.senderId)?.fullName ?? '',
+      createdAt: input.now.toISOString(),
+    });
+    return id;
+  }
+  async listAnnouncements(eventId: string) {
+    return this.announcements.filter((a) => a.eventId === eventId).map(({ eventId: _e, senderId: _s, emails: _m, ...a }) => a);
+  }
+  async countAnnouncementsSince(senderId: string, since: Date) {
+    return this.announcements.filter((a) => a.senderId === senderId && Date.parse(a.createdAt) >= since.getTime()).length;
+  }
+
   async audit(entry: { actorId: string; action: string; entity: string; entityId: string | null; meta: Record<string, unknown> }) {
     if (this.failAudit) throw new Error('db down');
     this.audits.push(entry);

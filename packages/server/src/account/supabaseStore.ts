@@ -1,6 +1,7 @@
 import type { PaymentStatus } from '../payments/status';
 import {
   DocumentInUseError,
+  type AccountNotification,
   type AccountStore,
   type DocumentQuery,
   type EventRef,
@@ -337,6 +338,38 @@ export class SupabaseAccountStore implements AccountStore {
       platformAdmin: Boolean(users[0]?.is_platform_admin),
       slugs: [...new Set(rows.flatMap((r) => (r.event ? [r.event.slug] : [])))],
     };
+  }
+
+  async listNotifications(userId: string, limit: number): Promise<AccountNotification[]> {
+    const rows = await this.request<
+      { id: string; kind: string; data: Record<string, unknown>; event_id: string | null; read_at: string | null; created_at: string }[]
+    >(`notifications?user_id=eq.${q(userId)}&select=id,kind,data,event_id,read_at,created_at&order=created_at.desc&limit=${limit}`);
+    const ids = [...new Set(rows.flatMap((r) => (r.event_id ? [r.event_id] : [])))];
+    const events = ids.length
+      ? await this.request<{ id: string; slug: string }[]>(`events?id=in.(${ids.map(q).join(',')})&select=id,slug`)
+      : [];
+    return rows.map((row) => ({
+      id: row.id,
+      kind: row.kind,
+      data: row.data ?? {},
+      eventSlug: events.find((e) => e.id === row.event_id)?.slug ?? null,
+      readAt: row.read_at,
+      createdAt: row.created_at,
+    }));
+  }
+
+  async countUnreadNotifications(userId: string): Promise<number> {
+    const rows = await this.request<{ id: string }[]>(
+      `notifications?user_id=eq.${q(userId)}&read_at=is.null&select=id&limit=100`,
+    );
+    return rows.length;
+  }
+
+  async markNotificationsRead(userId: string, now: Date): Promise<void> {
+    await this.request<unknown[]>(`notifications?user_id=eq.${q(userId)}&read_at=is.null&select=id`, {
+      method: 'PATCH',
+      body: JSON.stringify({ read_at: now.toISOString() }),
+    });
   }
 
   async hitRateLimit(key: string, windowSeconds: number, max: number): Promise<boolean> {

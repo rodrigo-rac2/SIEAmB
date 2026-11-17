@@ -170,6 +170,22 @@ export const requestRegistrationLink = (
 export const confirmRegistrationLink = (linkToken: string): Promise<unknown> =>
   request('POST', 'link-confirm', { body: { token: linkToken } });
 
+export interface SiteNotification {
+  id: string;
+  kind: string;
+  data: Record<string, string | number>;
+  eventSlug: string | null;
+  readAt: string | null;
+  createdAt: string;
+}
+
+/** What is under the bell (#221). */
+export const fetchNotifications = (token: string): Promise<{ unread: number; items: SiteNotification[] }> =>
+  request('GET', 'notifications', { token });
+
+export const markNotificationsRead = (token: string): Promise<unknown> =>
+  request('POST', 'notifications-read', { token, body: {} });
+
 export interface DuplicateCheck {
   duplicate: boolean;
   maskedEmail?: string;

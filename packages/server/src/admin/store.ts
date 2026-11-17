@@ -83,6 +83,24 @@ export interface Invite {
   role: MemberRole;
 }
 
+export type Audience = 'all' | 'registered' | 'authors' | 'reviewers' | 'organisers';
+export const AUDIENCES: Audience[] = ['all', 'registered', 'authors', 'reviewers', 'organisers'];
+
+export interface Person {
+  email: string;
+  fullName: string;
+}
+
+export interface SentAnnouncement {
+  id: string;
+  audience: Audience;
+  subject: string;
+  body: string;
+  recipients: number;
+  senderName: string;
+  createdAt: string;
+}
+
 export interface PendingLink {
   id: string;
   createdAt: string;
@@ -128,6 +146,14 @@ export interface AdminStore {
   decideLink(id: string, status: 'CONFIRMED' | 'REJECTED', by: string, now: Date): Promise<void>;
   /** False when the registration already has an account or the account already has one in the event. */
   linkRegistration(registrationId: string, userId: string): Promise<boolean>;
+
+  /** Who is in each group of the edition (#221). Administrators are in none of them by role alone. */
+  listAudiences(eventId: string): Promise<Record<Exclude<Audience, 'all'>, Person[]>>;
+  /** Accounts among the given addresses: they also get the notice in the site. */
+  findAccounts(emails: string[]): Promise<{ id: string; email: string }[]>;
+  insertAnnouncement(input: { eventId: string; senderId: string; audience: Audience; subject: string; body: string; recipients: string[]; now: Date }): Promise<string>;
+  listAnnouncements(eventId: string): Promise<SentAnnouncement[]>;
+  countAnnouncementsSince(senderId: string, since: Date): Promise<number>;
 
   audit(entry: { actorId: string; action: string; entity: string; entityId: string | null; meta: Record<string, unknown> }): Promise<void>;
 }
