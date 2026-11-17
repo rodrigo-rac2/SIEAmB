@@ -833,6 +833,90 @@ describe('people tab', () => {
     expect(within(dono).queryByRole('button', { name: /Editar os dados|Enviar link/ })).not.toBeInTheDocument();
   });
 
+  it('an administrator is offered neither the e-mail, the CPF nor a typed password (#272)', async () => {
+    stubApi({ members: members() });
+    panel('people');
+    const pessoa = await row('Pessoa Comum');
+    expect(within(pessoa).queryByRole('button', { name: /Definir a senha/ })).not.toBeInTheDocument();
+    await userEvent.click(within(pessoa).getByRole('button', { name: 'Editar os dados de Pessoa Comum' }));
+    expect(within(pessoa).queryByLabelText('CPF')).not.toBeInTheDocument();
+    expect(within(pessoa).queryByLabelText('E-mail')).not.toBeInTheDocument();
+  });
+
+  it('the owner changes the e-mail and the CPF of someone (#272)', async () => {
+    const withCpf = members('ADMIN', true);
+    withCpf.body.accounts = withCpf.body.accounts.map((a) => (a.userId === 'u5' ? { ...a, cpf: '52998224725' } : a));
+    const calls = stubApi({ members: withCpf, 'account-update': { body: { ok: true, changed: true } } });
+    panel('people');
+    const pessoa = await row('Pessoa Comum');
+    await userEvent.click(within(pessoa).getByRole('button', { name: 'Editar os dados de Pessoa Comum' }));
+    const email = within(pessoa).getByLabelText('E-mail');
+    expect(email).toHaveValue('pessoa@ufrn.br');
+    expect(within(pessoa).getByLabelText('CPF')).toHaveValue('529.982.247-25');
+    await userEvent.clear(email);
+    expect(within(pessoa).getByRole('button', { name: 'Salvar' })).toBeDisabled();
+    await userEvent.type(email, 'pessoa.nova@ufrn.br');
+    await userEvent.clear(within(pessoa).getByLabelText('CPF'));
+    await userEvent.click(within(pessoa).getByRole('button', { name: 'Salvar' }));
+    expect(await screen.findByRole('status')).toHaveTextContent('Dados atualizados.');
+    expect(calls.find((c) => c.url.endsWith('account-update'))!.body).toEqual({
+      eventSlug: '2027',
+      userId: 'u5',
+      fullName: 'Pessoa Comum',
+      institution: '',
+      email: 'pessoa.nova@ufrn.br',
+      cpf: '',
+    });
+  });
+
+  it.each([
+    ['email_in_use', 'Já existe uma conta com esse e-mail.'],
+    ['document_in_use', 'Esse CPF já está em outra conta.'],
+    ['invalid_cpf', 'CPF'],
+  ])('keeps the owner\'s form open and explains %s', async (code, text) => {
+    stubApi({ members: members('ADMIN', true), 'account-update': { status: 409, body: { error: code } } });
+    panel('people');
+    const pessoa = await row('Pessoa Comum');
+    await userEvent.click(within(pessoa).getByRole('button', { name: 'Editar os dados de Pessoa Comum' }));
+    await userEvent.click(within(pessoa).getByRole('button', { name: 'Salvar' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(text);
+    expect(within(pessoa).getByLabelText('E-mail')).toBeInTheDocument();
+  });
+
+  it('the owner sets a password, hidden while typed, and is told to pass it on (#272)', async () => {
+    const calls = stubApi({ members: members('ADMIN', true), 'account-password-set': { body: { ok: true } } });
+    panel('people');
+    const pessoa = await row('Pessoa Comum');
+    await userEvent.click(within(pessoa).getByRole('button', { name: 'Definir a senha de Pessoa Comum' }));
+    const field = within(pessoa).getByLabelText('Nova senha de Pessoa Comum');
+    expect(field).toHaveAttribute('type', 'password');
+    expect(field).toHaveAttribute('autocomplete', 'new-password');
+    await userEvent.type(field, 'curta');
+    expect(within(pessoa).getByRole('button', { name: 'Definir senha' })).toBeDisabled();
+    await userEvent.click(within(pessoa).getByRole('button', { name: 'Cancelar' }));
+    expect(calls.some((c) => c.url.endsWith('account-password-set'))).toBe(false);
+
+    await userEvent.click(within(pessoa).getByRole('button', { name: 'Definir a senha de Pessoa Comum' }));
+    // What was typed before cancelling is gone.
+    expect(within(pessoa).getByLabelText('Nova senha de Pessoa Comum')).toHaveValue('');
+    await userEvent.type(within(pessoa).getByLabelText('Nova senha de Pessoa Comum'), 'uma-senha-bem-longa');
+    await userEvent.click(within(pessoa).getByRole('button', { name: 'Definir senha' }));
+    expect(await screen.findByRole('status')).toHaveTextContent('Senha de Pessoa Comum definida. Informe a nova senha à pessoa.');
+    expect(calls.find((c) => c.url.endsWith('account-password-set'))!.body).toEqual({ eventSlug: '2027', userId: 'u5', password: 'uma-senha-bem-longa' });
+    expect(within(pessoa).queryByLabelText('Nova senha de Pessoa Comum')).not.toBeInTheDocument();
+  });
+
+  it('keeps the password form open when the server finds the password weak', async () => {
+    stubApi({ members: members('ADMIN', true), 'account-password-set': { status: 400, body: { error: 'weak_password' } } });
+    panel('people');
+    const pessoa = await row('Pessoa Comum');
+    await userEvent.click(within(pessoa).getByRole('button', { name: 'Definir a senha de Pessoa Comum' }));
+    await userEvent.type(within(pessoa).getByLabelText('Nova senha de Pessoa Comum'), 'pessoa-2027-xx');
+    await userEvent.click(within(pessoa).getByRole('button', { name: 'Definir senha' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Senha fraca');
+    expect(within(pessoa).getByLabelText('Nova senha de Pessoa Comum')).toHaveValue('pessoa-2027-xx');
+  });
+
   it('says so when the account has no login yet', async () => {
     stubApi({ members: members(), 'account-password-link': { status: 409, body: { error: 'account_without_login' } } });
     panel('people');

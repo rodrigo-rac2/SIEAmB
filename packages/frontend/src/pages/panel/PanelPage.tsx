@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from
 import { useTranslation } from 'react-i18next';
 import { Link, Navigate, useLocation, useSearchParams } from 'react-router-dom';
 import { PageHeader } from '../../components/shared/PageHeader';
+import { PasswordInput } from '../../components/shared/PasswordInput';
 import { useAuth } from '../../contexts/AuthContext';
 import { useEvent } from '../../contexts/EventContext';
 import { useLocale, useLocalized } from '../../hooks/useLocale';
@@ -21,6 +22,7 @@ import {
   fetchAudiences,
   fetchPanelMembers,
   sendPasswordLink,
+  setAccountPassword,
   updateAccount,
   fetchPanelPapers,
   fetchPanelRegistrations,
@@ -45,6 +47,7 @@ import {
   type PanelRequest,
   type SentAnnouncement,
 } from '../../services/admin';
+import { PASSWORD_MIN } from '../../services/account';
 import { browser, paperFileUrl, withdrawPaper } from '../../services/submissions';
 import { NotFoundPage } from '../NotFoundPage';
 import '../../components/registration/RegistrationForm.css';
@@ -885,22 +888,30 @@ type PanelAccount = PanelMembers['accounts'][number];
 function AccountRow({
   account,
   canManage,
+  owner,
   busy,
   onGive,
   onTake,
   onSave,
   onPasswordLink,
+  onPasswordSet,
 }: {
   account: PanelAccount;
   canManage: MemberRole[];
+  /** The person looking is the owner: e-mail, CPF and a typed password are theirs alone (#272). */
+  owner: boolean;
   busy: boolean;
   onGive: (role: MemberRole) => void;
   onTake: (role: MemberRole) => void;
-  onSave: (fullName: string, institution: string) => Promise<boolean>;
+  onSave: (data: { fullName: string; institution: string; email?: string; cpf?: string }) => Promise<boolean>;
   onPasswordLink: () => void;
+  onPasswordSet: (password: string) => Promise<boolean>;
 }) {
   const { t } = useTranslation();
-  const [mode, setMode] = useState<'view' | 'edit' | 'password'>('view');
+  const [mode, setMode] = useState<'view' | 'edit' | 'password' | 'set-password'>('view');
+  const [email, setEmail] = useState(account.email);
+  const [cpf, setCpf] = useState(account.cpf ? formatCpf(account.cpf) : '');
+  const [password, setPassword] = useState('');
   const [chosen, setChosen] = useState<MemberRole | ''>('');
   const [fullName, setFullName] = useState(account.fullName);
   const [institution, setInstitution] = useState(account.institution ?? '');
@@ -909,6 +920,8 @@ function AccountRow({
   const startEdit = () => {
     setFullName(account.fullName);
     setInstitution(account.institution ?? '');
+    setEmail(account.email);
+    setCpf(account.cpf ? formatCpf(account.cpf) : '');
     setMode('edit');
   };
   return (
@@ -919,7 +932,11 @@ function AccountRow({
             className="panel__edit"
             onSubmit={(e) => {
               e.preventDefault();
-              void onSave(fullName.trim(), institution.trim()).then((ok) => ok && setMode('view'));
+              void onSave({
+                fullName: fullName.trim(),
+                institution: institution.trim(),
+                ...(owner ? { email: email.trim(), cpf: cpf.trim() } : {}),
+              }).then((ok) => ok && setMode('view'));
             }}
           >
             <label>
@@ -930,9 +947,23 @@ function AccountRow({
               {t('registration.institution')}
               <input value={institution} onChange={(e) => setInstitution(e.target.value)} maxLength={200} />
             </label>
-            <span className="panel__meta">{account.email}</span>
+            {owner ? (
+              <>
+                <label>
+                  {t('account.email')}
+                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} maxLength={200} />
+                </label>
+                <label>
+                  {t('registration.cpf')}
+                  <input value={cpf} onChange={(e) => setCpf(e.target.value)} inputMode="numeric" maxLength={14} />
+                </label>
+                <span className="panel__meta">{t('panel.people.ownerFieldsHint')}</span>
+              </>
+            ) : (
+              <span className="panel__meta">{account.email}</span>
+            )}
             <span>
-              <button className="account__button" type="submit" disabled={busy || fullName.trim().length < 3}>
+              <button className="account__button" type="submit" disabled={busy || fullName.trim().length < 3 || (owner && !email.trim())}>
                 {t('common.save')}
               </button>{' '}
               <button className="account__button account__button--quiet" type="button" onClick={() => setMode('view')}>
@@ -1025,7 +1056,54 @@ function AccountRow({
             >
               {t('panel.people.passwordLink')}
             </button>
+            {owner && (
+              <>
+                {' '}
+                <button
+                  className="account__button account__button--quiet"
+                  type="button"
+                  aria-label={t('panel.people.passwordSetFor', { name })}
+                  onClick={() => {
+                    setPassword('');
+                    setMode('set-password');
+                  }}
+                >
+                  {t('panel.people.passwordSet')}
+                </button>
+              </>
+            )}
           </>
+        )}
+        {mode === 'set-password' && (
+          <form
+            className="panel__edit"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void onPasswordSet(password).then((ok) => {
+                if (ok) {
+                  setPassword('');
+                  setMode('view');
+                }
+              });
+            }}
+          >
+            <label htmlFor={`set-password-${account.userId}`}>{t('panel.people.passwordNew', { name })}</label>
+            <PasswordInput
+              id={`set-password-${account.userId}`}
+              autoComplete="new-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <span className="panel__meta">{t('panel.people.passwordSetHint', { min: PASSWORD_MIN })}</span>
+            <span>
+              <button className="account__button" type="submit" disabled={busy || password.length < PASSWORD_MIN}>
+                {t('panel.people.passwordSetSave')}
+              </button>{' '}
+              <button className="account__button account__button--quiet" type="button" onClick={() => setMode('view')}>
+                {t('common.cancel')}
+              </button>
+            </span>
+          </form>
         )}
         {mode === 'password' && (
           <>
@@ -1176,13 +1254,20 @@ function PeopleTab({ token, slug, message }: TabProps) {
                 key={a.userId}
                 account={a}
                 canManage={data.canManage}
+                owner={data.owner}
                 busy={busy}
                 onGive={(r) => void give(a.email, r)}
                 onTake={(r) => void run(async () => (await removeMember(token, slug, a.email, r), null))}
-                onSave={(fullName, institution) =>
+                onSave={(changes) =>
                   run(async () => {
-                    await updateAccount(token, slug, a.userId, { fullName, institution });
+                    await updateAccount(token, slug, a.userId, changes);
                     return t('panel.people.updated');
+                  })
+                }
+                onPasswordSet={(password) =>
+                  run(async () => {
+                    await setAccountPassword(token, slug, a.userId, password);
+                    return t('panel.people.passwordSetDone', { name: a.fullName || a.email });
                   })
                 }
                 onPasswordLink={() =>

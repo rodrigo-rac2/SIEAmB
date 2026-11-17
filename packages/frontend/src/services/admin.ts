@@ -74,6 +74,8 @@ export interface PanelMembers {
     email: string;
     fullName: string;
     institution: string | null;
+    /** Sent to the owner only, who is the one who can change it (#272). */
+    cpf?: string | null;
     owner: boolean;
     roles: MemberRole[];
     canEdit: boolean;
@@ -122,6 +124,9 @@ const KNOWN_ERRORS = [
   'owner_only',
   'account_not_found',
   'account_without_login',
+  'email_in_use',
+  'document_in_use',
+  'weak_password',
 ] as const;
 
 export type AdminErrorCode = (typeof KNOWN_ERRORS)[number] | 'generic';
@@ -215,8 +220,16 @@ export function toCsv(rows: (string | number | null | undefined)[][]): string {
 }
 
 /** An administrator corrects someone's name and institution (#269). */
-export const updateAccount = (token: string, slug: string, userId: string, data: { fullName: string; institution: string }) =>
+export const updateAccount = (
+  token: string,
+  slug: string,
+  userId: string,
+  data: { fullName: string; institution: string; email?: string; cpf?: string },
+) =>
   request<{ ok: true; changed: boolean }>('POST', 'account-update', token, slug, { userId, ...data });
 /** Sends the person the e-mail to choose a new password (#270). */
 export const sendPasswordLink = (token: string, slug: string, userId: string) =>
   request<{ ok: true; queued: boolean }>('POST', 'account-password-link', token, slug, { userId });
+/** The owner sets someone's password (#272). */
+export const setAccountPassword = (token: string, slug: string, userId: string, password: string) =>
+  request<{ ok: true }>('POST', 'account-password-set', token, slug, { userId, password });

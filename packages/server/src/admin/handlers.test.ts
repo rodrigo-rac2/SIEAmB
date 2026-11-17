@@ -1259,7 +1259,7 @@ describe('an administrator updates someone else\'s account (#269)', () => {
     expect(outbox.notifications).toEqual([]);
   });
 
-  it('never touches the e-mail, the documents or the owner flag, whatever is sent', async () => {
+  it('an administrator never touches the e-mail, the documents or the owner flag, whatever is sent', async () => {
     const { deps, tokens, store } = setup();
     const before = JSON.stringify(store.users.find((u) => u.id === NOBODY.id));
     const response = await post(deps, 'account-update', tokens.admin, { userId: NOBODY.id, email: 'tomada@ufcg.edu.br', cpf: '52998224725', owner: true, isPlatformAdmin: true });
@@ -1351,5 +1351,120 @@ describe('an administrator sends someone a new-password link (#270)', () => {
     expect(sent).toEqual([]);
     expect((await post(deps, 'account-password-link', tokens.platform, { userId: 'user-admin-2' })).status).toBe(200);
     expect(sent.map((m) => m.to)).toEqual(['thays@ufcg.edu.br']);
+  });
+});
+
+describe('the owner changes what nobody else does: e-mail, CPF and password (#272)', () => {
+  const CPF = '52998224725';
+
+  it('changes the e-mail in the login service and in the account, logs it and tells the old address', async () => {
+    const { deps, tokens, store, auth, sent } = setup();
+    const response = await post(deps, 'account-update', tokens.platform, { userId: NOBODY.id, email: ' Pessoa.Nova@UFRN.br ' });
+    expect(await body(response)).toEqual({ ok: true, changed: true });
+    expect(auth.emails).toEqual([{ userId: NOBODY.id, email: 'pessoa.nova@ufrn.br' }]);
+    expect(store.users.find((u) => u.id === NOBODY.id)!.email).toBe('pessoa.nova@ufrn.br');
+    expect(store.audits[0]).toMatchObject({ action: 'account.update', entityId: NOBODY.id, meta: { email: NOBODY.email, newEmail: 'pessoa.nova@ufrn.br', fields: ['email'] } });
+    expect(sent.map((m) => m.to)).toEqual([NOBODY.email]);
+    expect(sent[0]!.subject).toBe('O e-mail da sua conta foi alterado (II SIEAmB)');
+    expect(sent[0]!.text).toContain('pessoa.nova@ufrn.br');
+  });
+
+  it('refuses an address another account has, or one that is not an address, and changes nothing', async () => {
+    const { deps, tokens, store, auth, sent } = setup();
+    auth.accounts.set(ORGANISER.email, true);
+    const taken = await post(deps, 'account-update', tokens.platform, { userId: NOBODY.id, email: ORGANISER.email, fullName: 'Nome Que Não Deve Ficar' });
+    expect(taken.status).toBe(409);
+    expect(await body(taken)).toEqual({ error: 'email_in_use' });
+    const invalid = await post(deps, 'account-update', tokens.platform, { userId: NOBODY.id, email: 'sem-arroba' });
+    expect(invalid.status).toBe(400);
+    expect(await body(invalid)).toEqual({ error: 'invalid_email' });
+    expect(store.users.find((u) => u.id === NOBODY.id)).toMatchObject({ email: NOBODY.email, fullName: 'Pessoa Comum' });
+    expect(store.audits).toEqual([]);
+    expect(sent).toEqual([]);
+  });
+
+  it('puts the login back on the old address when the account cannot take the new one', async () => {
+    const { deps, tokens, store, auth } = setup();
+    // The login service does not know the address, but an account row already has it.
+    store.users.push({ id: 'user-orphan', email: 'orfa@ufcg.edu.br', fullName: 'Conta Órfã' });
+    const response = await post(deps, 'account-update', tokens.platform, { userId: NOBODY.id, email: 'orfa@ufcg.edu.br' });
+    expect(response.status).toBe(409);
+    expect(await body(response)).toEqual({ error: 'email_in_use' });
+    expect(auth.emails).toEqual([
+      { userId: NOBODY.id, email: 'orfa@ufcg.edu.br' },
+      { userId: NOBODY.id, email: NOBODY.email },
+    ]);
+    expect(store.users.find((u) => u.id === NOBODY.id)!.email).toBe(NOBODY.email);
+  });
+
+  it('sets, replaces and takes off the CPF, and refuses an invalid one or one another account has', async () => {
+    const { deps, tokens, store } = setup();
+    expect(await body(await post(deps, 'account-update', tokens.platform, { userId: NOBODY.id, cpf: '529.982.247-25' }))).toEqual({ ok: true, changed: true });
+    expect(store.users.find((u) => u.id === NOBODY.id)!.cpf).toBe(CPF);
+    // The audit line says the field changed, never the number.
+    expect(JSON.stringify(store.audits)).not.toContain(CPF);
+    const invalid = await post(deps, 'account-update', tokens.platform, { userId: NOBODY.id, cpf: '111.111.111-11' });
+    expect(invalid.status).toBe(400);
+    expect(await body(invalid)).toEqual({ error: 'invalid_cpf' });
+    const taken = await post(deps, 'account-update', tokens.platform, { userId: ORGANISER.id, cpf: CPF });
+    expect(taken.status).toBe(409);
+    expect(await body(taken)).toEqual({ error: 'document_in_use' });
+    expect(store.users.find((u) => u.id === ORGANISER.id)!.cpf ?? null).toBeNull();
+    expect(await body(await post(deps, 'account-update', tokens.platform, { userId: NOBODY.id, cpf: '' }))).toEqual({ ok: true, changed: true });
+    expect(store.users.find((u) => u.id === NOBODY.id)!.cpf).toBeNull();
+  });
+
+  it('shows the CPF in the list to the owner only', async () => {
+    const { deps, tokens, store } = setup();
+    store.users.find((u) => u.id === NOBODY.id)!.cpf = CPF;
+    const asOwner = await body(await get(deps, 'members', tokens.platform));
+    expect((asOwner.accounts as { userId: string; cpf?: string }[]).find((a) => a.userId === NOBODY.id)!.cpf).toBe(CPF);
+    for (const token of [tokens.admin, tokens.organiser]) {
+      expect(JSON.stringify(await body(await get(deps, 'members', token)))).not.toContain(CPF);
+    }
+  });
+
+  it('sets a password, tells the person it changed without saying what it is, and logs it without the password', async () => {
+    const { deps, tokens, store, auth, sent } = setup();
+    const response = await post(deps, 'account-password-set', tokens.platform, { userId: NOBODY.id, password: 'uma-senha-bem-longa' });
+    expect(await body(response)).toEqual({ ok: true });
+    expect(auth.passwords).toEqual([{ userId: NOBODY.id, password: 'uma-senha-bem-longa' }]);
+    expect(store.audits[0]).toMatchObject({ actorId: PLATFORM.id, action: 'account.password_set', entityId: NOBODY.id });
+    expect(JSON.stringify(store.audits)).not.toContain('uma-senha-bem-longa');
+    expect(sent.map((m) => m.to)).toEqual([NOBODY.email]);
+    expect(sent[0]!.subject).toBe('A senha da sua conta foi alterada (II SIEAmB)');
+    expect(`${sent[0]!.text}${sent[0]!.html}`).not.toContain('uma-senha-bem-longa');
+  });
+
+  it.each([
+    ['too short', 'curta'],
+    ['built on the address', 'pessoa-2027-xx'],
+    ['missing', undefined],
+    ['not text', 1234567890123],
+  ])('refuses a password that is %s', async (_label, password) => {
+    const { deps, tokens, auth, store } = setup();
+    const response = await post(deps, 'account-password-set', tokens.platform, { userId: NOBODY.id, password });
+    expect(response.status).toBe(400);
+    expect(await body(response)).toEqual({ error: 'weak_password' });
+    expect(auth.passwords).toEqual([]);
+    expect(store.audits).toEqual([]);
+  });
+
+  it('is the owner\'s alone: an administrator is refused the password, and their e-mail and CPF are ignored', async () => {
+    const { deps, tokens, store, auth, sent } = setup();
+    const refused = await post(deps, 'account-password-set', tokens.admin, { userId: NOBODY.id, password: 'uma-senha-bem-longa' });
+    expect(refused.status).toBe(403);
+    expect(await body(refused)).toEqual({ error: 'owner_only' });
+    // Not even for their own account by this door: Minha área has its own.
+    expect((await post(deps, 'account-password-set', tokens.admin, { userId: ADMIN.id, password: 'uma-senha-bem-longa' })).status).toBe(403);
+    expect((await post(deps, 'account-password-set', tokens.organiser, { userId: NOBODY.id, password: 'uma-senha-bem-longa' })).status).toBe(403);
+    expect((await post(deps, 'account-password-set', tokens.nobody, { userId: NOBODY.id, password: 'uma-senha-bem-longa' })).status).toBe(404);
+    expect((await post(deps, 'account-password-set', undefined, { userId: NOBODY.id, password: 'uma-senha-bem-longa' })).status).toBe(401);
+    expect(await body(await post(deps, 'account-update', tokens.admin, { userId: NOBODY.id, email: 'tomada@ufcg.edu.br', cpf: CPF }))).toEqual({ ok: true, changed: false });
+    expect(auth.passwords).toEqual([]);
+    expect(auth.emails).toEqual([]);
+    expect(store.users.find((u) => u.id === NOBODY.id)).toMatchObject({ email: NOBODY.email });
+    expect(store.users.find((u) => u.id === NOBODY.id)!.cpf ?? null).toBeNull();
+    expect(sent).toEqual([]);
   });
 });

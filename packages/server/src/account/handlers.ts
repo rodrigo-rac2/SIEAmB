@@ -371,20 +371,20 @@ async function updateProfile(request: Request, deps: AccountDeps): Promise<Respo
   return json(200, await describe(user, deps));
 }
 
+/** Too short, too long, or built on the person's own address, which is the first one anybody would try. */
+export function isWeakPassword(password: string, email: string): boolean {
+  if (password.length < PASSWORD_MIN || password.length > PASSWORD_MAX) return true;
+  const local = email.split('@')[0]!.toLowerCase();
+  return local.length >= 4 && password.toLowerCase().includes(local);
+}
+
 /** Sets the password of the logged-in account: after confirming the e-mail, or after a recovery link. */
 async function setPassword(request: Request, deps: AccountDeps): Promise<Response> {
   const auth = await authenticate(request, deps);
   if ('response' in auth) return auth.response;
   const body = await readJsonObject(request);
   const password = typeof body.password === 'string' ? body.password : '';
-  if (password.length < PASSWORD_MIN || password.length > PASSWORD_MAX) {
-    return json(400, { error: 'weak_password' });
-  }
-  // A password built on the person's own address is the first one anybody would try.
-  const local = auth.user.email.split('@')[0]!.toLowerCase();
-  if (local.length >= 4 && password.toLowerCase().includes(local)) {
-    return json(400, { error: 'weak_password' });
-  }
+  if (isWeakPassword(password, auth.user.email)) return json(400, { error: 'weak_password' });
   await deps.auth.setPassword(auth.user.id, password);
   deps.log('account_password_set', {});
   return json(200, { ok: true });

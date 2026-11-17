@@ -121,6 +121,15 @@ describe('SupabaseAuthGateway, the rest', () => {
     await expect(gateway([{ status: 422, body: {} }]).auth.setPassword('u', 'x')).rejects.toThrow('auth_password_failed: 422');
   });
 
+  it('changes the e-mail, already confirmed, and says when another account has it', async () => {
+    const { auth, calls } = gateway([{ body: {} }]);
+    expect(await auth.setEmail('user/1', 'nova@ufcg.edu.br')).toBe('ok');
+    expect(calls[0]).toMatchObject({ method: 'PUT', path: 'admin/users/user%2F1', body: { email: 'nova@ufcg.edu.br', email_confirm: true } });
+    expect(await gateway([{ status: 422, body: { error_code: 'email_exists' } }]).auth.setEmail('u', 'x@y.org')).toBe('in_use');
+    await expect(gateway([{ status: 422, body: { error_code: 'validation_failed' } }]).auth.setEmail('u', 'x')).rejects.toThrow('auth_email_failed: 422');
+    await expect(gateway([{ status: 500, body: {} }]).auth.setEmail('u', 'x@y.org')).rejects.toThrow('auth_email_failed: 500');
+  });
+
   it('makes a different unguessable password every time', () => {
     const made = new Set(Array.from({ length: 50 }, unguessablePassword));
     expect(made.size).toBe(50);

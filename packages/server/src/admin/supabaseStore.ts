@@ -2,6 +2,7 @@ import { RestError, UNIQUE_VIOLATION, q, type RestClient } from '../core/rest';
 import type { PaymentStatus } from '../payments/status';
 import {
   RegistrationExistsError,
+  AccountConflictError,
   type Account,
   type AccountPatch,
   type AdminRegistration,
@@ -117,12 +118,13 @@ const unique = async <T>(work: () => Promise<T>): Promise<T> => {
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const ACCOUNT_COLUMNS = 'id,email,full_name,institution,is_platform_admin';
+const ACCOUNT_COLUMNS = 'id,email,full_name,institution,cpf,is_platform_admin';
 interface AccountRow {
   id: string;
   email: string;
   full_name: string;
   institution: string | null;
+  cpf: string | null;
   is_platform_admin: boolean;
 }
 const toAccount = (row: AccountRow): Account => ({
@@ -130,6 +132,7 @@ const toAccount = (row: AccountRow): Account => ({
   email: row.email,
   fullName: row.full_name,
   institution: row.institution,
+  cpf: row.cpf,
   owner: row.is_platform_admin,
 });
 
@@ -348,7 +351,14 @@ export class SupabaseAdminStore implements AdminStore {
     const body: Record<string, unknown> = { updated_at: now.toISOString() };
     if (patch.fullName !== undefined) body.full_name = patch.fullName;
     if (patch.institution !== undefined) body.institution = patch.institution;
-    await this.rest.request<unknown>(`users?id=eq.${q(id)}`, { method: 'PATCH', body: JSON.stringify(body) });
+    if (patch.email !== undefined) body.email = patch.email;
+    if (patch.cpf !== undefined) body.cpf = patch.cpf;
+    try {
+      await this.rest.request<unknown>(`users?id=eq.${q(id)}`, { method: 'PATCH', body: JSON.stringify(body) });
+    } catch (error) {
+      if (error instanceof RestError && error.code === UNIQUE_VIOLATION) throw new AccountConflictError();
+      throw error;
+    }
   }
 
   async listMembers(eventId: string): Promise<Member[]> {

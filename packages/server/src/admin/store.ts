@@ -86,12 +86,25 @@ export interface Account {
   email: string;
   fullName: string;
   institution: string | null;
+  /** Digits only; null for someone who gave none. */
+  cpf: string | null;
   owner: boolean;
 }
 
 export interface AccountPatch {
   fullName?: string;
   institution?: string | null;
+  /** Only the owner changes these two (#272). */
+  email?: string;
+  cpf?: string | null;
+}
+
+/** The new e-mail or CPF already belongs to another account. */
+export class AccountConflictError extends Error {
+  constructor() {
+    super('account_conflict');
+    this.name = 'AccountConflictError';
+  }
 }
 
 export interface Invite {

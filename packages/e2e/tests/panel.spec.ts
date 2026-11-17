@@ -222,6 +222,13 @@ test.describe('organisation panel @panel', () => {
     await expect(page.getByRole('status')).toContainText(`Link enviado para ${listedEmail}.`);
     const queued = await admin<{ subject: string }[]>(`/rest/v1/outbox_emails?to_email=eq.${encodeURIComponent(listedEmail)}&select=subject`);
     expect(queued.map((q) => q.subject).filter((subject) => subject.startsWith('Escolha uma nova senha'))).toHaveLength(1);
+    // E-mail, CPF and a typed password are the owner's alone (#272): ignored or refused for an administrator.
+    await expect(person.getByRole('button', { name: /Definir a senha/ })).toHaveCount(0);
+    const ignored = await page.request.post('/api/v1/admin/account-update', { headers: asAdmin, data: { eventSlug: EVENT, userId: personId, email: unique('tomada'), cpf: randomCpf() } });
+    expect(await ignored.json()).toEqual({ ok: true, changed: false });
+    const typed = await page.request.post('/api/v1/admin/account-password-set', { headers: asAdmin, data: { eventSlug: EVENT, userId: personId, password: 'e2e-senha-de-administradora' } });
+    expect(typed.status()).toBe(403);
+    expect(await admin<{ email: string; cpf: string | null }[]>(`/rest/v1/users?id=eq.${personId}&select=email,cpf`)).toEqual([{ email: listedEmail, cpf: null }]);
     // Not for another administrator: that one is the owner's to do.
     const otherAdmin = await admin<{ user_id: string }[]>(`/rest/v1/event_members?event_id=eq.${await eventId()}&role=eq.ADMIN&user_id=neq.${adminId}&select=user_id&limit=1`);
     if (otherAdmin[0]) {
@@ -302,6 +309,80 @@ test.describe('organisation panel @panel', () => {
     expect(edit.status()).toBe(403);
     const link = await page.request.post('/api/v1/admin/account-password-link', { headers, data: { eventSlug: EVENT, userId: someone.userId } });
     expect(link.status()).toBe(403);
+  });
+
+  test('the owner changes the e-mail, the CPF and the password of an account, and the person logs in with them (#272)', async ({ page, browser }) => {
+    const ownerEmail = unique('dono');
+    const oldEmail = unique('antes');
+    const newEmail = unique('depois');
+    made.push(ownerEmail, oldEmail, newEmail);
+    const ownerId = await createAccount(ownerEmail, 'Dono E2E');
+    await admin(`/rest/v1/users?id=eq.${ownerId}`, { method: 'PATCH', body: JSON.stringify({ is_platform_admin: true }) });
+    const personId = await createAccount(oldEmail, 'Pessoa Do Dono E2E');
+    const cpf = randomCpf();
+    const newPassword = 'e2e-Outra-senha-2027-do-dono';
+
+    // 1. The owner has no role row and still opens the panel, with the three roles to give.
+    await logIn(page, ownerEmail);
+    await page.goto(`/${EVENT}/painel/pessoas`);
+    await expect(page.getByTestId('account-row').first()).toBeVisible();
+    await expect(page.getByLabel('Papel', { exact: true }).getByRole('option')).toHaveText(['Administrador', 'Organizador', 'Avaliador']);
+    await page.getByLabel('Buscar').fill(oldEmail);
+    const person = page.getByTestId('account-row');
+    await expect(person).toHaveCount(1);
+
+    // 2. E-mail and CPF, which nobody else is offered.
+    await person.getByRole('button', { name: 'Editar os dados de Pessoa Do Dono E2E' }).click();
+    await person.getByLabel('E-mail').fill(newEmail);
+    await person.getByLabel('CPF').fill(cpf);
+    await person.getByRole('button', { name: 'Salvar' }).click();
+    await expect(page.getByRole('status')).toContainText('Dados atualizados.');
+    await page.getByLabel('Buscar').fill(newEmail);
+    await expect(person).toHaveCount(1);
+    await expect(person).toContainText(newEmail);
+    const stored = await admin<{ email: string; cpf: string | null }[]>(`/rest/v1/users?id=eq.${personId}&select=email,cpf`);
+    expect(stored).toEqual([{ email: newEmail, cpf: cpf.replace(/\D/g, '') }]);
+    const login = await admin<{ email: string; email_confirmed_at: string | null }>(`/auth/v1/admin/users/${personId}`);
+    expect(login.email).toBe(newEmail);
+    expect(login.email_confirmed_at).not.toBeNull();
+
+    // 3. A password typed by the owner, hidden while typed.
+    await person.getByRole('button', { name: 'Definir a senha de Pessoa Do Dono E2E' }).click();
+    const field = person.getByLabel('Nova senha de Pessoa Do Dono E2E');
+    await expect(field).toHaveAttribute('type', 'password');
+    await field.fill(newPassword);
+    await person.getByRole('button', { name: 'Definir senha', exact: true }).click();
+    await expect(page.getByRole('status')).toContainText('Senha de Pessoa Do Dono E2E definida.');
+
+    // 4. The person logs in with the new address and the new password; the old ones no longer work.
+    const personContext = await browser.newContext();
+    const personPage = await personContext.newPage();
+    const attempt = async (email: string, password: string) => {
+      await personPage.goto(`/${EVENT}/conta/entrar`);
+      await personPage.getByLabel('E-mail').fill(email);
+      await personPage.getByLabel('Senha', { exact: true }).fill(password);
+      await personPage.getByRole('button', { name: 'Entrar' }).click();
+    };
+    await attempt(oldEmail, PASSWORD);
+    await expect(personPage.getByRole('alert')).toBeVisible();
+    await attempt(newEmail, PASSWORD);
+    await expect(personPage.getByRole('alert')).toBeVisible();
+    await attempt(newEmail, newPassword);
+    await expect(personPage).toHaveURL(new RegExp(`/${EVENT}/minha-area$`));
+    await personContext.close();
+
+    // 5. Taking the CPF off again, and what the trail kept: the fields, never the number or the password.
+    await person.getByRole('button', { name: 'Editar os dados de Pessoa Do Dono E2E' }).click();
+    await person.getByLabel('CPF').fill('');
+    await person.getByRole('button', { name: 'Salvar' }).click();
+    await expect(page.getByRole('status')).toContainText('Dados atualizados.');
+    const cleared = await admin<{ cpf: string | null }[]>(`/rest/v1/users?id=eq.${personId}&select=cpf`);
+    expect(cleared).toEqual([{ cpf: null }]);
+    const trail = await admin<{ action: string; meta: Record<string, unknown> }[]>(`/rest/v1/audit_logs?actor_id=eq.${ownerId}&select=action,meta&order=created_at.asc`);
+    expect(trail.map((a) => a.action)).toEqual(['account.update', 'account.password_set', 'account.update']);
+    expect(JSON.stringify(trail)).not.toContain(cpf.replace(/\D/g, ''));
+    expect(JSON.stringify(trail)).not.toContain(newPassword);
+    await admin(`/rest/v1/audit_logs?actor_id=eq.${ownerId}`, { method: 'DELETE' }).catch(() => undefined);
   });
 
   test('someone with no role finds no panel, in the site or in the server', async ({ page }) => {
