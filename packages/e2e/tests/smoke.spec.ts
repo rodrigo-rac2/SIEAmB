@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { randomCpf } from './helpers';
+import { randomCpf, unique } from './helpers';
 
 test.describe('public site @smoke', () => {
   test('root redirects to the current event home', async ({ page }) => {
@@ -171,7 +171,8 @@ test.describe('registration form @smoke', () => {
     await page.goto('/2027/inscricoes/nova');
 
     await page.getByLabel(/Nome completo/).fill('Maria da Silva Santos');
-    await page.getByLabel(/E-mail/).fill(`e2e+${Date.now()}@sieamb.org`);
+    // An address of this run, so the teardown removes the registration (#227).
+    await page.getByLabel(/E-mail/).fill(unique('smoke'));
     await page.getByLabel('CPF', { exact: true }).fill('111.111.111-11');
     await page.getByRole('button', { name: /Enviar inscrição/ }).click();
     await expect(page.getByText('CPF inválido. Confira os dígitos.')).toBeVisible();
