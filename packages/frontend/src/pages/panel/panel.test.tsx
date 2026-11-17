@@ -116,13 +116,11 @@ const members = (role: 'ADMIN' | 'ORGANIZER' = 'ADMIN', owner = false) => {
         { userId: 'u2', email: 'viviane@ufcg.edu.br', fullName: 'Viviane Farias', role: 'ORGANIZER' },
       ],
       invites: [{ email: 'futuro@ufpb.br', role: 'REVIEWER' }],
+      // As the server sends it: nobody gets a role above their own (#275). An organiser sees the
+      // administrator and the owner as accounts without those marks; only the owner sees the owner.
       accounts: [
-        ...(admin
-          ? [
-              account('u1', 'Najara Escarião', 'najara@ufcg.edu.br', ['ADMIN'], { canEdit: true }),
-              account('u0', 'Rodrigo Dono', 'rodrigo@sieamb.org', [], { owner: true, canEdit: owner }),
-            ]
-          : []),
+        account('u1', 'Najara Escarião', 'najara@ufcg.edu.br', admin ? ['ADMIN'] : [], { canEdit: admin }),
+        account('u0', 'Rodrigo Dono', 'rodrigo@sieamb.org', [], { owner, canEdit: owner }),
         account('u2', 'Viviane Farias', 'viviane@ufcg.edu.br', ['ORGANIZER'], { institution: 'UFCG' }),
         account('u5', 'Pessoa Comum', 'pessoa@ufrn.br', []),
       ],
@@ -698,7 +696,10 @@ describe('people tab', () => {
     expect(viviane).toHaveTextContent('viviane@ufcg.edu.br · UFCG');
     expect(within(viviane).getByTestId('account-roles')).toHaveTextContent('Organizador');
     expect(within(await row('Pessoa Comum')).getByTestId('account-roles')).toHaveTextContent('Sem papel');
-    expect(within(await row('Rodrigo Dono')).getByTestId('account-roles')).toHaveTextContent('Dono(a) do site');
+    // To an administrator the owner is a line with no role and nothing to do on it (#275).
+    const dono = within(await row('Rodrigo Dono'));
+    expect(dono.getByTestId('account-roles')).toHaveTextContent('Sem papel');
+    expect(screen.queryByText('Dono(a) do site')).not.toBeInTheDocument();
     expect(screen.getByTestId('account-count')).toHaveTextContent('4 contas');
     expect(screen.getByTestId('pending-invites')).toHaveTextContent('futuro@ufpb.br (Avaliador)');
   });
@@ -754,6 +755,7 @@ describe('people tab', () => {
     expect(within(await screen.findByLabelText('Papel')).getAllByRole('option').map((o) => o.textContent)).toEqual(['Administrador', 'Organizador', 'Avaliador']);
     expect(within(await row('Najara Escarião')).getByRole('button', { name: 'Tirar o papel de Administrador de Najara Escarião' })).toBeInTheDocument();
     expect(within(await row('Rodrigo Dono')).getByRole('button', { name: 'Editar os dados de Rodrigo Dono' })).toBeInTheDocument();
+    expect(within(await row('Rodrigo Dono')).getByTestId('account-roles')).toHaveTextContent('Dono(a) do site');
   });
 
   it('lets an organiser manage reviewers only, without the administrators and without editing anyone (#264)', async () => {
@@ -761,7 +763,11 @@ describe('people tab', () => {
     panel('people');
     const role = await screen.findByLabelText('Papel');
     expect(within(role).getAllByRole('option').map((o) => o.textContent)).toEqual(['Avaliador']);
-    expect(screen.queryByText(/najara@ufcg\.edu\.br/)).not.toBeInTheDocument();
+    // The administrator and the owner are lines like any other, with no role above the organiser's (#275).
+    expect(within(await row('Najara Escarião')).getByTestId('account-roles')).toHaveTextContent('Sem papel');
+    expect(within(await row('Rodrigo Dono')).getByTestId('account-roles')).toHaveTextContent('Sem papel');
+    expect(screen.queryByText('Dono(a) do site')).not.toBeInTheDocument();
+    expect(screen.queryByText('Administrador')).not.toBeInTheDocument();
     expect(screen.getByTestId('role-legend')).not.toHaveTextContent('Administrador:');
     expect(screen.getByTestId('role-legend')).toHaveTextContent('Avaliador: Avalia os trabalhos que receber.');
     const viviane = await row('Viviane Farias');
