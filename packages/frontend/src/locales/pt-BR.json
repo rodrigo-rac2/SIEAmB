@@ -593,6 +593,8 @@
       "assignFor": "Indicar para o trabalho nº {{number}}",
       "removeReviewer": "Tirar {{name}} do trabalho nº {{number}}",
       "noReviewers": "Ninguém tem o papel de Avaliador nesta edição. Dê esse papel em Pessoas e papéis.",
+      "noOtherReviewer": "Não há outro avaliador para indicar. Para ter mais, dê o papel de Avaliador a outras pessoas em Pessoas e papéis.",
+      "reviewersAreAuthors": "Quem tem o papel de Avaliador é autor deste trabalho e não pode avaliá-lo. Dê o papel de Avaliador a outra pessoa em Pessoas e papéis.",
       "reviewersHint": "Cada trabalho precisa de pelo menos um avaliador, e você pode indicar quantos quiser. Com um avaliador indicado, o trabalho fica em avaliação e os autores não podem mais alterá-lo. Os avaliadores veem o arquivo com os nomes dos autores.",
       "window": {
         "open": "As submissões estão abertas.",

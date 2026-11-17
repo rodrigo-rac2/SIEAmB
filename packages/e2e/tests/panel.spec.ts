@@ -221,6 +221,16 @@ test.describe('organisation panel @panel', () => {
     expect(promote.status()).toBe(403);
     const list = await (await page.request.get(`/api/v1/admin/registrations?eventSlug=${EVENT}`, { headers })).json();
     expect(JSON.stringify(list)).not.toMatch(/"cpf"/);
+
+    // People and roles: an organiser manages reviewers and is not told who the administrators are (#264).
+    await page.goto(`/${EVENT}/painel/pessoas`);
+    await expect(page.getByTestId('role-REVIEWER')).toBeVisible();
+    await expect(page.getByTestId('role-ORGANIZER')).toContainText(email);
+    await expect(page.getByTestId('role-ADMIN')).toHaveCount(0);
+    const people = await (await page.request.get(`/api/v1/admin/members?eventSlug=${EVENT}`, { headers })).json();
+    expect(people.members.length).toBeGreaterThan(0);
+    expect(people.members.filter((m: { role: string }) => m.role === 'ADMIN')).toEqual([]);
+    expect(people.invites.filter((i: { role: string }) => i.role === 'ADMIN')).toEqual([]);
   });
 
   test('someone with no role finds no panel, in the site or in the server', async ({ page }) => {

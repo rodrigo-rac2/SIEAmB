@@ -80,6 +80,8 @@ export interface SubmissionStore {
   /** People with the Administrador or Organizador role in the edition. */
   listOrganisers(eventId: string): Promise<Organiser[]>;
   isOrganiser(eventId: string, userId: string): Promise<boolean>;
+  /** An administrator of the edition (or of the platform): the only staff who change or withdraw a paper (#265). */
+  isAdmin(eventId: string, userId: string): Promise<boolean>;
   /** Accounts, by e-mail, among the given addresses: who gets the in-site notice too. */
   findUsersByEmail(emails: string[]): Promise<{ id: string; email: string }[]>;
 }

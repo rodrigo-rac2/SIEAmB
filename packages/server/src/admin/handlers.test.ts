@@ -397,6 +397,24 @@ describe('people and roles', () => {
     expect((await body(await get(deps, 'members', tokens.organiser))).canManage).toEqual(['REVIEWER']);
   });
 
+  it('does not tell an organiser who the administrators are, nor who was invited to be one (#264)', async () => {
+    const { deps, tokens, store } = setup();
+    store.invites.push({ eventId: EVENT.id, email: 'futura-admin@ufcg.edu.br', role: 'ADMIN' });
+    store.invites.push({ eventId: EVENT.id, email: 'futuro@ufpb.br', role: 'REVIEWER' });
+    const asOrganiser = await body(await get(deps, 'members', tokens.organiser));
+    expect(asOrganiser.members.map((m) => `${m.email as string}:${m.role as string}`)).toEqual([
+      `${ORGANISER.email}:ORGANIZER`,
+      `${REVIEWER.email}:REVIEWER`,
+    ]);
+    expect(asOrganiser.invites).toEqual([{ email: 'futuro@ufpb.br', role: 'REVIEWER' }]);
+    expect(JSON.stringify(asOrganiser)).not.toContain(ADMIN.email);
+    expect(JSON.stringify(asOrganiser)).not.toContain('futura-admin');
+    // The administrator still sees everyone.
+    const asAdmin = await body(await get(deps, 'members', tokens.admin));
+    expect(asAdmin.invites).toHaveLength(2);
+    expect(asAdmin.members.some((m) => m.role === 'ADMIN')).toBe(true);
+  });
+
   it('gives a role to someone with an account, tells them, and logs it', async () => {
     const { deps, tokens, store, sent, outbox } = setup();
     const response = await post(deps, 'member-add', tokens.admin, { email: NOBODY.email.toUpperCase(), role: 'ORGANIZER' });
