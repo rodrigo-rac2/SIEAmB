@@ -53,11 +53,22 @@ export interface Organiser {
   fullName: string;
 }
 
+export interface Person {
+  fullName: string;
+  email: string;
+  institution: string | null;
+}
+
 export interface SubmissionStore {
   findEvent(slug: string): Promise<{ id: string; slug: string; name: string } | null>;
   /** Papers of the edition, withdrawn ones left out, where the e-mail is any of the authors. */
   listByAuthorEmail(eventId: string, email: string): Promise<Submission[]>;
   findById(id: string): Promise<Submission | null>;
+  /**
+   * People whose name contains the text, ignoring case and accents: accounts,
+   * registrations of the edition and authors of its papers, one row per e-mail.
+   */
+  searchPeople(eventId: string, query: string, limit: number): Promise<Person[]>;
   insert(eventId: string, userId: string, input: SubmissionInput, now: Date): Promise<Submission>;
   /** Replaces the fields and the list of authors of a paper. */
   update(id: string, input: SubmissionInput, now: Date): Promise<Submission>;

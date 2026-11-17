@@ -7,7 +7,7 @@ import type { NewNotification, OutboxJob, OutboxMail, OutboxStore } from '../cor
 import type { Mailer, OutgoingMail } from '../payments/notifications';
 import type { SubmissionDeps } from './handlers';
 import { RULES } from './rules';
-import type { Author, FileStorage, Organiser, Submission, SubmissionInput, SubmissionStore } from './store';
+import type { Author, FileStorage, Organiser, Person, Submission, SubmissionInput, SubmissionStore } from './store';
 
 export const NOW = new Date('2026-12-01T15:00:00-03:00');
 export const EVENT = { id: 'ev-2027', slug: '2027', name: 'II SIEAmB' };
@@ -48,6 +48,9 @@ export class FakeSubmissionStore implements SubmissionStore {
     { id: ORGANISER.id, email: ORGANISER.email },
   ];
   deletions: { id: string; userId: string; reason: string }[] = [];
+  /** Who the name suggestions can find. */
+  people: Person[] = [];
+  searches: { eventId: string; query: string; limit: number }[] = [];
 
   async findEvent(slug: string) {
     return slug === EVENT.slug ? EVENT : null;
@@ -59,6 +62,11 @@ export class FakeSubmissionStore implements SubmissionStore {
   }
   async findById(id: string) {
     return this.submissions.find((s) => s.id === id) ?? null;
+  }
+  async searchPeople(eventId: string, query: string, limit: number) {
+    this.searches.push({ eventId, query, limit });
+    const fold = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    return this.people.filter((p) => fold(p.fullName).includes(fold(query.trim()))).slice(0, limit);
   }
   async insert(eventId: string, userId: string, input: SubmissionInput, now: Date) {
     seq += 1;
@@ -231,7 +239,6 @@ export function setup(options: { failSends?: boolean; noMailer?: boolean; locksA
       hits.set(key, count);
       return count <= max;
     },
-    profileName: async (userId) => (userId === MAIN.id ? 'Maria Clara de Souza' : 'João Lima'),
     siteUrl: 'https://dev.sieamb.org/',
     log: (event, data) => logs.push({ event, data }),
     now: () => NOW,

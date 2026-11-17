@@ -4,6 +4,7 @@ import type {
   Author,
   FileStorage,
   Organiser,
+  Person,
   Submission,
   SubmissionInput,
   SubmissionStatus,
@@ -103,6 +104,14 @@ export class SupabaseSubmissionStore implements SubmissionStore {
       `submissions?id=eq.${q(id)}&select=${WITH_AUTHORS}&limit=1`,
     );
     return rows[0] ? toSubmission(rows[0]) : null;
+  }
+
+  async searchPeople(eventId: string, query: string, limit: number): Promise<Person[]> {
+    const rows = await this.rest.request<{ full_name: string; email: string; institution: string | null }[]>(
+      'rpc/search_people',
+      { method: 'POST', body: JSON.stringify({ p_event_id: eventId, p_query: query, p_limit: limit }) },
+    );
+    return rows.map((r) => ({ fullName: r.full_name, email: r.email, institution: r.institution }));
   }
 
   private async writeAuthors(submissionId: string, authors: Author[]): Promise<void> {

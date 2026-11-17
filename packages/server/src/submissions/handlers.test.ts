@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { EMAIL_LOCALES } from '../payments/emailTemplates';
 import { renderOrganiserEmail, renderSubmissionEmail } from './emails';
-import { DOWNLOAD_LINK_SECONDS, UPLOADS_PER_HOUR, handleSubmissions, type SubmissionDeps } from './handlers';
+import {
+  DOWNLOAD_LINK_SECONDS,
+  PEOPLE_SEARCHES_PER_HOUR,
+  PEOPLE_SUGGESTIONS,
+  UPLOADS_PER_HOUR,
+  handleSubmissions,
+  type SubmissionDeps,
+} from './handlers';
+import { maskEmail, openEmail, sealEmail } from './people';
 import { RULES, areaName, areaRefs, rulesFor, submissionClock, windowState } from './rules';
 import { EVENT, MAIN, NOW, ORGANISER, OTHER, call, docx, pdf, setup } from './testing';
 
@@ -16,21 +24,33 @@ const body = async (response: Response) => (await response.json()) as Answer;
 const R = rulesFor('2027')!;
 const PATH = `2027/${MAIN.id}/3f2b8c1e-9a4d-4e7f-8b21-6c5d4e3f2a10.pdf`;
 
-const paper = (over: Record<string, unknown> = {}) => ({
-  eventSlug: '2027',
-  title: 'Governança da água no semiárido paraibano',
-  titleEn: 'Water governance in the semi-arid region of Paraíba',
-  modality: 'RESUMO_EXPANDIDO',
-  areaRef: 'a1',
-  abstract: 'Este trabalho analisa a governança da água em municípios do semiárido, com base em entrevistas e dados públicos.',
-  keywords: ['água', 'governança', 'semiárido'],
-  keywordsEn: ['water', 'governance'],
-  coauthors: [{ fullName: 'João Lima', email: 'Joao@UFPB.br' }],
-  filePath: PATH,
-  fileName: 'Resumo expandido - Maria.pdf',
-  locale: 'pt-BR',
-  ...over,
-});
+const ME = { fullName: 'Maria Clara de Souza', email: MAIN.email };
+
+/**
+ * What the form sends. `coauthors` is shorthand for "Maria first, then these";
+ * `authors` gives the whole list, in order, as the form really sends it.
+ */
+const paper = (over: Record<string, unknown> = {}) => {
+  const { coauthors = [{ fullName: 'João Lima', email: 'Joao@UFPB.br' }], authors, ...rest } = over as {
+    coauthors?: unknown[];
+    authors?: unknown[];
+  } & Record<string, unknown>;
+  return {
+    eventSlug: '2027',
+    title: 'Governança da água no semiárido paraibano',
+    titleEn: 'Water governance in the semi-arid region of Paraíba',
+    modality: 'RESUMO_EXPANDIDO',
+    areaRef: 'a1',
+    abstract: 'Este trabalho analisa a governança da água em municípios do semiárido, com base em entrevistas e dados públicos.',
+    keywords: ['água', 'governança', 'semiárido'],
+    keywordsEn: ['water', 'governance'],
+    authors: authors ?? [ME, ...coauthors],
+    filePath: PATH,
+    fileName: 'Resumo expandido - Maria.pdf',
+    locale: 'pt-BR',
+    ...rest,
+  };
+};
 
 /** A context with a 5-page PDF already uploaded by the main author. */
 async function ready(pages = 5, options: Parameters<typeof setup>[0] = {}) {
@@ -210,7 +230,7 @@ describe('upload-url', () => {
 });
 
 describe('sending a paper', () => {
-  it('saves it with the main author first, numbers it and answers with what the author sees', async () => {
+  it('saves it with the authors in the order given, numbers it and answers with what the author sees', async () => {
     const { save, store } = await ready();
     const response = await save(paper());
     expect(response.status).toBe(201);
@@ -222,7 +242,8 @@ describe('sending a paper', () => {
       fileName: 'Resumo expandido - Maria.pdf',
       filePages: 5,
       status: 'SUBMITTED',
-      role: 'main',
+      position: 1,
+      sentByMe: true,
       canEdit: true,
       authors: [
         { position: 1, fullName: 'Maria Clara de Souza', email: MAIN.email },
@@ -280,10 +301,14 @@ describe('sending a paper', () => {
     ['six keywords', { keywords: ['a1', 'b2', 'c3', 'd4', 'e5', 'f6'] }, 'invalid_keywords'],
     ['six English keywords', { keywordsEn: ['a1', 'b2', 'c3', 'd4', 'e5', 'f6'] }, 'invalid_keywords'],
     ['a one-letter keyword', { keywords: ['a'] }, 'invalid_keywords'],
-    ['a co-author without an e-mail', { coauthors: [{ fullName: 'João Lima' }] }, 'invalid_coauthor'],
-    ['a co-author with a bad e-mail', { coauthors: [{ fullName: 'João Lima', email: 'joao@' }] }, 'invalid_coauthor'],
-    ['a co-author without a name', { coauthors: [{ fullName: 'J', email: 'j@ufpb.br' }] }, 'invalid_coauthor'],
-    ['the main author listed as a co-author', { coauthors: [{ fullName: 'Maria', email: MAIN.email.toUpperCase() }] }, 'duplicate_author'],
+    ['an author without an e-mail', { coauthors: [{ fullName: 'João Lima' }] }, 'invalid_author'],
+    ['an author with a bad e-mail', { coauthors: [{ fullName: 'João Lima', email: 'joao@' }] }, 'invalid_author'],
+    ['an author without a name', { coauthors: [{ fullName: 'J', email: 'j@ufpb.br' }] }, 'invalid_author'],
+    ['an author picked with a reference we did not seal', { coauthors: [{ fullName: 'João Lima', ref: 'bm90LW91cnMtYXQtYWxsLW5vdC1vdXJzLWF0LWFsbC1ub3Qtb3Vycw' }] }, 'invalid_author'],
+    ['no authors at all', { authors: [] }, 'sender_not_listed'],
+    ['a list without the person who is sending it', { authors: [{ fullName: 'João Lima', email: 'joao@ufpb.br' }] }, 'sender_not_listed'],
+    ['a list that is not a list', { authors: 'Maria' }, 'sender_not_listed'],
+    ['the sender listed twice', { coauthors: [{ fullName: 'Maria', email: MAIN.email.toUpperCase() }] }, 'duplicate_author'],
     ['the same co-author twice', { coauthors: [{ fullName: 'João Lima', email: 'j@ufpb.br' }, { fullName: 'Joao L.', email: 'J@ufpb.br' }] }, 'duplicate_author'],
   ])('refuses %s', async (_name, over, error) => {
     const { save, store, sent } = await ready();
@@ -403,8 +428,30 @@ describe('limits of the edital', () => {
     for (let i = 1; i <= 3; i += 1) store.seed({ title: `Trabalho anterior ${i}` });
     const response = await save(paper());
     expect(response.status).toBe(409);
-    expect(await body(response)).toEqual({ error: 'too_many_as_main', max: 3 });
+    expect(await body(response)).toEqual({ error: 'too_many_as_main', name: 'Maria Clara de Souza', max: 3 });
     expect(store.submissions).toHaveLength(3);
+  });
+
+  it('counts the first-author limit for whoever is first in the list, not for who sends', async () => {
+    const { save, store } = await ready();
+    const prof = { fullName: 'Profa. Ana Reis', email: 'ana@ufrn.br' };
+    for (let i = 1; i <= 3; i += 1) {
+      store.seed({ title: `Da professora ${i}`, userId: 'someone', authors: [{ position: 1, ...prof }] });
+    }
+    // Maria sends, the professor is first: the professor's three are what counts.
+    const refused = await save(paper({ authors: [prof, ME] }));
+    expect(refused.status).toBe(409);
+    expect(await body(refused)).toEqual({ error: 'too_many_as_main', name: 'Profa. Ana Reis', max: 3 });
+    // With the professor second, it goes: three as first author do not count against other places.
+    expect((await save(paper({ authors: [ME, prof] }))).status).toBe(201);
+  });
+
+  it('counts a sender in second place against the other-places limit, not the first-author one', async () => {
+    const { save, store } = await ready();
+    for (let i = 1; i <= 3; i += 1) store.seed({ title: `Trabalho anterior ${i}` });
+    // Maria already has three as first author; as second author she can still be in more.
+    expect((await save(paper({ authors: [{ fullName: 'Profa. Ana Reis', email: 'ana@ufrn.br' }, ME] }))).status).toBe(201);
+    expect(store.submissions.at(-1)!.authors.map((a) => a.email)).toEqual(['ana@ufrn.br', MAIN.email]);
   });
 
   it('does not count a withdrawn paper, nor papers where the person is only a co-author', async () => {
@@ -431,7 +478,10 @@ describe('limits of the edital', () => {
     }
     const response = await save(paper({ coauthors: [{ fullName: 'João Lima', email: OTHER.email }] }));
     expect(response.status).toBe(409);
-    expect(await body(response)).toEqual({ error: 'coauthor_limit', email: OTHER.email, max: 5 });
+    const answer = await body(response);
+    expect(answer).toEqual({ error: 'coauthor_limit', name: 'João Lima', max: 5 });
+    // The answer never repeats an address: it may have come from a suggestion.
+    expect(JSON.stringify(answer)).not.toContain(OTHER.email);
   });
 
   it('does not count the papers a co-author sent as main author', async () => {
@@ -468,6 +518,163 @@ describe('limits of the edital', () => {
     const { save, store } = await ready();
     store.seed({ title: 'Governança da água no semiárido paraibano', userId: 'stranger', authors: [{ position: 1, fullName: 'X', email: 'x@y.org' }] });
     expect((await save(paper())).status).toBe(201);
+  });
+});
+
+describe('anyone among the authors can send', () => {
+  const PROF = { fullName: 'Prof. Carlos Meira', email: 'carlos.meira@ufcg.edu.br' };
+  const JOAO = { fullName: 'João Lima', email: OTHER.email };
+  const THEIRS = `2027/${OTHER.id}/cccccccc-0000-4000-8000-000000000003.pdf`;
+
+  it('takes a paper sent by the second author, with a first author who has no account', async () => {
+    const { save, store, files, tokens, sent: mails, outbox, deps } = await ready();
+    files.objects.set(THEIRS, await pdf(5));
+    const response = await save(paper({ authors: [PROF, JOAO], filePath: THEIRS }), tokens.other);
+    expect(response.status).toBe(201);
+    expect((await body(response)).submission).toMatchObject({
+      position: 2,
+      sentByMe: true,
+      canEdit: true,
+      authors: [
+        { position: 1, ...PROF },
+        { position: 2, ...JOAO },
+      ],
+    });
+    expect(store.submissions[0]).toMatchObject({ userId: OTHER.id });
+    // The professor is told by e-mail who sent it; only João has an account to be told in the site.
+    expect(mails.map((m) => m.to).sort()).toEqual([PROF.email, OTHER.email].sort());
+    expect(mails.find((m) => m.to === PROF.email)!.text).toContain('enviado por João Lima');
+    expect(outbox.notifications.map((n) => n.userId)).toEqual([OTHER.id]);
+    // It counts for João in "other places", not as first author.
+    const list = await body(await handleSubmissions(call('GET', 'mine', { token: tokens.other, query: '?eventSlug=2027' }), 'mine', deps));
+    expect(list.limits).toMatchObject({ asMain: 0, asCoauthor: 1 });
+  });
+
+  it('shows the paper to the first author once they create an account with that e-mail', async () => {
+    const { save, files, tokens, auth, deps } = await ready();
+    files.objects.set(THEIRS, await pdf(5));
+    await save(paper({ authors: [PROF, JOAO], filePath: THEIRS }), tokens.other);
+    const token = auth.login({ id: 'user-prof', email: PROF.email, emailConfirmed: true }, 'tok-prof');
+    const list = await body(await handleSubmissions(call('GET', 'mine', { token, query: '?eventSlug=2027' }), 'mine', deps));
+    expect(list.submissions).toHaveLength(1);
+    expect(list.submissions[0]).toMatchObject({ position: 1, sentByMe: false, canEdit: true });
+    expect(list.limits).toMatchObject({ asMain: 1, asCoauthor: 0 });
+  });
+
+  it('keeps the sender wherever they put themselves among five authors', async () => {
+    const { save, store } = await ready();
+    const others = Array.from({ length: 4 }, (_, i) => ({ fullName: `Autor ${i}`, email: `a${i}@ufpb.br` }));
+    expect((await save(paper({ authors: [others[0], others[1], ME, others[2], others[3]] }))).status).toBe(201);
+    expect(store.submissions[0]!.authors.map((a) => a.position)).toEqual([1, 2, 3, 4, 5]);
+    expect(store.submissions[0]!.authors[2]).toMatchObject({ email: MAIN.email, position: 3 });
+  });
+
+  it('takes the name typed for the sender, since the list is what goes in the proceedings', async () => {
+    const { save, store } = await ready();
+    await save(paper({ authors: [{ fullName: 'Maria C. de Souza', email: MAIN.email.toUpperCase() }] }));
+    expect(store.submissions[0]!.authors).toEqual([{ position: 1, fullName: 'Maria C. de Souza', email: MAIN.email }]);
+  });
+});
+
+describe('name suggestions for the author list', () => {
+  const search = (deps: SubmissionDeps, token: string | undefined, q: string) =>
+    handleSubmissions(
+      call('GET', 'people', { token, query: `?eventSlug=2027&q=${encodeURIComponent(q)}` }),
+      'people',
+      deps,
+    );
+  const known = [
+    { fullName: 'Rodrigo Alves Costa', email: 'rodrigo.costa@ufcg.edu.br', institution: 'UFCG' },
+    { fullName: 'Rodrigo Antônio Lima', email: 'ral@ufpb.br', institution: null },
+    { fullName: 'João Lima', email: OTHER.email, institution: 'UFPB' },
+    { fullName: 'Maria Clara de Souza', email: MAIN.email, institution: 'UFCG' },
+  ];
+
+  it('needs a login', async () => {
+    const { deps, store } = setup();
+    expect((await search(deps, undefined, 'Rodrigo')).status).toBe(401);
+    expect(store.searches).toEqual([]);
+  });
+
+  it('suggests people by name with a masked e-mail, and never the address itself', async () => {
+    const { deps, tokens, store } = setup();
+    store.people = known;
+    const response = await search(deps, tokens.main, 'Rodrigo');
+    expect(response.status).toBe(200);
+    const raw = await response.text();
+    const { people } = JSON.parse(raw) as { people: { fullName: string; institution: string | null; emailHint: string; ref: string }[] };
+    expect(people.map((p) => [p.fullName, p.institution, p.emailHint])).toEqual([
+      ['Rodrigo Alves Costa', 'UFCG', 'r•••@ufcg.edu.br'],
+      ['Rodrigo Antônio Lima', null, 'r•••@ufpb.br'],
+    ]);
+    expect(raw).not.toContain('rodrigo.costa@');
+    expect(raw).not.toContain('ral@');
+    // The reference is ours to open, and differs each time it is sealed.
+    expect(openEmail(people[0]!.ref, deps.pepper)).toBe('rodrigo.costa@ufcg.edu.br');
+    expect(openEmail(people[0]!.ref, 'another-pepper')).toBeNull();
+    expect(sealEmail('a@b.co', deps.pepper)).not.toBe(sealEmail('a@b.co', deps.pepper));
+  });
+
+  it.each(['', 'R', 'Ro', ' R o ', '  '])('does not search for "%s": three letters at least', async (q) => {
+    const { deps, tokens, store } = setup();
+    store.people = known;
+    expect(await body(await search(deps, tokens.main, q))).toEqual({ people: [] });
+    expect(store.searches).toEqual([]);
+  });
+
+  it('finds a name typed without its accents, and leaves the person asking out of the list', async () => {
+    const { deps, tokens, store } = setup();
+    store.people = known;
+    const antonio = await body(await search(deps, tokens.main, 'antonio'));
+    expect((antonio.people as { fullName: string }[]).map((p) => p.fullName)).toEqual(['Rodrigo Antônio Lima']);
+    const maria = await body(await search(deps, tokens.main, 'Maria Clara'));
+    expect(maria.people).toEqual([]);
+  });
+
+  it(`gives at most ${PEOPLE_SUGGESTIONS} suggestions`, async () => {
+    const { deps, tokens, store } = setup();
+    store.people = Array.from({ length: 20 }, (_, i) => ({ fullName: `Ana Souza ${i}`, email: `ana${i}@ufcg.edu.br`, institution: null }));
+    const { people } = await body(await search(deps, tokens.main, 'Ana'));
+    expect(people).toHaveLength(PEOPLE_SUGGESTIONS);
+  });
+
+  it(`stops after ${PEOPLE_SEARCHES_PER_HOUR} searches in an hour for one person, not for another`, async () => {
+    const { deps, tokens } = setup();
+    for (let i = 0; i < PEOPLE_SEARCHES_PER_HOUR; i += 1) await search(deps, tokens.main, 'Rodrigo');
+    expect((await search(deps, tokens.main, 'Rodrigo')).status).toBe(429);
+    expect((await search(deps, tokens.other, 'Rodrigo')).status).toBe(200);
+  });
+
+  it('does not find an edition that does not exist', async () => {
+    const { deps, tokens } = setup();
+    const response = await handleSubmissions(call('GET', 'people', { token: tokens.main, query: '?eventSlug=1999&q=Rodrigo' }), 'people', deps);
+    expect(response.status).toBe(404);
+  });
+
+  it('saves a picked person with their real e-mail, and tells them', async () => {
+    const { save, store, deps, tokens, sent: mails } = await ready();
+    store.people = known;
+    const { people } = (await body(await search(deps, tokens.main, 'Rodrigo Alves'))) as unknown as { people: { fullName: string; ref: string }[] };
+    const response = await save(paper({ authors: [ME, { fullName: people[0]!.fullName, ref: people[0]!.ref }] }));
+    expect(response.status).toBe(201);
+    expect(store.submissions[0]!.authors[1]).toEqual({ position: 2, fullName: 'Rodrigo Alves Costa', email: 'rodrigo.costa@ufcg.edu.br' });
+    expect(mails.map((m) => m.to)).toContain('rodrigo.costa@ufcg.edu.br');
+  });
+
+  it('refuses the same person picked and typed, without giving the address away', async () => {
+    const { save, deps } = await ready();
+    const ref = sealEmail('rodrigo.costa@ufcg.edu.br', deps.pepper);
+    const response = await save(paper({ authors: [ME, { fullName: 'Rodrigo Alves Costa', ref }, { fullName: 'R. Costa', ref: sealEmail('rodrigo.costa@ufcg.edu.br', deps.pepper) }] }));
+    expect(response.status).toBe(400);
+    const raw = await response.text();
+    expect(JSON.parse(raw)).toEqual({ error: 'duplicate_author', name: 'R. Costa' });
+    expect(raw).not.toContain('rodrigo.costa@');
+  });
+
+  it('masks an address without giving more than its first letter', () => {
+    expect(maskEmail('rodrigo.costa@gmail.com')).toBe('r•••@gmail.com');
+    expect(maskEmail('a@b.co')).toBe('a•••@b.co');
+    expect(maskEmail('not-an-address')).toBe('•••');
   });
 });
 
@@ -514,14 +721,55 @@ describe('changing a paper', () => {
     expect((await save(paper({ id, filePath: undefined }))).status).toBe(200);
   });
 
-  it.each([
-    ['a co-author', 'other'],
-    ['an organiser', 'organiser'],
-  ] as const)('does not let %s change it', async (_name, who) => {
+  it('lets any of the authors change it, in their own name, with a file of their own', async () => {
+    const { save, id, store, tokens, files, sent: mails } = await sent();
+    const theirs = `2027/${OTHER.id}/bbbbbbbb-0000-4000-8000-000000000002.pdf`;
+    files.objects.set(theirs, await pdf(6));
+    const response = await save(
+      paper({ id, filePath: theirs, fileName: 'versao-do-joao.pdf', title: 'Título revisto pelo segundo autor' }),
+      tokens.other,
+    );
+    expect(response.status).toBe(200);
+    expect((await body(response)).submission).toMatchObject({ position: 2, sentByMe: false, canEdit: true });
+    // Still the paper Maria sent; the change is told to everyone with João's name on it.
+    expect(store.submissions[0]).toMatchObject({ userId: MAIN.id, title: 'Título revisto pelo segundo autor', filePath: theirs });
+    expect(mails.find((m) => m.to === MAIN.email)!.text).toContain('foi alterado por João Lima');
+  });
+
+  it('lets an author change the order and drop another author, but not leave the list', async () => {
     const { save, id, store, tokens } = await sent();
+    const joao = { fullName: 'João Lima', email: OTHER.email };
+    // João puts himself first.
+    expect((await save(paper({ id, filePath: undefined, authors: [joao, ME] }), tokens.other)).status).toBe(200);
+    expect(store.submissions[0]!.authors.map((a) => [a.position, a.email])).toEqual([[1, OTHER.email], [2, MAIN.email]]);
+    // He cannot save a list he is not in.
+    const without = await save(paper({ id, filePath: undefined, authors: [ME] }), tokens.other);
+    expect(without.status).toBe(400);
+    expect(await body(without)).toEqual({ error: 'sender_not_listed' });
+    expect(store.submissions[0]!.authors).toHaveLength(2);
+    // He can drop Maria, who then no longer finds the paper.
+    expect((await save(paper({ id, filePath: undefined, authors: [joao] }), tokens.other)).status).toBe(200);
+    const gone = await save(paper({ id, filePath: undefined }), tokens.main);
+    expect(gone.status).toBe(404);
+  });
+
+  it('does not let an author attach a file from another author’s folder', async () => {
+    const { save, id, tokens, store } = await sent();
+    const response = await save(paper({ id, filePath: PATH, title: 'Com o arquivo da Maria' }), tokens.other);
+    expect(response.status).toBe(400);
+    expect(await body(response)).toEqual({ error: 'file_missing' });
+    expect(store.submissions[0]!.title).toBe('Governança da água no semiárido paraibano');
+  });
+
+  it.each([
+    ['an organiser', 'organiser'],
+    ['someone who is not an author', 'stranger'],
+  ] as const)('does not let %s change it', async (_name, who) => {
+    const { save, id, store, tokens, auth } = await sent();
     store.organisers = [{ userId: ORGANISER.id, email: ORGANISER.email, fullName: 'Viviane' }];
-    store.submissions[0]!.authors.push({ position: 3, fullName: 'x', email: OTHER.email });
-    const response = await save(paper({ id, filePath: undefined, title: 'Título trocado por outra pessoa' }), tokens[who]);
+    const stranger = auth.login({ id: 'user-stranger', email: 'estranho@ufrn.br', emailConfirmed: true }, 'tok-stranger');
+    const token = who === 'stranger' ? stranger : tokens[who];
+    const response = await save(paper({ id, filePath: undefined, title: 'Título trocado por outra pessoa' }), token);
     expect(response.status).toBe(404);
     expect(store.submissions[0]!.title).toBe('Governança da água no semiárido paraibano');
   });
@@ -575,7 +823,7 @@ describe('withdrawing a paper', () => {
     expect((await withdraw(tokens.main)).status).toBe(200);
     expect(store.submissions).toHaveLength(1);
     expect(store.submissions[0]!.deletedAt).not.toBeNull();
-    expect(store.deletions).toEqual([{ id: store.submissions[0]!.id, userId: MAIN.id, reason: 'withdrawn by the main author' }]);
+    expect(store.deletions).toEqual([{ id: store.submissions[0]!.id, userId: MAIN.id, reason: 'withdrawn by one of its authors' }]);
     expect(mails.map((m) => m.to).sort()).toEqual([OTHER.email, MAIN.email, ORGANISER.email].sort());
     expect(mails.every((m) => m.subject.includes('retirado'))).toBe(true);
     // Gone from Meus trabalhos, and the slot is free again.
@@ -585,9 +833,19 @@ describe('withdrawing a paper', () => {
     expect((await withdraw(tokens.main)).status).toBe(404);
   });
 
-  it.each(['other', 'organiser'] as const)('cannot be done by the %s', async (who) => {
-    const { withdraw, tokens, store } = await sent();
-    expect((await withdraw(tokens[who])).status).toBe(404);
+  it('can be done by any of the authors, and everyone is told who did it', async () => {
+    const { withdraw, tokens, store, sent: mails } = await sent();
+    expect((await withdraw(tokens.other)).status).toBe(200);
+    expect(store.deletions).toEqual([{ id: store.submissions[0]!.id, userId: OTHER.id, reason: 'withdrawn by one of its authors' }]);
+    expect(mails.map((m) => m.to).sort()).toEqual([OTHER.email, MAIN.email, ORGANISER.email].sort());
+    expect(mails.find((m) => m.to === MAIN.email)!.text).toContain('foi retirado por João Lima');
+  });
+
+  it('cannot be done by an organiser, nor by someone who is not an author', async () => {
+    const { withdraw, tokens, store, auth } = await sent();
+    expect((await withdraw(tokens.organiser)).status).toBe(404);
+    const stranger = auth.login({ id: 'user-stranger', email: 'estranho@ufrn.br', emailConfirmed: true }, 'tok-stranger');
+    expect((await withdraw(stranger)).status).toBe(404);
     expect(store.submissions[0]!.deletedAt).toBeNull();
   });
 
@@ -617,9 +875,9 @@ describe('Meus trabalhos', () => {
     store.seed({ title: 'Só do João', userId: OTHER.id, authors: [{ position: 1, fullName: 'João', email: OTHER.email }] });
     store.seed({ title: 'Retirado', deletedAt: NOW.toISOString() });
     const data = await body(await mine(deps, tokens.main));
-    expect(data.submissions.map((s) => [s.title, s.role, s.canEdit])).toEqual([
-      ['Meu', 'main', true],
-      ['Do João comigo', 'coauthor', false],
+    expect(data.submissions.map((s) => [s.title, s.position, s.sentByMe, s.canEdit])).toEqual([
+      ['Meu', 1, true, true],
+      ['Do João comigo', 2, false, true],
     ]);
     expect(data.limits).toEqual({ asMain: 1, maxAsMain: 3, asCoauthor: 1, maxAsCoauthor: 5 });
     expect(data.state).toBe('open');
@@ -633,7 +891,7 @@ describe('Meus trabalhos', () => {
     const token = auth.login({ id: 'user-new', email: 'nova@ufrn.br', emailConfirmed: true }, 'tok-new');
     const data = await body(await mine(deps, token));
     expect(data.submissions).toHaveLength(1);
-    expect(data.submissions[0]).toMatchObject({ role: 'coauthor', canEdit: false });
+    expect(data.submissions[0]).toMatchObject({ position: 2, sentByMe: false, canEdit: true });
   });
 
   it('shows the papers as locked after submissions close', async () => {

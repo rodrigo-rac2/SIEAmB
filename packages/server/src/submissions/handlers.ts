@@ -12,6 +12,7 @@ import {
   type SubmissionEmailKind,
 } from './emails';
 import { UnreadableFileError, extensionOf, inspectFile } from './files';
+import { maskEmail, openEmail, sealEmail } from './people';
 import {
   MODALITIES,
   areaName,
@@ -30,8 +31,6 @@ export interface SubmissionDeps extends OutboxDeps {
   auth: AuthGateway;
   /** Counts one more attempt under a key; false once the window is over the limit. */
   hitRateLimit(key: string, windowSeconds: number, max: number): Promise<boolean>;
-  /** Name the account holder gave, for the author list. */
-  profileName(userId: string): Promise<string>;
   siteUrl: string;
   log: Log;
   /** Real time, for records. */
@@ -45,6 +44,9 @@ export interface SubmissionDeps extends OutboxDeps {
 
 export const UPLOADS_PER_HOUR = 30;
 export const DOWNLOAD_LINK_SECONDS = 60;
+export const PEOPLE_SEARCHES_PER_HOUR = 300;
+export const PEOPLE_SUGGESTIONS = 6;
+const PEOPLE_MIN_LETTERS = 3;
 const TITLE = { min: 5, max: 300 };
 const ABSTRACT = { min: 50, max: 5000 };
 const KEYWORD = { min: 2, max: 60 };
@@ -53,7 +55,7 @@ const site = (deps: SubmissionDeps) => deps.siteUrl.replace(/\/+$/, '');
 
 /** What a paper looks like to someone allowed to see it. */
 function view(submission: Submission, user: AuthUser, open: boolean) {
-  const isMain = submission.userId === user.id;
+  const mine = submission.authors.find((a) => a.email === user.email);
   return {
     id: submission.id,
     number: submission.number,
@@ -70,9 +72,11 @@ function view(submission: Submission, user: AuthUser, open: boolean) {
     createdAt: submission.createdAt,
     updatedAt: submission.updatedAt,
     authors: submission.authors,
-    role: isMain ? 'main' : 'coauthor',
-    // Only the main author changes a paper, and only until submissions close.
-    canEdit: isMain && open && submission.status === 'SUBMITTED',
+    /** Where the reader stands in the author list, from 1. */
+    position: mine?.position ?? null,
+    sentByMe: submission.userId === user.id,
+    // Any of the authors changes a paper, while submissions are open and it is not under review.
+    canEdit: Boolean(mine) && open && submission.status === 'SUBMITTED',
   };
 }
 
@@ -118,6 +122,9 @@ async function rules(request: Request, deps: SubmissionDeps): Promise<Response> 
   });
 }
 
+const positionOf = (submission: Submission, email: string): number | null =>
+  submission.authors.find((a) => a.email === email)?.position ?? null;
+
 async function mine(request: Request, deps: SubmissionDeps): Promise<Response> {
   const ctx = await context(request, deps, new URL(request.url).searchParams.get('eventSlug'));
   if ('response' in ctx) return ctx.response;
@@ -127,10 +134,11 @@ async function mine(request: Request, deps: SubmissionDeps): Promise<Response> {
     state: ctx.state,
     closesAt: r.closesAt,
     pastDeadline: pastDeadline(r, deps.windowNow()),
+    // The edital's two limits, read by the place in the author list: first, or any other.
     limits: {
-      asMain: all.filter((s) => s.userId === user.id).length,
+      asMain: all.filter((s) => positionOf(s, user.email) === 1).length,
       maxAsMain: r.maxAsMainAuthor,
-      asCoauthor: all.filter((s) => s.userId !== user.id).length,
+      asCoauthor: all.filter((s) => (positionOf(s, user.email) ?? 0) > 1).length,
       maxAsCoauthor: r.maxAsCoauthor,
     },
     submissions: all.map((s) => view(s, user, ctx.open)),
@@ -152,6 +160,33 @@ async function file(request: Request, deps: SubmissionDeps): Promise<Response> {
   const url = await deps.files.createDownloadUrl(submission.filePath, submission.fileName, DOWNLOAD_LINK_SECONDS);
   deps.log('submission_file_opened', { submissionId: submission.id, byOrganiser: !isAuthor });
   return json(200, { url });
+}
+
+/**
+ * People already known to the system whose name matches what is being typed in the
+ * author list. Only a suggestion: a name and e-mail can always be typed instead.
+ */
+async function people(request: Request, deps: SubmissionDeps): Promise<Response> {
+  const params = new URL(request.url).searchParams;
+  const ctx = await context(request, deps, params.get('eventSlug'));
+  if ('response' in ctx) return ctx.response;
+  const query = text(params.get('q'), 80);
+  if (query.replace(/\s+/g, '').length < PEOPLE_MIN_LETTERS) return json(200, { people: [] });
+  if (!(await deps.hitRateLimit(sha256(`${deps.pepper}:people:${ctx.user.id}`), 3600, PEOPLE_SEARCHES_PER_HOUR))) {
+    return json(429, { error: 'too_many_attempts' });
+  }
+  const found = await deps.store.searchPeople(ctx.event.id, query, PEOPLE_SUGGESTIONS + 1);
+  return json(200, {
+    people: found
+      .filter((p) => p.email !== ctx.user.email)
+      .slice(0, PEOPLE_SUGGESTIONS)
+      .map((p) => ({
+        fullName: p.fullName,
+        institution: p.institution,
+        emailHint: maskEmail(p.email),
+        ref: sealEmail(p.email, deps.pepper),
+      })),
+  });
 }
 
 // ───────────────────────────── Upload ─────────────────────────────
@@ -195,9 +230,9 @@ function keywordList(value: unknown, max: number): string[] | null {
 
 type Parsed =
   | { error: string; extra?: Record<string, unknown> }
-  | { fields: Omit<SubmissionInput, 'filePath' | 'fileName' | 'filePages' | 'authors' | 'locale'>; coauthors: Omit<Author, 'position'>[] };
+  | { fields: Omit<SubmissionInput, 'filePath' | 'fileName' | 'filePages' | 'authors' | 'locale'>; authors: Author[] };
 
-function parse(body: Record<string, unknown>, ctx: Context): Parsed {
+function parse(body: Record<string, unknown>, ctx: Context, pepper: string): Parsed {
   const { rules: r, user, event } = ctx;
   const title = text(body.title, TITLE.max + 1);
   const titleEn = text(body.titleEn, TITLE.max + 1);
@@ -213,21 +248,25 @@ function parse(body: Record<string, unknown>, ctx: Context): Parsed {
   const keywordsEn = keywordList(body.keywordsEn, r.maxKeywords);
   if (!keywords || keywords.length === 0 || !keywordsEn) return { error: 'invalid_keywords' };
 
-  const rawAuthors = Array.isArray(body.coauthors) ? body.coauthors : [];
-  if (rawAuthors.length > r.maxAuthors - 1) return { error: 'too_many_authors', extra: { max: r.maxAuthors } };
-  const coauthors: Omit<Author, 'position'>[] = [];
+  // Every author, in the order of the paper. Whoever sends it is one of them, in any place.
+  const rawAuthors = Array.isArray(body.authors) ? body.authors : [];
+  if (rawAuthors.length > r.maxAuthors) return { error: 'too_many_authors', extra: { max: r.maxAuthors } };
+  const authors: Author[] = [];
   for (const raw of rawAuthors) {
     const entry = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {};
     const fullName = text(entry.fullName, 150);
-    const email = text(entry.email, 200).toLowerCase();
-    if (fullName.length < 3 || !isEmail(email)) return { error: 'invalid_coauthor' };
-    // The main author is not also a co-author, and nobody is listed twice.
-    if (email === user.email || coauthors.some((c) => c.email === email)) {
-      return { error: 'duplicate_author', extra: { email } };
+    // A person picked from the suggestions comes as a sealed reference, not as an address.
+    const ref = text(entry.ref, 600);
+    const email = ref ? (openEmail(ref, pepper) ?? '') : text(entry.email, 200).toLowerCase();
+    if (fullName.length < 3 || !isEmail(email)) return { error: 'invalid_author' };
+    if (authors.some((a) => a.email === email)) {
+      // Never echo an address the person did not type themselves.
+      return { error: 'duplicate_author', extra: { name: fullName } };
     }
-    coauthors.push({ fullName, email });
+    authors.push({ position: authors.length + 1, fullName, email });
   }
-  return { fields: { title, titleEn, modality, areaRef, abstract, keywords, keywordsEn }, coauthors };
+  if (!authors.some((a) => a.email === user.email)) return { error: 'sender_not_listed' };
+  return { fields: { title, titleEn, modality, areaRef, abstract, keywords, keywordsEn }, authors };
 }
 
 /** Page limits of the modality; a file that does not say its page count is accepted and flagged. */
@@ -246,27 +285,29 @@ async function save(request: Request, deps: SubmissionDeps): Promise<Response> {
 
   const id = text(body.id, 40);
   const existing = id ? await deps.store.findById(id) : null;
-  if (id && (!existing || existing.deletedAt || existing.userId !== user.id || existing.eventId !== event.id)) {
+  // Any of the authors changes the paper; to anyone else it does not exist.
+  if (id && (!existing || existing.deletedAt || positionOf(existing, user.email) === null || existing.eventId !== event.id)) {
     return json(404, { error: 'submission_not_found' });
   }
   if (existing && existing.status !== 'SUBMITTED') return json(409, { error: 'submission_locked' });
 
-  const parsed = parse(body, ctx);
+  const parsed = parse(body, ctx, deps.pepper);
   if ('error' in parsed) return json(400, { error: parsed.error, ...parsed.extra });
-  const { fields, coauthors } = parsed;
+  const { fields, authors } = parsed;
 
-  // The edital's limits, counted over the papers that are still standing.
-  const mine = await deps.store.listByAuthorEmail(event.id, user.email);
-  const others = (list: Submission[]) => list.filter((s) => s.id !== existing?.id);
-  if (!existing && mine.filter((s) => s.userId === user.id).length >= r.maxAsMainAuthor) {
-    return json(409, { error: 'too_many_as_main', max: r.maxAsMainAuthor });
-  }
-  const related = [...others(mine)];
-  for (const coauthor of coauthors) {
-    const theirs = others(await deps.store.listByAuthorEmail(event.id, coauthor.email));
-    const asCoauthor = theirs.filter((s) => s.authors.some((a) => a.email === coauthor.email && a.position > 1));
-    if (asCoauthor.length >= r.maxAsCoauthor) {
-      return json(409, { error: 'coauthor_limit', email: coauthor.email, max: r.maxAsCoauthor });
+  // The edital's limits, for every person in the list and counted over the papers that
+  // are still standing: so many as first author, so many in any other place.
+  const related: Submission[] = [];
+  for (const author of authors) {
+    const theirs = (await deps.store.listByAuthorEmail(event.id, author.email)).filter((s) => s.id !== existing?.id);
+    const first = author.position === 1;
+    const count = theirs.filter((s) => {
+      const position = positionOf(s, author.email) ?? 0;
+      return first ? position === 1 : position > 1;
+    }).length;
+    const max = first ? r.maxAsMainAuthor : r.maxAsCoauthor;
+    if (count >= max) {
+      return json(409, { error: first ? 'too_many_as_main' : 'coauthor_limit', name: author.fullName, max });
     }
     related.push(...theirs);
   }
@@ -307,11 +348,6 @@ async function save(request: Request, deps: SubmissionDeps): Promise<Response> {
     return json(400, { error: 'file_missing' });
   }
 
-  const mainName = (await deps.profileName(user.id)) || user.email;
-  const authors: Author[] = [
-    { position: 1, fullName: mainName, email: user.email },
-    ...coauthors.map((c, i) => ({ position: i + 2, ...c })),
-  ];
   const input: SubmissionInput = {
     ...fields,
     ...fileFields,
@@ -333,12 +369,12 @@ async function withdraw(request: Request, deps: SubmissionDeps): Promise<Respons
   if ('response' in ctx) return ctx.response;
   if (!ctx.open) return closedResponse(ctx.state);
   const submission = await deps.store.findById(text(body.id, 40));
-  if (!submission || submission.deletedAt || submission.userId !== ctx.user.id || submission.eventId !== ctx.event.id) {
+  if (!submission || submission.deletedAt || positionOf(submission, ctx.user.email) === null || submission.eventId !== ctx.event.id) {
     return json(404, { error: 'submission_not_found' });
   }
   if (submission.status !== 'SUBMITTED') return json(409, { error: 'submission_locked' });
   const now = deps.now();
-  await deps.store.softDelete(submission.id, ctx.user.id, 'withdrawn by the main author', now);
+  await deps.store.softDelete(submission.id, ctx.user.id, 'withdrawn by one of its authors', now);
   deps.log('submission_withdrawn', { submissionId: submission.id });
   await announce('withdrawn', submission, ctx, deps, now);
   return json(200, { ok: true });
@@ -359,7 +395,8 @@ async function announce(
 ): Promise<void> {
   try {
     const { event } = ctx;
-    const main = submission.authors[0]?.fullName ?? '';
+    // Who did it: the person logged in, by the name they have in the author list.
+    const main = submission.authors.find((a) => a.email === ctx.user.email)?.fullName ?? ctx.user.email;
     const stamp = kind === 'received' ? 'received' : `${kind}:${now.getTime()}`;
     const base = {
       eventName: event.name,
@@ -416,6 +453,7 @@ type Handler = (request: Request, deps: SubmissionDeps) => Promise<Response>;
 const ROUTES: Record<string, Partial<Record<string, Handler>>> = {
   rules: { GET: rules },
   mine: { GET: mine },
+  people: { GET: people },
   file: { GET: file },
   'upload-url': { POST: uploadUrl },
   save: { POST: save },

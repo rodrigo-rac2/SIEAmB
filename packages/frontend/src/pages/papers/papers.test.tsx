@@ -88,7 +88,8 @@ const paper = (over: Partial<Paper> = {}): Paper => ({
     { position: 1, fullName: 'Maria Clara de Souza', email: 'maria@ufcg.edu.br' },
     { position: 2, fullName: 'João Lima', email: 'joao@ufpb.br' },
   ],
-  role: 'main',
+  position: 1,
+  sentByMe: true,
   canEdit: true,
   ...over,
 });
@@ -136,7 +137,7 @@ describe('MyPapersPage', () => {
     expect(screen.getByTestId('registration-notice')).toHaveTextContent('A inscrição pode ser feita a qualquer momento.');
     expect(screen.getByRole('link', { name: 'Enviar trabalho' })).toHaveAttribute('href', '/2027/meus-trabalhos/novo');
     expect(screen.getByTestId('paper-limits')).toHaveTextContent('abertas até 18 de janeiro de 2027');
-    expect(screen.getByTestId('paper-limits')).toHaveTextContent('Você enviou 0 de 3 trabalhos como autor principal e consta como coautor em 0 de 5.');
+    expect(screen.getByTestId('paper-limits')).toHaveTextContent('Você é o primeiro autor em 0 de 3 trabalhos e consta nas demais posições em 0 de 5.');
     expect(calls.find((c) => c.url.includes('/submissions/mine'))).toMatchObject({ url: '/api/v1/submissions/mine?eventSlug=2027', authorization: 'Bearer access-token-1' });
   });
 
@@ -165,21 +166,30 @@ describe('MyPapersPage', () => {
     const card = await screen.findByTestId('paper-card');
     expect(card).toHaveTextContent('Trabalho nº 12 · Resumo expandido · Governança, Políticas Públicas e Direito Ambiental');
     expect(card).toHaveTextContent('Enviado');
-    expect(card).toHaveTextContent('você é o autor principal');
+    expect(card).toHaveTextContent('você é o 1º autor');
     expect(within(card).getAllByRole('listitem').map((li) => li.textContent)).toEqual(['Maria Clara de Souza', 'João Lima']);
     expect(card).toHaveTextContent('resumo.pdf · 5 páginas');
     expect(within(card).getByRole('link', { name: 'Alterar' })).toHaveAttribute('href', '/2027/meus-trabalhos/paper-1');
   });
 
-  it('gives a co-author the paper to read and download, with no way to change it', async () => {
-    stubApi({ mine: { body: mine({ submissions: [paper({ role: 'coauthor', canEdit: false, filePages: null })] }) }, me: account(null) });
+  it('gives an author in any position the same paper, to change or withdraw', async () => {
+    stubApi({ mine: { body: mine({ submissions: [paper({ position: 2, sentByMe: false, filePages: null })] }) }, me: account(null) });
     mount(...LIST, <MyPapersPage />);
     const card = await screen.findByTestId('paper-card');
-    expect(card).toHaveTextContent('você é coautor (somente consulta)');
+    expect(card).toHaveTextContent('você é o 2º autor');
+    expect(card).not.toHaveTextContent(/principal|coautor|somente consulta/i);
+    expect(within(card).getByRole('link', { name: 'Alterar' })).toBeInTheDocument();
+    expect(within(card).getByRole('button', { name: 'Retirar o trabalho' })).toBeInTheDocument();
+    expect(card).not.toHaveTextContent('páginas');
+  });
+
+  it('offers only the download once the paper can no longer be changed', async () => {
+    stubApi({ mine: { body: mine({ submissions: [paper({ status: 'UNDER_REVIEW', canEdit: false })] }) }, me: account(null) });
+    mount(...LIST, <MyPapersPage />);
+    const card = await screen.findByTestId('paper-card');
     expect(within(card).queryByRole('link', { name: 'Alterar' })).not.toBeInTheDocument();
     expect(within(card).queryByRole('button', { name: 'Retirar o trabalho' })).not.toBeInTheDocument();
     expect(within(card).getByRole('button', { name: 'Baixar o arquivo' })).toBeInTheDocument();
-    expect(card).not.toHaveTextContent('páginas');
   });
 
   it('downloads through a link asked from the server at that moment', async () => {
@@ -219,11 +229,17 @@ describe('MyPapersPage', () => {
     expect(calls.some((c) => c.url.includes('withdraw'))).toBe(false);
   });
 
-  it('hides the send button at the limit of three, and says why', async () => {
-    stubApi({ mine: { body: mine({ limits: { asMain: 3, maxAsMain: 3, asCoauthor: 0, maxAsCoauthor: 5 } }) }, me: account(null) });
+  it('hides the send button only when both limits of the edital are used up, and says why', async () => {
+    stubApi({ mine: { body: mine({ limits: { asMain: 3, maxAsMain: 3, asCoauthor: 5, maxAsCoauthor: 5 } }) }, me: account(null) });
     mount(...LIST, <MyPapersPage />);
-    expect(await screen.findByText('Você já enviou os 3 trabalhos permitidos como autor principal.')).toBeInTheDocument();
+    expect(await screen.findByText('Você já consta no número máximo de trabalhos que o edital permite.')).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Enviar trabalho' })).not.toBeInTheDocument();
+  });
+
+  it('still offers to send with three papers as first author: another place may be free', async () => {
+    stubApi({ mine: { body: mine({ limits: { asMain: 3, maxAsMain: 3, asCoauthor: 4, maxAsCoauthor: 5 } }) }, me: account(null) });
+    mount(...LIST, <MyPapersPage />);
+    expect(await screen.findByRole('link', { name: 'Enviar trabalho' })).toBeInTheDocument();
   });
 
   it('past the published date and still open: offers the send button and names no date', async () => {
@@ -265,9 +281,20 @@ async function fill() {
   await userEvent.type(screen.getByLabelText('Palavras-chave'), 'água; governança');
 }
 
+/** What the form sent to our server, leaving out what it only read (the account, the suggestions). */
+const posted = (calls: Call[]) => calls.filter((c) => c.method !== 'GET');
+const ME = { fullName: 'Maria', email: 'maria@ufcg.edu.br' };
+/** The form is ready once the sender's own row carries the name of their account. */
+const ownRow = async () => {
+  const name = await screen.findByLabelText('Nome do autor 1 (você)');
+  await waitFor(() => expect(name).toHaveValue('Maria'));
+  return name;
+};
+
 describe('PaperFormPage, new paper', () => {
   const UPLOAD = 'https://storage.example/upload/2027/u/f.pdf?token=t';
   const ok = () => ({
+    me: account(null),
     'upload-url': { body: { path: '2027/u/f.pdf', uploadUrl: UPLOAD } },
     [UPLOAD]: { body: {} },
     save: { status: 201, body: { submission: paper() } },
@@ -277,21 +304,23 @@ describe('PaperFormPage, new paper', () => {
     const calls = stubApi(ok());
     mount(...NEW, <PaperFormPage />);
     await fill();
-    await userEvent.click(screen.getByRole('button', { name: 'Adicionar coautor' }));
-    await userEvent.type(screen.getByLabelText('Nome do coautor 1'), 'João Lima');
-    await userEvent.type(screen.getByLabelText('E-mail do coautor 1'), 'joao@ufpb.br');
+    await ownRow();
+    await userEvent.click(screen.getByRole('button', { name: 'Adicionar autor' }));
+    await userEvent.type(screen.getByLabelText('Nome do autor 2'), 'João Lima');
+    await userEvent.type(screen.getByLabelText('E-mail do autor 2'), 'joao@ufpb.br');
     await userEvent.upload(screen.getByLabelText('Arquivo do trabalho'), pdfFile());
     await userEvent.click(screen.getByRole('button', { name: 'Enviar trabalho' }));
     expect(await screen.findByTestId('where')).toHaveTextContent('/2027/meus-trabalhos');
-    expect(calls.map((c) => `${c.method} ${c.url.split('?')[0]}`)).toEqual([
+    expect(posted(calls).map((c) => `${c.method} ${c.url.split('?')[0]}`)).toEqual([
       'POST /api/v1/submissions/upload-url',
       'PUT https://storage.example/upload/2027/u/f.pdf',
       'POST /api/v1/submissions/save',
     ]);
-    expect(calls[0]).toMatchObject({ authorization: 'Bearer access-token-1', body: { eventSlug: '2027', fileName: 'Resumo Maria.pdf', size: 2000 } });
+    const [upload, put, save] = posted(calls);
+    expect(upload).toMatchObject({ authorization: 'Bearer access-token-1', body: { eventSlug: '2027', fileName: 'Resumo Maria.pdf', size: 2000 } });
     // The file itself never passes through our server, and carries no login.
-    expect(calls[1]!.authorization).toBeNull();
-    expect(calls[2]!.body).toEqual({
+    expect(put!.authorization).toBeNull();
+    expect(save!.body).toEqual({
       title: 'Governança da água no semiárido',
       titleEn: 'Water governance in the semi-arid',
       modality: 'RESUMO_EXPANDIDO',
@@ -299,7 +328,7 @@ describe('PaperFormPage, new paper', () => {
       abstract: 'Um resumo com mais de cinquenta caracteres, para passar na conferência.',
       keywords: 'água; governança',
       keywordsEn: '',
-      coauthors: [{ fullName: 'João Lima', email: 'joao@ufpb.br' }],
+      authors: [ME, { fullName: 'João Lima', email: 'joao@ufpb.br' }],
       confirmDuplicate: false,
       eventSlug: '2027',
       locale: 'pt-BR',
@@ -314,7 +343,7 @@ describe('PaperFormPage, new paper', () => {
     await fill();
     await userEvent.click(screen.getByRole('button', { name: 'Enviar trabalho' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('Anexe o arquivo do trabalho.');
-    expect(calls).toEqual([]);
+    expect(posted(calls)).toEqual([]);
   });
 
   it('refuses a file over 10 MB before uploading it', async () => {
@@ -324,7 +353,7 @@ describe('PaperFormPage, new paper', () => {
     await userEvent.upload(screen.getByLabelText('Arquivo do trabalho'), pdfFile('grande.pdf', 10 * 1024 * 1024 + 1));
     await userEvent.click(screen.getByRole('button', { name: 'Enviar trabalho' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('O arquivo passa de 10 MB.');
-    expect(calls).toEqual([]);
+    expect(posted(calls)).toEqual([]);
   });
 
   it('shows the page limits of the chosen modality', async () => {
@@ -335,33 +364,71 @@ describe('PaperFormPage, new paper', () => {
     expect(screen.getByText('De 12 a 15 páginas, contando as referências.')).toBeInTheDocument();
   });
 
-  it('lets four co-authors be added, not a fifth, and one be removed', async () => {
-    stubApi({});
+  it('starts with the sender alone, whose e-mail is fixed and who cannot be removed', async () => {
+    stubApi(ok());
     mount(...NEW, <PaperFormPage />);
-    const add = await screen.findByRole('button', { name: 'Adicionar coautor' });
-    for (let i = 0; i < 4; i += 1) await userEvent.click(add);
-    expect(screen.getAllByTestId('coauthor-row')).toHaveLength(4);
-    expect(screen.queryByRole('button', { name: 'Adicionar coautor' })).not.toBeInTheDocument();
-    await userEvent.click(screen.getAllByRole('button', { name: 'Remover' })[0]!);
-    expect(screen.getAllByTestId('coauthor-row')).toHaveLength(3);
-    expect(screen.getByRole('button', { name: 'Adicionar coautor' })).toBeInTheDocument();
+    await ownRow();
+    expect(screen.getAllByTestId('author-row')).toHaveLength(1);
+    expect(screen.getByLabelText('E-mail do autor 1')).toHaveValue('maria@ufcg.edu.br');
+    expect(screen.getByLabelText('E-mail do autor 1')).toHaveAttribute('readonly');
+    expect(screen.queryByRole('button', { name: 'Remover autor 1' })).not.toBeInTheDocument();
+    expect(screen.queryByText(/principal|coautor/i)).not.toBeInTheDocument();
   });
 
-  it('leaves out a co-author row left blank', async () => {
+  it('lets five authors be listed, not a sixth, and one be removed', async () => {
+    stubApi(ok());
+    mount(...NEW, <PaperFormPage />);
+    const add = await screen.findByRole('button', { name: 'Adicionar autor' });
+    for (let i = 0; i < 4; i += 1) await userEvent.click(add);
+    expect(screen.getAllByTestId('author-row')).toHaveLength(5);
+    expect(screen.queryByRole('button', { name: 'Adicionar autor' })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Remover autor 3' }));
+    expect(screen.getAllByTestId('author-row')).toHaveLength(4);
+    expect(screen.getByRole('button', { name: 'Adicionar autor' })).toBeInTheDocument();
+  });
+
+  it('sends the authors in the order they were put in, with the sender in second place', async () => {
     const calls = stubApi(ok());
     mount(...NEW, <PaperFormPage />);
     await fill();
-    await userEvent.click(screen.getByRole('button', { name: 'Adicionar coautor' }));
+    await ownRow();
+    await userEvent.click(screen.getByRole('button', { name: 'Adicionar autor' }));
+    await userEvent.type(screen.getByLabelText('Nome do autor 2'), 'Prof. Carlos Meira');
+    await userEvent.type(screen.getByLabelText('E-mail do autor 2'), 'carlos@ufcg.edu.br');
+    expect(screen.getByRole('button', { name: 'Subir autor 1' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Descer autor 2' })).toBeDisabled();
+    await userEvent.click(screen.getByRole('button', { name: 'Subir autor 2' }));
+    // The professor is first now, and what was typed moved with the row.
+    expect(screen.getByLabelText('Nome do autor 1')).toHaveValue('Prof. Carlos Meira');
+    expect(screen.getByLabelText('Nome do autor 2 (você)')).toHaveValue('Maria');
     await userEvent.upload(screen.getByLabelText('Arquivo do trabalho'), pdfFile());
     await userEvent.click(screen.getByRole('button', { name: 'Enviar trabalho' }));
     await screen.findByTestId('where');
-    expect((calls.at(-1)!.body as { coauthors: unknown[] }).coauthors).toEqual([]);
+    expect((posted(calls).at(-1)!.body as { authors: unknown[] }).authors).toEqual([
+      { fullName: 'Prof. Carlos Meira', email: 'carlos@ufcg.edu.br' },
+      ME,
+    ]);
+  });
+
+  it('leaves out an author row left blank', async () => {
+    const calls = stubApi(ok());
+    mount(...NEW, <PaperFormPage />);
+    await fill();
+    await ownRow();
+    await userEvent.click(screen.getByRole('button', { name: 'Adicionar autor' }));
+    await userEvent.upload(screen.getByLabelText('Arquivo do trabalho'), pdfFile());
+    await userEvent.click(screen.getByRole('button', { name: 'Enviar trabalho' }));
+    await screen.findByTestId('where');
+    expect((posted(calls).at(-1)!.body as { authors: unknown[] }).authors).toEqual([ME]);
   });
 
   it.each([
     [{ error: 'wrong_page_count', pages: 9, minPages: 4, maxPages: 6 }, 400, 'O arquivo tem 9 páginas. Nesta modalidade, o edital pede de 4 a 6.'],
-    [{ error: 'coauthor_limit', email: 'joao@ufpb.br', max: 5 }, 409, 'joao@ufpb.br já consta como coautor em 5 trabalhos, o limite do edital.'],
-    [{ error: 'too_many_as_main', max: 3 }, 409, 'Você já enviou os 3 trabalhos permitidos como autor principal.'],
+    [{ error: 'coauthor_limit', name: 'João Lima', max: 5 }, 409, 'João Lima já consta em 5 trabalhos fora da primeira posição, o limite do edital.'],
+    [{ error: 'too_many_as_main', name: 'Prof. Carlos Meira', max: 3 }, 409, 'Prof. Carlos Meira já é o primeiro autor em 3 trabalhos, o limite do edital.'],
+    [{ error: 'duplicate_author', name: 'João Lima' }, 400, 'João Lima aparece mais de uma vez entre os autores.'],
+    [{ error: 'sender_not_listed' }, 400, 'Você precisa estar na lista de autores, com o e-mail da sua conta.'],
+    [{ error: 'invalid_author' }, 400, 'Confira o nome e o e-mail de cada autor.'],
     [{ error: 'unreadable_file' }, 400, /Não foi possível ler o arquivo/],
     [{ error: 'submissions_closed' }, 409, 'As submissões foram encerradas.'],
     [{ error: 'something_new' }, 500, 'Algo deu errado. Tente de novo em instantes.'],
@@ -407,6 +474,162 @@ describe('PaperFormPage, new paper', () => {
   });
 });
 
+describe('PaperFormPage, suggestions of people already in the system', () => {
+  const UPLOAD = 'https://storage.example/upload/2027/u/f.pdf?token=t';
+  const RODRIGO = { fullName: 'Rodrigo Alves Costa', institution: 'UFCG', emailHint: 'r•••@ufcg.edu.br', ref: 'sealed-ref-rodrigo' };
+  const OTHER_RODRIGO = { fullName: 'Rodrigo Antônio Lima', institution: null, emailHint: 'r•••@ufpb.br', ref: 'sealed-ref-antonio' };
+  const api = (people: unknown[] = [RODRIGO, OTHER_RODRIGO]) => ({
+    me: account(null),
+    people: { body: { people } },
+    'upload-url': { body: { path: '2027/u/f.pdf', uploadUrl: UPLOAD } },
+    [UPLOAD]: { body: {} },
+    save: { status: 201, body: { submission: paper() } },
+  });
+  const searches = (calls: Call[]) => calls.filter((c) => c.url.includes('/submissions/people'));
+  // The form has dropdowns of its own, so suggestions are looked for inside their list only.
+  const LIST_NAME = 'Pessoas já cadastradas com esse nome';
+  const suggestions = async () => within(await screen.findByRole('listbox', { name: LIST_NAME })).getAllByRole('option');
+  const noSuggestions = () => expect(screen.queryByRole('listbox', { name: LIST_NAME })).not.toBeInTheDocument();
+  const secondAuthor = async () => {
+    await ownRow();
+    await userEvent.click(screen.getByRole('button', { name: 'Adicionar autor' }));
+    return screen.getByLabelText('Nome do autor 2');
+  };
+
+  it('suggests people by the name being typed, with a masked e-mail, and picks one on a click', async () => {
+    const calls = stubApi(api());
+    mount(...NEW, <PaperFormPage />);
+    await fill();
+    const name = await secondAuthor();
+    await userEvent.type(name, 'Rodrigo');
+    const options = await suggestions();
+    expect(options.map((o) => o.textContent)).toEqual(['Rodrigo Alves CostaUFCG · r•••@ufcg.edu.br', 'Rodrigo Antônio Limar•••@ufpb.br']);
+    expect(searches(calls).at(-1)).toMatchObject({ url: '/api/v1/submissions/people?eventSlug=2027&q=Rodrigo', authorization: 'Bearer access-token-1' });
+    await userEvent.click(options[0]!);
+    expect(name).toHaveValue('Rodrigo Alves Costa');
+    noSuggestions();
+    // The e-mail is never shown in full: a masked hint that cannot be typed over.
+    const email = screen.getByLabelText('E-mail do autor 2');
+    expect(email).toHaveValue('r•••@ufcg.edu.br');
+    expect(email).toHaveAttribute('readonly');
+
+    await userEvent.upload(screen.getByLabelText('Arquivo do trabalho'), pdfFile());
+    await userEvent.click(screen.getByRole('button', { name: 'Enviar trabalho' }));
+    await screen.findByTestId('where');
+    expect((posted(calls).at(-1)!.body as { authors: unknown[] }).authors).toEqual([
+      ME,
+      { fullName: 'Rodrigo Alves Costa', ref: 'sealed-ref-rodrigo' },
+    ]);
+  });
+
+  it('is only a suggestion: a new person can be typed right over it', async () => {
+    const calls = stubApi(api());
+    mount(...NEW, <PaperFormPage />);
+    await fill();
+    const name = await secondAuthor();
+    await userEvent.type(name, 'Rodrigo Pereira');
+    await suggestions();
+    // Nothing was picked for them, and Tab moves on to the e-mail as in any form.
+    expect(name).toHaveValue('Rodrigo Pereira');
+    await userEvent.tab();
+    expect(screen.getByLabelText('E-mail do autor 2')).toHaveFocus();
+    noSuggestions();
+    await userEvent.type(screen.getByLabelText('E-mail do autor 2'), 'rpereira@ufrn.br');
+    await userEvent.upload(screen.getByLabelText('Arquivo do trabalho'), pdfFile());
+    await userEvent.click(screen.getByRole('button', { name: 'Enviar trabalho' }));
+    await screen.findByTestId('where');
+    expect((posted(calls).at(-1)!.body as { authors: unknown[] }).authors).toEqual([
+      ME,
+      { fullName: 'Rodrigo Pereira', email: 'rpereira@ufrn.br' },
+    ]);
+  });
+
+  it('undoes a pick with one click, back to an empty e-mail to type', async () => {
+    stubApi(api());
+    mount(...NEW, <PaperFormPage />);
+    const name = await secondAuthor();
+    await userEvent.type(name, 'Rodrigo');
+    await userEvent.click((await suggestions())[0]!);
+    await userEvent.click(screen.getByRole('button', { name: 'Desfazer escolha do autor 2' }));
+    const email = screen.getByLabelText('E-mail do autor 2');
+    expect(email).toHaveValue('');
+    expect(email).not.toHaveAttribute('readonly');
+    expect(name).toHaveValue('Rodrigo Alves Costa');
+  });
+
+  it('lets go of a picked person as soon as their name is typed over', async () => {
+    const calls = stubApi(api());
+    mount(...NEW, <PaperFormPage />);
+    await fill();
+    const name = await secondAuthor();
+    await userEvent.type(name, 'Rodrigo');
+    await userEvent.click((await suggestions())[0]!);
+    await userEvent.type(name, ' Filho');
+    const email = screen.getByLabelText('E-mail do autor 2');
+    expect(email).toHaveValue('');
+    expect(email).not.toHaveAttribute('readonly');
+    await userEvent.type(email, 'filho@ufcg.edu.br');
+    await userEvent.upload(screen.getByLabelText('Arquivo do trabalho'), pdfFile());
+    await userEvent.click(screen.getByRole('button', { name: 'Enviar trabalho' }));
+    await screen.findByTestId('where');
+    // The sealed reference of the person let go is not sent.
+    expect(JSON.stringify(posted(calls).at(-1)!.body)).not.toContain('sealed-ref');
+  });
+
+  it('picks with the keyboard only after arrowing to a suggestion; Escape dismisses them', async () => {
+    stubApi(api());
+    mount(...NEW, <PaperFormPage />);
+    const name = await secondAuthor();
+    await userEvent.type(name, 'Rodrigo');
+    await suggestions();
+    expect(name).toHaveAttribute('aria-expanded', 'true');
+    await userEvent.keyboard('{Escape}');
+    noSuggestions();
+    expect(name).toHaveValue('Rodrigo');
+    await userEvent.type(name, ' A');
+    await suggestions();
+    await userEvent.keyboard('{ArrowDown}{ArrowDown}{Enter}');
+    expect(name).toHaveValue('Rodrigo Antônio Lima');
+    expect(screen.getByLabelText('E-mail do autor 2')).toHaveValue('r•••@ufpb.br');
+  });
+
+  it('does not offer again someone already picked in another row', async () => {
+    stubApi(api());
+    mount(...NEW, <PaperFormPage />);
+    const name = await secondAuthor();
+    await userEvent.type(name, 'Rodrigo');
+    await userEvent.click((await suggestions())[0]!);
+    await userEvent.click(screen.getByRole('button', { name: 'Adicionar autor' }));
+    await userEvent.type(screen.getByLabelText('Nome do autor 3'), 'Rodrigo');
+    const options = await suggestions();
+    expect(options.map((o) => o.textContent)).toEqual(['Rodrigo Antônio Limar•••@ufpb.br']);
+  });
+
+  it('does not search under three letters, nor for the sender’s own name', async () => {
+    const calls = stubApi(api());
+    mount(...NEW, <PaperFormPage />);
+    const own = await ownRow();
+    await userEvent.type(own, ' Clara de Souza');
+    await userEvent.click(screen.getByRole('button', { name: 'Adicionar autor' }));
+    const name = screen.getByLabelText('Nome do autor 2');
+    await userEvent.type(name, 'Ro');
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    expect(searches(calls)).toEqual([]);
+    noSuggestions();
+  });
+
+  it('shows nothing, and gets in nobody’s way, when the search fails or finds no one', async () => {
+    stubApi({ ...api(), people: { status: 500, body: { error: 'server_error' } } });
+    mount(...NEW, <PaperFormPage />);
+    const name = await secondAuthor();
+    await userEvent.type(name, 'Rodrigo');
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    noSuggestions();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(name).toHaveValue('Rodrigo');
+  });
+});
+
 describe('PaperFormPage, changing a paper', () => {
   const EDIT = ['/2027/meus-trabalhos/paper-1', '/:eventSlug/meus-trabalhos/:paperId'] as const;
 
@@ -416,14 +639,19 @@ describe('PaperFormPage, changing a paper', () => {
     const title = await screen.findByLabelText('Título em português');
     expect(title).toHaveValue('Governança da água no semiárido');
     expect(screen.getByLabelText('Palavras-chave')).toHaveValue('água; governança');
-    expect(screen.getByLabelText('Nome do coautor 1')).toHaveValue('João Lima');
+    expect(screen.getByLabelText('Nome do autor 1 (você)')).toHaveValue('Maria Clara de Souza');
+    expect(screen.getByLabelText('Nome do autor 2')).toHaveValue('João Lima');
+    expect(screen.getByLabelText('E-mail do autor 2')).toHaveValue('joao@ufpb.br');
     expect(screen.getByText(/Arquivo atual: resumo.pdf\./)).toBeInTheDocument();
     await userEvent.clear(title);
     await userEvent.type(title, 'Governança da água: versão revista');
     await userEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }));
     expect(await screen.findByTestId('where')).toHaveTextContent('/2027/meus-trabalhos');
     const saved = calls.find((c) => c.url.includes('/save'))!.body as Record<string, unknown>;
-    expect(saved).toMatchObject({ id: 'paper-1', title: 'Governança da água: versão revista', coauthors: [{ fullName: 'João Lima', email: 'joao@ufpb.br' }] });
+    expect(saved).toMatchObject({ id: 'paper-1', title: 'Governança da água: versão revista', authors: [
+      { fullName: 'Maria Clara de Souza', email: 'maria@ufcg.edu.br' },
+      { fullName: 'João Lima', email: 'joao@ufpb.br' },
+    ] });
     expect(saved).not.toHaveProperty('filePath');
     expect(calls.some((c) => c.url.includes('upload-url'))).toBe(false);
   });

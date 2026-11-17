@@ -13,16 +13,75 @@
   padding-left: var(--space-5, 1.25rem);
 }
 
-.papers__coauthor {
+.papers__author-list {
+  list-style: decimal;
+  margin: 0 0 var(--space-3);
+  padding-left: var(--space-5, 1.25rem);
+}
+
+.papers__author {
   display: grid;
   grid-template-columns: 1fr 1fr auto;
   gap: var(--space-3);
-  align-items: end;
+  align-items: start;
+  margin-bottom: var(--space-3);
+}
+
+.papers__author-actions {
+  display: flex;
+  gap: var(--space-1, 0.25rem);
+  /* Lines up with the inputs, under their labels. */
+  padding-top: 1.6rem;
+}
+
+.papers__author-actions button {
+  min-width: 2.5rem;
+}
+
+.papers__name {
+  position: relative;
+}
+
+.papers__picked {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.papers__picked input {
+  flex: 1;
+  min-width: 0;
+}
+
+.papers__suggestions {
+  list-style: none;
+  margin: 2px 0 0;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  max-height: 14rem;
+  overflow-y: auto;
+}
+
+.papers__suggestions li {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-2) var(--space-3);
+  cursor: pointer;
+}
+
+.papers__suggestions li:hover,
+.papers__suggestions li.is-active {
+  background: var(--color-border);
 }
 
 @media (max-width: 560px) {
-  .papers__coauthor {
+  .papers__author {
     grid-template-columns: 1fr;
+  }
+
+  .papers__author-actions {
+    padding-top: 0;
   }
 }
 

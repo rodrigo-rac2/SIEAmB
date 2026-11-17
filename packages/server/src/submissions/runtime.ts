@@ -34,7 +34,6 @@ export function submissionsRuntime(env: Env = process.env): SubmissionDeps | nul
     outbox: new SupabaseOutbox(rest),
     mailer: settings ? createSmtpMailer(settings) : undefined,
     hitRateLimit: (k, windowSeconds, max) => accounts.hitRateLimit(k, windowSeconds, max),
-    profileName: async (userId) => (await accounts.getProfile(userId))?.fullName ?? '',
     siteUrl: siteOrigin(env),
     log,
     now: () => new Date(),
