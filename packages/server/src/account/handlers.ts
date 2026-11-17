@@ -192,9 +192,12 @@ export async function authenticate(
   return { user };
 }
 
-export type RegistrationState = 'PAID' | 'PENDING' | 'UNPAID';
+export type RegistrationState = 'PAID' | 'PENDING' | 'UNPAID' | 'CANCELLED';
 
 export function registrationState(registration: OwnRegistration): RegistrationState {
+  // What an administrator decided wins over the payment (#219).
+  if (registration.manualStatus === 'CANCELLED') return 'CANCELLED';
+  if (registration.manualStatus === 'CONFIRMED' || registration.manualStatus === 'EXEMPT') return 'PAID';
   const statuses = registration.payments.map((p) => p.status);
   if (statuses.includes('APPROVED')) return 'PAID';
   if (statuses.includes('PENDING')) return 'PENDING';
@@ -208,8 +211,10 @@ const documentOf = (profile: Profile) => ({
 });
 
 async function describe(user: AuthUser, deps: AccountDeps): Promise<Record<string, unknown>> {
-  // A registration made with this confirmed address is the person's own.
+  // A registration made with this confirmed address is the person's own, and so is a
+  // role that was given to the address before it had an account (#219).
   await deps.store.linkRegistrationsByEmail(user.id, user.email);
+  await deps.store.applyRoleInvites(user.id, user.email);
   const profile = await deps.store.getProfile(user.id);
   if (!profile) throw new Error('account_profile_missing');
   const registrations = await deps.store.listRegistrations(user.id);
@@ -222,6 +227,8 @@ async function describe(user: AuthUser, deps: AccountDeps): Promise<Record<strin
   );
 
   return {
+    // Where this person may open the organisation area.
+    panels: await deps.store.listPanels(user.id),
     user: {
       email: profile.email,
       fullName: profile.fullName,

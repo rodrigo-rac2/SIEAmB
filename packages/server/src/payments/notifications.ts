@@ -4,7 +4,15 @@ import { json, type Log } from './http';
 import type { PaymentStatus } from './status';
 import { paymentDeadlines, resolveFeeTier, type PaymentDeadline } from './fees';
 import { fetchOrder } from './mercadoPago';
-import { isUuid, type EmailJob, type EmailKind, type Payment, type PaymentStore, type ReminderCandidate } from './store';
+import {
+  isUuid,
+  type EmailJob,
+  type EmailKind,
+  type Payment,
+  type PaymentStore,
+  type PreRegistrationRef,
+  type ReminderCandidate,
+} from './store';
 import { applyOrderToPayment } from './sync';
 import type { PaymentNotifier } from './sync';
 
@@ -447,7 +455,11 @@ const receivedKey = (preRegistrationId: string) => `received:${preRegistrationId
 export async function handleRegistrationReceived(
   request: Request,
   env: { now: Date },
-  deps: Partial<EmailDeps> & { log: Log },
+  deps: Partial<EmailDeps> & {
+    log: Log;
+    /** Tells the organisers of a registration seen for the first time (#219). Never fails the form. */
+    onRegistered?: (registration: PreRegistrationRef) => Promise<void>;
+  },
 ): Promise<Response> {
   if (request.method !== 'POST') return json(405, { error: 'method_not_allowed' });
   const { store, siteUrl, log } = deps;
@@ -469,7 +481,10 @@ export async function handleRegistrationReceived(
       kind: 'RECEIVED',
       dedupeKey: receivedKey(registration.id),
     });
-    if (job) await deliverEmail(job, { store, mailer: deps.mailer, siteUrl, log }, env.now);
+    if (job) {
+      await deliverEmail(job, { store, mailer: deps.mailer, siteUrl, log }, env.now);
+      await deps.onRegistered?.(registration).catch(() => log('registration_notice_failed', {}));
+    }
     return json(202, { received: true });
   } catch {
     // The background job sends it for a recent registration, so the form is not failed for this.

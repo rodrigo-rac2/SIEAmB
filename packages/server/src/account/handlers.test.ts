@@ -296,13 +296,17 @@ describe('me', () => {
   });
 
   it('derives the state from every payment of the registration', () => {
-    const base = { id: 'r', eventSlug: '2027', eventName: 'x', category: 'c', modality: 'm', createdAt: '', payToken: 't' };
+    const base = { id: 'r', eventSlug: '2027', eventName: 'x', category: 'c', modality: 'm', createdAt: '', payToken: 't', manualStatus: null };
     const payment = (status: PaymentStatus) => ({ id: status, status, mpStatus: null, amountCents: 1 });
     expect(registrationState({ ...base, payments: [] })).toBe('UNPAID');
     expect(registrationState({ ...base, payments: [payment('CREATED'), payment('REJECTED')] })).toBe('UNPAID');
     expect(registrationState({ ...base, payments: [payment('REFUNDED')] })).toBe('UNPAID');
     expect(registrationState({ ...base, payments: [payment('PENDING')] })).toBe('PENDING');
     expect(registrationState({ ...base, payments: [payment('PENDING'), payment('APPROVED')] })).toBe('PAID');
+    // An administrator's decision wins over whatever was paid (#219).
+    expect(registrationState({ ...base, manualStatus: 'CONFIRMED', payments: [] })).toBe('PAID');
+    expect(registrationState({ ...base, manualStatus: 'EXEMPT', payments: [payment('REJECTED')] })).toBe('PAID');
+    expect(registrationState({ ...base, manualStatus: 'CANCELLED', payments: [payment('APPROVED')] })).toBe('CANCELLED');
   });
 });
 

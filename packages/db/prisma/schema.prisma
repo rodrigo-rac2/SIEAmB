@@ -50,6 +50,7 @@ model Event {
   preRegistrations PreRegistration[]
   payments         Payment[]
   submissions      Submission[]
+  memberInvites    EventMemberInvite[]
 
   @@map("events")
 }
@@ -312,6 +313,17 @@ model PreRegistration {
   // The account this registration belongs to (#208). Set by the server only, once the
   // account's e-mail is confirmed and matches, or after a confirmed link request (#209).
   userId      String?             @map("user_id") @db.Uuid
+  // Decided by an administrator, whatever the payment says (#219): who, when and why are kept.
+  manualStatus  RegistrationOverride? @map("manual_status")
+  manualReason  String?               @map("manual_reason")
+  manualBy      String?               @map("manual_by") @db.Uuid
+  manualAt      DateTime?             @map("manual_at")
+  // Registered by an administrator on the person's behalf (#219).
+  createdBy     String?               @map("created_by") @db.Uuid
+  // Never erased (ADR-006, #204): a deleted registration is hidden everywhere and can be restored.
+  deletedAt     DateTime?             @map("deleted_at")
+  deletedBy     String?               @map("deleted_by") @db.Uuid
+  deletedReason String?               @map("deleted_reason")
   createdAt   DateTime            @default(now()) @map("created_at")
 
   event        Event                     @relation(fields: [eventId], references: [id])
@@ -320,8 +332,10 @@ model PreRegistration {
   emails       PaymentEmail[]
   linkRequests RegistrationLinkRequest[]
 
-  @@unique([eventId, email])
-  @@unique([eventId, userId]) // one registration per account per event; rows without an account are not compared
+  // One registration per e-mail and one per account in each event, counted over the
+  // registrations that are not deleted: partial unique indexes in the migration SQL (#204).
+  @@index([eventId, email])
+  @@index([eventId, userId])
   @@index([cpf])
   @@index([passport])
   @@index([eventId, createdAt])
@@ -405,6 +419,29 @@ model PaymentEmail {
 }
 
 // ───────────────────────────── Accounts (#208, #209) ─────────────────────────────
+
+enum RegistrationOverride {
+  CONFIRMED // counts as paid: paid outside the site, by empenho, in cash
+  EXEMPT // no fee is owed
+  CANCELLED
+}
+
+// A role given to an address that has no account yet (#219). It becomes a row in
+// event_members the first time that address logs in with a confirmed e-mail.
+model EventMemberInvite {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  eventId   String    @map("event_id") @db.Uuid
+  email     String // lower-cased
+  role      EventRole
+  invitedBy String?   @map("invited_by") @db.Uuid
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  event Event @relation(fields: [eventId], references: [id])
+
+  @@unique([eventId, email, role])
+  @@index([email])
+  @@map("event_member_invites")
+}
 
 enum LinkRequestStatus {
   PENDING // waiting for the click on the link sent to the registration's e-mail

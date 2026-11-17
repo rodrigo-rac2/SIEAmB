@@ -27,6 +27,7 @@ export interface FakeRegistration extends RegistrationMatch {
   passport: string | null;
   country: string;
   payments: OwnRegistration['payments'];
+  manualStatus?: OwnRegistration['manualStatus'];
 }
 
 let seq = 0;
@@ -112,6 +113,7 @@ export class FakeAccountStore implements AccountStore {
         modality: 'ONLINE',
         createdAt: r.createdAt,
         payToken: `pay-${r.id}`,
+        manualStatus: r.manualStatus ?? null,
         payments: r.payments,
       }));
   }
@@ -163,6 +165,14 @@ export class FakeAccountStore implements AccountStore {
   async updateLinkRequest(id: string, status: LinkRequestStatus) {
     const link = this.links.find((l) => l.id === id);
     if (link) link.status = status;
+  }
+  invitesApplied: string[] = [];
+  panels = { platformAdmin: false, slugs: [] as string[] };
+  async applyRoleInvites(_userId: string, email: string) {
+    this.invitesApplied.push(email);
+  }
+  async listPanels() {
+    return this.panels;
   }
   async hitRateLimit(key: string, _windowSeconds: number, max: number) {
     const count = (this.hits.get(key) ?? 0) + 1;

@@ -1,0 +1,133 @@
+import type { PaymentStatus } from '../payments/status';
+
+export type PanelRole = 'ADMIN' | 'ORGANIZER';
+export type MemberRole = 'ADMIN' | 'ORGANIZER' | 'REVIEWER';
+export type ManualStatus = 'CONFIRMED' | 'EXEMPT' | 'CANCELLED';
+
+export interface AdminRegistration {
+  id: string;
+  eventId: string;
+  fullName: string;
+  email: string;
+  cpf: string | null;
+  passport: string | null;
+  country: string;
+  institution: string | null;
+  category: string;
+  modality: string;
+  createdAt: string;
+  userId: string | null;
+  createdBy: string | null;
+  manualStatus: ManualStatus | null;
+  manualReason: string | null;
+  manualBy: string | null;
+  manualAt: string | null;
+  deletedAt: string | null;
+  deletedBy: string | null;
+  deletedReason: string | null;
+  payments: { status: PaymentStatus; amountCents: number; paidAt: string | null }[];
+}
+
+export interface NewRegistration {
+  eventId: string;
+  fullName: string;
+  email: string;
+  cpf: string | null;
+  passport: string | null;
+  country: string;
+  institution: string | null;
+  category: string;
+  modality: string;
+  locale: string;
+  createdBy: string;
+  manualStatus: ManualStatus | null;
+  manualReason: string | null;
+  now: Date;
+}
+
+export interface RegistrationPatch {
+  manualStatus?: ManualStatus | null;
+  manualReason?: string | null;
+  manualBy?: string | null;
+  manualAt?: string | null;
+  deletedAt?: string | null;
+  deletedBy?: string | null;
+  deletedReason?: string | null;
+}
+
+export interface AdminSubmission {
+  id: string;
+  number: number;
+  title: string;
+  modality: string;
+  areaRef: string;
+  status: string;
+  fileName: string;
+  filePages: number | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+  deletedReason: string | null;
+  authors: { position: number; fullName: string; email: string }[];
+}
+
+export interface Member {
+  userId: string;
+  email: string;
+  fullName: string;
+  role: MemberRole;
+}
+
+export interface Invite {
+  email: string;
+  role: MemberRole;
+}
+
+export interface PendingLink {
+  id: string;
+  createdAt: string;
+  registrationId: string;
+  registrationName: string;
+  registrationEmail: string;
+  registrationDeleted: boolean;
+  accountId: string;
+  accountName: string;
+  accountEmail: string;
+}
+
+/** Thrown when a write would break "one registration per e-mail (or account) per event". */
+export class RegistrationExistsError extends Error {
+  constructor() {
+    super('registration_exists');
+    this.name = 'RegistrationExistsError';
+  }
+}
+
+export interface AdminStore {
+  findEvent(slug: string): Promise<{ id: string; slug: string; name: string } | null>;
+  /** The person's standing in the edition; a platform administrator counts as ADMIN everywhere. */
+  roleOf(eventId: string, userId: string): Promise<PanelRole | null>;
+
+  listRegistrations(eventId: string): Promise<AdminRegistration[]>;
+  findRegistration(id: string): Promise<AdminRegistration | null>;
+  insertRegistration(input: NewRegistration): Promise<AdminRegistration>;
+  patchRegistration(id: string, patch: RegistrationPatch): Promise<void>;
+
+  listSubmissions(eventId: string): Promise<AdminSubmission[]>;
+
+  listMembers(eventId: string): Promise<Member[]>;
+  listInvites(eventId: string): Promise<Invite[]>;
+  findUserByEmail(email: string): Promise<{ id: string; email: string; fullName: string } | null>;
+  addMember(eventId: string, userId: string, role: MemberRole, by: string): Promise<void>;
+  removeMember(eventId: string, userId: string, role: MemberRole): Promise<void>;
+  addInvite(eventId: string, email: string, role: MemberRole, by: string): Promise<void>;
+  removeInvite(eventId: string, email: string, role: MemberRole): Promise<void>;
+
+  listPendingLinks(eventId: string): Promise<PendingLink[]>;
+  findPendingLink(id: string): Promise<(PendingLink & { eventId: string }) | null>;
+  decideLink(id: string, status: 'CONFIRMED' | 'REJECTED', by: string, now: Date): Promise<void>;
+  /** False when the registration already has an account or the account already has one in the event. */
+  linkRegistration(registrationId: string, userId: string): Promise<boolean>;
+
+  audit(entry: { actorId: string; action: string; entity: string; entityId: string | null; meta: Record<string, unknown> }): Promise<void>;
+}
