@@ -9,6 +9,9 @@ const BYPASS = process.env.E2E_BYPASS_TOKEN;
 
 export default defineConfig({
   testDir: './tests',
+  // Every run cleans up what it created and checks that nothing is left (#227).
+  globalSetup: './global-setup.ts',
+  globalTeardown: './global-teardown.ts',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,

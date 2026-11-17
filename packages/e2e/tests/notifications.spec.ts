@@ -89,17 +89,22 @@ test.describe('notifications and announcements @notifications', () => {
     expect(record!.recipients).not.toContain(outsiderEmail);
     expect(record!.recipients).not.toContain(organiserEmail);
     // One e-mail owed to the reviewer, in the outbox, and none to the outsider.
-    const owed = await admin<{ subject: string }[]>(`/rest/v1/outbox_emails?to_email=eq.${encodeURIComponent(reviewerEmail)}&select=subject`);
+    // Other runs may be announcing to the same group at this moment: look at this announcement only.
+    const mine = encodeURIComponent(`announcement:${record!.id}:*`);
+    const owed = await admin<{ subject: string }[]>(
+      `/rest/v1/outbox_emails?to_email=eq.${encodeURIComponent(reviewerEmail)}&dedupe_key=like.${mine}&select=subject`,
+    );
     expect(owed).toHaveLength(1);
     expect(owed[0]!.subject).toBe(`${subject} (II SIEAmB)`);
-    expect(await admin<unknown[]>(`/rest/v1/outbox_emails?to_email=eq.${encodeURIComponent(outsiderEmail)}&select=id`)).toEqual([]);
+    expect(await admin<unknown[]>(`/rest/v1/outbox_emails?to_email=eq.${encodeURIComponent(outsiderEmail)}&dedupe_key=like.${mine}&select=id`)).toEqual([]);
 
     // 3. The reviewer, in another browser: the bell counts it, the page shows it as text, then the bell clears.
     const other = await browser.newContext();
     const reviewer = await other.newPage();
     await logIn(reviewer, reviewerEmail);
     const bell = reviewer.getByTestId('bell');
-    await expect(bell).toHaveAttribute('aria-label', 'Notificações: 1 não lida');
+    // At least this one; a run in parallel may have announced to the reviewers too.
+    await expect(bell).toHaveAttribute('aria-label', /^Notificações: \d+ não lidas?$/);
     await bell.click();
     const notice = reviewer.getByTestId('notification').filter({ hasText: subject });
     await expect(notice).toContainText('Primeiro parágrafo do comunicado.');

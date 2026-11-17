@@ -7,7 +7,8 @@
     "test": "playwright test",
     "test:smoke": "playwright test --grep @smoke",
     "test:deployed": "playwright test --grep @deployed",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "seed:demo": "tsx scripts/seed-demo.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.49.1",

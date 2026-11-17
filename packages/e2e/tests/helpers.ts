@@ -37,8 +37,12 @@ export async function admin<T>(path: string, init: RequestInit = {}): Promise<T>
   return (text ? JSON.parse(text) : null) as T;
 }
 
+/**
+ * A test address nobody else has. It carries the id of the run (set by the global
+ * setup), which is how the teardown knows what to remove (#227).
+ */
 export const unique = (label: string) =>
-  `e2e+${label}-${Date.now()}-${Math.random().toString(16).slice(2, 8)}@sieamb.org`;
+  `e2e+${process.env.E2E_RUN_ID ?? 'local'}-${label}-${Date.now().toString(36)}${Math.random().toString(16).slice(2, 8)}@sieamb.org`;
 
 /** A confirmed account with a known password. */
 export async function createAccount(email: string, fullName: string): Promise<string> {

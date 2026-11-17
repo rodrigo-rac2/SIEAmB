@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { expect as baseExpect, test, type Page } from '@playwright/test';
-import { randomCpf } from './helpers';
+import { randomCpf, unique as runUnique } from './helpers';
 
 // Each step waits on a real server and a real database, some on a cold start.
 const expect = baseExpect.configure({ timeout: 25_000 });
@@ -34,7 +34,7 @@ async function admin<T>(path: string, init: RequestInit = {}): Promise<T> {
   return (text ? JSON.parse(text) : null) as T;
 }
 
-const unique = (label: string) => `e2e+${label}-${Date.now()}-${randomBytes(3).toString('hex')}@sieamb.org`;
+const unique = runUnique;
 
 const eventId = async (): Promise<string> =>
   (await admin<{ id: string }[]>(`/rest/v1/events?slug=eq.${EVENT}&select=id`))[0]!.id;
