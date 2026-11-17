@@ -226,6 +226,15 @@ describe('MyPapersPage', () => {
     expect(screen.queryByRole('link', { name: 'Enviar trabalho' })).not.toBeInTheDocument();
   });
 
+  it('past the published date and still open: offers the send button and names no date', async () => {
+    stubApi({ mine: { body: mine({ pastDeadline: true }) }, me: account(null) });
+    mount(...LIST, <MyPapersPage />);
+    const line = await screen.findByTestId('paper-limits');
+    expect(line).toHaveTextContent('As submissões estão abertas.');
+    expect(line).not.toHaveTextContent(/janeiro|prorrog|prazo/i);
+    expect(screen.getByRole('link', { name: 'Enviar trabalho' })).toBeInTheDocument();
+  });
+
   it.each([
     ['closed', /foram encerradas em 18 de janeiro de 2027/],
     ['not_open', 'As submissões ainda não abriram.'],

@@ -417,6 +417,7 @@
     "limitReached": "您已提交第一作者允许的 {{maxAsMain}} 篇论文。",
     "window": {
       "open": "投稿开放至 {{date}}。",
+      "open_late": "投稿通道已开放。",
       "not_open": "投稿尚未开放。",
       "closed": "投稿已于 {{date}} 截止。论文不能再修改。"
     },

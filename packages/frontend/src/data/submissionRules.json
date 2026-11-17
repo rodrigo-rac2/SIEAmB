@@ -3,6 +3,7 @@
     "eventId": "evt-2027",
     "opensAt": "2026-11-15T00:00:00-03:00",
     "closesAt": "2027-01-18T23:59:59-03:00",
+    "locksAtClose": false,
     "maxAuthors": 5,
     "maxAsMainAuthor": 3,
     "maxAsCoauthor": 5,

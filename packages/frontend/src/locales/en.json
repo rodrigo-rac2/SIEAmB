@@ -417,6 +417,7 @@
     "limitReached": "You have already sent the {{maxAsMain}} papers allowed as main author.",
     "window": {
       "open": "Submissions are open until {{date}}.",
+      "open_late": "Submissions are open.",
       "not_open": "Submissions have not opened yet.",
       "closed": "Submissions closed on {{date}}. Papers can no longer be changed."
     },
