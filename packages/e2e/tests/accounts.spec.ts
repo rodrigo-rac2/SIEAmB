@@ -83,7 +83,7 @@ async function cleanup(emails: string[]): Promise<void> {
 async function logIn(page: Page, email: string, password = PASSWORD) {
   await page.goto(`/${EVENT}/conta/entrar`);
   await page.getByLabel('E-mail').fill(email);
-  await page.getByLabel('Senha').fill(password);
+  await page.getByLabel('Senha', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Entrar' }).click();
 }
 
@@ -173,7 +173,7 @@ test.describe('accounts @accounts', () => {
     // 8. Wrong password is refused, the right one gets back in, and the session survives a reload.
     await logIn(page, email, 'senha-errada-12345');
     await expect(page.getByRole('alert')).toContainText('E-mail ou senha incorretos.');
-    await page.getByLabel('Senha').fill(PASSWORD);
+    await page.getByLabel('Senha', { exact: true }).fill(PASSWORD);
     await page.getByRole('button', { name: 'Entrar' }).click();
     await expect(page.getByTestId('registration-card')).toBeVisible();
     await page.reload();

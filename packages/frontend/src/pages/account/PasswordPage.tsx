@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { PasswordInput } from '../../components/shared/PasswordInput';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { PageHeader } from '../../components/shared/PageHeader';
@@ -92,9 +93,8 @@ export function PasswordPage({ type }: { type: LinkType }) {
               <form className="reg-form" onSubmit={(e) => void submit(e)} noValidate>
                 <div className="reg-form__field">
                   <label htmlFor="new-password">{t('account.password.new')}</label>
-                  <input
+                  <PasswordInput
                     id="new-password"
-                    type="password"
                     autoComplete="new-password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -104,9 +104,8 @@ export function PasswordPage({ type }: { type: LinkType }) {
                 </div>
                 <div className="reg-form__field">
                   <label htmlFor="repeat-password">{t('account.password.repeat')}</label>
-                  <input
+                  <PasswordInput
                     id="repeat-password"
-                    type="password"
                     autoComplete="new-password"
                     value={repeat}
                     onChange={(e) => setRepeat(e.target.value)}
