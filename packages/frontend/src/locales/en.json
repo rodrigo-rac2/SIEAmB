@@ -463,6 +463,7 @@
       "suggestionsHint": "Suggestions of people already in the system. Pick one or keep typing.",
       "suggestionPicked": "Person already in the system. The full e-mail is kept and not shown here.",
       "suggestionClear": "Undo the choice for author {{n}}",
+      "suggestionUndo": "Undo",
       "file": "Paper file",
       "fileReplace": "Replace the file (optional)",
       "fileHint": "PDF or Word (.docx), up to {{maxMb}} MB, in the template of the call and with the names of all authors.",

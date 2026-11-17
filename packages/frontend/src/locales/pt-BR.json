@@ -463,6 +463,7 @@
       "suggestionsHint": "Sugestões de quem já está no sistema. Escolha uma ou continue digitando.",
       "suggestionPicked": "Pessoa já cadastrada no sistema. O e-mail completo fica guardado e não é mostrado aqui.",
       "suggestionClear": "Desfazer escolha do autor {{n}}",
+      "suggestionUndo": "Desfazer",
       "file": "Arquivo do trabalho",
       "fileReplace": "Substituir o arquivo (opcional)",
       "fileHint": "PDF ou Word (.docx), até {{maxMb}} MB, no modelo do edital e com os nomes de todos os autores.",

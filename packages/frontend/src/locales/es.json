@@ -463,6 +463,7 @@
       "suggestionsHint": "Sugerencias de quienes ya están en el sistema. Elija una o siga escribiendo.",
       "suggestionPicked": "Persona ya registrada en el sistema. El correo completo queda guardado y no se muestra aquí.",
       "suggestionClear": "Deshacer la elección del autor {{n}}",
+      "suggestionUndo": "Deshacer",
       "file": "Archivo del trabajo",
       "fileReplace": "Reemplazar el archivo (opcional)",
       "fileHint": "PDF o Word (.docx), hasta {{maxMb}} MB, en el modelo de la convocatoria y con los nombres de todos los autores.",

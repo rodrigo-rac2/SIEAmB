@@ -463,6 +463,7 @@
       "suggestionsHint": "系统中已有人员的建议。可选择其一，或继续输入。",
       "suggestionPicked": "此人已在系统中。完整邮箱已保存，此处不显示。",
       "suggestionClear": "取消第 {{n}} 作者的选择",
+      "suggestionUndo": "撤销",
       "file": "论文文件",
       "fileReplace": "替换文件（可选）",
       "fileHint": "PDF 或 Word（.docx），最大 {{maxMb}} MB，使用征稿通知的模板并包含所有作者姓名。",
