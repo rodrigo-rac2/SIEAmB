@@ -90,7 +90,21 @@
     "rulesTitle": "Submission Rules",
     "rulesBody": "The submission rules, thematic areas and schedule are in the call for papers.",
     "rulesCta": "Read the call for papers",
-    "templatesTitle": "Templates to download"
+    "templatesTitle": "Templates to download",
+    "state": {
+      "open": {
+        "title": "Submissions are open",
+        "body": "Send your paper through the website. You need an account; registering for the event can be done later."
+      },
+      "not_open": {
+        "title": "Submissions have not opened yet",
+        "body": "You can already create your account. Sending becomes available on the date set in the call."
+      },
+      "closed": {
+        "title": "Submissions are closed",
+        "body": "The deadline has passed. Those who sent a paper can follow it under My papers."
+      }
+    }
   },
   "editais": {
     "title": "Calls for papers",
@@ -379,6 +393,103 @@
       "link_not_found": "This link is not valid.",
       "link_expired": "This link has expired. Ask for another one in My area.",
       "cannot_link": "The registration could not be added to that account. Contact the organisers."
+    }
+  },
+  "papers": {
+    "title": "My papers",
+    "send": "Submit a paper",
+    "editTitle": "Change paper",
+    "edit": "Change",
+    "none": "You have not sent a paper yet, and are not listed as a co-author.",
+    "number": "Paper no. {{number}}",
+    "roleMain": "you are the main author",
+    "roleCoauthor": "you are a co-author (view only)",
+    "sentOn": "sent on {{date}}",
+    "pages_one": "{{count}} page",
+    "pages_other": "{{count}} pages",
+    "openFile": "Download the file",
+    "withdraw": "Withdraw the paper",
+    "withdrawConfirm": "Withdraw this paper? It will not be reviewed.",
+    "withdrawYes": "Yes, withdraw",
+    "limits": "You have sent {{asMain}} of {{maxAsMain}} papers as main author and are a co-author in {{asCoauthor}} of {{maxAsCoauthor}}.",
+    "limitReached": "You have already sent the {{maxAsMain}} papers allowed as main author.",
+    "window": {
+      "open": "Submissions are open until {{date}}.",
+      "not_open": "Submissions have not opened yet.",
+      "closed": "Submissions closed on {{date}}. Papers can no longer be changed."
+    },
+    "modalities": {
+      "ARTIGO": "Scientific article",
+      "RESUMO_EXPANDIDO": "Expanded abstract"
+    },
+    "status": {
+      "SUBMITTED": "Sent",
+      "UNDER_REVIEW": "Under review",
+      "APPROVED": "Approved",
+      "APPROVED_WITH_REVISION": "Approved subject to revision",
+      "REJECTED": "Not approved"
+    },
+    "registration": {
+      "none": "You are not registered for the event yet. You can register at any time.",
+      "noneWithPapers": "You are not registered yet. An approved paper only enters the programme if at least one of its authors is registered.",
+      "UNPAID": "The fee still has to be paid to complete the registration.",
+      "PENDING": "We are waiting for the payment to be confirmed.",
+      "PAID": "Nothing else to do about the registration."
+    },
+    "form": {
+      "title": "Title in Portuguese",
+      "titleEn": "Title in English",
+      "modality": "Modality",
+      "pagesHint": "{{min}} to {{max}} pages, references included.",
+      "area": "Thematic area",
+      "areaChoose": "Choose the area",
+      "abstract": "Abstract",
+      "keywords": "Keywords in Portuguese",
+      "keywordsEn": "Keywords in English",
+      "keywordsHint": "Up to {{max}} in each language, separated by semicolons.",
+      "coauthorsTitle": "Co-authors",
+      "coauthorsHint": "Up to {{max}} co-authors, in authorship order. You are the main author. Co-authors need neither an account nor a registration for the paper to be sent, and are told by e-mail.",
+      "coauthorName": "Name of co-author {{n}}",
+      "coauthorEmail": "E-mail of co-author {{n}}",
+      "coauthorAdd": "Add co-author",
+      "coauthorRemove": "Remove",
+      "file": "Paper file",
+      "fileReplace": "Replace the file (optional)",
+      "fileHint": "PDF or Word (.docx), up to {{maxMb}} MB, in the template of the call and with the names of all authors.",
+      "fileCurrent": "Current file: {{name}}.",
+      "submit": "Submit paper",
+      "save": "Save changes",
+      "sending": "Sending…",
+      "sendAnyway": "It is another paper, send it anyway"
+    },
+    "errors": {
+      "generic": "Something went wrong. Try again in a moment.",
+      "not_logged_in": "Your session has ended. Log in again.",
+      "email_not_confirmed": "Confirm your e-mail to continue.",
+      "event_not_found": "This edition does not take papers through the website.",
+      "submissions_not_open": "Submissions have not opened yet.",
+      "submissions_closed": "Submissions are closed.",
+      "submission_not_found": "We could not find that paper, or it can no longer be changed.",
+      "submission_locked": "This paper is already under review and can no longer be changed.",
+      "too_many_attempts": "Too many attempts. Wait a little and try again.",
+      "wrong_file_type": "The file must be a PDF or a Word file (.docx).",
+      "file_missing": "Attach the paper file.",
+      "file_too_large": "The file is over {{maxMb}} MB.",
+      "unreadable_file": "The file could not be read. Check that it opens normally and that it really is a PDF or a .docx.",
+      "wrong_page_count": "The file has {{pages}} pages. For this modality the call asks for {{minPages}} to {{maxPages}}.",
+      "invalid_title": "Enter the title in Portuguese.",
+      "invalid_title_en": "Enter the title in English.",
+      "invalid_modality": "Choose the modality.",
+      "invalid_area": "Choose the thematic area.",
+      "invalid_abstract": "The abstract needs between 50 and 5000 characters.",
+      "invalid_keywords": "Enter 1 to 5 keywords, separated by semicolons.",
+      "invalid_coauthor": "Check the name and e-mail of each co-author.",
+      "duplicate_author": "The e-mail {{email}} appears more than once among the authors.",
+      "too_many_authors": "The call allows up to {{max}} authors per paper.",
+      "too_many_as_main": "You have already sent the {{max}} papers allowed as main author.",
+      "coauthor_limit": "{{email}} is already a co-author in {{max}} papers, the limit of the call.",
+      "duplicate_title": "One of the authors already sent a paper with this title (no. {{number}}). Each paper must be sent only once.",
+      "upload_failed": "The file could not be sent. Check your connection and try again."
     }
   }
 }

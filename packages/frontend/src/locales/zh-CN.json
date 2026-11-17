@@ -90,7 +90,21 @@
     "rulesTitle": "投稿规则",
     "rulesBody": "投稿规则、主题领域和日程安排详见征稿通知。",
     "rulesCta": "阅读征稿通知",
-    "templatesTitle": "模板下载"
+    "templatesTitle": "模板下载",
+    "state": {
+      "open": {
+        "title": "投稿已开放",
+        "body": "请通过网站提交论文。需要先创建账户；会议注册可以稍后进行。"
+      },
+      "not_open": {
+        "title": "投稿尚未开放",
+        "body": "您现在可以创建账户。投稿将在征稿通知规定的日期开放。"
+      },
+      "closed": {
+        "title": "投稿已截止",
+        "body": "投稿期限已过。已投稿者可在“我的论文”中查看进展。"
+      }
+    }
   },
   "editais": {
     "title": "征稿通知",
@@ -379,6 +393,103 @@
       "link_not_found": "此链接无效。",
       "link_expired": "此链接已过期。请在“我的主页”中重新申请。",
       "cannot_link": "无法将注册关联到该账户。请联系组委会。"
+    }
+  },
+  "papers": {
+    "title": "我的论文",
+    "send": "提交论文",
+    "editTitle": "修改论文",
+    "edit": "修改",
+    "none": "您尚未提交论文，也未被列为合作者。",
+    "number": "第 {{number}} 号论文",
+    "roleMain": "您是第一作者",
+    "roleCoauthor": "您是合作者（仅可查看）",
+    "sentOn": "提交于 {{date}}",
+    "pages_one": "{{count}} 页",
+    "pages_other": "{{count}} 页",
+    "openFile": "下载文件",
+    "withdraw": "撤回论文",
+    "withdrawConfirm": "确定撤回这篇论文吗？它将不再评审。",
+    "withdrawYes": "是的，撤回",
+    "limits": "您已作为第一作者提交 {{asMain}}/{{maxAsMain}} 篇，并作为合作者参与 {{asCoauthor}}/{{maxAsCoauthor}} 篇。",
+    "limitReached": "您已提交第一作者允许的 {{maxAsMain}} 篇论文。",
+    "window": {
+      "open": "投稿开放至 {{date}}。",
+      "not_open": "投稿尚未开放。",
+      "closed": "投稿已于 {{date}} 截止。论文不能再修改。"
+    },
+    "modalities": {
+      "ARTIGO": "学术论文",
+      "RESUMO_EXPANDIDO": "扩展摘要"
+    },
+    "status": {
+      "SUBMITTED": "已提交",
+      "UNDER_REVIEW": "评审中",
+      "APPROVED": "已录用",
+      "APPROVED_WITH_REVISION": "修改后录用",
+      "REJECTED": "未录用"
+    },
+    "registration": {
+      "none": "您尚未注册会议。可以随时注册。",
+      "noneWithPapers": "您尚未注册。只有至少一位作者注册，被录用的论文才会进入会议日程。",
+      "UNPAID": "还需支付注册费才能完成注册。",
+      "PENDING": "我们正在等待付款确认。",
+      "PAID": "注册方面无需其他操作。"
+    },
+    "form": {
+      "title": "葡萄牙语标题",
+      "titleEn": "英语标题",
+      "modality": "类型",
+      "pagesHint": "{{min}} 至 {{max}} 页，含参考文献。",
+      "area": "主题领域",
+      "areaChoose": "请选择领域",
+      "abstract": "摘要",
+      "keywords": "葡萄牙语关键词",
+      "keywordsEn": "英语关键词",
+      "keywordsHint": "每种语言最多 {{max}} 个，用分号分隔。",
+      "coauthorsTitle": "合作者",
+      "coauthorsHint": "最多 {{max}} 位合作者，按署名顺序填写。您是第一作者。合作者无需账户或注册即可提交论文，并会收到邮件通知。",
+      "coauthorName": "合作者 {{n}} 的姓名",
+      "coauthorEmail": "合作者 {{n}} 的邮箱",
+      "coauthorAdd": "添加合作者",
+      "coauthorRemove": "删除",
+      "file": "论文文件",
+      "fileReplace": "替换文件（可选）",
+      "fileHint": "PDF 或 Word（.docx），最大 {{maxMb}} MB，使用征稿通知的模板并包含所有作者姓名。",
+      "fileCurrent": "当前文件：{{name}}。",
+      "submit": "提交论文",
+      "save": "保存修改",
+      "sending": "正在提交…",
+      "sendAnyway": "这是另一篇论文，仍然提交"
+    },
+    "errors": {
+      "generic": "出了点问题。请稍后重试。",
+      "not_logged_in": "您的会话已结束。请重新登录。",
+      "email_not_confirmed": "请确认您的邮箱以继续。",
+      "event_not_found": "本届会议不通过网站接收论文。",
+      "submissions_not_open": "投稿尚未开放。",
+      "submissions_closed": "投稿已截止。",
+      "submission_not_found": "未找到该论文，或它已不能修改。",
+      "submission_locked": "该论文已进入评审，不能再修改。",
+      "too_many_attempts": "尝试次数过多。请稍等后重试。",
+      "wrong_file_type": "文件必须是 PDF 或 Word（.docx）。",
+      "file_missing": "请附上论文文件。",
+      "file_too_large": "文件超过 {{maxMb}} MB。",
+      "unreadable_file": "无法读取文件。请确认它可以正常打开，并且确实是 PDF 或 .docx。",
+      "wrong_page_count": "文件有 {{pages}} 页。此类型要求 {{minPages}} 至 {{maxPages}} 页。",
+      "invalid_title": "请填写葡萄牙语标题。",
+      "invalid_title_en": "请填写英语标题。",
+      "invalid_modality": "请选择类型。",
+      "invalid_area": "请选择主题领域。",
+      "invalid_abstract": "摘要需要 50 至 5000 个字符。",
+      "invalid_keywords": "请填写 1 至 5 个关键词，用分号分隔。",
+      "invalid_coauthor": "请检查每位合作者的姓名和邮箱。",
+      "duplicate_author": "邮箱 {{email}} 在作者中出现了多次。",
+      "too_many_authors": "每篇论文最多允许 {{max}} 位作者。",
+      "too_many_as_main": "您已提交第一作者允许的 {{max}} 篇论文。",
+      "coauthor_limit": "{{email}} 已作为合作者参与 {{max}} 篇论文，达到上限。",
+      "duplicate_title": "其中一位作者已提交过同名论文（第 {{number}} 号）。每篇论文只能提交一次。",
+      "upload_failed": "无法上传文件。请检查网络连接后重试。"
     }
   }
 }

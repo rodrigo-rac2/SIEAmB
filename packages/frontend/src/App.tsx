@@ -9,6 +9,8 @@ import { MyAreaPage } from './pages/account/MyAreaPage';
 import { PasswordPage } from './pages/account/PasswordPage';
 import { SignupPage } from './pages/account/SignupPage';
 import { AnaisPage } from './pages/AnaisPage';
+import { MyPapersPage } from './pages/papers/MyPapersPage';
+import { PaperFormPage } from './pages/papers/PaperFormPage';
 import { CommitteePage } from './pages/CommitteePage';
 import { ContactPage } from './pages/ContactPage';
 import { EditaisPage } from './pages/EditaisPage';
@@ -77,6 +79,9 @@ function AppRoutes() {
           <Route path="conta/nova-senha" element={<PasswordPage type="recovery" />} />
           <Route path="conta/vincular" element={<LinkPage />} />
           <Route path="minha-area" element={<MyAreaPage />} />
+          <Route path="meus-trabalhos" element={<MyPapersPage />} />
+          <Route path="meus-trabalhos/novo" element={<PaperFormPage />} />
+          <Route path="meus-trabalhos/:paperId" element={<PaperFormPage />} />
           <Route path="datas-importantes" element={<ImportantDatesPage />} />
           <Route path="avisos" element={<NewsListPage />} />
           <Route path="avisos/:newsSlug" element={<NewsDetailPage />} />

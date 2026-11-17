@@ -90,7 +90,21 @@
     "rulesTitle": "Regras de Submissão",
     "rulesBody": "As regras de submissão, as áreas temáticas e o cronograma estão no edital.",
     "rulesCta": "Ler o edital de submissão",
-    "templatesTitle": "Modelos para download"
+    "templatesTitle": "Modelos para download",
+    "state": {
+      "open": {
+        "title": "Submissões abertas",
+        "body": "Envie seu trabalho pelo site. É preciso ter uma conta; a inscrição no evento pode ser feita depois."
+      },
+      "not_open": {
+        "title": "As submissões ainda não abriram",
+        "body": "Você já pode criar sua conta. O envio fica disponível na data prevista no edital."
+      },
+      "closed": {
+        "title": "Submissões encerradas",
+        "body": "O prazo de envio terminou. Quem enviou trabalho acompanha a situação em Meus trabalhos."
+      }
+    }
   },
   "editais": {
     "title": "Editais",
@@ -379,6 +393,103 @@
       "link_not_found": "Este link não é válido.",
       "link_expired": "Este link expirou. Peça outro em Minha área.",
       "cannot_link": "Não foi possível reunir a inscrição a essa conta. Fale com a organização."
+    }
+  },
+  "papers": {
+    "title": "Meus trabalhos",
+    "send": "Enviar trabalho",
+    "editTitle": "Alterar trabalho",
+    "edit": "Alterar",
+    "none": "Você ainda não enviou nenhum trabalho, nem consta como coautor.",
+    "number": "Trabalho nº {{number}}",
+    "roleMain": "você é o autor principal",
+    "roleCoauthor": "você é coautor (somente consulta)",
+    "sentOn": "enviado em {{date}}",
+    "pages_one": "{{count}} página",
+    "pages_other": "{{count}} páginas",
+    "openFile": "Baixar o arquivo",
+    "withdraw": "Retirar o trabalho",
+    "withdrawConfirm": "Retirar este trabalho? Ele não será avaliado.",
+    "withdrawYes": "Sim, retirar",
+    "limits": "Você enviou {{asMain}} de {{maxAsMain}} trabalhos como autor principal e consta como coautor em {{asCoauthor}} de {{maxAsCoauthor}}.",
+    "limitReached": "Você já enviou os {{maxAsMain}} trabalhos permitidos como autor principal.",
+    "window": {
+      "open": "As submissões estão abertas até {{date}}.",
+      "not_open": "As submissões ainda não abriram.",
+      "closed": "As submissões foram encerradas em {{date}}. Os trabalhos não podem mais ser alterados."
+    },
+    "modalities": {
+      "ARTIGO": "Artigo científico",
+      "RESUMO_EXPANDIDO": "Resumo expandido"
+    },
+    "status": {
+      "SUBMITTED": "Enviado",
+      "UNDER_REVIEW": "Em avaliação",
+      "APPROVED": "Aprovado",
+      "APPROVED_WITH_REVISION": "Aprovado mediante revisão",
+      "REJECTED": "Não aprovado"
+    },
+    "registration": {
+      "none": "Você ainda não está inscrito no evento. A inscrição pode ser feita a qualquer momento.",
+      "noneWithPapers": "Você ainda não está inscrito. Um trabalho aprovado só entra na programação se pelo menos um dos autores estiver inscrito.",
+      "UNPAID": "Falta o pagamento da taxa para concluir a inscrição.",
+      "PENDING": "Estamos aguardando a confirmação do pagamento.",
+      "PAID": "Nada mais a fazer quanto à inscrição."
+    },
+    "form": {
+      "title": "Título em português",
+      "titleEn": "Título em inglês",
+      "modality": "Modalidade",
+      "pagesHint": "De {{min}} a {{max}} páginas, contando as referências.",
+      "area": "Área temática",
+      "areaChoose": "Escolha a área",
+      "abstract": "Resumo",
+      "keywords": "Palavras-chave",
+      "keywordsEn": "Keywords (em inglês)",
+      "keywordsHint": "Até {{max}} em cada idioma, separadas por ponto e vírgula.",
+      "coauthorsTitle": "Coautores",
+      "coauthorsHint": "Até {{max}} coautores, na ordem de autoria. Você é o autor principal. Os coautores não precisam ter conta nem inscrição para o trabalho ser enviado, e recebem um aviso por e-mail.",
+      "coauthorName": "Nome do coautor {{n}}",
+      "coauthorEmail": "E-mail do coautor {{n}}",
+      "coauthorAdd": "Adicionar coautor",
+      "coauthorRemove": "Remover",
+      "file": "Arquivo do trabalho",
+      "fileReplace": "Substituir o arquivo (opcional)",
+      "fileHint": "PDF ou Word (.docx), até {{maxMb}} MB, no modelo do edital e com os nomes de todos os autores.",
+      "fileCurrent": "Arquivo atual: {{name}}.",
+      "submit": "Enviar trabalho",
+      "save": "Salvar alterações",
+      "sending": "Enviando…",
+      "sendAnyway": "É outro trabalho, enviar mesmo assim"
+    },
+    "errors": {
+      "generic": "Algo deu errado. Tente de novo em instantes.",
+      "not_logged_in": "Sua sessão terminou. Entre de novo.",
+      "email_not_confirmed": "Confirme seu e-mail para continuar.",
+      "event_not_found": "Esta edição não recebe trabalhos pelo site.",
+      "submissions_not_open": "As submissões ainda não abriram.",
+      "submissions_closed": "As submissões foram encerradas.",
+      "submission_not_found": "Não encontramos esse trabalho, ou ele não pode mais ser alterado.",
+      "submission_locked": "Este trabalho já está em avaliação e não pode mais ser alterado.",
+      "too_many_attempts": "Muitas tentativas. Aguarde um pouco e tente de novo.",
+      "wrong_file_type": "O arquivo precisa ser PDF ou Word (.docx).",
+      "file_missing": "Anexe o arquivo do trabalho.",
+      "file_too_large": "O arquivo passa de {{maxMb}} MB.",
+      "unreadable_file": "Não foi possível ler o arquivo. Confira se ele abre normalmente e se é mesmo um PDF ou um .docx.",
+      "wrong_page_count": "O arquivo tem {{pages}} páginas. Nesta modalidade, o edital pede de {{minPages}} a {{maxPages}}.",
+      "invalid_title": "Informe o título em português.",
+      "invalid_title_en": "Informe o título em inglês.",
+      "invalid_modality": "Escolha a modalidade.",
+      "invalid_area": "Escolha a área temática.",
+      "invalid_abstract": "O resumo precisa ter entre 50 e 5000 caracteres.",
+      "invalid_keywords": "Informe de 1 a 5 palavras-chave, separadas por ponto e vírgula.",
+      "invalid_coauthor": "Confira o nome e o e-mail de cada coautor.",
+      "duplicate_author": "O e-mail {{email}} aparece mais de uma vez entre os autores.",
+      "too_many_authors": "O edital permite até {{max}} autores por trabalho.",
+      "too_many_as_main": "Você já enviou os {{max}} trabalhos permitidos como autor principal.",
+      "coauthor_limit": "{{email}} já consta como coautor em {{max}} trabalhos, o limite do edital.",
+      "duplicate_title": "Um dos autores já enviou um trabalho com este título (nº {{number}}). Cada trabalho deve ser enviado uma única vez.",
+      "upload_failed": "Não foi possível enviar o arquivo. Confira sua conexão e tente de novo."
     }
   }
 }

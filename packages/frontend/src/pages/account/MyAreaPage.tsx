@@ -321,6 +321,11 @@ export function MyAreaPage() {
           {!account && !error && <p role="status">{t('common.loading')}</p>}
           {account && (
             <>
+              <p>
+                <Link className="account__button" to={`/${event?.slug ?? ''}/meus-trabalhos`}>
+                  {t('papers.title')}
+                </Link>
+              </p>
               <h2>{t('account.area.registrationTitle')}</h2>
               {here.map((r) => (
                 <RegistrationCard key={r.id} registration={r} />
