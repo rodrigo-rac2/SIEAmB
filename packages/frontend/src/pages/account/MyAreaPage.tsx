@@ -16,7 +16,7 @@ import {
   type AccountSuggestion,
   type ProfileInput,
 } from '../../services/account';
-import { fetchReviewing } from '../../services/submissions';
+import { fetchReviewing, fetchWindow, type WindowState } from '../../services/submissions';
 import { NotFoundPage } from '../NotFoundPage';
 import '../../components/registration/RegistrationForm.css';
 import './Account.css';
@@ -265,6 +265,20 @@ export function MyAreaPage() {
   // How many papers this person was chosen to review; the link only shows when there are some (#232).
   const [toReview, setToReview] = useState(0);
   const eventSlug = event?.slug;
+  // Sending is offered unless the server says submissions are not open; if it cannot say, the form will.
+  const [windowState, setWindowState] = useState<WindowState | null>(null);
+  useEffect(() => {
+    // Nothing is asked of the server for someone who is not logged in.
+    if (!accessToken || !eventSlug) return;
+    let active = true;
+    fetchWindow(eventSlug)
+      .then((w) => active && setWindowState(w.state))
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [accessToken, eventSlug]);
+  const canSend = windowState === null || windowState === 'open';
   useEffect(() => {
     if (!accessToken || !eventSlug) return;
     let active = true;
@@ -335,37 +349,50 @@ export function MyAreaPage() {
           {!account && !error && <p role="status">{t('common.loading')}</p>}
           {account && (
             <>
-              <p className="account__actions">
-                <Link className="account__button" to={`/${event?.slug ?? ''}/meus-trabalhos`}>
-                  {t('papers.title')}
-                </Link>
-                {event && toReview > 0 && (
-                  <Link className="account__button" to={`/${event.slug}/avaliacoes`} data-testid="reviewing-link">
-                    {t('reviewing.link', { count: toReview })}
-                  </Link>
-                )}
-                {event && (account.panels?.platformAdmin || account.panels?.slugs.includes(event.slug)) && (
-                  <Link className="account__button" to={`/${event.slug}/painel`} data-testid="panel-link">
-                    {t('panel.title')}
-                  </Link>
-                )}
-              </p>
-              <h2>{t('account.area.registrationTitle')}</h2>
-              {here.map((r) => (
-                <RegistrationCard key={r.id} registration={r} />
-              ))}
-              {account.suggestions.map((s) => (
-                <Suggestion key={s.registrationId} suggestion={s} onAsk={(noAccess) => ask(s, noAccess)} />
-              ))}
-              {here.length === 0 && !waiting && (
-                <div className="account__card" data-testid="no-registration">
-                  <p>{t('account.area.none')}</p>
-                  <div className="account__actions">
-                    <Link className="account__button" to={paths.register}>
-                      {t('account.area.registerCta')}
+              {event && (toReview > 0 || account.panels?.platformAdmin || account.panels?.slugs.includes(event.slug)) && (
+                <p className="account__actions">
+                  {toReview > 0 && (
+                    <Link className="account__button" to={`/${event.slug}/avaliacoes`} data-testid="reviewing-link">
+                      {t('reviewing.link', { count: toReview })}
                     </Link>
-                  </div>
+                  )}
+                  {(account.panels?.platformAdmin || account.panels?.slugs.includes(event.slug)) && (
+                    <Link className="account__button" to={`/${event.slug}/painel`} data-testid="panel-link">
+                      {t('panel.title')}
+                    </Link>
+                  )}
+                </p>
+              )}
+
+              {/* Papers come first: most people open an account to send one (#246). */}
+              <h2>{t('papers.title')}</h2>
+              <div className="account__card" data-testid="area-papers">
+                <p>{t('account.area.papersBody')}</p>
+                <div className="account__actions">
+                  {canSend && (
+                    <Link className="account__button" to={`/${event?.slug ?? ''}/meus-trabalhos/novo`}>
+                      {t('account.area.sendNew')}
+                    </Link>
+                  )}
+                  <Link
+                    className={canSend ? 'account__button account__button--quiet' : 'account__button'}
+                    to={`/${event?.slug ?? ''}/meus-trabalhos`}
+                  >
+                    {t('papers.title')}
+                  </Link>
                 </div>
+              </div>
+
+              {(here.length > 0 || account.suggestions.length > 0) && (
+                <>
+                  <h2 className="account__section">{t('account.area.registrationTitle')}</h2>
+                  {here.map((r) => (
+                    <RegistrationCard key={r.id} registration={r} />
+                  ))}
+                  {account.suggestions.map((s) => (
+                    <Suggestion key={s.registrationId} suggestion={s} onAsk={(noAccess) => ask(s, noAccess)} />
+                  ))}
+                </>
               )}
               {elsewhere.length > 0 && (
                 <>
@@ -378,6 +405,21 @@ export function MyAreaPage() {
 
               <h2 className="account__section">{t('account.area.profileTitle')}</h2>
               <ProfileForm account={account} onSave={save} />
+
+              {/* Not registered yet: a reminder at the end of the page, not the first thing on it (#246). */}
+              {here.length === 0 && !waiting && (
+                <>
+                  <h2 className="account__section">{t('account.area.registrationTitle')}</h2>
+                  <div className="account__card" data-testid="no-registration">
+                    <p>{t('account.area.none')}</p>
+                    <div className="account__actions">
+                      <Link className="account__button" to={paths.register}>
+                        {t('account.area.registerCta')}
+                      </Link>
+                    </div>
+                  </div>
+                </>
+              )}
 
               <p className="account__links account__section">
                 <button

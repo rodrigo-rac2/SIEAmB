@@ -7,6 +7,7 @@ import { AccountError, startRecovery, startSignup } from '../../services/account
 import { NotFoundPage } from '../NotFoundPage';
 import '../../components/registration/RegistrationForm.css';
 import './Account.css';
+import { rememberNext } from './nextPage';
 import { useAccountPaths } from './useAccountPaths';
 
 /**
@@ -27,6 +28,7 @@ export function SignupPage({ mode }: { mode: 'signup' | 'recover' }) {
 
   if (!auth.enabled) return <NotFoundPage />;
   if (!paths.ready) return null;
+  rememberNext(params.get('next'));
 
   const signup = mode === 'signup';
   const key = signup ? 'account.signup' : 'account.recover';

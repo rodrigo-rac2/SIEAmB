@@ -375,7 +375,9 @@
       "sendAgain": "Enviar o link de novo",
       "noAccess": "Não tenho mais acesso a esse e-mail",
       "requestSent": "Enviamos um link de confirmação para {{email}}. Abra esse e-mail e confirme para reunir a inscrição a esta conta.",
-      "requestOrganiser": "Seu pedido foi encaminhado à organização, que vai conferir e responder."
+      "requestOrganiser": "Seu pedido foi encaminhado à organização, que vai conferir e responder.",
+      "papersBody": "Envie um trabalho ou acompanhe os que você já enviou e aqueles em que consta como autor.",
+      "sendNew": "Enviar novo trabalho"
     },
     "errors": {
       "generic": "Algo deu errado. Tente de novo em instantes.",

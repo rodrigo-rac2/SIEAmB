@@ -375,7 +375,9 @@
       "sendAgain": "Enviar el enlace de nuevo",
       "noAccess": "Ya no tengo acceso a ese correo",
       "requestSent": "Enviamos un enlace de confirmación a {{email}}. Abra ese correo y confirme para unir la inscripción a esta cuenta.",
-      "requestOrganiser": "Su solicitud fue enviada a la organización, que la revisará y responderá."
+      "requestOrganiser": "Su solicitud fue enviada a la organización, que la revisará y responderá.",
+      "papersBody": "Envíe un trabajo o siga los que ya envió y aquellos en los que figura como autor.",
+      "sendNew": "Enviar nuevo trabajo"
     },
     "errors": {
       "generic": "Algo salió mal. Intente de nuevo en un momento.",
