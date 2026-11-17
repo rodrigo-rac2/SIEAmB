@@ -1,5 +1,8 @@
 import { createHash, randomBytes } from 'node:crypto';
-import { expect, test, type Page } from '@playwright/test';
+import { expect as baseExpect, test, type Page } from '@playwright/test';
+
+// Each step waits on a real server and a real database, some on a cold start.
+const expect = baseExpect.configure({ timeout: 25_000 });
 
 /**
  * Accounts end to end against a real deployment and the dev database (#208, #209, #210).
@@ -98,6 +101,7 @@ async function logIn(page: Page, email: string, password = PASSWORD) {
 }
 
 test.describe('accounts @accounts', () => {
+  test.setTimeout(180_000);
   test.skip(!SUPABASE_URL || !SERVICE_KEY, 'needs SUPABASE_DEV_URL and SUPABASE_DEV_SERVICE_ROLE_KEY');
   test.skip(
     ({ baseURL }) => !baseURL || /\/\/(www\.)?sieamb\.org/.test(baseURL) || baseURL.includes('localhost'),
@@ -260,6 +264,7 @@ test.describe('accounts @accounts', () => {
     await page.locator('#fullName').fill('Pessoa de Teste E2E');
     await page.locator('#email').fill(newEmail);
     await page.locator('#cpf').fill(cpf);
+    await expect(page.locator('#cpf')).toHaveValue(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/);
     await page.getByRole('checkbox').check();
     await page.getByRole('button', { name: /Enviar inscrição/ }).click();
     await expect(page.getByRole('alert')).toContainText('feita com o e-mail e•••@sieamb.org');

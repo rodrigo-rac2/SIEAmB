@@ -248,6 +248,8 @@ describe('PasswordPage', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Salvar senha' }));
     expect(await screen.findByTestId('where')).toHaveTextContent('/2027/minha-area');
     expect(state.verifyLink).toHaveBeenCalledWith('abc123', 'signup');
+    // Saving a password ends the session, so the page logs in again with the new one.
+    expect(state.signIn).toHaveBeenCalledWith('maria@ufcg.edu.br', 'uma-senha-bem-longa');
     expect(calls).toEqual([
       expect.objectContaining({ url: '/api/v1/account/password', method: 'POST', authorization: 'Bearer access-token-1', body: { password: 'uma-senha-bem-longa' } }),
     ]);

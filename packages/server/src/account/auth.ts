@@ -29,8 +29,12 @@ export interface AuthGateway {
 /** A password nobody knows, for the time between creating an account and its owner choosing one. */
 export const unguessablePassword = (): string => randomBytes(36).toString('base64url');
 
+/** An account created less than this long ago was created by the call that is asking. */
+export const NEW_ACCOUNT_MS = 30_000;
+
 interface GenerateLinkAnswer {
   id?: string;
+  created_at?: string;
   hashed_token?: string;
   error_code?: string;
   code?: number | string;
@@ -68,7 +72,7 @@ export class SupabaseAuthGateway implements AuthGateway {
     });
   }
 
-  async startSignup(email: string, fullName: string): Promise<SignupStart> {
+  private async signupLink(email: string, fullName: string): Promise<GenerateLinkAnswer | 'exists'> {
     const response = await this.call('admin/generate_link', {
       method: 'POST',
       body: JSON.stringify({
@@ -79,14 +83,27 @@ export class SupabaseAuthGateway implements AuthGateway {
       }),
     });
     const answer = (await response.json().catch(() => ({}))) as GenerateLinkAnswer;
-    if (response.status === 422 && answer.error_code === 'email_exists') return { kind: 'exists' };
+    if (response.status === 422 && answer.error_code === 'email_exists') return 'exists';
     if (!response.ok || !answer.hashed_token || !answer.id) {
       throw new Error(`auth_signup_failed: ${response.status} ${answer.error_code ?? ''}`.trim());
     }
-    // An account that was started earlier and never confirmed keeps the password it
-    // was started with, which may have been chosen by someone else. Replace it.
-    await this.setPassword(answer.id, unguessablePassword());
-    return { kind: 'link', tokenHash: answer.hashed_token };
+    return answer;
+  }
+
+  async startSignup(email: string, fullName: string, now: Date = new Date()): Promise<SignupStart> {
+    const first = await this.signupLink(email, fullName);
+    if (first === 'exists') return { kind: 'exists' };
+    const createdAt = Date.parse(first.created_at ?? '');
+    const isNew = !Number.isNaN(createdAt) && now.getTime() - createdAt < NEW_ACCOUNT_MS;
+    if (isNew) return { kind: 'link', tokenHash: first.hashed_token! };
+
+    // The account was started earlier and never confirmed. It keeps the password it
+    // was started with, which someone else may have chosen, so replace it. Changing
+    // the password cancels the link just issued: ask for a fresh one afterwards.
+    await this.setPassword(first.id!, unguessablePassword());
+    const second = await this.signupLink(email, fullName);
+    if (second === 'exists') return { kind: 'exists' };
+    return { kind: 'link', tokenHash: second.hashed_token! };
   }
 
   async startRecovery(email: string): Promise<{ tokenHash: string } | null> {

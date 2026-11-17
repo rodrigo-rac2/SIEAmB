@@ -54,6 +54,8 @@ export function PasswordPage({ type }: { type: LinkType }) {
     setBusy(true);
     try {
       await savePassword(auth.accessToken, password);
+      // Changing the password ends every session of the account, this one included.
+      if (auth.email) await auth.signIn(auth.email, password);
       navigate(paths.area, { replace: true });
     } catch (err) {
       const code = err instanceof AccountError ? err.code : 'generic';
