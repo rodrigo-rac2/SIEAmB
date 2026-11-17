@@ -237,7 +237,7 @@ test.describe('submissions @submissions', () => {
     // Attaching the owner's file to a paper of one's own is refused too.
     const steal = await request.post('/api/v1/submissions/save', {
       headers,
-      data: { eventSlug: EVENT, title: 'Com o arquivo de outra pessoa', titleEn: 'Stolen file', modality: 'RESUMO_EXPANDIDO', areaRef: 'a1', abstract: 'x'.repeat(80), keywords: ['x1'], filePath: `${EVENT}/${ownerId}/00000000-0000-4000-8000-000000000000.pdf`, fileName: 'x.pdf' },
+      data: { eventSlug: EVENT, title: 'Com o arquivo de outra pessoa', titleEn: 'Stolen file', modality: 'RESUMO_EXPANDIDO', areaRef: 'a1', abstract: 'x'.repeat(80), keywords: ['x1'], authors: [{ fullName: 'Estranho E2E', email: strangerEmail }], filePath: `${EVENT}/${ownerId}/00000000-0000-4000-8000-000000000000.pdf`, fileName: 'x.pdf' },
     });
     expect(steal.status()).toBe(400);
     expect(await steal.json()).toEqual({ error: 'file_missing' });
