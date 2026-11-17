@@ -1179,7 +1179,11 @@ function PeopleTab({ token, slug, message }: TabProps) {
         </label>
         <label>
           {t('panel.people.role')}
-          <select value={data.canManage.includes(role) ? role : data.canManage[0]} onChange={(e) => setRole(e.target.value as MemberRole)}>
+          <select
+            data-testid="invite-role"
+            value={data.canManage.includes(role) ? role : data.canManage[0]}
+            onChange={(e) => setRole(e.target.value as MemberRole)}
+          >
             {data.canManage.map((r) => (
               <option key={r} value={r}>
                 {t(`panel.roles.${r}`)}

@@ -166,13 +166,13 @@ test.describe('organisation panel @panel', () => {
     // The tab has loaded when the accounts are listed; the form of the previous tab is gone by then.
     await expect(page.getByTestId('account-row').first()).toBeVisible();
     await page.getByLabel('E-mail').fill(reviewerEmail);
-    await page.getByLabel('Papel', { exact: true }).selectOption('REVIEWER');
+    await page.getByTestId('invite-role').selectOption('REVIEWER');
     await page.getByRole('button', { name: 'Dar o papel', exact: true }).click();
     await expect(page.getByRole('status')).toContainText('Essa pessoa ainda não tem conta.');
     await expect(page.getByTestId('pending-invites')).toContainText(`${reviewerEmail} (Avaliador)`);
 
     // 5a. An administrator gives Organizador and Avaliador, never Administrador: that is the owner's (#268).
-    await expect(page.getByLabel('Papel', { exact: true }).getByRole('option')).toHaveText(['Organizador', 'Avaliador']);
+    await expect(page.getByTestId('invite-role').getByRole('option')).toHaveText(['Organizador', 'Avaliador']);
     await page.getByLabel('Buscar').fill(adminEmail);
     const own = page.getByTestId('account-row');
     await expect(own).toHaveCount(1);
@@ -292,7 +292,7 @@ test.describe('organisation panel @panel', () => {
     await page.goto(`/${EVENT}/painel/pessoas`);
     await expect(page.getByTestId('account-row').first()).toBeVisible();
     await expect(page.getByTestId('role-legend')).not.toContainText('Administrador:');
-    await expect(page.getByLabel('Papel', { exact: true }).getByRole('option')).toHaveText(['Avaliador']);
+    await expect(page.getByTestId('invite-role').getByRole('option')).toHaveText(['Avaliador']);
     await expect(page.getByRole('button', { name: /Editar os dados|Enviar link de nova senha/ })).toHaveCount(0);
     await page.getByLabel('Buscar').fill(email);
     await expect(page.getByTestId('account-row')).toHaveCount(1);
@@ -326,7 +326,7 @@ test.describe('organisation panel @panel', () => {
     await logIn(page, ownerEmail);
     await page.goto(`/${EVENT}/painel/pessoas`);
     await expect(page.getByTestId('account-row').first()).toBeVisible();
-    await expect(page.getByLabel('Papel', { exact: true }).getByRole('option')).toHaveText(['Administrador', 'Organizador', 'Avaliador']);
+    await expect(page.getByTestId('invite-role').getByRole('option')).toHaveText(['Administrador', 'Organizador', 'Avaliador']);
     await page.getByLabel('Buscar').fill(oldEmail);
     const person = page.getByTestId('account-row');
     await expect(person).toHaveCount(1);
