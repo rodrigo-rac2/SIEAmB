@@ -51,7 +51,7 @@ interface Call {
 }
 type Answer = { status?: number; body: unknown };
 
-function stubApi(answers: Record<string, Answer | (() => Answer)>) {
+function stubApi(answers: Record<string, Answer | (() => Answer | Promise<Answer>)>) {
   const calls: Call[] = [];
   vi.stubGlobal(
     'fetch',
@@ -64,7 +64,7 @@ function stubApi(answers: Record<string, Answer | (() => Answer)>) {
         authorization: new Headers(init.headers).get('authorization'),
       });
       const entry = answers[key];
-      const answer = typeof entry === 'function' ? entry() : entry;
+      const answer = typeof entry === 'function' ? await entry() : entry;
       if (!answer) return new Response(JSON.stringify({ error: 'not_found' }), { status: 404 });
       return new Response(JSON.stringify(answer.body), { status: answer.status ?? 200 });
     }),
@@ -679,6 +679,106 @@ describe('papers tab', () => {
     await userEvent.type(screen.getByLabelText('Buscar'), 'joao@ufpb');
     expect(screen.getAllByTestId('paper-row')).toHaveLength(1);
     expect(screen.getByTestId('paper-row')).toHaveTextContent('Trabalho retirado');
+  });
+});
+
+/** An answer that only comes when the test lets it: what the page shows meanwhile is the point (#278). */
+function held(answer: Answer) {
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  return { answer: () => gate.then(() => answer), release };
+}
+
+describe('while something is being processed (#278)', () => {
+  it('shades the line of the person, says "Processando…" there and nowhere else, and stops other actions', async () => {
+    const remove = held({ body: { ok: true } });
+    stubApi({ members: members(), 'member-remove': remove.answer });
+    panel('people');
+    const rows = await screen.findAllByTestId('account-row');
+    const viviane = rows.find((r) => within(r).queryByText('Viviane Farias'))!;
+    const pessoa = rows.find((r) => within(r).queryByText('Pessoa Comum'))!;
+    expect(screen.queryByTestId('processing')).not.toBeInTheDocument();
+    await userEvent.click(within(viviane).getByRole('button', { name: 'Tirar o papel de Organizador de Viviane Farias' }));
+    expect(await within(viviane).findByTestId('processing')).toHaveTextContent('Processando…');
+    expect(viviane).toHaveAttribute('aria-busy', 'true');
+    expect(pessoa).toHaveAttribute('aria-busy', 'false');
+    expect(screen.getAllByTestId('processing')).toHaveLength(1);
+    // Nothing else can be started meanwhile, on this line or on another.
+    expect(within(viviane).getByRole('button', { name: 'Tirar o papel de Organizador de Viviane Farias' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Dar o papel' })).toBeDisabled();
+    remove.release();
+    await waitFor(() => expect(screen.queryByTestId('processing')).not.toBeInTheDocument());
+    expect((await screen.findAllByTestId('account-row')).every((r) => r.getAttribute('aria-busy') === 'false')).toBe(true);
+  });
+
+  it('stays until the list has been read again, not only until the server answered', async () => {
+    const reload = held(members());
+    let loads = 0;
+    stubApi({
+      // The panel reads the people twice to open (the tabs, then the list); the third time is after the change.
+      members: () => ((loads += 1) <= 2 ? members() : reload.answer()),
+      'member-add': { body: { ok: true, invited: true } },
+    });
+    panel('people');
+    await userEvent.type(await screen.findByLabelText('E-mail'), 'novo@ufpb.br');
+    await userEvent.click(screen.getByRole('button', { name: 'Dar o papel' }));
+    expect(await screen.findByTestId('processing')).toBeInTheDocument();
+    // The role was given, but the page still shows the old list: the wait is not over.
+    await waitFor(() => expect(loads).toBe(3));
+    expect(screen.getByTestId('processing')).toBeInTheDocument();
+    reload.release();
+    await waitFor(() => expect(screen.queryByTestId('processing')).not.toBeInTheDocument());
+  });
+
+  it('goes away and gives the line back when the server refuses', async () => {
+    const remove = held({ status: 403, body: { error: 'owner_only' } });
+    stubApi({ members: members(), 'member-remove': remove.answer });
+    panel('people');
+    const viviane = (await screen.findAllByTestId('account-row')).find((r) => within(r).queryByText('Viviane Farias'))!;
+    await userEvent.click(within(viviane).getByRole('button', { name: 'Tirar o papel de Organizador de Viviane Farias' }));
+    expect(await within(viviane).findByTestId('processing')).toBeInTheDocument();
+    remove.release();
+    expect(await screen.findByRole('alert')).toHaveTextContent('Só o dono do site pode fazer isso.');
+    expect(screen.queryByTestId('processing')).not.toBeInTheDocument();
+    expect(within(viviane).getByRole('button', { name: 'Tirar o papel de Organizador de Viviane Farias' })).toBeEnabled();
+  });
+
+  it('shows on the paper whose reviewer is being chosen', async () => {
+    const assign = held({ body: { ok: true } });
+    const ANA = { userId: 'u7', email: 'ana@ufrn.br', fullName: 'Ana Reis', role: 'REVIEWER' };
+    const base = members();
+    stubApi({
+      members: { body: { ...base.body, members: [...base.body.members, ANA] } },
+      submissions: {
+        body: {
+          role: 'ADMIN',
+          counts: { total: 1, withdrawn: 0 },
+          submissions: [
+            { id: 'p1', number: 12, title: 'Governança da água', modality: 'ARTIGO', areaRef: 'a1', status: 'SUBMITTED', fileName: 'artigo.pdf', filePages: 13, createdAt: '2026-12-01T12:00:00Z', deletedAt: null, authors: [{ position: 1, fullName: 'Maria Souza', email: 'maria@ufcg.edu.br' }], authorRegistered: false, reviewers: [] },
+          ],
+        },
+      },
+      'reviewer-assign': assign.answer,
+    });
+    panel('papers');
+    await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Indicar avaliador para o trabalho nº 12' }), 'Ana Reis');
+    await userEvent.click(screen.getByRole('button', { name: 'Indicar para o trabalho nº 12' }));
+    expect(await within(screen.getByTestId('paper-row')).findByTestId('processing')).toHaveTextContent('Processando…');
+    assign.release();
+    await waitFor(() => expect(screen.queryByTestId('processing')).not.toBeInTheDocument());
+  });
+
+  it('shows on the registration whose reminder is being sent', async () => {
+    const remind = held({ body: { ok: true, outcome: 'sent' } });
+    stubApi({ members: members(), registrations: list([registration()]), remind: remind.answer });
+    panel('registrations');
+    const row = await screen.findByTestId('registration-row');
+    await userEvent.click(within(row).getByRole('button', { name: 'Enviar lembrete' }));
+    expect(await within(row).findByTestId('processing')).toBeInTheDocument();
+    remind.release();
+    await waitFor(() => expect(screen.queryByTestId('processing')).not.toBeInTheDocument());
   });
 });
 
