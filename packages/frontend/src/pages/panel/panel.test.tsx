@@ -975,6 +975,21 @@ describe('people tab', () => {
     });
   });
 
+  it('masks the CPF as it is typed, stops at eleven digits and does not save half a number (#280)', async () => {
+    const calls = stubApi({ members: members('ADMIN', true), 'account-update': { body: { ok: true, changed: true } } });
+    panel('people');
+    const pessoa = await row('Pessoa Comum');
+    await userEvent.click(within(pessoa).getByRole('button', { name: 'Editar os dados de Pessoa Comum' }));
+    const cpf = within(pessoa).getByLabelText('CPF');
+    await userEvent.type(cpf, '5299822');
+    expect(cpf).toHaveValue('529.982.2');
+    expect(within(pessoa).getByRole('button', { name: 'Salvar' })).toBeDisabled();
+    await userEvent.type(cpf, '4725999abc');
+    expect(cpf).toHaveValue('529.982.247-25');
+    await userEvent.click(within(pessoa).getByRole('button', { name: 'Salvar' }));
+    await waitFor(() => expect(calls.find((c) => c.url.endsWith('account-update'))?.body).toMatchObject({ userId: 'u5', cpf: '529.982.247-25' }));
+  });
+
   it.each([
     ['email_in_use', 'Já existe uma conta com esse e-mail.'],
     ['document_in_use', 'Esse CPF já está em outra conta.'],

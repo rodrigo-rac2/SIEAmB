@@ -982,7 +982,7 @@ function AccountRow({
                 </label>
                 <label>
                   {t('registration.cpf')}
-                  <input value={cpf} onChange={(e) => setCpf(e.target.value)} inputMode="numeric" maxLength={14} />
+                  <input value={cpf} onChange={(e) => setCpf(maskCpf(e.target.value))} inputMode="numeric" maxLength={14} placeholder="000.000.000-00" />
                 </label>
                 <span className="panel__meta">{t('panel.people.ownerFieldsHint')}</span>
               </>
@@ -990,7 +990,7 @@ function AccountRow({
               <span className="panel__meta">{account.email}</span>
             )}
             <span>
-              <button className="account__button" type="submit" disabled={busy || fullName.trim().length < 3 || (owner && !email.trim())}>
+              <button className="account__button" type="submit" disabled={busy || fullName.trim().length < 3 || (owner && (!email.trim() || ![0, 11].includes(cpf.replace(/\D/g, '').length)))}>
                 {t('common.save')}
               </button>{' '}
               <button className="account__button account__button--quiet" type="button" onClick={() => setMode('view')}>
