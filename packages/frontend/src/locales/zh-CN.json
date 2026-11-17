@@ -453,7 +453,7 @@
       "keywordsEn": "英语关键词",
       "keywordsHint": "每种语言最多 {{max}} 个，用分号分隔。",
       "authorsTitle": "作者",
-      "authorsHint": "最多 {{max}} 位作者，按论文中的署名顺序排列。您必须在名单中，位置不限。其他作者无需账号或报名即可提交论文，并会收到邮件通知。任何有账号的作者都可以修改或撤回论文。",
+      "authorsHint": "最多 {{max}} 位作者，按论文中的署名顺序排列。您必须在名单中，位置不限。其他作者无需账号或报名即可提交论文，并会收到邮件通知。提交后，只有提交者本人可以修改或撤回论文；其他作者可在“我的论文”中查看。",
       "authorName": "第 {{n}} 作者姓名",
       "authorEmail": "第 {{n}} 作者邮箱",
       "authorYou": "您",
@@ -506,7 +506,8 @@
       "upload_failed": "无法上传文件。请检查网络连接后重试。"
     },
     "count_one": "{{count}} 篇论文",
-    "count_other": "{{count}} 篇论文"
+    "count_other": "{{count}} 篇论文",
+    "readOnly": "仅提交者可修改"
   },
   "reviewing": {
     "title": "待评审论文",
@@ -577,7 +578,7 @@
       "paper": "论文",
       "authors": "作者",
       "file": "文件",
-      "withdrawn": "作者已撤回",
+      "withdrawn": "已撤回",
       "authorRegistered": "有作者的注册已确认。",
       "noAuthorRegistered": "没有作者的注册已确认。",
       "notRegistered": "未注册",
@@ -597,7 +598,11 @@
         "closeConfirm": "确定关闭投稿吗？在重新开放之前，任何人都不能提交、修改或撤回论文。",
         "closeYes": "是的，关闭",
         "reopen": "重新开放投稿"
-      }
+      },
+      "withdraw": "撤回",
+      "editFor": "修改第 {{number}} 号论文",
+      "withdrawFor": "撤回第 {{number}} 号论文",
+      "withdrawConfirm": "确定撤回第 {{number}} 号论文吗？作者将收到通知。"
     },
     "people": {
       "role": "角色",

@@ -34,7 +34,7 @@ const COPY: Record<'pt-BR' | 'en' | 'es' | 'zh-CN', LocaleCopy> = {
         body: (d) => [
           `Recebemos o trabalho "${d.title}", enviado por ${d.mainAuthor} ao ${d.eventName}. Ele recebeu o número ${d.number}.`,
           'Você recebe este aviso porque consta como autor ou autora. O trabalho aparece na área Meus trabalhos de quem tiver conta no site com este e-mail.',
-          'Enquanto as submissões estiverem abertas, qualquer um dos autores pode alterar o trabalho ou retirá-lo em Meus trabalhos.',
+          'Enquanto as submissões estiverem abertas, quem enviou o trabalho pode alterá-lo ou retirá-lo em Meus trabalhos. Os demais autores acompanham por lá.',
         ],
         linkLabel: 'Ver meus trabalhos',
       },
@@ -50,7 +50,7 @@ const COPY: Record<'pt-BR' | 'en' | 'es' | 'zh-CN', LocaleCopy> = {
         subject: (d) => `Trabalho nº ${d.number} retirado (${d.eventName})`,
         body: (d) => [
           `O trabalho nº ${d.number}, "${d.title}", foi retirado por ${d.mainAuthor} e não será avaliado.`,
-          'Você recebe este aviso porque constava como autor ou autora. Se foi um engano, qualquer um dos autores pode enviá-lo de novo enquanto as submissões estiverem abertas.',
+          'Você recebe este aviso porque constava como autor ou autora. Se foi um engano, o trabalho pode ser enviado de novo enquanto as submissões estiverem abertas.',
         ],
         linkLabel: 'Ver meus trabalhos',
       },
@@ -65,7 +65,7 @@ const COPY: Record<'pt-BR' | 'en' | 'es' | 'zh-CN', LocaleCopy> = {
         body: (d) => [
           `We received the paper "${d.title}", sent by ${d.mainAuthor} to the ${d.eventName}. Its number is ${d.number}.`,
           'You receive this notice because you are listed as an author. The paper shows under My papers for anyone with an account on the website with this e-mail.',
-          'While submissions are open, any of the authors can change the paper or withdraw it in My papers.',
+          'While submissions are open, whoever sent the paper can change or withdraw it in My papers. The other authors follow it there.',
         ],
         linkLabel: 'See my papers',
       },
@@ -81,7 +81,7 @@ const COPY: Record<'pt-BR' | 'en' | 'es' | 'zh-CN', LocaleCopy> = {
         subject: (d) => `Paper no. ${d.number} withdrawn (${d.eventName})`,
         body: (d) => [
           `Paper no. ${d.number}, "${d.title}", was withdrawn by ${d.mainAuthor} and will not be reviewed.`,
-          'You receive this notice because you were listed as an author. If it was a mistake, any of the authors can send it again while submissions are open.',
+          'You receive this notice because you were listed as an author. If it was a mistake, the paper can be sent again while submissions are open.',
         ],
         linkLabel: 'See my papers',
       },
@@ -96,7 +96,7 @@ const COPY: Record<'pt-BR' | 'en' | 'es' | 'zh-CN', LocaleCopy> = {
         body: (d) => [
           `Recibimos el trabajo "${d.title}", enviado por ${d.mainAuthor} al ${d.eventName}. Recibió el número ${d.number}.`,
           'Usted recibe este aviso porque figura como autor o autora. El trabajo aparece en Mis trabajos para quien tenga cuenta en el sitio con este correo.',
-          'Mientras los envíos estén abiertos, cualquiera de los autores puede modificar el trabajo o retirarlo en Mis trabajos.',
+          'Mientras los envíos estén abiertos, quien envió el trabajo puede modificarlo o retirarlo en Mis trabajos. Los demás autores lo siguen allí.',
         ],
         linkLabel: 'Ver mis trabajos',
       },
@@ -112,7 +112,7 @@ const COPY: Record<'pt-BR' | 'en' | 'es' | 'zh-CN', LocaleCopy> = {
         subject: (d) => `Trabajo n.º ${d.number} retirado (${d.eventName})`,
         body: (d) => [
           `El trabajo n.º ${d.number}, "${d.title}", fue retirado por ${d.mainAuthor} y no será evaluado.`,
-          'Usted recibe este aviso porque figuraba como autor o autora. Si fue un error, cualquiera de los autores puede enviarlo de nuevo mientras los envíos estén abiertos.',
+          'Usted recibe este aviso porque figuraba como autor o autora. Si fue un error, el trabajo puede enviarse de nuevo mientras los envíos estén abiertos.',
         ],
         linkLabel: 'Ver mis trabajos',
       },
@@ -127,7 +127,7 @@ const COPY: Record<'pt-BR' | 'en' | 'es' | 'zh-CN', LocaleCopy> = {
         body: (d) => [
           `我们已收到 ${d.mainAuthor} 向 ${d.eventName} 提交的论文“${d.title}”，编号为 ${d.number}。`,
           '您收到此通知是因为您被列为作者。使用此邮箱在网站注册账户后，可在“我的论文”中查看该论文。',
-          '在投稿开放期间，任何一位作者都可以在“我的论文”中修改或撤回论文。',
+          '在投稿开放期间，论文的提交者可以在“我的论文”中修改或撤回论文，其他作者可在那里查看。',
         ],
         linkLabel: '查看我的论文',
       },
@@ -143,7 +143,7 @@ const COPY: Record<'pt-BR' | 'en' | 'es' | 'zh-CN', LocaleCopy> = {
         subject: (d) => `第 ${d.number} 号论文已撤回（${d.eventName}）`,
         body: (d) => [
           `第 ${d.number} 号论文“${d.title}”已由 ${d.mainAuthor} 撤回，将不再评审。`,
-          '您收到此通知是因为您曾被列为作者。如果是误操作，任何一位作者都可以在投稿开放期间重新提交。',
+          '您收到此通知是因为您曾被列为作者。如果是误操作，可以在投稿开放期间重新提交该论文。',
         ],
         linkLabel: '查看我的论文',
       },

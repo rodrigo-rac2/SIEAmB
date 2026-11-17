@@ -43,7 +43,7 @@ import {
   type PanelRequest,
   type SentAnnouncement,
 } from '../../services/admin';
-import { browser, paperFileUrl } from '../../services/submissions';
+import { browser, paperFileUrl, withdrawPaper } from '../../services/submissions';
 import { NotFoundPage } from '../NotFoundPage';
 import '../../components/registration/RegistrationForm.css';
 import '../account/Account.css';
@@ -546,6 +546,52 @@ function RegistrationsTab(props: TabProps) {
 
 // ───────────────────────────── Papers ─────────────────────────────
 
+/** The organisers change or withdraw any paper (#250). Withdrawing asks once more. */
+function PaperActions({ paper, slug, onWithdraw }: { paper: PanelPaper; slug: string; onWithdraw: () => Promise<void> }) {
+  const { t } = useTranslation();
+  const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
+  if (!confirming) {
+    return (
+      <>
+        <Link to={`/${slug}/meus-trabalhos/${paper.id}`} aria-label={t('panel.papers.editFor', { number: paper.number })}>
+          {t('papers.edit')}
+        </Link>{' '}
+        <button
+          className="account__button account__button--quiet"
+          type="button"
+          aria-label={t('panel.papers.withdrawFor', { number: paper.number })}
+          onClick={() => setConfirming(true)}
+        >
+          {t('panel.papers.withdraw')}
+        </button>
+      </>
+    );
+  }
+  return (
+    <>
+      <span>{t('panel.papers.withdrawConfirm', { number: paper.number })}</span>{' '}
+      <button
+        className="account__button"
+        type="button"
+        disabled={busy}
+        onClick={() => {
+          setBusy(true);
+          void onWithdraw().finally(() => {
+            setBusy(false);
+            setConfirming(false);
+          });
+        }}
+      >
+        {t('papers.withdrawYes')}
+      </button>{' '}
+      <button className="account__button account__button--quiet" type="button" onClick={() => setConfirming(false)}>
+        {t('common.cancel')}
+      </button>
+    </>
+  );
+}
+
 /** Who reviews one paper, and the way to choose more or take one off (#232). */
 function PaperReviewers({
   paper,
@@ -754,6 +800,7 @@ function PapersTab({ token, slug, message }: TabProps) {
               <th>{t('panel.registrations.state')}</th>
               <th>{t('panel.papers.reviewers')}</th>
               <th>{t('panel.papers.file')}</th>
+              <th>{t('common.actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -800,6 +847,15 @@ function PapersTab({ token, slug, message }: TabProps) {
                     {s.fileName}
                   </button>
                   {s.filePages !== null && <span className="panel__meta"> · {t('papers.pages', { count: s.filePages })}</span>}
+                </td>
+                <td>
+                  {!s.deletedAt && (
+                    <PaperActions
+                      paper={s}
+                      slug={slug}
+                      onWithdraw={() => change(() => withdrawPaper(token, slug, s.id))}
+                    />
+                  )}
                 </td>
               </tr>
             ))}

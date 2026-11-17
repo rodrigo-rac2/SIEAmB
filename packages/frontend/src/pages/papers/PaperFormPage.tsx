@@ -10,7 +10,7 @@ import { getDataProvider } from '../../services';
 import { fetchAccount } from '../../services/account';
 import {
   SubmissionError,
-  fetchMyPapers,
+  fetchPaper,
   rulesForEvent,
   savePaper,
   searchPeople,
@@ -66,10 +66,11 @@ export function PaperFormPage() {
   useEffect(() => {
     if (!accessToken || !event || !paperId) return;
     let active = true;
-    fetchMyPapers(accessToken, event.slug)
-      .then((mine) => {
+    fetchPaper(accessToken, event.slug, paperId)
+      .then((answer) => {
         if (!active) return;
-        const paper = mine.submissions.find((p) => p.id === paperId && p.canEdit) ?? null;
+        // Only whoever sent it, or an organiser, gets the form (#250).
+        const paper = answer.submission.canEdit ? answer.submission : null;
         setExisting(paper);
         if (paper) {
           setTitle(paper.title);
@@ -182,7 +183,8 @@ export function PaperFormPage() {
         },
         uploaded,
       );
-      navigate(list, { replace: true });
+      // An organiser who fixed someone's paper goes back to the panel, not to their own papers.
+      navigate(existing?.asOrganiser ? `/${event.slug}/painel/trabalhos` : list, { replace: true });
     } catch (err) {
       if (err instanceof SubmissionError && err.code === 'duplicate_title') {
         setDuplicate(Number(err.details.number));

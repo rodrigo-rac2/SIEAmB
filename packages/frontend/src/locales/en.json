@@ -453,7 +453,7 @@
       "keywordsEn": "Keywords in English",
       "keywordsHint": "Up to {{max}} in each language, separated by semicolons.",
       "authorsTitle": "Authors",
-      "authorsHint": "Up to {{max}} authors, in the order they appear in the paper. You must be in the list, in any position. The others need neither an account nor a registration for the paper to be sent, and are told by e-mail. Any author with an account can change or withdraw the paper.",
+      "authorsHint": "Up to {{max}} authors, in the order they appear in the paper. You must be in the list, in any position. The others need neither an account nor a registration for the paper to be sent, and are told by e-mail. Once sent, only you, the sender, can change or withdraw the paper; the other authors follow it in My papers.",
       "authorName": "Name of author {{n}}",
       "authorEmail": "E-mail of author {{n}}",
       "authorYou": "you",
@@ -506,7 +506,8 @@
       "upload_failed": "The file could not be sent. Check your connection and try again."
     },
     "count_one": "{{count}} paper",
-    "count_other": "{{count}} papers"
+    "count_other": "{{count}} papers",
+    "readOnly": "only the sender can change it"
   },
   "reviewing": {
     "title": "Papers to review",
@@ -577,7 +578,7 @@
       "paper": "Paper",
       "authors": "Authors",
       "file": "File",
-      "withdrawn": "Withdrawn by the author",
+      "withdrawn": "Withdrawn",
       "authorRegistered": "An author has a confirmed registration.",
       "noAuthorRegistered": "No author has a confirmed registration.",
       "notRegistered": "not registered",
@@ -597,7 +598,11 @@
         "closeConfirm": "Close submissions? Nobody will be able to send, change or withdraw papers until they are reopened.",
         "closeYes": "Yes, close",
         "reopen": "Reopen submissions"
-      }
+      },
+      "withdraw": "Withdraw",
+      "editFor": "Change paper no. {{number}}",
+      "withdrawFor": "Withdraw paper no. {{number}}",
+      "withdrawConfirm": "Withdraw paper no. {{number}}? Its authors will be told."
     },
     "people": {
       "role": "Role",
