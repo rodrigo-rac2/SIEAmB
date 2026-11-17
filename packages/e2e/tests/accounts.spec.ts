@@ -163,7 +163,9 @@ test.describe('accounts @accounts', () => {
     await expect(page.getByTestId('registration-card')).toBeVisible();
     // Nothing scrolls sideways, on a phone least of all.
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
-    await page.getByRole('button', { name: 'Sair' }).click();
+    // Sair is in the top bar on every page (#253), and at the foot of Minha área: here, the top bar one.
+    await expect(page.getByTestId('topbar-panel')).toHaveCount(0);
+    await page.locator('.topbar').getByRole('button', { name: 'Sair' }).click();
     await expect(page).toHaveURL(new RegExp(`/${EVENT}/conta/entrar`));
     await page.goto(`/${EVENT}/conta/confirmar?token_hash=${link.hashed_token}&type=signup`);
     await expect(page.getByRole('heading', { name: 'Este link não vale mais' })).toBeVisible();

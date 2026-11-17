@@ -142,6 +142,55 @@ describe('top bar', () => {
     mount('/2027/', <TopBar />, auth(LOGGED_IN));
     expect(await screen.findByRole('link', { name: 'Minha área' })).toHaveAttribute('href', '/2027/minha-area');
   });
+
+  it.each([
+    ['an organiser or administrator of this edition', { platformAdmin: false, slugs: ['2027'] }, true],
+    ['the platform owner', { platformAdmin: true, slugs: [] }, true],
+    ['someone with a role in another edition only', { platformAdmin: false, slugs: ['2025'] }, false],
+    ['someone with no role', { platformAdmin: false, slugs: [] }, false],
+  ])('links to the panel beside Minha área for %s: %j (#252)', async (_name, panels, shown) => {
+    const calls = stubApi({ me: { body: account({ panels }) } });
+    mount('/2027/', <TopBar />, auth(LOGGED_IN));
+    await screen.findByRole('link', { name: 'Minha área' });
+    await waitFor(() => expect(calls.some((c) => c.url === '/api/v1/account/me')).toBe(true));
+    if (shown) {
+      const link = await screen.findByTestId('topbar-panel');
+      expect(link).toHaveTextContent('Painel');
+      expect(link).toHaveAttribute('href', '/2027/painel');
+    } else {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(screen.queryByTestId('topbar-panel')).not.toBeInTheDocument();
+    }
+  });
+
+  it('has Sair as its last item when logged in, which logs out; and none when logged out (#253)', async () => {
+    stubApi({ me: { body: account() } });
+    const out = mount('/2027/', <TopBar />);
+    await screen.findByRole('link', { name: 'Entrar ou criar conta' });
+    expect(screen.queryByRole('button', { name: 'Sair' })).not.toBeInTheDocument();
+    out.unmount();
+    const state = auth(LOGGED_IN);
+    const view = mount('/2027/', <TopBar />, state);
+    const leave = await screen.findByRole('button', { name: 'Sair' });
+    const items = Array.from(view.container.querySelectorAll('.topbar__actions > *'));
+    expect(items.at(-1)).toBe(leave);
+    await userEvent.click(leave);
+    expect(state.signOut).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows no panel link, and asks the server nothing, when logged out; nor when the account cannot be read', async () => {
+    const calls = stubApi({});
+    const out = mount('/2027/', <TopBar />);
+    await screen.findByRole('link', { name: 'Entrar ou criar conta' });
+    expect(calls.filter((c) => c.url.includes('/account/me'))).toEqual([]);
+    expect(screen.queryByTestId('topbar-panel')).not.toBeInTheDocument();
+    out.unmount();
+    stubApi({ me: { status: 500, body: { error: 'server_error' } } });
+    mount('/2027/', <TopBar />, auth(LOGGED_IN));
+    await screen.findByRole('link', { name: 'Minha área' });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(screen.queryByTestId('topbar-panel')).not.toBeInTheDocument();
+  });
 });
 
 describe('LoginPage', () => {

@@ -519,6 +519,7 @@
   },
   "panel": {
     "title": "Panel de la organización",
+    "short": "Panel",
     "search": "Buscar",
     "all": "Todas",
     "download": "Descargar planilla",

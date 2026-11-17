@@ -198,7 +198,9 @@ test.describe('organisation panel @panel', () => {
     await createAccount(email, 'Organizadora Convidada E2E');
     await logIn(page, email);
     await expect(page.getByTestId('panel-link')).toBeVisible();
-    await page.getByTestId('panel-link').click();
+    // The same door is in the top bar, on every page (#252).
+    await expect(page.getByTestId('topbar-panel')).toHaveAttribute('href', `/${EVENT}/painel`);
+    await page.getByTestId('topbar-panel').click();
     await expect(page.getByTestId('panel-counts')).toBeVisible();
     // An organiser sees the list and can do nothing to it.
     await expect(page.getByRole('button', { name: 'Cadastrar inscrição' })).toHaveCount(0);
