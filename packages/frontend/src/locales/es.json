@@ -505,6 +505,14 @@
     "count_one": "{{count}} trabajo",
     "count_other": "{{count}} trabajos"
   },
+  "reviewing": {
+    "title": "Trabajos para evaluar",
+    "link": "Trabajos para evaluar ({{count}})",
+    "none": "No se le ha indicado ningún trabajo para evaluar.",
+    "intro": "Estos son los trabajos que el comité organizador le indicó. Descargue el archivo de cada uno; el comité informará cómo enviar el dictamen.",
+    "abstract": "Resumen",
+    "keywords": "Palabras clave"
+  },
   "panel": {
     "title": "Panel de la organización",
     "search": "Buscar",
@@ -569,7 +577,16 @@
       "withdrawn": "Retirado por el autor",
       "authorRegistered": "Hay un autor con inscripción confirmada.",
       "noAuthorRegistered": "Ningún autor con inscripción confirmada.",
-      "notRegistered": "sin inscripción"
+      "notRegistered": "sin inscripción",
+      "reviewers": "Evaluadores",
+      "noReviewer": "Sin evaluador",
+      "chooseReviewer": "Indicar evaluador para el trabajo n.º {{number}}",
+      "choose": "Elija",
+      "assign": "Indicar",
+      "assignFor": "Indicar para el trabajo n.º {{number}}",
+      "removeReviewer": "Quitar a {{name}} del trabajo n.º {{number}}",
+      "noReviewers": "Nadie tiene el papel de Evaluador en esta edición. Otorgue ese papel en Personas y papeles.",
+      "reviewersHint": "Cada trabajo necesita al menos un evaluador, y puede indicar cuantos quiera. Con un evaluador indicado, el trabajo queda en evaluación y los autores ya no pueden modificarlo. Los evaluadores ven el archivo con los nombres de los autores."
     },
     "people": {
       "role": "Rol",
@@ -614,7 +631,11 @@
       "too_many_attempts": "Demasiados comunicados en poco tiempo. Espere un poco.",
       "not_remindable": "Esta inscripción no tiene pago que recordar.",
       "already_reminded": "Esta persona ya recibió un recordatorio hoy.",
-      "reminders_unavailable": "Los recordatorios no están disponibles en este entorno."
+      "reminders_unavailable": "Los recordatorios no están disponibles en este entorno.",
+      "not_a_reviewer": "Esa persona no tiene el papel de Evaluador en esta edición.",
+      "reviewer_is_author": "Esa persona es uno de los autores del trabajo y no puede evaluarlo.",
+      "submission_not_found": "Trabajo no encontrado, o ya retirado.",
+      "reviewer_not_found": "Esa persona ya no evalúa este trabajo."
     },
     "announcements": {
       "audience": "Quién recibe",
@@ -673,7 +694,9 @@
       "organiser.registration.new": "Nueva inscripción: {{fullName}}.",
       "member.added": "Usted recibió el rol de {{role}}.",
       "link.approved": "La organización aprobó su solicitud: la inscripción ahora aparece en su cuenta.",
-      "link.rejected": "La organización no aprobó su solicitud para unir la inscripción a su cuenta. En caso de duda, hable con la organización."
+      "link.rejected": "La organización no aprobó su solicitud para unir la inscripción a su cuenta. En caso de duda, hable con la organización.",
+      "review.assigned": "Se le indicó para evaluar el trabajo n.º {{number}}, \"{{title}}\".",
+      "review.unassigned": "Usted ya no evalúa el trabajo n.º {{number}}, \"{{title}}\"."
     }
   }
 }

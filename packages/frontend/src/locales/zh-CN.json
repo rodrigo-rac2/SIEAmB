@@ -505,6 +505,14 @@
     "count_one": "{{count}} 篇论文",
     "count_other": "{{count}} 篇论文"
   },
+  "reviewing": {
+    "title": "待评审论文",
+    "link": "待评审论文（{{count}}）",
+    "none": "尚未为您指定待评审的论文。",
+    "intro": "以下是组委会指定给您的论文。请下载每篇论文的文件；组委会将告知如何提交评审意见。",
+    "abstract": "摘要",
+    "keywords": "关键词"
+  },
   "panel": {
     "title": "组委会面板",
     "search": "搜索",
@@ -569,7 +577,16 @@
       "withdrawn": "作者已撤回",
       "authorRegistered": "有作者的注册已确认。",
       "noAuthorRegistered": "没有作者的注册已确认。",
-      "notRegistered": "未注册"
+      "notRegistered": "未注册",
+      "reviewers": "审稿人",
+      "noReviewer": "暂无审稿人",
+      "chooseReviewer": "为第 {{number}} 号论文指定审稿人",
+      "choose": "请选择",
+      "assign": "指定",
+      "assignFor": "指定给第 {{number}} 号论文",
+      "removeReviewer": "将 {{name}} 从第 {{number}} 号论文中移除",
+      "noReviewers": "本届会议还没有人拥有审稿人角色。请在“人员与角色”中授予该角色。",
+      "reviewersHint": "每篇论文至少需要一位审稿人，可指定任意多位。指定审稿人后，论文进入评审状态，作者不能再修改。审稿人看到的文件包含作者姓名。"
     },
     "people": {
       "role": "角色",
@@ -614,7 +631,11 @@
       "too_many_attempts": "短时间内公告过多。请稍等。",
       "not_remindable": "此注册没有需要提醒的付款。",
       "already_reminded": "此人今天已收到过提醒。",
-      "reminders_unavailable": "此环境不提供提醒功能。"
+      "reminders_unavailable": "此环境不提供提醒功能。",
+      "not_a_reviewer": "此人在本届会议中没有审稿人角色。",
+      "reviewer_is_author": "此人是该论文的作者之一，不能评审该论文。",
+      "submission_not_found": "未找到论文，或论文已撤回。",
+      "reviewer_not_found": "此人已不再评审该论文。"
     },
     "announcements": {
       "audience": "接收对象",
@@ -673,7 +694,9 @@
       "organiser.registration.new": "新注册：{{fullName}}。",
       "member.added": "您被授予了“{{role}}”角色。",
       "link.approved": "组委会已批准您的申请：该注册现在显示在您的账户中。",
-      "link.rejected": "组委会未批准您将注册关联到账户的申请。如有疑问，请联系组委会。"
+      "link.rejected": "组委会未批准您将注册关联到账户的申请。如有疑问，请联系组委会。",
+      "review.assigned": "您被指定评审第 {{number}} 号论文“{{title}}”。",
+      "review.unassigned": "您不再评审第 {{number}} 号论文“{{title}}”。"
     }
   }
 }

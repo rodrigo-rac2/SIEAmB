@@ -69,6 +69,8 @@ export interface AdminSubmission {
   deletedAt: string | null;
   deletedReason: string | null;
   authors: { position: number; fullName: string; email: string }[];
+  /** Who reviews it (#232), in the order they were chosen. */
+  reviewers: { userId: string; fullName: string; email: string }[];
 }
 
 export interface Member {
@@ -132,6 +134,14 @@ export interface AdminStore {
   patchRegistration(id: string, patch: RegistrationPatch): Promise<void>;
 
   listSubmissions(eventId: string): Promise<AdminSubmission[]>;
+  findSubmission(id: string): Promise<(AdminSubmission & { eventId: string }) | null>;
+  /** False when that person already reviews the paper. */
+  assignReviewer(submissionId: string, userId: string, by: string, now: Date): Promise<boolean>;
+  /** False when that person did not review the paper. */
+  unassignReviewer(submissionId: string, userId: string): Promise<boolean>;
+  /** Takes a person off every paper of the edition; the ids of the papers they were on. */
+  unassignReviewerEverywhere(eventId: string, userId: string): Promise<string[]>;
+  setSubmissionStatus(id: string, status: 'SUBMITTED' | 'UNDER_REVIEW', now: Date): Promise<void>;
 
   listMembers(eventId: string): Promise<Member[]>;
   listInvites(eventId: string): Promise<Invite[]>;

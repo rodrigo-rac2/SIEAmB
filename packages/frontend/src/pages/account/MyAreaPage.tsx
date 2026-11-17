@@ -16,6 +16,7 @@ import {
   type AccountSuggestion,
   type ProfileInput,
 } from '../../services/account';
+import { fetchReviewing } from '../../services/submissions';
 import { NotFoundPage } from '../NotFoundPage';
 import '../../components/registration/RegistrationForm.css';
 import './Account.css';
@@ -261,6 +262,19 @@ export function MyAreaPage() {
   const location = useLocation();
   const { accessToken } = auth;
   const [account, setAccount] = useState<Account | null>(null);
+  // How many papers this person was chosen to review; the link only shows when there are some (#232).
+  const [toReview, setToReview] = useState(0);
+  const eventSlug = event?.slug;
+  useEffect(() => {
+    if (!accessToken || !eventSlug) return;
+    let active = true;
+    fetchReviewing(accessToken, eventSlug)
+      .then((data) => active && setToReview(data.submissions.length))
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [accessToken, eventSlug]);
   const [error, setError] = useState<string | null>(null);
 
   const message = useCallback(
@@ -325,6 +339,11 @@ export function MyAreaPage() {
                 <Link className="account__button" to={`/${event?.slug ?? ''}/meus-trabalhos`}>
                   {t('papers.title')}
                 </Link>
+                {event && toReview > 0 && (
+                  <Link className="account__button" to={`/${event.slug}/avaliacoes`} data-testid="reviewing-link">
+                    {t('reviewing.link', { count: toReview })}
+                  </Link>
+                )}
                 {event && (account.panels?.platformAdmin || account.panels?.slugs.includes(event.slug)) && (
                   <Link className="account__button" to={`/${event.slug}/painel`} data-testid="panel-link">
                     {t('panel.title')}

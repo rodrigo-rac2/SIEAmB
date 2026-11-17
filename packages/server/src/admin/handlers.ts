@@ -327,6 +327,86 @@ async function submissions(request: Request, deps: AdminDeps): Promise<Response>
   });
 }
 
+// ───────────────────────────── Reviewers of a paper (#232) ─────────────────────────────
+
+/**
+ * A paper with someone to review it is under review, and its authors can no longer
+ * change it; with nobody left it goes back to "enviado". Other states are left alone.
+ */
+async function settleStatus(deps: AdminDeps, submissionId: string, now: Date): Promise<void> {
+  const paper = await deps.store.findSubmission(submissionId);
+  if (!paper || paper.deletedAt) return;
+  if (paper.reviewers.length > 0 && paper.status === 'SUBMITTED') {
+    await deps.store.setSubmissionStatus(paper.id, 'UNDER_REVIEW', now);
+  } else if (paper.reviewers.length === 0 && paper.status === 'UNDER_REVIEW') {
+    await deps.store.setSubmissionStatus(paper.id, 'SUBMITTED', now);
+  }
+}
+
+/**
+ * The organisers choose who reviews each paper: at least one person, as many as
+ * they want. The review is not blind, so the only people kept out are the paper's
+ * own authors.
+ */
+async function reviewerChange(request: Request, deps: AdminDeps, assign: boolean): Promise<Response> {
+  const body = await readJsonObject(request);
+  const ctx = await context(request, deps, body.eventSlug);
+  if ('response' in ctx) return ctx.response;
+  const paper = await deps.store.findSubmission(text(body.submissionId, 40));
+  if (!paper || paper.eventId !== ctx.event.id || paper.deletedAt) return json(404, { error: 'submission_not_found' });
+  const userId = text(body.userId, 40);
+  const now = deps.now();
+
+  if (!assign) {
+    const removed = await deps.store.unassignReviewer(paper.id, userId);
+    if (!removed) return json(404, { error: 'reviewer_not_found' });
+    await settleStatus(deps, paper.id, now);
+    await audit(deps, ctx, 'reviewer.unassign', 'submission', paper.id, { userId, number: paper.number });
+    await notifyUsers([{ userId, eventId: ctx.event.id, kind: 'review.unassigned', data: { number: paper.number, title: paper.title } }], deps);
+    return json(200, { ok: true });
+  }
+
+  // Only someone who holds the Avaliador role in this edition.
+  const reviewer = (await deps.store.listMembers(ctx.event.id)).find((m) => m.userId === userId && m.role === 'REVIEWER');
+  if (!reviewer) return json(400, { error: 'not_a_reviewer' });
+  if (paper.authors.some((a) => a.email === reviewer.email.toLowerCase())) {
+    return json(409, { error: 'reviewer_is_author' });
+  }
+  const added = await deps.store.assignReviewer(paper.id, reviewer.userId, ctx.user.id, now);
+  // Asked twice (two organisers, a double click): the person reviews it once and is told once.
+  if (!added) return json(200, { ok: true, already: true });
+  await settleStatus(deps, paper.id, now);
+  await audit(deps, ctx, 'reviewer.assign', 'submission', paper.id, { userId, number: paper.number });
+
+  const url = `${deps.siteUrl.replace(/\/+$/, '')}/${encodeURIComponent(ctx.event.slug)}/avaliacoes`;
+  await sendThroughOutbox(
+    [
+      {
+        to: reviewer.email,
+        dedupeKey: `review:${paper.id}:${reviewer.userId}:${now.getTime()}`,
+        subject: `Trabalho nº ${paper.number} para avaliar`,
+        ...layoutEmail({
+          greeting: `Olá, ${firstName(reviewer.fullName)}.`,
+          paragraphs: [
+            `A comissão organizadora do ${ctx.event.name} indicou você para avaliar o trabalho nº ${paper.number}, "${paper.title}".`,
+            'O arquivo e os dados do trabalho estão em "Trabalhos para avaliar", no site.',
+          ],
+          linkLabel: 'Abrir os trabalhos para avaliar',
+          link: url,
+          signature: `Comissão organizadora do ${ctx.event.name}`,
+        }),
+      },
+    ],
+    deps,
+    now,
+  );
+  await notifyUsers(
+    [{ userId: reviewer.userId, eventId: ctx.event.id, kind: 'review.assigned', data: { number: paper.number, title: paper.title } }],
+    deps,
+  );
+  return json(200, { ok: true });
+}
+
 // ───────────────────────────── People and roles ─────────────────────────────
 
 async function members(request: Request, deps: AdminDeps): Promise<Response> {
@@ -360,6 +440,12 @@ async function memberChange(request: Request, deps: AdminDeps, add: boolean): Pr
   } else {
     if (account) await deps.store.removeMember(ctx.event.id, account.id, role);
     await deps.store.removeInvite(ctx.event.id, email, role);
+    // Someone who is no longer a reviewer keeps no paper to review, nor the way into its file (#232).
+    if (account && role === 'REVIEWER') {
+      for (const id of await deps.store.unassignReviewerEverywhere(ctx.event.id, account.id)) {
+        await settleStatus(deps, id, deps.now());
+      }
+    }
   }
   await audit(deps, ctx, add ? 'member.add' : 'member.remove', 'event_member', account?.id ?? null, { email, role, invited: add && !account });
 
@@ -526,6 +612,8 @@ const ROUTES: Record<string, Partial<Record<string, Handler>>> = {
   'registration-restore': { POST: registrationRestore },
   remind: { POST: remind },
   submissions: { GET: submissions },
+  'reviewer-assign': { POST: (request, deps) => reviewerChange(request, deps, true) },
+  'reviewer-unassign': { POST: (request, deps) => reviewerChange(request, deps, false) },
   members: { GET: members },
   'member-add': { POST: (request, deps) => memberChange(request, deps, true) },
   'member-remove': { POST: (request, deps) => memberChange(request, deps, false) },

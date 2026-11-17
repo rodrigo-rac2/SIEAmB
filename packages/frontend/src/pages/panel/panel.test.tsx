@@ -167,6 +167,28 @@ describe('who sees the panel', () => {
       view.unmount();
     }
   });
+
+  it('Minha área links to the papers to review only for someone who has some (#232)', async () => {
+    const me = {
+      body: { panels: { platformAdmin: false, slugs: [] }, user: { email: 'a@b.org', fullName: 'A', cpf: null, passport: null, country: 'BR', institution: null, documentLocked: false }, registrations: [], suggestions: [] },
+    };
+    const calls = stubApi({ me, reviewing: { body: { submissions: [{ id: 'p1' }, { id: 'p2' }] } } });
+    const some = mount('/2027/minha-area', <MyAreaPage />);
+    const link = await screen.findByTestId('reviewing-link');
+    expect(link).toHaveTextContent('Trabalhos para avaliar (2)');
+    expect(link).toHaveAttribute('href', '/2027/avaliacoes');
+    expect(calls.find((c) => c.url.includes('reviewing'))!.url).toBe('/api/v1/submissions/reviewing?eventSlug=2027');
+    some.unmount();
+    for (const reviewing of [{ body: { submissions: [] } }, { status: 500, body: { error: 'server_error' } }]) {
+      stubApi({ me, reviewing });
+      const none = mount('/2027/minha-area', <MyAreaPage />);
+      await screen.findByLabelText('Nome completo');
+      expect(screen.queryByTestId('reviewing-link')).not.toBeInTheDocument();
+      // A failure here is not the person's problem: the rest of the page is there, with no error.
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      none.unmount();
+    }
+  });
 });
 
 describe('registrations tab', () => {
@@ -353,8 +375,8 @@ describe('papers tab', () => {
       role: 'ORGANIZER',
       counts: { total: 1, withdrawn: 1 },
       submissions: [
-        { id: 'p1', number: 12, title: 'Governança da água', modality: 'ARTIGO', areaRef: 'a1', status: 'SUBMITTED', fileName: 'artigo.pdf', filePages: 13, createdAt: '2026-12-01T12:00:00Z', deletedAt: null, authors: [{ position: 1, fullName: 'Maria Souza', email: 'maria@ufcg.edu.br' }], authorRegistered: false },
-        { id: 'p2', number: 13, title: 'Trabalho retirado', modality: 'RESUMO_EXPANDIDO', areaRef: 'a6', status: 'SUBMITTED', fileName: 'r.docx', filePages: null, createdAt: '2026-12-02T12:00:00Z', deletedAt: '2026-12-03T12:00:00Z', authors: [{ position: 1, fullName: 'João Lima', email: 'joao@ufpb.br' }], authorRegistered: true },
+        { id: 'p1', number: 12, title: 'Governança da água', modality: 'ARTIGO', areaRef: 'a1', status: 'SUBMITTED', fileName: 'artigo.pdf', filePages: 13, createdAt: '2026-12-01T12:00:00Z', deletedAt: null, authors: [{ position: 1, fullName: 'Maria Souza', email: 'maria@ufcg.edu.br' }], authorRegistered: false, reviewers: [] },
+        { id: 'p2', number: 13, title: 'Trabalho retirado', modality: 'RESUMO_EXPANDIDO', areaRef: 'a6', status: 'SUBMITTED', fileName: 'r.docx', filePages: null, createdAt: '2026-12-02T12:00:00Z', deletedAt: '2026-12-03T12:00:00Z', authors: [{ position: 1, fullName: 'João Lima', email: 'joao@ufpb.br' }], authorRegistered: true, reviewers: [] },
       ],
     },
   };
@@ -372,6 +394,102 @@ describe('papers tab', () => {
     expect(first).toHaveTextContent('13 páginas');
     expect(second).toHaveTextContent('Retirado pelo autor');
     expect(second).toHaveTextContent('Há autor com inscrição confirmada.');
+  });
+
+  describe('reviewers (#232)', () => {
+    const ANA = { userId: 'u7', email: 'ana@ufrn.br', fullName: 'Ana Reis', role: 'REVIEWER' };
+    const BRUNO = { userId: 'u8', email: 'bruno@ufpb.br', fullName: 'Bruno Sá', role: 'REVIEWER' };
+    const MARIA = { userId: 'u9', email: 'Maria@UFCG.edu.br', fullName: 'Maria Souza', role: 'REVIEWER' };
+    const withReviewers = (...people: (typeof ANA)[]) => {
+      const base = members('ORGANIZER');
+      return { body: { ...base.body, members: [...base.body.members, ...people] } };
+    };
+    const reviewed = (...reviewers: (typeof ANA)[]) => ({
+      body: {
+        ...papers.body,
+        submissions: papers.body.submissions.map((s) =>
+          s.id === 'p1' ? { ...s, status: reviewers.length ? 'UNDER_REVIEW' : 'SUBMITTED', reviewers: reviewers.map(({ userId, email, fullName }) => ({ userId, email, fullName })) } : s,
+        ),
+      },
+    });
+
+    it('says a paper has no reviewer, and where to give the role when nobody has it', async () => {
+      stubApi({ members: members('ORGANIZER'), submissions: papers });
+      panel('papers');
+      const [first] = await screen.findAllByTestId('paper-row');
+      expect(within(first!).getByTestId('paper-reviewers')).toHaveTextContent('Sem avaliador');
+      expect(await screen.findByTestId('no-reviewers')).toHaveTextContent('Ninguém tem o papel de Avaliador nesta edição.');
+      expect(within(screen.getByTestId('no-reviewers')).getByRole('link', { name: 'Pessoas e papéis' })).toHaveAttribute('href', '/2027/painel/pessoas');
+      expect(screen.queryByRole('combobox', { name: /Indicar avaliador/ })).not.toBeInTheDocument();
+    });
+
+    it('assigns the chosen reviewer and shows the paper under review', async () => {
+      let assigned = false;
+      const calls = stubApi({
+        members: withReviewers(ANA, BRUNO),
+        submissions: () => (assigned ? reviewed(ANA) : papers),
+        'reviewer-assign': () => {
+          assigned = true;
+          return { body: { ok: true } };
+        },
+      });
+      panel('papers');
+      const choose = await screen.findByRole('combobox', { name: 'Indicar avaliador para o trabalho nº 12' });
+      const button = screen.getByRole('button', { name: 'Indicar para o trabalho nº 12' });
+      // Nothing is sent until someone is chosen.
+      expect(button).toBeDisabled();
+      await userEvent.selectOptions(choose, 'Ana Reis');
+      await userEvent.click(button);
+      const row = (await screen.findAllByTestId('paper-row'))[0]!;
+      await waitFor(() => expect(within(row).getByTestId('paper-reviewers')).toHaveTextContent('Ana Reis'));
+      expect(row).toHaveTextContent('Em avaliação');
+      expect(calls.find((c) => c.url.includes('reviewer-assign'))).toMatchObject({
+        method: 'POST',
+        authorization: 'Bearer access-token-1',
+        body: { eventSlug: '2027', submissionId: 'p1', userId: 'u7' },
+      });
+      // Ana is on the paper now: only Bruno is left to choose.
+      const left = within(screen.getByRole('combobox', { name: 'Indicar avaliador para o trabalho nº 12' })).getAllByRole('option');
+      expect(left.map((o) => o.textContent)).toEqual(['Escolha', 'Bruno Sá']);
+    });
+
+    it('takes a reviewer off a paper that has several', async () => {
+      let removed = false;
+      const calls = stubApi({
+        members: withReviewers(ANA, BRUNO),
+        submissions: () => (removed ? reviewed(BRUNO) : reviewed(ANA, BRUNO)),
+        'reviewer-unassign': () => {
+          removed = true;
+          return { body: { ok: true } };
+        },
+      });
+      panel('papers');
+      await userEvent.click(await screen.findByRole('button', { name: 'Tirar Ana Reis do trabalho nº 12' }));
+      await waitFor(() => expect(screen.queryByRole('button', { name: 'Tirar Ana Reis do trabalho nº 12' })).not.toBeInTheDocument());
+      expect(screen.getByRole('button', { name: 'Tirar Bruno Sá do trabalho nº 12' })).toBeInTheDocument();
+      expect(calls.find((c) => c.url.includes('reviewer-unassign'))!.body).toEqual({ eventSlug: '2027', submissionId: 'p1', userId: 'u7' });
+    });
+
+    it('does not offer an author of the paper as its reviewer, nor anything on a withdrawn paper', async () => {
+      stubApi({ members: withReviewers(MARIA, ANA), submissions: papers });
+      panel('papers');
+      const choose = await screen.findByRole('combobox', { name: 'Indicar avaliador para o trabalho nº 12' });
+      expect(within(choose).getAllByRole('option').map((o) => o.textContent)).toEqual(['Escolha', 'Ana Reis']);
+      expect(screen.queryByRole('combobox', { name: 'Indicar avaliador para o trabalho nº 13' })).not.toBeInTheDocument();
+    });
+
+    it('says why when the server refuses, and changes nothing', async () => {
+      stubApi({
+        members: withReviewers(ANA),
+        submissions: papers,
+        'reviewer-assign': { status: 409, body: { error: 'reviewer_is_author' } },
+      });
+      panel('papers');
+      await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Indicar avaliador para o trabalho nº 12' }), 'Ana Reis');
+      await userEvent.click(screen.getByRole('button', { name: 'Indicar para o trabalho nº 12' }));
+      expect(await screen.findByRole('alert')).toHaveTextContent('Essa pessoa é um dos autores do trabalho e não pode avaliá-lo.');
+      expect(within(screen.getAllByTestId('paper-row')[0]!).getByTestId('paper-reviewers')).toHaveTextContent('Sem avaliador');
+    });
   });
 
   it('opens a file through a link asked from the server', async () => {
@@ -489,8 +607,8 @@ describe('registration and papers side by side, and reminders (#225)', () => {
           role: 'ORGANIZER',
           counts: { total: 2, withdrawn: 0 },
           submissions: [
-            { id: 'p1', number: 1, title: 'Da Paula', modality: 'ARTIGO', areaRef: 'a1', status: 'SUBMITTED', fileName: 'a.pdf', filePages: 13, createdAt: '2026-12-01T12:00:00Z', deletedAt: null, authorRegistered: true, authors: [{ position: 1, fullName: 'Paula Nunes', email: 'paula@outlook.com', registration: 'PAID' }, { position: 2, fullName: 'Sem Inscrição', email: 'sem@x.org', registration: null }] },
-            { id: 'p2', number: 2, title: 'De outra pessoa', modality: 'ARTIGO', areaRef: 'a1', status: 'SUBMITTED', fileName: 'b.pdf', filePages: 12, createdAt: '2026-12-01T12:00:00Z', deletedAt: null, authorRegistered: false, authors: [{ position: 1, fullName: 'Outra', email: 'outra@x.org', registration: 'UNPAID' }] },
+            { id: 'p1', number: 1, title: 'Da Paula', modality: 'ARTIGO', areaRef: 'a1', status: 'SUBMITTED', fileName: 'a.pdf', filePages: 13, createdAt: '2026-12-01T12:00:00Z', deletedAt: null, authorRegistered: true, reviewers: [], authors: [{ position: 1, fullName: 'Paula Nunes', email: 'paula@outlook.com', registration: 'PAID' }, { position: 2, fullName: 'Sem Inscrição', email: 'sem@x.org', registration: null }] },
+            { id: 'p2', number: 2, title: 'De outra pessoa', modality: 'ARTIGO', areaRef: 'a1', status: 'SUBMITTED', fileName: 'b.pdf', filePages: 12, createdAt: '2026-12-01T12:00:00Z', deletedAt: null, authorRegistered: false, reviewers: [], authors: [{ position: 1, fullName: 'Outra', email: 'outra@x.org', registration: 'UNPAID' }] },
           ],
         },
       },

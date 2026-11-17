@@ -154,12 +154,46 @@ async function file(request: Request, deps: SubmissionDeps): Promise<Response> {
   // Same answer for "does not exist" and "not yours": nothing to learn by guessing ids.
   if (!submission) return json(404, { error: 'submission_not_found' });
   const isAuthor = submission.authors.some((a) => a.email === auth.user.email);
+  // Authors and the people chosen to review it, while it stands; organisers always.
+  const isReviewer = !isAuthor && !submission.deletedAt && (await deps.store.isReviewerOf(submission.id, auth.user.id));
   const allowed =
-    (isAuthor && !submission.deletedAt) || (await deps.store.isOrganiser(submission.eventId, auth.user.id));
+    ((isAuthor || isReviewer) && !submission.deletedAt) ||
+    (await deps.store.isOrganiser(submission.eventId, auth.user.id));
   if (!allowed) return json(404, { error: 'submission_not_found' });
   const url = await deps.files.createDownloadUrl(submission.filePath, submission.fileName, DOWNLOAD_LINK_SECONDS);
-  deps.log('submission_file_opened', { submissionId: submission.id, byOrganiser: !isAuthor });
+  deps.log('submission_file_opened', {
+    submissionId: submission.id,
+    as: isAuthor ? 'author' : isReviewer ? 'reviewer' : 'organiser',
+  });
   return json(200, { url });
+}
+
+/**
+ * The papers this person was chosen to review (#232). The review is not blind: the
+ * authors' names are shown, as they are in the file. Their e-mails are not.
+ */
+async function reviewing(request: Request, deps: SubmissionDeps): Promise<Response> {
+  const ctx = await context(request, deps, new URL(request.url).searchParams.get('eventSlug'));
+  if ('response' in ctx) return ctx.response;
+  const assigned = await deps.store.listAssignedTo(ctx.event.id, ctx.user.id);
+  return json(200, {
+    submissions: assigned.map((s) => ({
+      id: s.id,
+      number: s.number,
+      title: s.title,
+      titleEn: s.titleEn,
+      modality: s.modality,
+      areaRef: s.areaRef,
+      abstract: s.abstract,
+      keywords: s.keywords,
+      keywordsEn: s.keywordsEn,
+      fileName: s.fileName,
+      filePages: s.filePages,
+      status: s.status,
+      createdAt: s.createdAt,
+      authors: s.authors.map((a) => ({ position: a.position, fullName: a.fullName })),
+    })),
+  });
 }
 
 /**
@@ -454,6 +488,7 @@ const ROUTES: Record<string, Partial<Record<string, Handler>>> = {
   rules: { GET: rules },
   mine: { GET: mine },
   people: { GET: people },
+  reviewing: { GET: reviewing },
   file: { GET: file },
   'upload-url': { POST: uploadUrl },
   save: { POST: save },

@@ -63,6 +63,16 @@ export class FakeSubmissionStore implements SubmissionStore {
   async findById(id: string) {
     return this.submissions.find((s) => s.id === id) ?? null;
   }
+  /** submission id → the accounts chosen to review it. */
+  reviewers = new Map<string, string[]>();
+  async listAssignedTo(eventId: string, userId: string) {
+    return this.submissions.filter(
+      (s) => s.eventId === eventId && !s.deletedAt && (this.reviewers.get(s.id) ?? []).includes(userId),
+    );
+  }
+  async isReviewerOf(submissionId: string, userId: string) {
+    return (this.reviewers.get(submissionId) ?? []).includes(userId);
+  }
   async searchPeople(eventId: string, query: string, limit: number) {
     this.searches.push({ eventId, query, limit });
     const fold = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();

@@ -933,7 +933,7 @@ describe('opening the file', () => {
     store.organisers = [{ userId: ORGANISER.id, email: ORGANISER.email, fullName: 'Viviane' }];
     const s = store.seed();
     expect((await open(deps, tokens.organiser, s.id)).status).toBe(200);
-    expect(logs.at(-1)).toEqual({ event: 'submission_file_opened', data: { submissionId: s.id, byOrganiser: true } });
+    expect(logs.at(-1)).toEqual({ event: 'submission_file_opened', data: { submissionId: s.id, as: 'organiser' } });
   });
 
   it('answers "not found" to anyone else, the same as for a paper that does not exist', async () => {
@@ -944,6 +944,23 @@ describe('opening the file', () => {
     expect(stranger.status).toBe(404);
     expect(await body(stranger)).toEqual(await body(missing));
     expect(files.downloadUrls).toEqual([]);
+  });
+
+  it('gives it to someone chosen to review the paper, and to no other reviewer', async () => {
+    const { deps, tokens, store, logs } = setup();
+    const s = store.seed();
+    const mineToo = store.seed({ title: 'Outro' });
+    store.reviewers.set(s.id, [OTHER.id]);
+    expect((await open(deps, tokens.other, s.id)).status).toBe(200);
+    expect(logs.at(-1)).toEqual({ event: 'submission_file_opened', data: { submissionId: s.id, as: 'reviewer' } });
+    // Reviewing one paper opens no other.
+    expect((await open(deps, tokens.other, mineToo.id)).status).toBe(404);
+    // Once the paper is withdrawn, or the person is taken off it, the way in is gone.
+    store.reviewers.set(s.id, []);
+    expect((await open(deps, tokens.other, s.id)).status).toBe(404);
+    store.reviewers.set(s.id, [OTHER.id]);
+    s.deletedAt = NOW.toISOString();
+    expect((await open(deps, tokens.other, s.id)).status).toBe(404);
   });
 
   it('does not open a withdrawn paper for its authors, but still does for an organiser', async () => {
@@ -977,5 +994,50 @@ describe('submission e-mails', () => {
     expect(mail.subject).toContain('nº 12');
     expect(mail.text).toContain('Maria Souza');
     expect(mail.subject + mail.text + mail.html).not.toMatch(/undefined|\$\{|\[object/);
+  });
+});
+
+describe('papers to review (#232)', () => {
+  const reviewing = (deps: SubmissionDeps, token?: string, slug = '2027') =>
+    handleSubmissions(call('GET', 'reviewing', { token, query: `?eventSlug=${slug}` }), 'reviewing', deps);
+
+  it('needs a login, and an edition that exists', async () => {
+    const { deps, tokens } = setup();
+    expect((await reviewing(deps)).status).toBe(401);
+    expect((await reviewing(deps, tokens.other, '1999')).status).toBe(404);
+  });
+
+  it('lists the papers a person was chosen to review, with the authors’ names and without their e-mails', async () => {
+    const { deps, tokens, store } = setup();
+    const first = store.seed({ title: 'Para o João avaliar', authors: [{ position: 1, fullName: 'Maria Clara de Souza', email: MAIN.email }, { position: 2, fullName: 'Ana Reis', email: 'ana@ufrn.br' }] });
+    const withdrawn = store.seed({ title: 'Retirado', deletedAt: NOW.toISOString() });
+    const notMine = store.seed({ title: 'De outro avaliador' });
+    store.reviewers.set(first.id, [OTHER.id, 'someone-else']);
+    store.reviewers.set(withdrawn.id, [OTHER.id]);
+    store.reviewers.set(notMine.id, ['someone-else']);
+    const response = await reviewing(deps, tokens.other);
+    expect(response.status).toBe(200);
+    const raw = await response.text();
+    const data = JSON.parse(raw) as { submissions: Record<string, unknown>[] };
+    expect(data.submissions).toHaveLength(1);
+    expect(data.submissions[0]).toMatchObject({
+      id: first.id,
+      title: 'Para o João avaliar',
+      fileName: 'trabalho.pdf',
+      authors: [
+        { position: 1, fullName: 'Maria Clara de Souza' },
+        { position: 2, fullName: 'Ana Reis' },
+      ],
+    });
+    // Not blind, but no addresses and nothing about where the file is kept.
+    expect(raw).not.toContain(MAIN.email);
+    expect(raw).not.toContain('ana@ufrn.br');
+    expect(raw).not.toContain('seed-');
+  });
+
+  it('is an empty list for someone with nothing to review', async () => {
+    const { deps, tokens, store } = setup();
+    store.seed();
+    expect(await body(await reviewing(deps, tokens.main))).toEqual({ submissions: [] });
   });
 });

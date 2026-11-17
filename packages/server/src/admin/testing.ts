@@ -103,6 +103,30 @@ export class FakeAdminStore implements AdminStore {
   async listSubmissions(eventId: string) {
     return this.submissions.filter((s) => s.eventId === eventId);
   }
+  async findSubmission(id: string) {
+    return this.submissions.find((s) => s.id === id) ?? null;
+  }
+  async assignReviewer(submissionId: string, userId: string) {
+    const paper = this.submissions.find((s) => s.id === submissionId)!;
+    if (paper.reviewers.some((r) => r.userId === userId)) return false;
+    const user = this.users.find((u) => u.id === userId)!;
+    paper.reviewers.push({ userId, fullName: user.fullName, email: user.email });
+    return true;
+  }
+  async unassignReviewer(submissionId: string, userId: string) {
+    const paper = this.submissions.find((s) => s.id === submissionId)!;
+    const before = paper.reviewers.length;
+    paper.reviewers = paper.reviewers.filter((r) => r.userId !== userId);
+    return paper.reviewers.length < before;
+  }
+  async unassignReviewerEverywhere(eventId: string, userId: string) {
+    const touched = this.submissions.filter((s) => s.eventId === eventId && s.reviewers.some((r) => r.userId === userId));
+    for (const paper of touched) paper.reviewers = paper.reviewers.filter((r) => r.userId !== userId);
+    return touched.map((s) => s.id);
+  }
+  async setSubmissionStatus(id: string, status: 'SUBMITTED' | 'UNDER_REVIEW') {
+    this.submissions.find((s) => s.id === id)!.status = status;
+  }
   async listMembers(eventId: string) {
     return this.members.filter((m) => m.eventId === eventId).map(({ eventId: _e, ...m }) => m);
   }
