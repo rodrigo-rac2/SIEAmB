@@ -288,7 +288,7 @@
     "backToLogin": "Voltar para a entrada",
     "sentHint": "Se a mensagem não chegar em alguns minutos, confira a caixa de spam ou peça de novo.",
     "nav": {
-      "login": "Entrar",
+      "login": "Entrar ou criar conta",
       "myArea": "Minha área",
       "logout": "Sair"
     },

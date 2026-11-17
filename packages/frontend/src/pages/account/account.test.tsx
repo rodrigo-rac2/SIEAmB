@@ -130,14 +130,14 @@ describe('accounts switched off', () => {
   it('the top bar shows no account link', async () => {
     mount('/2027/', <TopBar />, auth({ enabled: false }));
     await screen.findByText(/2027/);
-    expect(screen.queryByRole('link', { name: 'Entrar' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Entrar ou criar conta' })).not.toBeInTheDocument();
   });
 });
 
 describe('top bar', () => {
   it('offers Entrar when logged out and Minha área when logged in', async () => {
     const { unmount } = mount('/2027/', <TopBar />);
-    expect(await screen.findByRole('link', { name: 'Entrar' })).toHaveAttribute('href', '/2027/conta/entrar');
+    expect(await screen.findByRole('link', { name: 'Entrar ou criar conta' })).toHaveAttribute('href', '/2027/conta/entrar');
     unmount();
     mount('/2027/', <TopBar />, auth(LOGGED_IN));
     expect(await screen.findByRole('link', { name: 'Minha área' })).toHaveAttribute('href', '/2027/minha-area');

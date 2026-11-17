@@ -288,7 +288,7 @@
     "backToLogin": "Back to log in",
     "sentHint": "If the message does not arrive in a few minutes, check your spam folder or ask again.",
     "nav": {
-      "login": "Log in",
+      "login": "Log in or create account",
       "myArea": "My area",
       "logout": "Log out"
     },
