@@ -8,6 +8,9 @@ Append a dated entry per working session. Newest first.
 - Built accounts on dev (#208, #209, #210, ADR-007): create account, confirm e-mail, choose password, log in, forgotten password, Minha área, linking a registration by confirmed e-mail or by a CPF match proved with a link sent to the registration's e-mail, registration form tied to the account.
 - Found by testing against the real login service, not by the unit tests: a password set while the address is unconfirmed survives confirmation (so the password is now chosen after the link); changing an unconfirmed account's password cancels its pending link; saving a password ends the session; a `[action].ts` function loses to the SPA catch-all rewrite; the functions cannot import `@sieamb/shared` (ES module versus CommonJS, fails only on Vercel).
 - Browser tests run against the preview deployment and the dev database, with the confirmation link read from the login service because test addresses are never mailed.
+- Exploratory pass with playwright-cli found three defects, fixed the same day (#212, #213, #214): no "Dados salvos" after the first CPF save, a spent link logging a logged-in person out, the top bar overflowing on phones.
+- Slices 2, 3 and 4 built the same day with the edital's values (ADR-008): paper submissions with private file storage (#216), the general outbox and notifications (#217), the organisers' panel with manual registration, manual status, soft delete and roles (#219, #204), the bell and announcements (#221). Each slice: unit tests, a browser test against the preview and the dev database, then merged to develop.
+- Found along the way: Supabase Storage answers with unencoded addresses and refuses object names with spaces or accents (we use our own random names); the audit line must read the "before" value before the change is made; a test that types into a form must wait for the right tab to be on screen.
 
 ## 2026-11-16 — Payments live, e-mails, reminders
 
