@@ -412,7 +412,9 @@ describe('people and roles', () => {
       `${REVIEWER.email}:REVIEWER`,
     ]);
     expect(asOrganiser.invites).toEqual([{ email: 'futuro@ufpb.br', role: 'REVIEWER' }]);
-    expect(JSON.stringify(asOrganiser)).not.toContain(ADMIN.email);
+    // The administrator is in the list of accounts as anyone else, with no role that says so (#275).
+    expect(JSON.stringify(asOrganiser.members)).not.toContain(ADMIN.email);
+    expect(JSON.stringify(asOrganiser)).not.toContain('"ADMIN"');
     expect(JSON.stringify(asOrganiser)).not.toContain('futura-admin');
     // The administrator still sees everyone.
     const asAdmin = await body(await get(deps, 'members', tokens.admin));
@@ -507,6 +509,16 @@ describe('people and roles', () => {
     expect(response.status).toBe(409);
     expect(await body(response)).toEqual({ error: 'cannot_remove_self' });
     expect(store.members.some((m) => m.userId === ADMIN.id && m.role === 'ADMIN')).toBe(true);
+  });
+
+  it('lets the owner take the administrator role off their own account, and they still open the panel (#277)', async () => {
+    const { deps, tokens, store } = setup();
+    store.members.push({ eventId: EVENT.id, userId: PLATFORM.id, email: PLATFORM.email, fullName: 'Rodrigo Dono', role: 'ADMIN' });
+    const response = await post(deps, 'member-remove', tokens.platform, { email: PLATFORM.email, role: 'ADMIN' });
+    expect(response.status).toBe(200);
+    expect(store.members.some((m) => m.userId === PLATFORM.id)).toBe(false);
+    const after = await body(await get(deps, 'members', tokens.platform));
+    expect(after).toMatchObject({ role: 'ADMIN', owner: true, canManage: ['ADMIN', 'ORGANIZER', 'REVIEWER'] });
   });
 
   it.each([
@@ -1200,26 +1212,43 @@ describe('every account with its roles (#268)', () => {
       `${REVIEWER.email} [REVIEWER] editable`,
       `${ADMIN.email} [ADMIN] editable`,
       `${NOBODY.email} [] editable`,
-      `${PLATFORM.email} [] owner`,
+      // The owner is a line like any other to an administrator, with nothing to do on it (#275).
+      `${PLATFORM.email} []`,
       `${ORGANISER.email} [ORGANIZER,REVIEWER] editable`,
     ]);
+    expect(JSON.stringify(data.accounts)).not.toContain('"owner":true');
     store.members.push({ eventId: EVENT.id, userId: NOBODY.id, email: NOBODY.email, fullName: 'Pessoa Comum', role: 'ADMIN' });
     const again = await body(await get(deps, 'members', tokens.admin));
     expect(lines(again)).toContain(`${NOBODY.email} [ADMIN]`);
   });
 
-  it('lets the owner act on anyone', async () => {
+  it('lets the owner act on anyone, and shows the owner who the owner is', async () => {
     const { deps, tokens } = setup();
     const data = await body(await get(deps, 'members', tokens.platform));
+    expect(lines(data)).toContain(`${PLATFORM.email} [] owner editable`);
+    expect(lines(data)).toContain(`${ADMIN.email} [ADMIN] editable`);
     expect((data.accounts as { canEdit: boolean }[]).every((a) => a.canEdit)).toBe(true);
   });
 
-  it('shows an organiser neither administrators nor the owner, and nothing to edit', async () => {
-    const { deps, tokens } = setup();
+  it('shows an organiser every account without any role above theirs, and nothing to edit (#275)', async () => {
+    const { deps, tokens, store } = setup();
+    // An administrator who also reviews: the organiser sees the reviewer, not the administrator.
+    store.members.push({ eventId: EVENT.id, userId: ADMIN.id, email: ADMIN.email, fullName: 'Najara Escarião', role: 'REVIEWER' });
+    store.invites.push({ eventId: EVENT.id, email: 'futura-admin@ufcg.edu.br', role: 'ADMIN' });
     const data = await body(await get(deps, 'members', tokens.organiser));
-    expect(lines(data)).toEqual([`${REVIEWER.email} [REVIEWER]`, `${NOBODY.email} []`, `${ORGANISER.email} [ORGANIZER]`]);
-    expect(JSON.stringify(data)).not.toContain(ADMIN.email);
-    expect(JSON.stringify(data)).not.toContain(PLATFORM.email);
+    expect(lines(data)).toEqual([
+      `${REVIEWER.email} [REVIEWER]`,
+      `${ADMIN.email} [REVIEWER]`,
+      `${NOBODY.email} []`,
+      `${PLATFORM.email} []`,
+      `${ORGANISER.email} [ORGANIZER]`,
+    ]);
+    // Nothing in the whole answer says who is an administrator or the owner.
+    const text = JSON.stringify(data);
+    expect(text).not.toContain('"ADMIN"');
+    expect(text).not.toContain('"owner":true');
+    expect(text).not.toContain('futura-admin');
+    expect(data.owner).toBe(false);
   });
 
   it('keeps the accounts of a test run among test accounts', async () => {

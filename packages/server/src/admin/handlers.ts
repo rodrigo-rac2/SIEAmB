@@ -626,9 +626,10 @@ async function members(request: Request, deps: AdminDeps): Promise<Response> {
     // An organiser is not told who the administrators are, nor who was invited to be one (#264).
     members: all.filter((m) => (admin || m.role !== 'ADMIN') && shown(m.email)),
     invites: (await deps.store.listInvites(ctx.event.id)).filter((i) => (admin || i.role !== 'ADMIN') && shown(i.email)),
-    // Every account with its roles in this edition (#268). The same rule hides administrators and the owner.
+    // Every account with its roles in this edition (#268). Nobody is shown a role above their own (#275):
+    // an organiser sees no Administrador role and nobody but the owner sees who the owner is.
     accounts: (await deps.store.listAccounts())
-      .filter((a) => shown(a.email) && (admin || !(a.owner || adminIds.has(a.id))))
+      .filter((a) => shown(a.email))
       .map((a) => ({
         userId: a.id,
         email: a.email,
@@ -636,8 +637,8 @@ async function members(request: Request, deps: AdminDeps): Promise<Response> {
         institution: a.institution,
         // The document is only for the owner, who is the one who can reset it (#272).
         ...(owner ? { cpf: a.cpf } : {}),
-        owner: a.owner,
-        roles: ROLES.filter((r) => all.some((m) => m.userId === a.id && m.role === r)),
+        owner: owner && a.owner,
+        roles: ROLES.filter((r) => (admin || r !== 'ADMIN') && all.some((m) => m.userId === a.id && m.role === r)),
         canEdit: mayActOn(viewer, { id: a.id, owner: a.owner, admin: adminIds.has(a.id) }),
       })),
   });
@@ -650,9 +651,11 @@ async function memberChange(request: Request, deps: AdminDeps, add: boolean): Pr
   const role = ROLES.find((r) => r === body.role);
   if (!role) return json(400, { error: 'invalid_role' });
   const email = text(body.email, 200).toLowerCase();
-  // Nobody removes their own administrator role: the edition must not be left without one by accident.
-  if (!add && role === 'ADMIN' && ctx.role === 'ADMIN' && email === ctx.user.email) return json(409, { error: 'cannot_remove_self' });
-  if (!grantable(ctx.role, await isOwner(deps, ctx.user.id)).includes(role)) {
+  const owner = await isOwner(deps, ctx.user.id);
+  // An administrator does not remove their own administrator role: the edition must not be left without
+  // one by accident. The owner may (#277): they stand as administrator everywhere, with or without it.
+  if (!add && role === 'ADMIN' && ctx.role === 'ADMIN' && !owner && email === ctx.user.email) return json(409, { error: 'cannot_remove_self' });
+  if (!grantable(ctx.role, owner).includes(role)) {
     return json(403, { error: ctx.role === 'ADMIN' ? 'owner_only' : 'admin_only' });
   }
   if (!isEmail(email)) return json(400, { error: 'invalid_email' });
