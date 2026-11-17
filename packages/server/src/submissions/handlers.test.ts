@@ -129,7 +129,7 @@ describe('router', () => {
   it('says when submissions open and close without a login', async () => {
     const { deps, clock } = setup();
     const get = (d = deps) => handleSubmissions(call('GET', 'rules', { query: '?eventSlug=2027' }), 'rules', d);
-    expect(await body(await get())).toEqual({ state: 'open', opensAt: R.opensAt, closesAt: R.closesAt, pastDeadline: false });
+    expect(await body(await get())).toEqual({ state: 'open', opensAt: R.opensAt, closesAt: R.closesAt, pastDeadline: false, closedAt: null });
     clock.window = new Date('2027-01-19T00:00:01-03:00');
     // Past the published date and still open: the date is postponed by announcement, not by the clock.
     expect(await body(await get())).toMatchObject({ state: 'open', pastDeadline: true });
@@ -1039,5 +1039,68 @@ describe('papers to review (#232)', () => {
     const { deps, tokens, store } = setup();
     store.seed();
     expect(await body(await reviewing(deps, tokens.main))).toEqual({ submissions: [] });
+  });
+});
+
+describe('submissions closed by the organisers (#236)', () => {
+  const CLOSED = '2026-12-10T18:00:00.000Z';
+  const mine = (deps: SubmissionDeps, token: string) =>
+    handleSubmissions(call('GET', 'mine', { token, query: '?eventSlug=2027' }), 'mine', deps);
+
+  it('says so to everyone, with when it was closed, though the published date is still ahead', async () => {
+    const { deps, store } = setup();
+    store.closedAt = CLOSED;
+    const response = await handleSubmissions(call('GET', 'rules', { query: '?eventSlug=2027' }), 'rules', deps);
+    expect(await body(response)).toEqual({ state: 'closed', opensAt: R.opensAt, closesAt: R.closesAt, pastDeadline: false, closedAt: CLOSED });
+  });
+
+  it('takes no new paper, no change, no withdrawal and hands out no upload link', async () => {
+    const ctx = await ready();
+    const first = await body(await ctx.save(paper()));
+    const id = first.submission.id as string;
+    ctx.store.closedAt = CLOSED;
+    ctx.sent.length = 0;
+    const attempts = [
+      await ctx.save(paper({ title: 'Um trabalho novo, depois de encerradas' })),
+      await ctx.save(paper({ id, filePath: undefined, title: 'Título trocado depois de encerradas' })),
+      await handleSubmissions(call('POST', 'withdraw', { token: ctx.tokens.main, body: { eventSlug: '2027', id } }), 'withdraw', ctx.deps),
+      await handleSubmissions(call('POST', 'upload-url', { token: ctx.tokens.main, body: { eventSlug: '2027', fileName: 'x.pdf', size: 10 } }), 'upload-url', ctx.deps),
+    ];
+    for (const response of attempts) {
+      expect(response.status).toBe(409);
+      expect(await body(response)).toEqual({ error: 'submissions_closed' });
+    }
+    expect(ctx.store.submissions).toHaveLength(1);
+    expect(ctx.store.submissions[0]).toMatchObject({ title: 'Governança da água no semiárido paraibano', deletedAt: null });
+    expect(ctx.sent).toEqual([]);
+  });
+
+  it('shows the papers as locked, and still lets them be read and downloaded', async () => {
+    const { deps, tokens, store } = setup();
+    const s = store.seed();
+    store.closedAt = CLOSED;
+    const data = await body(await mine(deps, tokens.main));
+    expect(data).toMatchObject({ state: 'closed', closedAt: CLOSED });
+    expect(data.submissions[0]!.canEdit).toBe(false);
+    const file = await handleSubmissions(call('GET', 'file', { token: tokens.main, query: `?id=${s.id}` }), 'file', deps);
+    expect(file.status).toBe(200);
+  });
+
+  it('works again as soon as they are reopened, even past the published date', async () => {
+    const ctx = await ready();
+    ctx.store.closedAt = CLOSED;
+    expect((await ctx.save(paper())).status).toBe(409);
+    ctx.store.closedAt = null;
+    ctx.clock.window = new Date('2027-02-10T12:00:00-03:00');
+    expect((await ctx.save(paper())).status).toBe(201);
+    expect((await body(await mine(ctx.deps, ctx.tokens.main))).state).toBe('open');
+  });
+
+  it('still says "not open yet" before the opening date, closed by hand or not', async () => {
+    const { deps, store, clock } = setup();
+    store.closedAt = CLOSED;
+    clock.window = new Date('2026-11-14T12:00:00-03:00');
+    const response = await handleSubmissions(call('GET', 'rules', { query: '?eventSlug=2027' }), 'rules', deps);
+    expect((await body(response)).state).toBe('not_open');
   });
 });

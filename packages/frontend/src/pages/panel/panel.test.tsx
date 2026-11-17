@@ -396,6 +396,71 @@ describe('papers tab', () => {
     expect(second).toHaveTextContent('Há autor com inscrição confirmada.');
   });
 
+  describe('closing and reopening submissions (#236)', () => {
+    const CLOSED = { closedAt: '2026-12-10T18:00:00.000Z', closedBy: 'Viviane Farias' };
+
+    it('closes only after a second click, then shows who closed and offers to reopen', async () => {
+      let closed = false;
+      const calls = stubApi({
+        members: members('ORGANIZER'),
+        submissions: () => ({ body: { ...papers.body, closed: closed ? CLOSED : null } }),
+        'submissions-close': () => {
+          closed = true;
+          return { body: { ok: true, changed: true, closed: CLOSED } };
+        },
+      });
+      panel('papers');
+      const box = await screen.findByTestId('submissions-switch');
+      expect(box).toHaveTextContent('As submissões estão abertas.');
+      await userEvent.click(within(box).getByRole('button', { name: 'Encerrar submissões' }));
+      // Nothing is sent by the first click.
+      expect(calls.some((c) => c.url.includes('submissions-close'))).toBe(false);
+      expect(box).toHaveTextContent('Ninguém poderá enviar, alterar ou retirar trabalhos até que sejam reabertas.');
+      await userEvent.click(within(box).getByRole('button', { name: 'Sim, encerrar' }));
+      await waitFor(() => expect(box).toHaveTextContent('Submissões encerradas em 10/12/2026 por Viviane Farias.'));
+      expect(within(box).getByRole('button', { name: 'Reabrir submissões' })).toBeInTheDocument();
+      expect(within(box).queryByRole('button', { name: 'Encerrar submissões' })).not.toBeInTheDocument();
+      expect(calls.find((c) => c.url.includes('submissions-close'))).toMatchObject({ method: 'POST', body: { eventSlug: '2027' }, authorization: 'Bearer access-token-1' });
+    });
+
+    it('cancelling the closing sends nothing', async () => {
+      const calls = stubApi({ members: members('ORGANIZER'), submissions: papers });
+      panel('papers');
+      const box = await screen.findByTestId('submissions-switch');
+      await userEvent.click(within(box).getByRole('button', { name: 'Encerrar submissões' }));
+      await userEvent.click(within(box).getByRole('button', { name: 'Cancelar' }));
+      expect(within(box).getByRole('button', { name: 'Encerrar submissões' })).toBeInTheDocument();
+      expect(calls.every((c) => c.method === 'GET')).toBe(true);
+    });
+
+    it('reopens with one click', async () => {
+      let closed = true;
+      const calls = stubApi({
+        members: members('ADMIN'),
+        submissions: () => ({ body: { ...papers.body, role: 'ADMIN', closed: closed ? CLOSED : null } }),
+        'submissions-reopen': () => {
+          closed = false;
+          return { body: { ok: true, changed: true, closed: null } };
+        },
+      });
+      panel('papers');
+      const box = await screen.findByTestId('submissions-switch');
+      await userEvent.click(within(box).getByRole('button', { name: 'Reabrir submissões' }));
+      await waitFor(() => expect(box).toHaveTextContent('As submissões estão abertas.'));
+      expect(calls.some((c) => c.url.includes('submissions-reopen'))).toBe(true);
+    });
+
+    it('says so when the server refuses, and stays as it was', async () => {
+      stubApi({ members: members('ORGANIZER'), submissions: papers, 'submissions-close': { status: 500, body: { error: 'server_error' } } });
+      panel('papers');
+      const box = await screen.findByTestId('submissions-switch');
+      await userEvent.click(within(box).getByRole('button', { name: 'Encerrar submissões' }));
+      await userEvent.click(within(box).getByRole('button', { name: 'Sim, encerrar' }));
+      expect(await screen.findByRole('alert')).toHaveTextContent('Algo deu errado. Tente de novo em instantes.');
+      expect(box).toHaveTextContent('As submissões estão abertas.');
+    });
+  });
+
   describe('reviewers (#232)', () => {
     const ANA = { userId: 'u7', email: 'ana@ufrn.br', fullName: 'Ana Reis', role: 'REVIEWER' };
     const BRUNO = { userId: 'u8', email: 'bruno@ufpb.br', fullName: 'Bruno Sá', role: 'REVIEWER' };

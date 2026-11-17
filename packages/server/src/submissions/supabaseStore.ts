@@ -81,10 +81,11 @@ export class SupabaseSubmissionStore implements SubmissionStore {
   constructor(private readonly rest: RestClient) {}
 
   async findEvent(slug: string) {
-    const rows = await this.rest.request<{ id: string; slug: string; name: string }[]>(
-      `events?slug=eq.${q(slug)}&select=id,slug,name&limit=1`,
-    );
-    return rows[0] ?? null;
+    const rows = await this.rest.request<
+      { id: string; slug: string; name: string; submissions_closed_at: string | null }[]
+    >(`events?slug=eq.${q(slug)}&select=id,slug,name,submissions_closed_at&limit=1`);
+    const row = rows[0];
+    return row ? { id: row.id, slug: row.slug, name: row.name, closedAt: row.submissions_closed_at } : null;
   }
 
   async listByAuthorEmail(eventId: string, email: string): Promise<Submission[]> {

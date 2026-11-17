@@ -60,7 +60,8 @@ export interface Person {
 }
 
 export interface SubmissionStore {
-  findEvent(slug: string): Promise<{ id: string; slug: string; name: string } | null>;
+  /** `closedAt` is set while the organisers have submissions closed by hand (#236). */
+  findEvent(slug: string): Promise<{ id: string; slug: string; name: string; closedAt: string | null } | null>;
   /** Papers of the edition, withdrawn ones left out, where the e-mail is any of the authors. */
   listByAuthorEmail(eventId: string, email: string): Promise<Submission[]>;
   findById(id: string): Promise<Submission | null>;

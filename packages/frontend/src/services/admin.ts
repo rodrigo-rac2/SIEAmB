@@ -55,6 +55,8 @@ export interface PanelPaper {
 
 export interface PanelPapers {
   role: PanelRole;
+  /** Set while the organisers have submissions closed by hand (#236). */
+  closed?: { closedAt: string; closedBy: string } | null;
   counts: { total: number; withdrawn: number };
   submissions: PanelPaper[];
 }
@@ -157,6 +159,8 @@ export const addMember = (token: string, slug: string, email: string, role: Memb
   request<{ invited: boolean }>('POST', 'member-add', token, slug, { email, role });
 export const removeMember = (token: string, slug: string, email: string, role: MemberRole) =>
   request<unknown>('POST', 'member-remove', token, slug, { email, role });
+export const closeSubmissions = (token: string, slug: string) => request<unknown>('POST', 'submissions-close', token, slug, {});
+export const reopenSubmissions = (token: string, slug: string) => request<unknown>('POST', 'submissions-reopen', token, slug, {});
 export const assignReviewer = (token: string, slug: string, submissionId: string, userId: string) =>
   request<{ already?: boolean }>('POST', 'reviewer-assign', token, slug, { submissionId, userId });
 export const unassignReviewer = (token: string, slug: string, submissionId: string, userId: string) =>

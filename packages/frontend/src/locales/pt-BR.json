@@ -586,7 +586,15 @@
       "assignFor": "Indicar para o trabalho nº {{number}}",
       "removeReviewer": "Tirar {{name}} do trabalho nº {{number}}",
       "noReviewers": "Ninguém tem o papel de Avaliador nesta edição. Dê esse papel em Pessoas e papéis.",
-      "reviewersHint": "Cada trabalho precisa de pelo menos um avaliador, e você pode indicar quantos quiser. Com um avaliador indicado, o trabalho fica em avaliação e os autores não podem mais alterá-lo. Os avaliadores veem o arquivo com os nomes dos autores."
+      "reviewersHint": "Cada trabalho precisa de pelo menos um avaliador, e você pode indicar quantos quiser. Com um avaliador indicado, o trabalho fica em avaliação e os autores não podem mais alterá-lo. Os avaliadores veem o arquivo com os nomes dos autores.",
+      "window": {
+        "open": "As submissões estão abertas.",
+        "closed": "Submissões encerradas em {{date}} por {{name}}. Ninguém pode enviar, alterar ou retirar trabalhos.",
+        "close": "Encerrar submissões",
+        "closeConfirm": "Encerrar as submissões? Ninguém poderá enviar, alterar ou retirar trabalhos até que sejam reabertas.",
+        "closeYes": "Sim, encerrar",
+        "reopen": "Reabrir submissões"
+      }
     },
     "people": {
       "role": "Papel",

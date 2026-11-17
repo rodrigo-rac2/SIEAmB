@@ -52,8 +52,10 @@ export class FakeSubmissionStore implements SubmissionStore {
   people: Person[] = [];
   searches: { eventId: string; query: string; limit: number }[] = [];
 
+  /** Set to close submissions by hand, as the organisers' button does. */
+  closedAt: string | null = null;
   async findEvent(slug: string) {
-    return slug === EVENT.slug ? EVENT : null;
+    return slug === EVENT.slug ? { ...EVENT, closedAt: this.closedAt } : null;
   }
   async listByAuthorEmail(eventId: string, email: string) {
     return this.submissions.filter(

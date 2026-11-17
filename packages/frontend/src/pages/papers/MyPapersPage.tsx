@@ -227,7 +227,8 @@ export function MyPapersPage() {
 
               <p className="papers__limits" data-testid="paper-limits">
                 {t(`papers.window.${papers.state === 'open' && papers.pastDeadline ? 'open_late' : papers.state}`, {
-                  date: day(papers.closesAt, locale),
+                  // Closed by the organisers: the day they closed it, not the published date.
+                  date: day(papers.state === 'closed' && papers.closedAt ? papers.closedAt : papers.closesAt, locale),
                 })}{' '}
                 {t('papers.limits', papers.limits)}
               </p>
