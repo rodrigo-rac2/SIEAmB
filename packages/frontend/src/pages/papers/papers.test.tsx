@@ -161,6 +161,19 @@ describe('MyPapersPage', () => {
     expect(within(notice).queryByRole('link')).not.toBeInTheDocument();
   });
 
+  it.each([
+    ['with papers and no registration', null, [paper()]],
+    ['with papers and an unpaid registration', 'UNPAID', [paper()]],
+    ['with no paper at all', null, []],
+  ] as const)('puts the registration reminder after the papers, %s (#257)', async (_name, state, submissions) => {
+    stubApi({ mine: { body: mine({ submissions: [...submissions] }) }, me: account(state) });
+    mount(...LIST, <MyPapersPage />);
+    const notice = await screen.findByTestId('registration-notice');
+    const before = submissions.length ? screen.getByTestId('paper-card') : screen.getByTestId('no-papers');
+    expect(screen.getByTestId('paper-limits').compareDocumentPosition(notice) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(before.compareDocumentPosition(notice) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('lists a paper with number, modality, area, status, authors in order and pages', async () => {
     stubApi({ mine: { body: mine({ submissions: [paper()], limits: { asMain: 1, maxAsMain: 3, asCoauthor: 0, maxAsCoauthor: 5 } }) }, me: account('PAID') });
     mount(...LIST, <MyPapersPage />);
@@ -703,7 +716,12 @@ describe('PaperFormPage, changing a paper', () => {
     expect(screen.getByLabelText('Nome do autor 1 (você)')).toHaveValue('Maria Clara de Souza');
     expect(screen.getByLabelText('Nome do autor 2')).toHaveValue('João Lima');
     expect(screen.getByLabelText('E-mail do autor 2')).toHaveValue('joao@ufpb.br');
-    expect(screen.getByText(/Arquivo atual: resumo.pdf\./)).toBeInTheDocument();
+    // The file the paper has now is said on its own line, above the field that replaces it (#257).
+    const current = screen.getByTestId('current-file');
+    expect(current).toHaveTextContent('Arquivo atual: resumo.pdf. 5 páginas.');
+    const field = screen.getByLabelText('Substituir o arquivo (opcional)');
+    expect(current.compareDocumentPosition(field) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByText(/PDF ou Word/)).not.toHaveTextContent('Arquivo atual');
     await userEvent.clear(title);
     await userEvent.type(title, 'Governança da água: versão revista');
     await userEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }));
