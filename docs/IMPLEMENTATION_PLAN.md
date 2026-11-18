@@ -3,6 +3,16 @@
 Seminário Internacional de Estudos Ambientais (2nd edition) — UFCG.
 Custom-built conference platform, multi-event from day one, maintained by Rodrigo (+ Samuel, estagiário).
 
+> **Read this first (2026-11-17).** This is the plan written in August 2026 and it is kept as history. Several parts were built differently, and where they differ the decision records win:
+>
+> - **No Express server, no AWS Lambda, no Cloudflare R2.** The site runs on Vercel functions over `packages/server`, with Supabase for the data, the login and the files (`docs/adr/009-runtime-architecture.md`).
+> - **Login and roles**: Supabase Auth, roles per edition plus the owner, not a JWT of our own with global roles (ADR-002, ADR-007, ADR-008).
+> - **Payments**: Mercado Pago's Orders API, not Preferences (§7 here is out of date; ADR-004).
+> - **Submissions and review**: authors are one ordered list, the review is not blind, the organisers choose one or more reviewers per paper (§6 here is out of date; ADR-003's note and ADR-008).
+> - **E-mails**: an outbox, Resend over SMTP, and a background job the database starts (ADR-005).
+>
+> What is live and what is waiting is in `.claude/context/STATUS.md`.
+
 > **Status (2026-09-01): Phase 0 is COMPLETE and live** at https://rodrigo-rac2.github.io/SIEAmB/ — see `.claude/context/STATUS.md` for the living status. This plan is the roadmap; deltas discovered during Phase 0 are noted inline as **[UPDATE]** blocks.
 
 All code, comments, identifiers, and docs: **English**. User-facing UI: **4 locales via react-i18next — pt-BR (forced default), en, es, zh-CN** (flag-button switcher; zh-CN needs native review). UI strings live in `locales/<locale>.json`, never hardcoded. Dynamic content (news) is pt-BR only for now.

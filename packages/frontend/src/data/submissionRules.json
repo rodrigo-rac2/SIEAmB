@@ -1,0 +1,18 @@
+[
+  {
+    "eventId": "evt-2027",
+    "opensAt": "2026-11-15T00:00:00-03:00",
+    "closesAt": "2027-01-18T23:59:59-03:00",
+    "locksAtClose": false,
+    "maxAuthors": 5,
+    "maxAsMainAuthor": 3,
+    "maxAsCoauthor": 5,
+    "maxKeywords": 5,
+    "maxFileMb": 10,
+    "formats": ["pdf", "docx"],
+    "modalities": {
+      "ARTIGO": { "minPages": 12, "maxPages": 15 },
+      "RESUMO_EXPANDIDO": { "minPages": 4, "maxPages": 6 }
+    }
+  }
+]

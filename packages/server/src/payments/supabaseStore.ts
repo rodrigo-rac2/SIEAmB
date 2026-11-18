@@ -140,7 +140,7 @@ export class SupabasePaymentStore implements PaymentStore {
         event: { slug: string } | null;
       }[]
     >(
-      `pre_registrations?pay_token=eq.${encodeURIComponent(token)}&select=id,event_id,email,category,modality,full_name,cpf,event:events(slug)&limit=1`,
+      `pre_registrations?pay_token=eq.${encodeURIComponent(token)}&deleted_at=is.null&select=id,event_id,email,category,modality,full_name,cpf,event:events(slug)&limit=1`,
     );
     const row = rows[0];
     if (!row?.event) return null;
@@ -277,7 +277,7 @@ export class SupabasePaymentStore implements PaymentStore {
         event: { slug: string; name: string } | null;
       }[]
     >(
-      `pre_registrations?id=eq.${encodeURIComponent(preRegistrationId)}&select=full_name,email,locale,pay_token,category,modality,event:events(slug,name)&limit=1`,
+      `pre_registrations?id=eq.${encodeURIComponent(preRegistrationId)}&deleted_at=is.null&select=full_name,email,locale,pay_token,category,modality,event:events(slug,name)&limit=1`,
     );
     const row = rows[0];
     if (!row?.event) return null;
@@ -321,7 +321,7 @@ export class SupabasePaymentStore implements PaymentStore {
         payment_emails: { kind: EmailKind; dedupe_key: string; created_at: string }[];
       }[]
     >(
-      `pre_registrations?${filter}&select=id,created_at,category,modality,event:events(slug),payments(id,status,mp_status),payment_emails(kind,dedupe_key,created_at)&order=created_at.asc&limit=${limit}`,
+      `pre_registrations?${filter}&deleted_at=is.null&manual_status=is.null&select=id,created_at,category,modality,event:events(slug),payments(id,status,mp_status),payment_emails(kind,dedupe_key,created_at)&order=created_at.asc&limit=${limit}`,
     );
     return rows.map((row) => ({
       preRegistrationId: row.id,

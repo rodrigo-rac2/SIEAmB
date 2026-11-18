@@ -4,7 +4,15 @@ import { json, type Log } from './http';
 import type { PaymentStatus } from './status';
 import { paymentDeadlines, resolveFeeTier, type PaymentDeadline } from './fees';
 import { fetchOrder } from './mercadoPago';
-import { isUuid, type EmailJob, type EmailKind, type Payment, type PaymentStore, type ReminderCandidate } from './store';
+import {
+  isUuid,
+  type EmailJob,
+  type EmailKind,
+  type Payment,
+  type PaymentStore,
+  type PreRegistrationRef,
+  type ReminderCandidate,
+} from './store';
 import { applyOrderToPayment } from './sync';
 import type { PaymentNotifier } from './sync';
 
@@ -254,13 +262,31 @@ const EMAIL = /^[^\s@<>,;"]+@[^\s@<>,;"]+\.[^\s@<>,;"]+$/;
 // only bounces, and bounces hurt the sender's reputation.
 const TEST_ADDRESS = /^e2e\+[^@]*@sieamb\.org$|@(?:[^@]+\.)?example\.(?:com|org|net)$|\.(?:test|invalid|example|localhost)$/i;
 
+/** An address of our own tests or of a domain reserved for examples: never a real inbox. */
+export const isTestAddress = (value: string): boolean => TEST_ADDRESS.test(value);
+
+/**
+ * Who is told about something. What is only about test people (a paper whose authors
+ * are all test addresses, a test registration) stays among test accounts: on the dev
+ * site real organisers share the database with the automatic tests, and were mailed
+ * dozens of times per test run (#255). Real data goes to everyone, as always.
+ */
+export function audienceFor<T extends { email: string }>(subjectEmails: string[], recipients: T[]): T[] {
+  const aboutTests = subjectEmails.length > 0 && subjectEmails.every(isTestAddress);
+  return aboutTests ? recipients.filter((r) => isTestAddress(r.email)) : recipients;
+}
+
 export const isSendableEmail = (value: unknown): value is string =>
   typeof value === 'string' && value.length <= 200 && EMAIL.test(value) && !TEST_ADDRESS.test(value);
 
 /** First word of the name, without anything that could break a line. */
+/** Academic and courtesy titles people put before their names: "Prof. Dr. Maria" is greeted as Maria (#292). */
+const TITLE = /^(prof|profa|profª|professor|professora|dr|dra|drª|me|ma|msc|esp|sr|sra|srta)\.?ª?$/i;
+
+/** First word of the name that is not a title, without anything that could break a line. */
 export function firstName(fullName: string): string {
-  const cleaned = fullName.replace(/[\r\n\t]+/g, ' ').trim();
-  return (cleaned.split(/\s+/)[0] ?? '').slice(0, 60);
+  const words = fullName.replace(/[\r\n\t]+/g, ' ').trim().split(/\s+/).filter(Boolean);
+  return (words.find((w) => !TITLE.test(w)) ?? '').slice(0, 60);
 }
 
 export function formatAmount(amountCents: number, locale: string): string {
@@ -447,7 +473,11 @@ const receivedKey = (preRegistrationId: string) => `received:${preRegistrationId
 export async function handleRegistrationReceived(
   request: Request,
   env: { now: Date },
-  deps: Partial<EmailDeps> & { log: Log },
+  deps: Partial<EmailDeps> & {
+    log: Log;
+    /** Tells the organisers of a registration seen for the first time (#219). Never fails the form. */
+    onRegistered?: (registration: PreRegistrationRef) => Promise<void>;
+  },
 ): Promise<Response> {
   if (request.method !== 'POST') return json(405, { error: 'method_not_allowed' });
   const { store, siteUrl, log } = deps;
@@ -469,7 +499,10 @@ export async function handleRegistrationReceived(
       kind: 'RECEIVED',
       dedupeKey: receivedKey(registration.id),
     });
-    if (job) await deliverEmail(job, { store, mailer: deps.mailer, siteUrl, log }, env.now);
+    if (job) {
+      await deliverEmail(job, { store, mailer: deps.mailer, siteUrl, log }, env.now);
+      await deps.onRegistered?.(registration).catch(() => log('registration_notice_failed', {}));
+    }
     return json(202, { received: true });
   } catch {
     // The background job sends it for a recent registration, so the form is not failed for this.
@@ -557,6 +590,8 @@ export interface SweepDeps extends Partial<EmailDeps> {
   fetch?: typeof fetch;
   notify?: PaymentNotifier;
   log: Log;
+  /** Delivers what the general outbox still owes (#217); absent where it is not set up. */
+  sweepOutbox?: (now: Date) => Promise<unknown>;
 }
 
 function sameSecret(given: string, expected: string): boolean {
@@ -601,6 +636,7 @@ export async function handleEmailSweep(
     mailer: Boolean(mailer),
     errors: [] as string[],
   };
+  const extra: { outbox?: unknown } = {};
 
   if (accessToken && deps.fetch) {
     try {
@@ -629,7 +665,15 @@ export async function handleEmailSweep(
   } catch {
     result.errors.push('deliver');
   }
+  // The general outbox (#217): submissions, announcements. Counts only, like the rest.
+  if (deps.sweepOutbox) {
+    try {
+      extra.outbox = await deps.sweepOutbox(now);
+    } catch {
+      result.errors.push('outbox');
+    }
+  }
 
-  log('payment_email_sweep', { ...result });
-  return json(result.errors.length ? 502 : 200, { ...result });
+  log('payment_email_sweep', { ...result, ...extra });
+  return json(result.errors.length ? 502 : 200, { ...result, ...extra });
 }

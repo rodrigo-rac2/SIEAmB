@@ -7,10 +7,13 @@
     "test": "playwright test",
     "test:smoke": "playwright test --grep @smoke",
     "test:deployed": "playwright test --grep @deployed",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "seed:demo": "tsx scripts/seed-demo.ts",
+    "cleanup:run": "tsx scripts/cleanup-run.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.49.1",
-    "@types/node": "^22.20.1"
+    "@types/node": "^22.20.1",
+    "pdf-lib": "^1.17.1"
   }
 }
