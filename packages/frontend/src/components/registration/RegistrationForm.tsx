@@ -5,7 +5,7 @@ import {
   type Registration,
   type RegistrationFormData,
 } from '@sieamb/shared';
-import { useEffect, useState, type ChangeEvent } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
@@ -29,53 +29,68 @@ export function RegistrationForm({
 }) {
   const { t, i18n } = useTranslation();
   const { event } = useEvent();
-  const { accessToken } = useAuth();
+  const { accessToken, email: sessionEmail, loading: authLoading } = useAuth();
   const [submitError, setSubmitError] = useState<string | null>(null);
-  // Logged in (#210): the registration is made with the account's own e-mail.
-  const [accountEmail, setAccountEmail] = useState<string | null>(null);
+  // Logged in (#210): the registration is made with the account's own e-mail. It comes from the
+  // session, known before any call to the server, so there is no moment in which a logged-in person
+  // can type another one (#290).
+  const accountEmail = sessionEmail ? sessionEmail.toLowerCase() : null;
+  const tokenRef = useRef(accessToken);
+  tokenRef.current = accessToken;
+  // While the account's data is on its way the form cannot be sent: the name may still be missing.
+  const [accountPending, setAccountPending] = useState(false);
 
   const {
     register,
     handleSubmit,
-    reset,
+    getValues,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
     defaultValues: { country: 'BR', category: 'ESTUDANTE_POS', modality: 'ONLINE', consent: false },
   });
 
+  // The account's e-mail goes in at once; name, document and institution follow from the account,
+  // and only into fields still empty, so nothing the person already typed is thrown away. Keyed on
+  // the e-mail, not on the token, which changes on every refresh and used to drop the answer (#290).
   useEffect(() => {
-    if (!accessToken) return setAccountEmail(null);
+    if (!accountEmail) return;
+    setValue('email', accountEmail, { shouldValidate: false });
+    const token = tokenRef.current;
+    if (!token) return;
     let active = true;
-    fetchAccount(accessToken)
+    setAccountPending(true);
+    const fillEmpty = (field: 'fullName' | 'cpf' | 'passport' | 'institution', value: string | null | undefined) => {
+      if (value && !getValues(field)) setValue(field, value);
+    };
+    fetchAccount(token)
       .then(({ user }) => {
         if (!active) return;
-        setAccountEmail(user.email);
-        reset({
-          country: user.passport ? user.country : 'BR',
-          category: 'ESTUDANTE_POS',
-          modality: 'ONLINE',
-          consent: false,
-          fullName: user.fullName,
-          email: user.email,
-          cpf: user.cpf ? maskCpf(user.cpf) : '',
-          passport: user.passport ?? '',
-          institution: user.institution ?? '',
-        });
+        fillEmpty('fullName', user.fullName);
+        fillEmpty('cpf', user.cpf ? maskCpf(user.cpf) : null);
+        fillEmpty('passport', user.passport);
+        fillEmpty('institution', user.institution);
+        if (user.passport && !getValues('cpf')) setValue('country', user.country);
       })
       // The form still works without the account's data.
-      .catch(() => undefined);
+      .catch(() => undefined)
+      .finally(() => {
+        if (active) setAccountPending(false);
+      });
     return () => {
       active = false;
+      setAccountPending(false);
     };
-  }, [accessToken, reset]);
+  }, [accountEmail, getValues, setValue]);
 
   if (!event) return null;
 
   const onSubmit = handleSubmit(async (data) => {
     setSubmitError(null);
     try {
-      const parsed = registrationSchema.parse(data);
+      // Logged in, the e-mail is the account's whatever the field says (#290).
+      const parsed = registrationSchema.parse(accountEmail ? { ...data, email: accountEmail } : data);
       const check = await checkDuplicateRegistration({
         eventSlug: event.slug,
         email: parsed.email,
@@ -138,7 +153,7 @@ export function RegistrationForm({
           id="email"
           type="email"
           autoComplete="email"
-          readOnly={Boolean(accountEmail)}
+          readOnly={Boolean(accountEmail) || authLoading}
           {...register('email')}
         />
         {accountEmail && <p className="reg-form__hint">{t('registration.accountEmailHint')}</p>}
@@ -221,7 +236,7 @@ export function RegistrationForm({
         </p>
       )}
 
-      <button className="reg-form__submit" type="submit" disabled={isSubmitting}>
+      <button className="reg-form__submit" type="submit" disabled={isSubmitting || accountPending}>
         {isSubmitting ? t('registration.submitting') : t('registration.submit')}
       </button>
     </form>
