@@ -24,8 +24,13 @@ export default defineConfig({
     extraHTTPHeaders: BASE_URL && BYPASS ? { 'x-sieamb-e2e': BYPASS } : {},
   },
   projects: [
+    // The three engines on a desktop, then a phone of each mobile family (#332).
+    // WebKit is Safari's engine: it catches what Safari does differently, not what a real iPhone does.
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
+    { name: 'webkit', use: { ...devices['Desktop Safari'] } },
     { name: 'mobile', use: { ...devices['Pixel 7'] } },
+    { name: 'mobile-safari', use: { ...devices['iPhone 14'] } },
   ],
   webServer: BASE_URL
     ? undefined
