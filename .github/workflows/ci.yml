@@ -29,7 +29,17 @@ jobs:
           cache: npm
       - run: npm ci
       # Chromium, Firefox and WebKit (Safari's engine): every project of the suite (#332).
-      - run: npx playwright install --with-deps
+      # The system packages come from the runner's Ubuntu mirror, which now and then crawls (#337):
+      # an attempt that stalls is cut after five minutes and tried again, twice at most.
+      - name: Install the browsers
+        timeout-minutes: 18
+        run: |
+          for attempt in 1 2 3; do
+            if timeout 300 npx playwright install --with-deps; then exit 0; fi
+            echo "::warning::Browser install attempt $attempt failed or stalled"
+          done
+          echo "::error::The browsers could not be installed in three attempts."
+          exit 1
       - run: npm run test -w @sieamb/e2e
       - uses: actions/upload-artifact@v4
         if: failure()
