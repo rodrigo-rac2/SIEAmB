@@ -69,11 +69,11 @@
   margin: 0;
 }
 
+/* Registration and paper submission are equals in the hero: same size, same weight (#306). */
 .hero__cta--second,
 .hero--light .hero__cta--second {
-  background: transparent;
-  color: inherit;
-  box-shadow: inset 0 0 0 2px currentColor;
+  background: var(--color-accent);
+  color: var(--color-surface);
 }
 
 .hero__cta:hover {
@@ -284,6 +284,18 @@
   text-transform: uppercase;
   padding: 0 var(--space-2);
   border-radius: var(--radius-sm);
+}
+
+/* While papers can be sent the strip is a call-out, like the registration one above it (#306). */
+.edital-strip__badge--open {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: var(--space-1) var(--space-3);
+  border-radius: 999px;
 }
 
 .edital-strip__title {
