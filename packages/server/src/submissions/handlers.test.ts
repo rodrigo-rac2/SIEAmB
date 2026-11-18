@@ -266,6 +266,12 @@ describe('sending a paper', () => {
     expect(toAuthor.text).toContain('Olá, João.');
     expect(toAuthor.text).toContain('enviado por Maria Clara de Souza');
     expect(toAuthor.text).toContain('https://dev.sieamb.org/2027/meus-trabalhos');
+    expect(toAuthor.text).not.toContain('Criar conta');
+    // An author with no account is offered to create one, and then lands on Meus trabalhos (#292).
+    const toNewcomer = sent.find((m) => m.to === 'semconta@ufrn.br')!;
+    expect(toNewcomer.text).toContain('Você ainda não tem conta no site com este e-mail.');
+    expect(toNewcomer.html).toContain('Criar conta com este e-mail');
+    expect(toNewcomer.text).toContain('https://dev.sieamb.org/2027/conta/criar?next=%2F2027%2Fmeus-trabalhos');
     const toOrganiser = sent.find((m) => m.to === ORGANISER.email)!;
     expect(toOrganiser.subject).toContain('Novo trabalho nº');
     expect(toOrganiser.text).toContain('Resumo expandido · Governança, Políticas Públicas e Direito Ambiental');

@@ -280,9 +280,13 @@ export const isSendableEmail = (value: unknown): value is string =>
   typeof value === 'string' && value.length <= 200 && EMAIL.test(value) && !TEST_ADDRESS.test(value);
 
 /** First word of the name, without anything that could break a line. */
+/** Academic and courtesy titles people put before their names: "Prof. Dr. Maria" is greeted as Maria (#292). */
+const TITLE = /^(prof|profa|profª|professor|professora|dr|dra|drª|me|ma|msc|esp|sr|sra|srta)\.?ª?$/i;
+
+/** First word of the name that is not a title, without anything that could break a line. */
 export function firstName(fullName: string): string {
-  const cleaned = fullName.replace(/[\r\n\t]+/g, ' ').trim();
-  return (cleaned.split(/\s+/)[0] ?? '').slice(0, 60);
+  const words = fullName.replace(/[\r\n\t]+/g, ' ').trim().split(/\s+/).filter(Boolean);
+  return (words.find((w) => !TITLE.test(w)) ?? '').slice(0, 60);
 }
 
 export function formatAmount(amountCents: number, locale: string): string {
