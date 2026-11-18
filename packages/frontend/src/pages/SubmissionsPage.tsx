@@ -1,4 +1,3 @@
-import type { Edital } from '@sieamb/shared';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
@@ -6,7 +5,7 @@ import { EditalFiles } from '../components/editais/EditalFiles';
 import { PageHeader } from '../components/shared/PageHeader';
 import { useAuth } from '../contexts/AuthContext';
 import { useEvent } from '../contexts/EventContext';
-import { getDataProvider } from '../services';
+import { useContent } from '../hooks/useContent';
 import { fetchWindow, type WindowState } from '../services/submissions';
 import './account/Account.css';
 import './SubmissionsPage.css';
@@ -15,7 +14,7 @@ import { Loading } from '../components/shared/Loading';
 export function SubmissionsPage() {
   const { t } = useTranslation();
   const { event } = useEvent();
-  const [edital, setEdital] = useState<Edital | null>(null);
+  const edital = useContent('getEditais', event?.id)?.[0] ?? null;
   const auth = useAuth();
   // Where the submission system is on, the server says whether submissions are open.
   const [state, setState] = useState<WindowState | null>(null);
@@ -32,13 +31,6 @@ export function SubmissionsPage() {
       active = false;
     };
   }, [event, auth.enabled]);
-
-  useEffect(() => {
-    if (!event) return;
-    void getDataProvider()
-      .getEditais(event.id)
-      .then((list) => setEdital(list[0] ?? null));
-  }, [event]);
 
   return (
     <>

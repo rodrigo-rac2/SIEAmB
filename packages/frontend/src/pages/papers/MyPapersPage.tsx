@@ -1,4 +1,3 @@
-import type { ThematicArea } from '@sieamb/shared';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, Navigate, useLocation } from 'react-router-dom';
@@ -6,7 +5,7 @@ import { PageHeader } from '../../components/shared/PageHeader';
 import { useAuth } from '../../contexts/AuthContext';
 import { useEvent } from '../../contexts/EventContext';
 import { useLocale, useLocalized } from '../../hooks/useLocale';
-import { getDataProvider } from '../../services';
+import { useContent } from '../../hooks/useContent';
 import { fetchAccount, type AccountRegistration } from '../../services/account';
 import {
   SubmissionError,
@@ -150,7 +149,7 @@ export function MyPapersPage() {
   const accessToken = auth.enabled ? auth.accessToken : null;
   const [papers, setPapers] = useState<MyPapers | null>(null);
   const [registration, setRegistration] = useState<AccountRegistration | null>(null);
-  const [areas, setAreas] = useState<ThematicArea[]>([]);
+  const areas = useContent('getThematicAreas', event?.id) ?? [];
   const [error, setError] = useState<string | null>(null);
 
   const message = useCallback(
@@ -162,14 +161,9 @@ export function MyPapersPage() {
   const load = useCallback(async () => {
     if (!accessToken || !event) return;
     try {
-      const [mine, account, list] = await Promise.all([
-        fetchMyPapers(accessToken, event.slug),
-        fetchAccount(accessToken),
-        getDataProvider().getThematicAreas(event.id),
-      ]);
+      const [mine, account] = await Promise.all([fetchMyPapers(accessToken, event.slug), fetchAccount(accessToken)]);
       setPapers(mine);
       setRegistration(account.registrations.find((r) => r.eventSlug === event.slug) ?? null);
-      setAreas(list);
     } catch (err) {
       setError(message(err));
     }

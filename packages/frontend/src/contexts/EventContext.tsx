@@ -32,7 +32,7 @@ export function EventProvider({ children }: { children: ReactNode }) {
   // The editions ship with the site, so the answer is there for the first paint: no page is
   // drawn empty and then filled (#329).
   const known = useMemo(() => {
-    const events = getDataProvider().peekEvents?.();
+    const events = getDataProvider().now?.getEvents();
     return events ? resolve(events, eventSlug) : null;
   }, [eventSlug]);
 

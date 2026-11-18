@@ -1,22 +1,15 @@
-import type { ThematicArea } from '@sieamb/shared';
-import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PageHeader } from '../components/shared/PageHeader';
 import { useEvent } from '../contexts/EventContext';
+import { useContent } from '../hooks/useContent';
 import { useLocalized } from '../hooks/useLocale';
-import { getDataProvider } from '../services';
 import './ThematicAreasPage.css';
 
 export function ThematicAreasPage() {
   const { t } = useTranslation();
   const { event } = useEvent();
   const l = useLocalized();
-  const [areas, setAreas] = useState<ThematicArea[]>([]);
-
-  useEffect(() => {
-    if (!event) return;
-    void getDataProvider().getThematicAreas(event.id).then(setAreas);
-  }, [event]);
+  const areas = useContent('getThematicAreas', event?.id) ?? [];
 
   return (
     <>

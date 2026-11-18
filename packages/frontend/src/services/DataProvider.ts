@@ -14,22 +14,12 @@ import type {
   ThematicArea,
 } from '@sieamb/shared';
 
-/**
- * All frontend data access goes through this interface.
- * Implementations: StaticDataProvider (fixtures), SupabaseDataProvider
- * (direct client, Phase 0), ApiDataProvider (Express, Phase 1+).
- */
-export interface DataProvider {
+/** The reads of public content. */
+export interface ContentProvider {
   getSiteContent(): Promise<SiteContent>;
   getFounders(): Promise<Founder[]>;
 
   getEvents(): Promise<EventSummary[]>;
-  /**
-   * The editions, newest first, when they can be told without waiting (they ship with the site),
-   * so the first paint already has them (#329). A provider that has to ask leaves this out or
-   * answers `undefined`, and callers wait for `getEvents()`.
-   */
-  peekEvents?(): EventSummary[] | undefined;
   getEventBySlug(slug: string): Promise<EventSummary | null>;
   getCurrentEvent(): Promise<EventSummary>;
 
@@ -46,6 +36,28 @@ export interface DataProvider {
 
   getPublishedNews(eventId: string): Promise<NewsItem[]>;
   getNewsBySlug(eventId: string, slug: string): Promise<NewsItem | null>;
+}
+
+export type ContentRead = keyof ContentProvider;
+export type Content<K extends ContentRead> = Awaited<ReturnType<ContentProvider[K]>>;
+
+/** The same reads, answered without waiting. */
+export type ContentNow = {
+  [K in ContentRead]: (...args: Parameters<ContentProvider[K]>) => Content<K>;
+};
+
+/**
+ * All frontend data access goes through this interface.
+ * Implementations: StaticDataProvider (fixtures), SupabaseDataProvider
+ * (direct client, Phase 0), ApiDataProvider (Express, Phase 1+).
+ */
+export interface DataProvider extends ContentProvider {
+  /**
+   * Set when the content ships with the site and can be told without waiting, so the first
+   * paint already has it (#329, #331). A provider that has to ask leaves it out, and readers
+   * wait for the promises above. Pages read through `useContent`, which handles both.
+   */
+  readonly now?: ContentNow;
 
   createRegistration(eventId: string, input: RegistrationInput): Promise<Registration>;
 }

@@ -15,7 +15,7 @@ interface CurrentEvent {
  */
 export function useCurrentEvent(): CurrentEvent {
   const [state, setState] = useState<CurrentEvent>(() => {
-    const events = getDataProvider().peekEvents?.();
+    const events = getDataProvider().now?.getEvents();
     return events
       ? { current: events.find((e) => e.isCurrent) ?? null, settled: true }
       : { current: null, settled: false };

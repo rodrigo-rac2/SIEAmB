@@ -1,21 +1,14 @@
-import type { NewsItem } from '@sieamb/shared';
-import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NewsCard } from '../components/news/NewsCard';
 import { PageHeader } from '../components/shared/PageHeader';
 import { useEvent } from '../contexts/EventContext';
-import { getDataProvider } from '../services';
+import { useContent } from '../hooks/useContent';
 import { Loading } from '../components/shared/Loading';
 
 export function NewsListPage() {
   const { t } = useTranslation();
   const { event } = useEvent();
-  const [news, setNews] = useState<NewsItem[] | null>(null);
-
-  useEffect(() => {
-    if (!event) return;
-    void getDataProvider().getPublishedNews(event.id).then(setNews);
-  }, [event]);
+  const news = useContent('getPublishedNews', event?.id);
 
   if (!event) return null;
 
@@ -24,7 +17,7 @@ export function NewsListPage() {
       <PageHeader title={t('news.title')} />
       <section className="section">
         <div className="container">
-          {news === null ? (
+          {news === undefined ? (
             <Loading />
           ) : news.length === 0 ? (
             <p>{t('news.empty')}</p>
