@@ -133,16 +133,73 @@ describe('accounts switched off', () => {
     mount('/2027/', <TopBar />, auth({ enabled: false }));
     await screen.findByText(/2027/);
     expect(screen.queryByRole('link', { name: 'Entrar ou criar conta' })).not.toBeInTheDocument();
+    expect(screen.queryByTestId('topbar-account')).not.toBeInTheDocument();
   });
 });
 
 describe('top bar', () => {
-  it('offers Entrar when logged out and Minha área when logged in', async () => {
+  const openMenu = async () => {
+    const button = await screen.findByTestId('account-menu');
+    await userEvent.click(button);
+    return within(screen.getByRole('menu'));
+  };
+
+  it('keeps the first line as it was: dates, editions and languages; the account has a line of its own (#311)', async () => {
+    stubApi({ me: { body: account() } });
+    const view = mount('/2027/', <TopBar />, auth(LOGGED_IN));
+    await screen.findByTestId('account-menu');
+    const first = view.container.querySelector('.topbar__inner')!;
+    expect(within(first as HTMLElement).getByRole('link', { name: 'Edições Anteriores' })).toBeInTheDocument();
+    expect(within(first as HTMLElement).getAllByRole('button').length).toBe(4);
+    expect(within(first as HTMLElement).queryByTestId('account-menu')).not.toBeInTheDocument();
+    const second = screen.getByTestId('topbar-account');
+    expect(second).toContainElement(screen.getByTestId('account-menu'));
+    // The bell comes before the name.
+    const items = Array.from(second.children);
+    expect(items.at(-1)).toContainElement(screen.getByTestId('account-menu'));
+    expect(items).toHaveLength(2);
+  });
+
+  it('offers Entrar when logged out, and the first name with a menu when logged in', async () => {
     const { unmount } = mount('/2027/', <TopBar />);
-    expect(await screen.findByRole('link', { name: 'Entrar ou criar conta' })).toHaveAttribute('href', '/2027/conta/entrar');
+    const login = await screen.findByRole('link', { name: 'Entrar ou criar conta' });
+    expect(login).toHaveAttribute('href', '/2027/conta/entrar');
+    expect(screen.getByTestId('topbar-account')).toContainElement(login);
+    expect(screen.queryByTestId('account-menu')).not.toBeInTheDocument();
     unmount();
+    stubApi({ me: { body: account() } });
     mount('/2027/', <TopBar />, auth(LOGGED_IN));
-    expect(await screen.findByRole('link', { name: 'Minha área' })).toHaveAttribute('href', '/2027/minha-area');
+    const button = await screen.findByTestId('account-menu');
+    await waitFor(() => expect(button).toHaveTextContent('Maria'));
+    expect(button).not.toHaveTextContent('Clara');
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    const menu = await openMenu();
+    expect(button).toHaveAttribute('aria-expanded', 'true');
+    expect(menu.getByRole('menuitem', { name: 'Minha área' })).toHaveAttribute('href', '/2027/minha-area');
+    expect(menu.getByRole('menuitem', { name: 'Meus trabalhos' })).toHaveAttribute('href', '/2027/meus-trabalhos');
+    expect(menu.getAllByRole('menuitem').at(-1)).toHaveTextContent('Sair');
+  });
+
+  it('shows the e-mail on the button until the account has been read, or when it cannot be', async () => {
+    stubApi({ me: { status: 500, body: { error: 'server_error' } } });
+    mount('/2027/', <TopBar />, auth(LOGGED_IN));
+    expect(await screen.findByTestId('account-menu')).toHaveTextContent('maria@ufcg.edu.br');
+  });
+
+  it('closes with Escape, with a click outside, and when the button is pressed again', async () => {
+    stubApi({ me: { body: account() } });
+    mount('/2027/', <TopBar />, auth(LOGGED_IN));
+    await openMenu();
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    expect(screen.getByTestId('account-menu')).toHaveFocus();
+    await openMenu();
+    await userEvent.click(document.body);
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    await openMenu();
+    await userEvent.click(screen.getByTestId('account-menu'));
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
   });
 
   it.each([
@@ -150,48 +207,41 @@ describe('top bar', () => {
     ['the platform owner', { platformAdmin: true, slugs: [] }, true],
     ['someone with a role in another edition only', { platformAdmin: false, slugs: ['2025'] }, false],
     ['someone with no role', { platformAdmin: false, slugs: [] }, false],
-  ])('links to the panel beside Minha área for %s: %j (#252)', async (_name, panels, shown) => {
+  ])('has the panel in the menu for %s: %j (#252)', async (_name, panels, shown) => {
     const calls = stubApi({ me: { body: account({ panels }) } });
     mount('/2027/', <TopBar />, auth(LOGGED_IN));
-    await screen.findByRole('link', { name: 'Minha área' });
+    await screen.findByTestId('account-menu');
     await waitFor(() => expect(calls.some((c) => c.url === '/api/v1/account/me')).toBe(true));
+    await waitFor(() => expect(screen.getByTestId('account-menu')).toHaveTextContent('Maria'));
+    const menu = await openMenu();
     if (shown) {
-      const link = await screen.findByTestId('topbar-panel');
-      expect(link).toHaveTextContent('Painel');
+      const link = menu.getByTestId('topbar-panel');
+      expect(link).toHaveTextContent('Painel da organização');
       expect(link).toHaveAttribute('href', '/2027/painel');
     } else {
-      await new Promise((resolve) => setTimeout(resolve, 50));
-      expect(screen.queryByTestId('topbar-panel')).not.toBeInTheDocument();
+      expect(menu.queryByTestId('topbar-panel')).not.toBeInTheDocument();
     }
   });
 
-  it('has Sair as its last item when logged in, which logs out; and none when logged out (#253)', async () => {
+  it('logs out from the menu, and has no Sair when logged out (#253)', async () => {
     stubApi({ me: { body: account() } });
     const out = mount('/2027/', <TopBar />);
     await screen.findByRole('link', { name: 'Entrar ou criar conta' });
-    expect(screen.queryByRole('button', { name: 'Sair' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: 'Sair' })).not.toBeInTheDocument();
     out.unmount();
     const state = auth(LOGGED_IN);
-    const view = mount('/2027/', <TopBar />, state);
-    const leave = await screen.findByRole('button', { name: 'Sair' });
-    const items = Array.from(view.container.querySelectorAll('.topbar__actions > *'));
-    expect(items.at(-1)).toBe(leave);
-    await userEvent.click(leave);
+    mount('/2027/', <TopBar />, state);
+    const menu = await openMenu();
+    await userEvent.click(menu.getByRole('menuitem', { name: 'Sair' }));
     expect(state.signOut).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
   });
 
-  it('shows no panel link, and asks the server nothing, when logged out; nor when the account cannot be read', async () => {
+  it('asks the server nothing when logged out', async () => {
     const calls = stubApi({});
-    const out = mount('/2027/', <TopBar />);
+    mount('/2027/', <TopBar />);
     await screen.findByRole('link', { name: 'Entrar ou criar conta' });
     expect(calls.filter((c) => c.url.includes('/account/me'))).toEqual([]);
-    expect(screen.queryByTestId('topbar-panel')).not.toBeInTheDocument();
-    out.unmount();
-    stubApi({ me: { status: 500, body: { error: 'server_error' } } });
-    mount('/2027/', <TopBar />, auth(LOGGED_IN));
-    await screen.findByRole('link', { name: 'Minha área' });
-    await new Promise((resolve) => setTimeout(resolve, 50));
-    expect(screen.queryByTestId('topbar-panel')).not.toBeInTheDocument();
   });
 });
 

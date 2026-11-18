@@ -294,6 +294,7 @@
     "sentHint": "If the message does not arrive in a few minutes, check your spam folder or ask again.",
     "nav": {
       "login": "Log in or create account",
+      "menuOf": "Account menu of {{name}}",
       "myArea": "My area",
       "logout": "Log out"
     },

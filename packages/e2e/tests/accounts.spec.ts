@@ -163,9 +163,17 @@ test.describe('accounts @accounts', () => {
     await expect(page.getByTestId('registration-card')).toBeVisible();
     // Nothing scrolls sideways, on a phone least of all.
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
-    // Sair is in the top bar on every page (#253), and at the foot of Minha área: here, the top bar one.
+    // Sair is in the account menu of the top bar on every page (#253, #311), and at the foot of Minha
+    // área: here, the top bar one. The menu shows the first name and has no panel for an author.
+    await expect(page.getByTestId('account-menu')).toContainText('Conta');
+    await page.getByTestId('account-menu').click();
+    const menu = page.locator('.topbar').getByRole('menu');
+    await expect(menu.getByRole('menuitem')).toHaveText(['Minha área', 'Meus trabalhos', 'Sair']);
     await expect(page.getByTestId('topbar-panel')).toHaveCount(0);
-    await page.locator('.topbar').getByRole('button', { name: 'Sair' }).click();
+    await page.keyboard.press('Escape');
+    await expect(menu).toHaveCount(0);
+    await page.getByTestId('account-menu').click();
+    await menu.getByRole('menuitem', { name: 'Sair' }).click();
     await expect(page).toHaveURL(new RegExp(`/${EVENT}/conta/entrar`));
     await page.goto(`/${EVENT}/conta/confirmar?token_hash=${link.hashed_token}&type=signup`);
     await expect(page.getByRole('heading', { name: 'Este link não vale mais' })).toBeVisible();

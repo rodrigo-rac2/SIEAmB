@@ -64,11 +64,93 @@
   }
 }
 
-/* "Sair" reads like the links beside it, though it is a button. */
-.topbar__logout {
-  background: none;
-  border: 0;
-  padding: 0;
+/* The account's own line, under the event and the languages, at the right (#311). */
+.topbar__account {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--space-4);
+  padding-block: var(--space-1);
+  border-top: 1px solid rgb(255 255 255 / 18%);
+}
+
+.topbar__login,
+.account-menu__button {
+  color: inherit;
   font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.topbar__login:hover {
+  text-decoration: underline;
+}
+
+.account-menu {
+  position: relative;
+}
+
+.account-menu__button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1, 0.25rem);
+  max-width: 14rem;
+  padding: 2px var(--space-2);
+  border: 1px solid rgb(255 255 255 / 45%);
+  border-radius: var(--radius-sm);
+  background: none;
   cursor: pointer;
+}
+
+.account-menu__button:hover,
+.account-menu__button[aria-expanded='true'] {
+  background: rgb(255 255 255 / 14%);
+}
+
+.account-menu__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.account-menu__list {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 30;
+  min-width: 13rem;
+  display: grid;
+  padding: var(--space-1, 0.25rem);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 18%);
+}
+
+.account-menu__list a,
+.account-menu__logout {
+  display: block;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.account-menu__list a:hover,
+.account-menu__logout:hover,
+.account-menu__list a:focus-visible,
+.account-menu__logout:focus-visible {
+  background: var(--color-accent-light);
+}
+
+.account-menu__logout {
+  margin-top: var(--space-1, 0.25rem);
+  border-top: 1px solid var(--color-border);
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
 }

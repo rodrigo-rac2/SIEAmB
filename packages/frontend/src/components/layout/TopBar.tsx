@@ -7,6 +7,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useEvent } from '../../contexts/EventContext';
 import { showsEditionsLink } from '../../lib/nav';
 import { fetchAccount } from '../../services/account';
+import { AccountMenu } from './AccountMenu';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { NotificationsBell } from './NotificationsBell';
 import './TopBar.css';
@@ -18,18 +19,23 @@ export function TopBar() {
   const locale = useLocale();
   const l = useLocalized();
 
-  // Whoever may open the organisers' panel of this edition gets a link to it here, on every
-  // page (#252). The server decides again when the panel is opened; this only shows the door.
+  // Whoever may open the organisers' panel of this edition gets a link to it in the account menu,
+  // on every page (#252). The server decides again when the panel is opened; this only shows the door.
   const accessToken = auth.enabled ? auth.accessToken : null;
   const slug = event?.slug;
   const [panel, setPanel] = useState(false);
+  // The first name for the account menu (#311); the e-mail stands in until the account is read.
+  const [name, setName] = useState<string | null>(null);
   useEffect(() => {
     setPanel(false);
+    setName(null);
     if (!accessToken || !slug) return;
     let active = true;
     fetchAccount(accessToken)
       .then((account) => {
-        if (active) setPanel(Boolean(account.panels?.platformAdmin || account.panels?.slugs.includes(slug)));
+        if (!active) return;
+        setPanel(Boolean(account.panels?.platformAdmin || account.panels?.slugs.includes(slug)));
+        setName(account.user.fullName.trim().split(/\s+/)[0] || null);
       })
       .catch(() => undefined);
     return () => {
@@ -50,29 +56,29 @@ export function TopBar() {
               {t('nav.editions')}
             </Link>
           )}
-          {auth.enabled && event && !auth.loading && (
-            <Link
-              className="topbar__editions"
-              to={auth.accessToken ? `/${event.slug}/minha-area` : `/${event.slug}/conta/entrar`}
-            >
-              {auth.accessToken ? t('account.nav.myArea') : t('account.nav.login')}
-            </Link>
-          )}
-          {event && panel && (
-            <Link className="topbar__editions" to={`/${event.slug}/painel`} data-testid="topbar-panel" title={t('panel.title')}>
-              {t('panel.short')}
-            </Link>
-          )}
-          {event && <NotificationsBell slug={event.slug} />}
           <LanguageSwitcher />
-          {/* Right-most, on every page: out in one click (#253). */}
-          {auth.enabled && auth.accessToken && (
-            <button className="topbar__editions topbar__logout" type="button" onClick={() => void auth.signOut()}>
-              {t('account.nav.logout')}
-            </button>
-          )}
         </div>
       </div>
+      {/* The account has a line of its own, at the right, where accounts are on (#311). */}
+      {auth.enabled && event && !auth.loading && (
+        <div className="container topbar__account" data-testid="topbar-account">
+          {auth.accessToken ? (
+            <>
+              <NotificationsBell slug={event.slug} />
+              <AccountMenu
+                slug={event.slug}
+                name={name ?? auth.email ?? t('account.nav.myArea')}
+                panel={panel}
+                onSignOut={() => void auth.signOut()}
+              />
+            </>
+          ) : (
+            <Link className="topbar__login" to={`/${event.slug}/conta/entrar`}>
+              {t('account.nav.login')}
+            </Link>
+          )}
+        </div>
+      )}
     </div>
   );
 }
