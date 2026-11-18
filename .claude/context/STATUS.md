@@ -1,116 +1,131 @@
 # SIEAmB — Current Status
 
-> Last updated: 2026-11-16, evening (update this file whenever meaningful progress happens)
-> Daily log: `.claude/log/<year>-w<week>.md` · Backlog: GitHub Issues by milestone (commands: `/log-daily`, `/pending-items`)
+> Last updated: 2026-11-17, night. Update this file whenever something meaningful changes.
+> Decisions: `docs/adr/` (001 to 009). Session log: `.claude/context/HISTORY.md`. Backlog: GitHub Issues by milestone.
+> The long narrative this file had until 2026-11-17 is kept, word for word, at the end of HISTORY.md.
 
-## Where we are
+## In short
 
-**Production site live at https://sieamb.org** (Vercel, since 2026-10-10). `develop` → https://dev.sieamb.org, every PR gets a preview URL. The old GitHub Pages URL redirects (branch `gh-pages`).
+The II SIEAmB site is live at https://sieamb.org with the public pages, registration and payment. The submission system (accounts, papers, the organisers' panel, announcements) is finished and tested on https://dev.sieamb.org and **waits for Rodrigo's go to reach production**. That release is prepared as the draft pull request **#274**, with a production backup taken on 2026-11-17.
 
-- **Backlog = GitHub Issues by milestone**: https://github.com/rodrigo-rac2/SIEAmB/milestones. Nearest: **Edital (23 Oct 2026)** with #11 editais page, #37 thematic areas, #7 fees, #6 slug year, #12 committee asks. Then **Registrations + submissions open (10 Nov 2026)**: #13 Supabase, #14 registration persistence + e-mail, #15 admin, #16 payment decision by 24/10, #17 submissions MVP, #18 Resend.
-- **Hard date**: registrations open on **2026-11-10** (Rodrigo's commitment to Najara; Even3 fallback for payment like 2025).
-- **Process**: `feature/<issue>-<slug>` → PR to `develop` (`Closes #N`) → release PR `develop → main`. Required checks: `quality`, `e2e-smoke`, `e2e-preview` (Playwright against the Vercel deployment), `branch-policy` (main only from develop/hotfix/*). Rodrigo admin-merges while alone; Samuel's invite still pending.
-- **Every change goes through an issue (rule since 2026-10-11)**, even one opened and closed in the same sitting; multi-topic requests are split. Closed issues are the resolution log.
-- **Translations (2026-10-12)**: UI strings were already complete; fixture content is now `LocalizedText` (`string | {pt-BR, en?, es?, zh-CN?}`, resolved by `localize()` / `useLocalized()` with pt-BR fallback). Venue, important dates, team groups, fee lots, areas, news, bios, founder affiliations and about texts carry en/es/zh-CN (machine-drafted, zh-CN under #23). A Playwright guard (`i18n-leaks.spec.ts`) fails on Portuguese showing up in the other languages. Language switcher shows flag + PT/EN/ES/中文 with full contrast.
-- **CI (2026-10-12)**: `e2e-preview` no longer depends on the Vercel GitHub app. The build emits `/version.json` with the commit SHA; the workflow runs on `pull_request` and pushes to develop/main, derives the URL from the branch, waits until it serves the head SHA, then runs Playwright. The Vercel app stopped posting deployments/checks on 12 Oct (and one build died with `git_info_fail`); builds still need it. Vercel's automatic DDoS mitigation challenged sieamb.org for ~20 min after release #92 because of our own test traffic (#93 lightened the guard).
-- **Applied on 2026-10-10 from Najara's input**: March 2027 dates, online venue (YouTube), committee schedule, About page (general text + 2025 text + idealizadores), team page per edition with photos/bios/groups (Comitê Científico, Revisores, Mídias; 2025 keeps its team + palestrantes), Equipe in the menu, editions link in the top bar.
-- **Najara's 11 Oct batch applied**: Lattes/ORCID for Viviane, Thays, Laura, Luana, Lourdes; affiliations for Pollyanna, Luana, Zhou Lin, Thays; hero reads "24, 25 e 26 de março de 2027" (`formatDateList`). Slug is `/2027/` with `/2026/` redirecting; lots 10/11→01/01 and 02/01→20/03; programme "dezembro de 2026"; Laura's photo confirmed.
-- **Database (2026-10-14, #13)**: two free Supabase projects in sa-east-1, `sieamb-prod` (ref lmqprlysncmnozjrmrsb, Vercel Production) and `sieamb-dev` (ref tasvpjomfncmrpdosqwm, Vercel Preview + Development, local, CI). `packages/db` holds the Prisma 7 schema (Phase 1 tables: events, content tables, users, event_members, news, fee_tiers, registrations, audit_logs), the init migration with the hand-written companions (one-current-event index, `auth.users → public.users` trigger, RLS with public-read and own-row policies, grants) and a seed that upserts the two events from the frontend fixtures. Migration applied and seeded on both projects. Runtime uses the transaction pooler (`DATABASE_URL`), migrations the session pooler (`DIRECT_URL`); the direct `db.<ref>` host is IPv6-only so CI can't use it. Secrets: `.env.local` is Rodrigo's vault (prefixed names), `.env` the generated local copy, Vercel env vars per environment, GitHub secrets `SUPABASE_{PROD,DEV}_*`. Workflows: `db-backup.yml` (weekly pg_dump of prod, encrypted with the `BACKUP_PASSPHRASE` secret and kept in the `db-backups` release, restore steps in `docs/db-backups.md`, #145), `db-keepalive.yml` (REST reads on both projects every 4 hours, #112) and `db-watchdog.yml` (every 6 hours restores a paused project through the Management API and opens an issue, needs `SUPABASE_ACCESS_TOKEN`, #144). Supabase never defines how much activity prevents pausing, so the watchdog is the real guarantee. Projects were created with "automatically expose new tables" OFF, so every new table needs explicit grants in its migration. **Browser-side inserts (#149)**: Prisma's `@default(uuid())` is client-side and never runs through PostgREST, so a table the anon role inserts into needs `DEFAULT gen_random_uuid()` in the database (`pre_registrations` uses `dbgenerated`). The `schema.test.ts` guard allows exactly one browser write grant: `INSERT` on `pre_registrations`.
-- **Team page (2026-10-20, #118)**: five new reviewers from Najara's Drive batch (Marconi, Alyne, Ellora, Mayra, Anna Rebeca) live on sieamb.org; Mayra's photo still pending (card shows her initial, named exception in the fixture test). Niklas left the reviewers (#102) and stays in the Comitê Científico.
-- **Payments (2026-11-05, #16, #158, #160)**: **live in production since 2026-11-16 (#166)**, card and boleto, no Pix; sandbox on dev. Mercado Pago account under the empresa júnior, developer app `SIEAmB Inscricoes` on Checkout Pro with the **API de Orders** (the panel flags the Preferences API as "será descontinuada em breve"; `docs/IMPLEMENTATION_PLAN.md` §7 still describes Preferences and needs the rewrite).
-  - **Server** (first server code in the repo): Vercel functions in `/api/v1/payments/*` as thin entry points, logic and tests in the `packages/server` workspace. `POST orders` (body `{token}`) looks up the fee on the server from the same fixtures the fee table shows (`feeTiers.json`), creates the order (`POST /v1/orders`, idempotency key = our payment id) and answers with the `checkout_url`; a second call returns the same open order; an order older than 23 h is checked and cancelled at Mercado Pago before a new one is opened. `POST webhook/mercadopago` checks `x-signature`, reads the order back with `GET /v1/orders/{id}` and records the status. `GET status?p=<payment id>` serves the return page and re-reads an open order, so the page does not depend on the notification.
-  - **Database** (migration `20261105230000_payments`, on sieamb-dev since 5 Nov and on sieamb-prod since 16 Nov, after a fresh backup): `payments` (service_role only, RLS on with no policy, one open payment per pre-registration by a partial unique index) and `pre_registrations.pay_token` (uuid, the handle that starts a payment; generated by the browser on insert because the anon role cannot read the row back). The frontend only sends it when `VITE_PAYMENTS_ENABLED=true`.
-  - **Screens** (behind `VITE_PAYMENTS_ENABLED`, on for Vercel Preview and Production): pay button after the form, `/:event/inscricoes/pagar?t=<pay token>` for paying later, `/:event/inscricoes/pagamento?p=<payment id>` as the return page.
-  - **Vercel env**: Preview has the sandbox `MP_ACCESS_TOKEN` and `MP_WEBHOOK_SECRET`, `VITE_PAYMENTS_ENABLED=true` and `PAYMENTS_NOW=2026-11-12T12:00:00-03:00` (moves only the fee-lookup clock so lot 1 can be tried before 10 Nov; ignored in production; **remove it after 10 Nov**). Production has the production `MP_ACCESS_TOKEN` and `MP_WEBHOOK_SECRET` and `VITE_PAYMENTS_ENABLED=true` since 16 Nov (release #169). `.env.local` holds production and test credentials, both webhook secrets and the test seller and buyer (`MP_*`, `MP_TEST_*`).
-  - **Confirmed against real sandbox payments on 2026-11-05**: the signature recipe is HMAC-SHA256 over `id:<data.id lower-cased>;request-id:<x-request-id>;ts:<ts>;` with the webhook secret (the lower-casing is not in the docs pages we read); sandbox payments do send `order.processed` notifications, within seconds; the Vercel firewall lets Mercado Pago through; test credentials work with the Orders API although its reference says otherwise; an approved card payment is `processed` / `accredited`; Mercado Pago sends the buyer back to our return URL with its own `status=` query, which we ignore. The checkout answers **403 to a headless browser**, so an automated test can go as far as the redirect, not through the payment.
-  - **Boleto (tested 2026-11-05 on dev)**: the checkout asks for CPF, name and address and generates the boleto; Mercado Pago sends `order.action_required` (`action_required` / `waiting_payment`, method `bolbradesco`) and the payment is recorded as PENDING, which the return page shows as "Pagamento em processamento". A boleto actually being paid could not be tried in the sandbox.
-  - **Go-live checks (2026-11-16)**: on sieamb.org the order endpoint answers 404 to an unknown pay token, the status endpoint 404 to an unknown payment, the webhook 401 to a bad signature, and the pay page renders. The production token belongs to an active MLB account.
-  - **Real payments (2026-11-16)**: first approved boleto (R$ 30, Rodrigo's test, later deleted from the database and still to be refunded, order id on #166) and first approved card (R$ 70, Rodrigo's own registration, still to be refunded). Three cards were refused as high risk and one went to manual review before the order started carrying the buyer's name without accents, the CPF and a single instalment (#191, #194, #198). The first real registrant paid the same evening, after the first reminder. Decisions in `docs/adr/004-payments-mercado-pago.md`.
-  - **E-mails and reminders (2026-11-16, #185, #187, #195, #201)**: live in production. Every e-mail is a row in `payment_emails` first (unique `dedupe_key`, claimed by compare-and-swap, six attempts), delivered by the request or by the background job `POST /api/v1/payments/emails/deliver` that the database of each site starts every 10 minutes (`pg_cron` + `pg_net`, migration `20261118010000_background_job_schedule`, #273; on dev since 2026-11-17, **on production only after that migration runs and the two Vault secrets `sieamb_site_url` and `sieamb_cron_secret` are set there**). GitHub Actions (`email-sweep.yml`) is an hourly second line: on `*/10` it ran about three times a day. Kinds: registration received (with the pay link), payment processing, confirmed, failed, reminder. Reminders are on (`REMINDERS_ENABLED=true` on Vercel Production): 1 and 3 days after registering, then 7 days and 1 day before the end of each fee lot, 08:00 to 20:00 only. Sender is Resend over SMTP as `inscricoes@sieamb.org`, replies go to the committee's Gmail, and Cloudflare Email Routing forwards mail sent to that address. Texts in four languages. Migrations `20261116160000_payment_emails`, `20261116170000_payment_email_reminders`, `20261116180000_payment_email_received` on both databases. Decisions in `docs/adr/005-emails-and-reminders.md`.
-  - **Test rows deleted (2026-11-16)**: four registrations with a plus sign in the e-mail were erased by hand from sieamb-prod, copy kept in the git-ignored `.env.backups/`. Soft delete is proposed in `docs/adr/006-soft-delete.md` (#204).
-  - **Not done**: the refund of the two real test payments (#166); a boleto paid after the one-day order expiry was never verified (#167); the Vercel team is still on Hobby (#168, Rodrigo decided to upgrade); **no Pix** on the account (cards, boleto and account money only, a Pix key could not be created on 2026-11-05); the fee table only covers ESTUDANTE_GRADUACAO, ESTUDANTE_POS and PROFISSIONAL, any other category answers "no fee available"; people who pre-registered before payments existed need their pay link sent to them (every row has a `pay_token`); committee list of who paid (#15); refunds are recorded when Mercado Pago reports them but there is no screen to issue one; no empenho or exemption flow; no automated check of a real inbox (testmail.app or MailSlurp, not set up); Mercado Pago's approval advice not done (Device ID script, item details, integration quality); `PAYMENTS_NOW` should be removed from Vercel Preview; test rows named `TESTE PAGAMENTO (#160)` are in sieamb-dev.
-- **Accounts (2026-11-17, #208, #209, #210)**: **on dev only**, slice 1 of the submission system. Create account (name and e-mail, the password is chosen after the link in the e-mail), log in, forgotten password, `/:event/minha-area` with the registration status, pay link and profile. A registration with the same confirmed e-mail is linked to the account; one under another e-mail with the same CPF or passport is offered as "is this yours?" and linked by a link sent to the registration's e-mail. The registration form is filled from the account and stops a CPF already registered under another e-mail. Server: one function `api/v1/account.ts` (rewrite in `vercel.json`), logic in `packages/server/src/account`. Switched by `VITE_ACCOUNTS_ENABLED` and `ACCOUNTS_ENABLED`, set on Vercel Preview only. Migration `20261117010000_accounts` (`pre_registrations.user_id`, `registration_link_requests`, `rate_limit_hits`, `hit_rate_limit()`) is on sieamb-dev only. **To release to production**: apply the migration to sieamb-prod after a backup, set both flags on Vercel Production, redeploy. Not built: the organisers' screen to approve a link request when the person lost the old inbox, merging duplicate registrations, turning off public sign-ups in the Supabase dashboard. Decisions in `docs/adr/007-accounts.md`. Next slices: sending papers, organisation area, notifications and announcements.
-- **Submission system, slices 2 to 4 (2026-11-17, #216, #217, #219, #221)**: **on dev only**, behind the same two switches as accounts. Built with the edital's values, without waiting for the committee's answers.
-  - **Papers**: `/:event/meus-trabalhos` and the form; rules in `submissionRules.json` (window 15/11/2026 to 18/01/2027, 5 authors, 3 as main and 5 as co-author, 12 to 15 and 4 to 6 pages, PDF or Word up to 10 MB), enforced by `packages/server/src/submissions`. Files in the private Supabase Storage bucket `submissions` (created by the server on first use), uploaded through a one-time link and downloaded through a one-minute link. One file with the authors' names; no blind version.
-  - **Organisers' panel**: `/:event/painel` (inscrições, trabalhos, pessoas e papéis, comunicados, pedidos), server in `packages/server/src/admin`. Roles `ADMIN` and `ORGANIZER` per edition, platform administrators everywhere. Manual registration, manual status with reason, soft delete and restore of registrations (#204), role invitations for addresses without an account, approval of link requests, audit log.
-  - **Notifications and announcements**: bell in the top bar, `/:event/notificacoes`, announcements to a group from the panel. General outbox `outbox_emails`, delivered by the same background job (40 per run).
-  - **Functions**: `api/v1/account.ts`, `submissions.ts`, `admin.ts`, each reached by a rewrite in `vercel.json` (9 functions in all; the Hobby plan allows 12).
-  - **Migrations on sieamb-dev only**: `20261117010000_accounts`, `20261117020000_submissions`, `20261117030000_organisation`, `20261117040000_announcements`.
-  - **To release to production**: backup, the four migrations on sieamb-prod, `VITE_ACCOUNTS_ENABLED` and `ACCOUNTS_ENABLED` on Vercel Production, redeploy, give the first Administrador role (an invitation row for the address, or `users.is_platform_admin`), and upgrade the Resend plan before announcements are used (the free plan allows about 100 e-mails a day).
-  - **Not built**: the review form (scores, recommendation, opinions), results, an unsubscribe link, merging two registrations of the same person (delete one instead).
-  - **Changes asked by the committee and Rodrigo on 2026-11-17 (#230 to #233, #236)**, on dev only:
-    - **Any author sends a paper** (#230): one ordered author list, no main author or co-author; whoever sends is in the list in any place; any listed author with an account changes or withdraws; the edital's limits are counted by place in the list (3 as first author, 5 elsewhere).
-    - **Name suggestions** (#231): typing an author's name suggests people already in the system, with a masked e-mail; the page never gets the address (`search_people`, sealed reference).
-    - **Review is not blind, one reviewer or more** (#232): organisers assign reviewers per paper in the panel; reviewers have `/:event/avaliacoes` with their papers and the file. A paper with a reviewer is "em avaliação" and locked for its authors. The review form is not built.
-    - **The closing date does not lock** (#233): 18/01/2027 is only what the site shows (`locksAtClose: false`); the committee will postpone it and announce later. Until then the site says nothing about an extension.
-    - **Close and reopen by button** (#236): organisers close submissions for the edition in the papers tab, and reopen them.
-    - **Migrations on sieamb-dev only, added**: `20261117050000_people_search`, `20261117051000_people_search_institution`, `20261117060000_submission_reviewers`, `20261117061000_submission_reviewers_created_at`, `20261117070000_submissions_closed`.
-  - **Feedback round of 2026-11-17 (Rodrigo and Najara testing on dev)**, all on dev only:
-    - **Only the sender changes or withdraws a paper** (#250); the other authors see and download it. Administrators and the platform owner change or withdraw any paper at any time, from the panel's papers tab; an Organizador does not (#265), and does not see the administrators in "Pessoas e papéis" (#264). "Pessoas e papéis" is one list of every account with its roles (#268), where nobody is shown a role above their own (#275): an Organizador gives Avaliador, an Administrador also Organizador, only the owner (`users.is_platform_admin`) gives Administrador. Administrators and the owner correct another person's name and institution (#269) and send them a new-password link (#270), for people below them. **Before production: mark the owner's account with `is_platform_admin`, or nobody can give Administrador.** This replaced the "any listed author can change" of #230 the same day.
-    - **Ways in** (#244, #246, #252, #253): the home page has "Enviar trabalho" beside "Fazer inscrição"; the top bar has "Entrar ou criar conta", and when logged in "Minha área", "Painel" (for who may open it) and "Sair" at the far right. Minha área opens with the papers ("Enviar novo trabalho"), and the not-registered reminder is at the bottom, as it is in Meus trabalhos (#257). Someone who creates an account on the way to a page continues to it after the e-mail link and the password (the page rides on the link, checked by the server).
-    - **Fixes found by testing**: dates from the database were shown three hours late in the browser (#239, the server now marks them as UTC); the paper form was wider than a phone screen and the author row controls were tiny (#241); a reviewer was not told when losing the role took them off papers (#242); a cancelled test run left its data on dev (#248, the workflow now always cleans up); test runs e-mailed and notified the real organisers on dev, 168 e-mails in one day (#255, what is about test data now stays among test accounts).
-    - The team's guide is the "Guia de teste" tab of the shared proposal document.
-  - Decisions in `docs/adr/008-submissions-and-organisation.md` (and the note at the top of ADR-003).
-- **Still waiting on the committee**: II SIEAmB presentation text (with Prof. Viviane for approval, #12), edital text (#11), 2027 thematic areas (#37), Rodrigo's own team entry (#12), Mayra's photo (#12). **Waiting on Rodrigo**: Supabase/Resend accounts (#13, #14, #15, #18), the Mercado Pago Pix key (#16), the refund of the test payments (#166) and the Vercel upgrade (#168). **Waiting on the committee too**: answers to the nine open questions of the submission system proposal (shared document, private until Rodrigo shares it; submissions are not built and the edital says they opened on 15/11/2026), `.env.local` template ready.
+## What is where
 
-## What works today
+| | Production, https://sieamb.org (`main`) | Dev, https://dev.sieamb.org (`develop`) |
+|---|---|---|
+| Public pages in four languages, two editions | Live | Live |
+| Registration form, saved to the database | Live | Live |
+| Payment by card and boleto (Mercado Pago), return page, pay later link | Live since 2026-11-16 | Sandbox |
+| E-mails: registration received, payment processing, confirmed, failed, reminders | Live since 2026-11-16 | Live |
+| Accounts, Minha área | Off | Live since 2026-11-17 |
+| Papers: send, change, withdraw, Meus trabalhos | Off | Live |
+| Reviewers: chosen per paper, "Trabalhos para avaliar" | Off | Live |
+| Organisers' panel: registrations, papers, people and roles, announcements, requests | Off | Live |
+| Notices in the site (bell) | Off | Live |
+| Background job on time, every 10 minutes | No: GitHub starts it, a few times a day (#273) | Yes: the database starts it |
 
-- Monorepo (npm workspaces): `packages/shared`, `packages/frontend`, `packages/e2e`, `packages/db`, `packages/server` (logic behind the Vercel functions in `/api`)
-- All public pages in 4 languages (pt-BR default forced, en, es, zh-CN), UI strings and fixture content alike — flag + code buttons in the topbar, preference in localStorage (`sieamb-locale`)
-- Multi-event routing: `/2027/` (current II SIEAmB, 24–26 Mar 2027, slug may become `/2027/` per #6), `/2025/` (archived recap with team, speakers, anais), root redirects to current event (`isCurrent` in `events.json`)
-- **Per-edition themes** (ADR-001): each event's optional `theme` overrides the CSS tokens for that edition only; archived editions keep their palette forever. Current-edition identity goes in the event `theme`, tokens.css is just the neutral fallback. 2025 has a demo blue theme as proof
-- Pre-registration form with CPF/passport validation (zod schemas in `@sieamb/shared`) and LGPD consent, persisted to `pre_registrations` (#149). Read the rows with the service role key (Supabase Table Editor or REST); the e2e form submit runs on local/preview only, never on production
-- News (avisos) list + detail with markdown
-- Tests: Vitest + RTL on the fixtures (shared + frontend, incl. a locale-completeness test over every content string) + Playwright (desktop + mobile; smoke, `@deployed`, Portuguese-leak guard) run locally in CI and against every Vercel deployment, all green
-- SPA routing on Vercel via `rewrites` in `vercel.json`
+"Off" means the two switches `VITE_ACCOUNTS_ENABLED` and `ACCOUNTS_ENABLED` are not set on Vercel Production and the migrations `20261117010000` to `20261118010000` have not run on `sieamb-prod`.
 
-## What is placeholder / fake
+## Live in production
 
-- **Visual identity 2026: APPLIED** (palette, Garet/Lora fonts, logo, lockup hero, cracked-earth texture) via the event record + `public/brand/2027/`. tokens.css remains the neutral fallback. Still open: 2026 theme/dates text from the committee (the design mock still shows 2025's), optional SVG exports
-- **Still placeholder**: fee lot dates and category labels (#7), thematic areas for 2027 (#37), edition presentation text for 2027 (`aboutMd` null → "em breve"), editais (#11), news items, sponsors logos, contact e-mail (fixtures say sieambufcg@gmail.com from the old site). Everything else on the public pages is real committee content
-- **Pre-registration persists since 2026-10-25 (#149)**: the form inserts anonymously into `pre_registrations` (Supabase, RLS insert-only for anon, no reads; service role exports). No password, no account, no confirmation e-mail yet (#14, #18). `VITE_DATA_PROVIDER=supabase` on Vercel (all environments); a local build without it still fakes success. Submissions before 25 Oct were lost
-- **zh-CN translations are machine-drafted** — need native-speaker review before the event
+- **Site**: `/2027/` (current, 24 to 26 March 2027, online) and `/2025/` (archive); the root goes to the current edition; `/2026/` redirects. pt-BR by default, en, es, zh-CN. Per-edition theme (ADR-001).
+- **Content** is files in `packages/frontend/src/data/`: dates, fees (three categories, two lots), thematic areas, team, editais, news, presentation text. All real committee content.
+- **Registration**: the form writes to `pre_registrations` (anonymous insert only, nobody reads it from the browser).
+- **Payment** (ADR-004): Mercado Pago Checkout Pro with the Orders API, account held by the Empresa Júnior de Engenharia Florestal - UFCG. Card and boleto, no Pix. Fee looked up on the server from the same table the page shows.
+- **E-mails** (ADR-005): Resend over SMTP as `inscricoes@sieamb.org`, replies to the committee's Gmail. Every e-mail is first a row in an outbox, sent at once and retried by the background job. Reminders are on: 1 and 3 days after registering, then 7 days and 1 day before the end of each fee lot, 08:00 to 20:00 only. The Resend plan was upgraded on 2026-11-17.
 
-## Budget reality check (2026-09-13)
+## On dev, waiting for the release
 
-Professora Viviane (project lead) said there is **no budget for ~R$250/month**. Her Joomla suggestion was evaluated and rejected (legacy install, no registration/payment components, unsafe for CPF/payments — details kept off the public repo). The answer is the **R$0/month architecture**, which the stack already supports:
+Decisions in ADR-007 (accounts) and ADR-008 (the rest).
 
-- Vercel free (frontend) + Supabase free (Postgres 500 MB, Auth; weekly `pg_dump` GitHub Action replaces PITR) + Express on **AWS Lambda Function URL** (always-free tier; App Runner dropped — it bills idle provisioned memory) + Cloudflare R2 free 10 GB for all PDFs (submissions + anais) + Resend free for email (needs the domain).
-- **Peer review designed against Brazilian practice (ADR-003, 2026-09-13)**: research report in `docs/research/peer-review-brazilian-events.md` (JEMS, Even3, Doity, Galoá, SIGEventos, ANPAD, real forms). One anonymised PDF at submission; weighted 1–5 criteria form + gate + confidence + 4-option recommendation + comments to authors/committee; desk check; divergence ⇒ 3rd reviewer; committee decides oral/pôster; no rebuttal; ACCEPTED_PENDING_REGISTRATION; reviewer certificates.
-- **Roles redesigned (ADR-002, 2026-09-13)**: per-edition memberships (`event_members`) with ADMIN, SCIENTIFIC_CHAIR, AREA_CHAIR, REVIEWER, EDITOR, FINANCE, STAFF + `is_platform_admin` flag; participant/author/registered are derived states. Conflict-of-interest rule and e-mail-based certificates for co-authors added to the plan.
-- Payments with **no monthly fee**: Mercado Pago Checkout Pro / links de pagamento (per-transaction fees only; webhooks retry, so cold starts are fine). Alternative with even less build: Even3 for registration+payment (per-ticket fee, used by the 1st edition), our site stays the public face.
-- Trade-offs: weekly instead of point-in-time backups, cold starts on the API, free-tier pausing mitigated by a scheduled ping.
-- Remaining costs: domain ~R$40/yr + Samuel's bolsa (committee's call).
+- **Accounts**: create with name and e-mail, choose the password after the link in the e-mail, log in, forgotten password, Minha área with the papers first, the registration, the pay link and the profile. A registration with the same confirmed e-mail joins the account; one under another e-mail with the same CPF or passport is offered and joined by a link sent to that e-mail. Signing up on the way to a page continues to it. Password fields have a show and hide button.
+- **Papers**: rules in `submissionRules.json` (window 15/11/2026 to 18/01/2027, up to 5 authors, 3 papers as first author and 5 in any other place, 12 to 15 pages for an article and 4 to 6 for an expanded abstract, PDF or Word up to 10 MB). Authors are one ordered list with name and e-mail; any of them sends the paper; typing a name suggests people already in the system with the e-mail masked. Only whoever sent it changes or withdraws it; the other authors see and download it. The closing date is shown and does not lock; organisers close and reopen by a button.
+- **Review**: not blind. Organisers choose one reviewer or more per paper, never one of its authors. A paper with a reviewer is "em avaliação" and locked for its sender. The reviewer has `/:event/avaliacoes` with the file. **The review form is not built.**
+- **Panel** `/:event/painel`: registrations (list, search, spreadsheet, manual registration, manual status with a reason, soft delete and restore, reminders one by one or to everyone who owes), papers (authors and their registration, reviewers, file, close and reopen), people and roles, announcements, requests to join a registration to an account. Every action is in `audit_logs`. Whatever is being processed shades its line and says "Processando…".
+- **Announcements** to everyone, the registered, the authors, the reviewers or the organisers: recorded, shown in the bell, and e-mailed in the same click for up to 40 seconds, the rest by the background job.
+- **Notices in the site**: bell in the top bar and `/:event/notificacoes`.
 
-## Next steps
+### Who may do what
 
-The backlog is GitHub Issues, ordered by milestone: https://github.com/rodrigo-rac2/SIEAmB/milestones
+| | Dono(a) do site | Administrador | Organizador | Avaliador |
+|---|---|---|---|---|
+| In the database | `users.is_platform_admin` | `event_members` `ADMIN` | `ORGANIZER` | `REVIEWER` |
+| Opens the panel | Yes | Yes | Yes | No |
+| Gives and takes roles | All three | Organizador, Avaliador | Avaliador | None |
+| Registrations: manual, status, delete, see CPF | Yes | Yes | Sees the list, no documents | No |
+| Changes or withdraws someone's paper | Yes | Yes | No | No |
+| Chooses reviewers, closes submissions, sends announcements | Yes | Yes | Yes | No |
+| Corrects another person's name and institution, sends a new-password e-mail | Anyone | People below them | No | No |
+| Changes someone's e-mail or CPF, types a password for them | Yes | No | No | No |
 
-**Payments went live on 2026-11-16** (#166, release #169), six days after the planned opening. In this order:
+Nobody is shown a role above their own. Roles given to an address without an account wait for that account.
 
-1. **One real low-value payment and its refund** (Rodrigo, #166). Until then the production webhook secret is unchecked.
-2. **Upgrade the Vercel team to Pro** (#168).
-3. **Send the pay link to everyone who pre-registered before payments existed** (11 rows on 16 Nov). The link is `/:event/inscricoes/pagar?t=<pay_token>`. Nobody has received one.
-4. **Boleto validity** (#167): orders expire after one day; check that a boleto paid later is credited, lengthen the validity if not.
-5. **Pix key** on the Mercado Pago account (#16).
-6. **Committee list of who paid** (#15). A CSV export covers the first days if the screen is not ready.
-7. **Confirmation e-mail** (#18, #14). Blocked on the Resend key (`RESEND_API_KEY` is empty in `.env.local`).
-8. **Submissions** (#17): no plan yet, a call for Rodrigo and the committee.
+## The release to production
 
-After launch: remove `PAYMENTS_NOW` from Vercel Preview (10 Nov has passed); accounts (#14); a way to issue refunds; the empenho and exemption flows; the payment decision ADR (#16 checklist) and the `docs/IMPLEMENTATION_PLAN.md` §7 rewrite for the Orders API; an automated test up to the checkout redirect.
+Prepared, not done. Rodrigo chose "prepare only" on 2026-11-17. The steps, in order, are in the draft pull request **#274**:
 
-Milestones after the opening: **Peer review (Jan-Mar 2027)** #21, **Event (24-26 Mar 2027)** #22 certificates/anais, #23 zh-CN review (no milestone). Still open from the Edital milestone: #132 presentation text, #12 committee asks.
+1. Backup of `sieamb-prod` (taken on 2026-11-17, label `before-submissions-release`; take a new one if days have passed).
+2. Ten migrations, `20261117010000_accounts` to `20261118010000_background_job_schedule`. They only add.
+3. The private storage bucket `submissions`.
+4. The two Vault secrets `sieamb_site_url` and `sieamb_cron_secret` on `sieamb-prod`, so the 10-minute job has something to call.
+5. `VITE_ACCOUNTS_ENABLED` and `ACCOUNTS_ENABLED` on Vercel Production.
+6. Merge, deploy, check the live site without writing test data.
+7. Rodrigo creates his account on sieamb.org and it is marked `is_platform_admin`. Without an owner nobody can give Administrador.
+8. As owner, Rodrigo gives the roles by e-mail in "Pessoas e papéis": Najara Administrador, Thays Organizador, the reviewers Avaliador. Each person creates their own account with that address. No CPF and no temporary password are needed.
 
-## External dependencies to kick off early
+The 43 issues finished on dev close when that pull request reaches `main`.
 
-- **Domain decided 2026-10-10: `sieamb.org`** (free as of 10/10; register at Cloudflare Registrar, Rodrigo's account). `sieamb.ufcg.edu.br` stays an optional STI ask
-- Mercado Pago account under the empresa júnior CNPJ (open; developer app created 2026-11-05, see Payments above; money flows to them)
-- ISSN application via IBICT for the anais (not started, slow process)
-- Design identity (in progress by the event's design team)
+## Waiting on Rodrigo
+
+- The go for the release above.
+- One real low-value payment and its refund, and sending the pay link to the people who registered before payments existed (#166). The R$ 30 boleto test and the R$ 70 card test are still to be refunded.
+- A boleto paid after its one-day order expires: is it credited? (#167)
+- The Vercel plan: Hobby forbids commercial use and caps functions at 12; we use 8 (#168).
+- A Pix key on the Mercado Pago account.
+- To confirm, from the hand-over checklist (#229): the edital's limits counted by place in the author list; a paper with a reviewer locked for its sender; "Retirar" taken from organisers together with "Alterar"; one manual reminder per person per day; registering with a CPF does not copy it to the account; no unsubscribe link in announcements and reminders.
+- When the committee announces the new schedule: change `closesAt` in `submissionRules.json`.
+- Remove `PAYMENTS_NOW` from Vercel Preview: it was for trying lot 1 before 10 November.
+- His own entry on the team page (#12).
+
+## Not built
+
+- The review form (criteria, recommendation, opinions), the committee's decision and results, reviewer certificates (#21).
+- Certificates and anais (#22); the ISSN application has not started.
+- A screen to issue refunds; the empenho flow; merging two registrations of the same person.
+- Knowing when Resend drops an e-mail it had accepted (#261).
+- An unsubscribe link.
+- A native review of the zh-CN texts, which are machine-drafted (#23).
+- The programme: the home page card says "Programação em breve".
+
+## How it runs
+
+Full record in `docs/adr/009-runtime-architecture.md`.
+
+- **Vercel** (team `sieamb`, project `sieamb`, Hobby): `main` is production, `develop` is dev, every pull request gets a preview. Eight functions under `api/v1/`, logic and tests in `packages/server`.
+- **Supabase**, two free projects in sa-east-1: `sieamb-prod` (ref `lmqprlysncmnozjrmrsb`) and `sieamb-dev` (ref `tasvpjomfncmrpdosqwm`, shared by dev, previews, local work and the automatic tests). Postgres, Auth, Storage. Row-level security on every table.
+- **Migrations**: hand-written SQL in `packages/db/prisma/migrations`, applied with `DIRECT_URL=<session pooler> npm run migrate:deploy -w @sieamb/db`. Check that the address is the database you mean before running it.
+- **Background job**: `POST /api/v1/payments/emails/deliver` with the site's `CRON_SECRET`. On dev the database starts it every 10 minutes (#273). On production that begins with the release; until then GitHub starts it, and GitHub runs a 10-minute schedule only a few times a day, so a failed e-mail or a due reminder can wait hours there. `email-sweep.yml` ("Run workflow") starts it by hand, and after the release stays as an hourly second line.
+- **Other scheduled jobs** (GitHub Actions): weekly encrypted backup of production (`db-backup.yml`, see `docs/db-backups.md`), keep-alive reads every 4 hours, a watchdog every 6 hours that restores a paused project.
+- **Switches**: `VITE_PAYMENTS_ENABLED` (Preview and Production); `VITE_ACCOUNTS_ENABLED` with `ACCOUNTS_ENABLED` (Preview only); `REMINDERS_ENABLED` (Production); `PAYMENTS_NOW` and `SUBMISSIONS_NOW` move the clock on previews only.
+- **Secrets**: `.env.local` at the repository root is Rodrigo's vault, never committed. Vercel and GitHub hold their own copies. Nothing secret goes in an issue, a pull request or a migration.
+- **Domain**: `sieamb.org` at Cloudflare (registrar and DNS; e-mail routing forwards `inscricoes@` to the committee's Gmail).
+
+## Tests
+
+- Unit and component tests with Vitest: `shared`, `frontend`, `server`, `db` (the last reads the schema and the migration files).
+- Browser tests with Playwright, desktop and phone, against a local build and against every Vercel deployment: public pages, a guard against Portuguese leaking into the other languages, and, on dev and previews only, accounts, papers, the panel and notifications.
+- The browser tests write to `sieamb-dev` with addresses of their own (`e2e+<run>-…@sieamb.org`), are never mailed, and remove what they created in a step that always runs. Sample data for people to look at: `npm run seed:demo -w @sieamb/e2e` (16 registrations and 5 papers under `demo.*@example.com`).
+- Required checks on `develop` and `main`: `quality`, `e2e-smoke`, `e2e-preview`, `branch-policy`.
+
+## Process
+
+- Every change goes through an issue, even a one-line fix. `feature/<issue>-<slug>` → pull request to `develop` (`Closes #N`) → release pull request `develop` → `main`. Never a direct commit to either.
+- Rodrigo admin-merges while he is the only developer.
+- A decision that changes how the system is built gets a record in `docs/adr/`, in the same pull request.
 
 ## Key links
 
-- Live site: https://sieamb.org (Vercel team `sieamb`, project `sieamb`, Git-connected to rodrigo-rac2/SIEAmB; `main` = production, `develop` = https://dev.sieamb.org). Old Pages URL https://rodrigo-rac2.github.io/SIEAmB/ redirects (branch `gh-pages`)
-- Repo: https://github.com/rodrigo-rac2/SIEAmB
-- Full plan: docs/IMPLEMENTATION_PLAN.md (also published as a Claude artifact: https://claude.ai/code/artifact/6af1a1b5-57dc-4440-abd3-237a6f3ee474)
+- Live site: https://sieamb.org · Dev: https://dev.sieamb.org
+- Repository: https://github.com/rodrigo-rac2/SIEAmB · Milestones: https://github.com/rodrigo-rac2/SIEAmB/milestones
+- Release draft: https://github.com/rodrigo-rac2/SIEAmB/pull/274 · Hand-over checklist: https://github.com/rodrigo-rac2/SIEAmB/issues/229
+- The August 2026 plan, kept as history: `docs/IMPLEMENTATION_PLAN.md`
 - Reference site (inspiration): https://engema.org.br/28/

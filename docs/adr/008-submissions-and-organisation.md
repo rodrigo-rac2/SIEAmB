@@ -1,6 +1,6 @@
 # ADR-008: Paper submissions, the organisers' panel, notifications and announcements
 
-**Date:** 2026-11-17 · **Status:** Accepted, on dev only (same switches as ADR-007) · **Issues:** #216, #217, #219, #221, #204
+**Date:** 2026-11-17 · **Status:** Accepted, on dev only (same switches as ADR-007); the release to production is prepared in the draft pull request #274 · **Issues:** #216, #217, #219, #221, #204, and the changes of the same day: #230 to #281
 
 ## Context
 
@@ -33,6 +33,8 @@ The edital says submissions opened on 15/11/2026 and close on 18/01/2027. The co
    - **Who over whom**, for both actions: the owner for anyone; an Administrador for themselves and for people who are neither administrators nor the owner. Otherwise an administrator could take over the owner's account and with it the power to make administrators.
    - **Nobody sees a role above their own (#275, Rodrigo: "They should be seeing no role in case the role is above theirs").** An Organizador sees every account, with nothing to edit, and without the Administrador role or the owner mark on those who have them; an Administrador does not see who the owner is. The server strips them, so who the administrators are stays unknown to an organiser (#264). The explanation of the roles on the page lists only the roles up to the viewer's own.
    - **Accounts of a test run** (`e2e+…@sieamb.org`) are listed only for test accounts. Dev is shared by the automatic tests and by real testers, and those accounts appeared and vanished in front of an organiser during a run.
+9b. **Whatever is being processed says so** (#278, asked by Rodrigo after a click that showed almost nothing): the line, card or box an action belongs to is shaded, cannot be clicked, and shows a spinner with "Processando…" until the list has been read again. One component and one CSS rule (`:has()`) do it for the whole panel. New screens follow it.
+9c. **The owner may take the Administrador role off their own account** (#277); an Administrador may not (decision 13). The owner keeps every power through the platform flag, so nobody is locked out.
 10. **A decision made by hand never hides the payment.** `manual_status` sits beside the payments; the panel shows both, and who, when and why are stored with the registration and in `audit_logs`. Clearing it hands the registration back to the payment. Every panel action writes an audit line.
 11. **Soft delete of registrations is built** (ADR-006, now accepted for this table): `deleted_at`, `deleted_by`, `deleted_reason`; every query of the site ignores deleted rows, so they get no more e-mails and cannot be paid; "one registration per e-mail and per account" is counted over live rows only (partial unique indexes). Deleting a paid registration needs an explicit confirmation. Restoring is refused if the person registered again meanwhile.
 12. **A role can be given to an address that has no account.** It is kept in `event_member_invites` and becomes a real role the first time that address logs in with a confirmed e-mail.
@@ -50,15 +52,15 @@ The edital says submissions opened on 15/11/2026 and close on 18/01/2027. The co
 15. **A general outbox** (`outbox_emails`) for every e-mail that is not about a payment, with the guarantees of ADR-005: a unique key per e-mail, claimed by compare-and-swap, retried by the background job, body cleared once sent.
 16. **Notices in the site are stored as a kind plus data**, never as text, and written in the reader's language when shown. A kind this version does not know reads as "há uma novidade".
 17. **Who is told of what**: a paper sent, changed or withdrawn goes to all its authors (e-mail, and the bell for those with an account) and to the organisers; a new registration goes to the organisers; a role given goes to the person.
-18. **Announcements** go to one group: everyone, the registered, the authors, the reviewers or the organisers. Administrators are in no group by role alone. The screen shows how many people the group has and asks for a confirmation with that number. The announcement is recorded with the sender, the group and every address. E-mails are queued and sent by the background job, 40 per run; one sender can send 10 announcements an hour.
+18. **Announcements** go to one group: everyone, the registered, the authors, the reviewers or the organisers. Administrators are in no group by role alone. The screen shows how many people the group has and asks for a confirmation with that number. The announcement is recorded with the sender, the group and every address. E-mails are written to the outbox and **sent in the same request, for up to 40 seconds** (#281); what does not fit stays for the background job, 40 per run every 10 minutes, and the page says how many left now and how many are waiting. They were first only queued, which on 2026-11-17 meant hours, because the job was not keeping its schedule (#273). One sender can send 10 announcements an hour.
 
 ## Consequences
 
-- **Resend's plan limits the e-mails**, and announcements make that real: the free plan allows about 100 e-mails a day, counting reminders and confirmations too. An announcement to more people than that will take days to go out or be refused. The plan has to be upgraded before announcements are used for real.
+- **Resend's plan limits the e-mails.** The free plan allowed about 100 a day, counting reminders and confirmations, and was used up on 2026-11-17 (ADR-005). Rodrigo upgraded it that day. An announcement to several hundred people should still be checked against the plan's limit first.
 - Announcements have no unsubscribe link. Each one says why the person receives it. This was left open in ADR-005 and still needs a decision.
 - Organisers get one e-mail per registration and per paper. If that becomes too much, a daily digest is the natural change.
 - Changing a paper replaces its author rows in two steps (delete, insert). A failure between them would leave a paper without authors; it has not been seen, and the fix is a database function doing both at once.
-- An announcement to a few hundred people takes up to an hour to finish going out.
+- An announcement to a few hundred people sends what fits in 40 seconds at once and the rest within the hour, now that the background job keeps its 10 minutes (#273).
 - The organisers' notice e-mails and announcements are in Portuguese only. Author e-mails and everything in the site are in four languages.
-- The first Administrador of an edition has to be set in the database (or invited by a platform administrator). After that, roles are managed in the panel.
-- To release: migrations `20261117010000_accounts` to `20261117040000_announcements` on sieamb-prod after a backup, the two switches on Vercel Production, and the Resend plan.
+- The owner has to be set in the database (`users.is_platform_admin`), after that person has created their account. Only the owner gives Administrador, so until it is set an edition can get no administrator from the site. After that, roles are managed in the panel.
+- To release: the ordered steps are in the draft pull request #274 (backup, ten migrations `20261117010000` to `20261118010000`, the storage bucket, the two Vault secrets of the background job, the two switches on Vercel Production, the owner).

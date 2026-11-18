@@ -1,6 +1,6 @@
 # ADR-007: Accounts on Supabase Auth, tied to registrations by proof of the e-mail
 
-**Date:** 2026-11-17 · **Status:** Accepted, on dev only (`VITE_ACCOUNTS_ENABLED` / `ACCOUNTS_ENABLED`) · **Issues:** #208, #209, #210
+**Date:** 2026-11-17 · **Status:** Accepted, on dev only (`VITE_ACCOUNTS_ENABLED` / `ACCOUNTS_ENABLED`); the release to production is prepared in the draft pull request #274 · **Issues:** #208, #209, #210, #246, #262, #269, #270, #272
 
 ## Context
 
@@ -25,6 +25,9 @@ Rodrigo's decisions (2026-11-16): an account is optional to register and require
 9. **Rate limits in the database.** `hit_rate_limit()` counts attempts per key and time window; the key is a hash, never an address or an IP. Limits: 3 per hour per address for create account and for forgotten password, 20 per hour per IP for both, 30 per hour per IP for the form's check, 5 per day per account for link requests.
 10. **One Vercel function for all account actions**, reached by a rewrite in `vercel.json`. The Hobby plan caps the number of functions, and a `[action].ts` file loses to the catch-all rewrite that serves the single-page app.
 11. **Switched on per deployment.** The frontend shows nothing and the server answers 503 unless both flags are `true`. Preview has them; production does not until this is released there, which also needs the migration `20261117010000_accounts` on sieamb-prod.
+12. **Signing up on the way somewhere continues there** (#246, after Najara's first test). Someone sent to log in from "Enviar trabalho" who creates an account instead lands on the paper form after the e-mail link and the password, even in another browser: the destination rides on the confirmation link as `next`, and the server only accepts a plain path under the edition.
+13. **The password fields have a show and hide button** (#262), beside the field and not inside it, so it does not cover a password manager's icon.
+14. **What other people may do to an account** is decided with the roles (ADR-008, decision 9a): an Administrador corrects the name and institution of people below them and has the new-password e-mail sent to them; only the owner changes the e-mail someone logs in with, sets or clears their CPF, and types a password for them. Decision 6 (the document is given once) still holds for the person; the owner is the way a wrong document is corrected. A changed e-mail is changed at Supabase Auth first and in `public.users` second, because the mirror trigger only runs when an account is created.
 
 ## Consequences
 
