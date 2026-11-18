@@ -1,5 +1,5 @@
 import type { Edital, ImportantDate, NewsItem, Sponsor } from '@sieamb/shared';
-import { formatDateList } from '@sieamb/shared';
+import { formatDate, formatDateList } from '@sieamb/shared';
 import { useEffect, useState, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
@@ -9,6 +9,8 @@ import { useEvent } from '../contexts/EventContext';
 import { useLocale, useLocalized } from '../hooks/useLocale';
 import { getDataProvider } from '../services';
 import { assetUrl } from '../lib/assets';
+import { accountsEnabled } from '../services/account';
+import { fetchWindow, type WindowState } from '../services/submissions';
 import './HomePage.css';
 
 /**
@@ -39,6 +41,8 @@ export function HomePage() {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
   const [edital, setEdital] = useState<Edital | null>(null);
+  // Whether papers can be sent right now, and until when (#306). Null where the system is off.
+  const [papers, setPapers] = useState<{ state: WindowState; closesAt: string } | null>(null);
 
   useEffect(() => {
     if (!event) return;
@@ -52,8 +56,21 @@ export function HomePage() {
       .then((list) => setEdital([...list].sort((a, b) => b.publishedAt.localeCompare(a.publishedAt))[0] ?? null));
   }, [event]);
 
+  useEffect(() => {
+    if (!event || !accountsEnabled()) return;
+    let active = true;
+    fetchWindow(event.slug)
+      .then((w) => active && setPapers(w))
+      // Without the answer the page stays as it is without submissions: nothing is promised.
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [event]);
+
   if (!event) return null;
   const base = `/${event.slug}`;
+  const papersOpen = papers?.state === 'open';
 
   const pdf = edital?.attachments.find((f) => f.format === 'pdf');
 
@@ -120,11 +137,19 @@ export function HomePage() {
             <span>{formatDateList(event.startsAt, event.endsAt, locale)}</span>
             {event.venue && <span>{l(event.venue)}</span>}
           </p>
-          {event.settings.registrationOpen && (
-            <Link className="hero__cta" to={`${base}/inscricoes`}>
-              {t('registration.registerCta')}
-            </Link>
-          )}
+          <p className="hero__actions">
+            {event.settings.registrationOpen && (
+              <Link className="hero__cta" to={`${base}/inscricoes`}>
+                {t('registration.registerCta')}
+              </Link>
+            )}
+            {/* While papers can be sent, the way in sits beside the registration (#244, #306). */}
+            {papersOpen && (
+              <Link className="hero__cta hero__cta--second" to={`${base}/meus-trabalhos/novo`} data-testid="hero-submit">
+                {t('papers.send')}
+              </Link>
+            )}
+          </p>
         </div>
       </section>
 
@@ -157,15 +182,36 @@ export function HomePage() {
         <section className="edital-strip" aria-labelledby="edital-strip-title">
           <div className="container edital-strip__inner">
             <div className="edital-strip__text">
-              <span className="edital-strip__badge">{t('home.editalBadge')}</span>
-              <h2 id="edital-strip-title" className="edital-strip__title">
-                {l(edital.title)}
-              </h2>
-              {edital.summary && <p>{l(edital.summary)}</p>}
+              {papersOpen ? (
+                <>
+                  <span className="edital-strip__badge edital-strip__badge--open" data-testid="papers-open-badge">
+                    <span className="registration-callout__dot" aria-hidden="true" />
+                    {t('home.papersBadge')}
+                  </span>
+                  <h2 id="edital-strip-title" className="edital-strip__title">
+                    {t('home.papersTitle', { event: event.name })}
+                  </h2>
+                  <p>{t('home.papersBody', { date: formatDate(papers.closesAt, locale) })}</p>
+                </>
+              ) : (
+                <>
+                  <span className="edital-strip__badge">{t('home.editalBadge')}</span>
+                  <h2 id="edital-strip-title" className="edital-strip__title">
+                    {l(edital.title)}
+                  </h2>
+                  {edital.summary && <p>{l(edital.summary)}</p>}
+                </>
+              )}
             </div>
             <div className="edital-strip__actions">
-              <Link className="edital-strip__primary" to={`${base}/editais/${edital.slug}`}>
-                {t('home.editalRead')} →
+              {papersOpen && (
+                <Link className="edital-strip__primary" to={`${base}/meus-trabalhos/novo`} data-testid="papers-open-cta">
+                  {t('papers.send')} →
+                </Link>
+              )}
+              <Link className={papersOpen ? undefined : 'edital-strip__primary'} to={`${base}/editais/${edital.slug}`}>
+                {t('home.editalRead')}
+                {papersOpen ? '' : ' →'}
               </Link>
               {pdf && (
                 <a href={assetUrl(pdf.url)} target="_blank" rel="noreferrer">

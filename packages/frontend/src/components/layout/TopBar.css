@@ -38,8 +38,37 @@
   opacity: 1;
 }
 
+.topbar__badge {
+  display: inline-block;
+  min-width: 1.25rem;
+  margin-left: 2px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--color-primary-dark);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-align: center;
+}
+
 @media (max-width: 560px) {
   .topbar__venue {
     display: none;
   }
+
+  /* Date, editions link, account link and four flags do not fit in one row on a phone. */
+  .topbar__actions {
+    gap: var(--space-2);
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+}
+
+/* "Sair" reads like the links beside it, though it is a button. */
+.topbar__logout {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
 }

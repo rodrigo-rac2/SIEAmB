@@ -6,7 +6,7 @@ Plataforma web do **SIEAmB**, evento científico promovido pela UFCG (Programa d
 
 🗂️ **Backlog:** [GitHub Issues](https://github.com/rodrigo-rac2/SIEAmB/issues) organizadas por [milestones](https://github.com/rodrigo-rac2/SIEAmB/milestones) (ver [Backlog e processo](#backlog-e-processo))
 
-📋 **Plano completo do projeto:** [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md)
+🧭 **Decisões técnicas:** [docs/adr/](docs/adr/) (ADR-001 a ADR-009) · o plano original de agosto de 2026, mantido como histórico, está em [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md)
 
 📌 **Status atual e histórico:** [.claude/context/STATUS.md](.claude/context/STATUS.md) e [.claude/context/HISTORY.md](.claude/context/HISTORY.md)
 
@@ -15,17 +15,18 @@ Plataforma web do **SIEAmB**, evento científico promovido pela UFCG (Programa d
 ## Índice
 
 1. [O que é este projeto](#o-que-é-este-projeto)
-2. [Arquitetura e fases](#arquitetura-e-fases)
+2. [O que está no ar e a arquitetura](#o-que-está-no-ar-e-a-arquitetura)
 3. [Estrutura do repositório](#estrutura-do-repositório)
 4. [Como rodar localmente](#como-rodar-localmente)
 5. [Como o site funciona (conceitos-chave)](#como-o-site-funciona-conceitos-chave)
-6. [Onde fica cada conteúdo](#onde-fica-cada-conteúdo)
-7. [Testes](#testes)
-8. [Backlog e processo (leia antes de contribuir)](#backlog-e-processo)
-9. [Fluxo de trabalho com Git](#fluxo-de-trabalho-com-git)
-10. [CI/CD, ambientes e deploy](#cicd-ambientes-e-deploy)
-11. [Convenções do projeto](#convenções-do-projeto)
-12. [Problemas comuns (troubleshooting)](#problemas-comuns-troubleshooting)
+6. [Contas, trabalhos e painel da organização](#contas-trabalhos-e-painel-da-organização)
+7. [Onde fica cada conteúdo](#onde-fica-cada-conteúdo)
+8. [Testes](#testes)
+9. [Backlog e processo (leia antes de contribuir)](#backlog-e-processo)
+10. [Fluxo de trabalho com Git](#fluxo-de-trabalho-com-git)
+11. [CI/CD, ambientes e deploy](#cicd-ambientes-e-deploy)
+12. [Convenções do projeto](#convenções-do-projeto)
+13. [Problemas comuns (troubleshooting)](#problemas-comuns-troubleshooting)
 
 ---
 
@@ -35,29 +36,37 @@ O SIEAmB é um seminário internacional acadêmico. O site precisa de:
 
 - **Páginas institucionais**: sobre o evento, organização, áreas temáticas, datas, local, contato
 - **Sistema de avisos** (notícias do evento)
-- **Inscrições** de participantes (com pagamento via Mercado Pago no futuro)
-- **Submissão de artigos** científicos com revisão às cegas (fase futura)
-- **Certificados** com código de validação (fase futura)
+- **Inscrições** de participantes, com pagamento por cartão ou boleto via Mercado Pago e e-mails de confirmação e lembrete
+- **Contas**, **submissão de trabalhos** e **avaliação** (a avaliação não é às cegas: a organização indica um ou mais avaliadores por trabalho)
+- **Painel da organização**: inscrições, trabalhos, pessoas e papéis, comunicados
+- **Certificados** e **anais** (ainda não construídos)
 
 O site é **multi-edição**: cada edição tem um slug com o ano do evento (ex.: `/2027/`), e as edições antigas continuam acessíveis como arquivo. O domínio raiz sempre redireciona para a edição atual. Slugs antigos de uma edição (`legacySlugs` no evento, ex.: `/2026/` → `/2027/`) redirecionam mantendo o resto do caminho.
 
 Somos os mantenedores deste projeto daqui pra frente — o código precisa ficar sempre num estado que outra pessoa consiga assumir.
 
-## Arquitetura e fases
+## O que está no ar e a arquitetura
 
-O projeto evolui em fases (detalhes no [plano](docs/IMPLEMENTATION_PLAN.md)):
-
-| Fase | O quê | Status |
+| Parte | Produção (https://sieamb.org) | Desenvolvimento (https://dev.sieamb.org) |
 |---|---|---|
-| **0** | Protótipo visual + pré-inscrição (hoje em https://sieamb.org, na Vercel; o endereço antigo do GitHub Pages redireciona) | ✅ Concluída |
-| **1** | Supabase (persistência real), painel admin, e-mails, hospedagem definitiva | 🚧 **Em andamento (estamos aqui)** — milestone [Registrations + submissions open](https://github.com/rodrigo-rac2/SIEAmB/milestone/2) |
-| 2 | Submissão de artigos com revisão double-blind | Planejada |
-| 3 | Pagamento (Mercado Pago: Pix, cartão, boleto) | Planejada |
-| 4 | Certificados + anais | Planejada |
+| Páginas públicas em 4 idiomas, duas edições | ✅ No ar | ✅ |
+| Inscrição gravada no banco | ✅ No ar | ✅ |
+| Pagamento (cartão e boleto, Mercado Pago) e e-mails | ✅ No ar desde 16/11/2026 | ✅ (sandbox) |
+| Contas, Minha área | ⏳ Desligado | ✅ desde 17/11/2026 |
+| Envio de trabalhos, avaliadores, painel da organização, comunicados, notificações | ⏳ Desligado | ✅ |
+| Formulário de avaliação, resultados, certificados, anais | Não construído | Não construído |
 
-**Stack:** React 18 + TypeScript + Vite (frontend) · Express.js (backend, fase 1+) · PostgreSQL/Supabase (fase 1+) · Vitest (testes unitários) · Playwright (testes E2E).
+O que está "desligado" em produção já está pronto e testado em desenvolvimento, e entra com o release preparado no PR [#274](https://github.com/rodrigo-rac2/SIEAmB/pull/274). O retrato atualizado fica em [.claude/context/STATUS.md](.claude/context/STATUS.md).
 
-Na Fase 0 **não existe backend rodando**: o site é 100% estático e os dados vêm de arquivos JSON (fixtures). A arquitetura já está preparada para trocar a fonte de dados sem reescrever as telas (ver [DataProvider](#2-dataprovider-abstração-de-dados)).
+**Stack:** React 18 + TypeScript + Vite (frontend) · funções da Vercel em `api/v1/` com a lógica em `packages/server` (não existe servidor Express) · Supabase (PostgreSQL, Auth para as contas, Storage para os arquivos) · Prisma só para o schema e as migrations · Resend por SMTP (e-mails) · Mercado Pago (pagamentos) · Vitest e Playwright (testes).
+
+**Como as peças se encaixam** (registro completo em [ADR-009](docs/adr/009-runtime-architecture.md)):
+
+- O **conteúdo público** (datas, taxas, áreas, equipe, avisos, editais) são arquivos JSON no repositório. Mudar conteúdo é um PR.
+- O navegador só **grava a inscrição** direto no banco (inserção anônima, sem leitura). Todo o resto passa por uma função da Vercel, que confere quem está pedindo.
+- **Contas e senhas** ficam no Supabase Auth. **Papéis** são por edição (tabela `event_members`), mais o dono do site (`users.is_platform_admin`).
+- **Todo e-mail** é primeiro uma linha numa tabela de saída e depois é enviado. Um **job em segundo plano**, iniciado pelo próprio banco a cada 10 minutos, reenvia o que falhou, registra os lembretes e confere pagamentos em aberto.
+- Partes novas são **ligadas por ambiente** com um par de variáveis (`VITE_ACCOUNTS_ENABLED` e `ACCOUNTS_ENABLED`, por exemplo). Desligadas, as telas não aparecem e as funções respondem 503.
 
 ## Estrutura do repositório
 
@@ -65,33 +74,40 @@ Na Fase 0 **não existe backend rodando**: o site é 100% estático e os dados v
 
 ```
 SIEAmB/
-├── .github/workflows/       # CI (lint+testes), E2E contra deploys da Vercel, política de branches
+├── .github/workflows/       # CI, E2E contra deploys da Vercel, política de branches, backup e vigia do banco
 ├── .claude/                 # Contexto para sessões do Claude Code (status, histórico, skills)
+├── api/v1/                  # Funções da Vercel: só a porta de entrada, a lógica está em packages/server
+│   ├── account.ts           #   contas (/api/v1/account/<ação>)
+│   ├── submissions.ts       #   trabalhos (/api/v1/submissions/<ação>)
+│   ├── admin.ts             #   painel da organização (/api/v1/admin/<ação>)
+│   ├── payments/            #   pedidos, status, webhook do Mercado Pago, job em segundo plano
+│   └── registrations/       #   aviso de inscrição recebida
 ├── docs/
-│   └── IMPLEMENTATION_PLAN.md   # Plano completo das 5 fases
+│   ├── adr/                 # Decisões técnicas (001 a 009): leia antes de mudar como algo funciona
+│   ├── db-backups.md        # Como o backup é feito e como restaurar
+│   └── IMPLEMENTATION_PLAN.md   # Plano de agosto de 2026, mantido como histórico
 ├── packages/
-│   ├── shared/              # @sieamb/shared — código compartilhado entre front e back
-│   │   └── src/
-│   │       ├── types/       # Tipos TypeScript (Event, NewsItem, Registration…)
-│   │       ├── validation/  # Schemas zod (validação do formulário de inscrição)
-│   │       └── utils/       # Validador de CPF, formatação de datas/dinheiro
+│   ├── shared/              # @sieamb/shared — tipos, validação (zod), CPF, formatação
 │   ├── frontend/            # @sieamb/frontend — o site em React
 │   │   └── src/
-│   │       ├── pages/       # Uma pasta = uma página (HomePage, NewsListPage…)
-│   │       ├── components/  # Componentes reutilizáveis (layout, news, registration…)
-│   │       ├── contexts/    # EventContext (edição atual da URL)
-│   │       ├── services/    # DataProvider e implementações (static, supabase, api)
+│   │       ├── pages/       # Uma pasta = uma página (account, papers, panel, …)
+│   │       ├── components/  # Componentes reutilizáveis (layout, news, registration, shared…)
+│   │       ├── contexts/    # EventContext (edição da URL), AuthContext (conta logada)
+│   │       ├── services/    # DataProvider e as chamadas às funções (account, submissions, admin, payments)
 │   │       ├── locales/     # Traduções: pt-BR.json, en.json, es.json, zh-CN.json
-│   │       ├── data/        # Fixtures JSON (conteúdo do site na Fase 0)
+│   │       ├── data/        # Conteúdo do site em JSON, taxas e regras de submissão
 │   │       ├── styles/      # tokens.css (identidade visual) + base.css
 │   │       └── i18n.ts      # Configuração de idiomas
-│   └── e2e/                 # @sieamb/e2e — testes end-to-end com Playwright
-│       └── tests/smoke.spec.ts
+│   ├── server/              # @sieamb/server — a lógica atrás das funções, com seus testes
+│   │   └── src/             #   payments, account, submissions, admin, core (banco e fila de e-mails)
+│   ├── db/                  # @sieamb/db — schema Prisma e migrations em SQL escritas à mão
+│   └── e2e/                 # @sieamb/e2e — testes de navegador com Playwright
+├── vercel.json              # Build, rotas das funções e do site
 ├── package.json             # Raiz: scripts que orquestram os workspaces
 └── CLAUDE.md                # Convenções para sessões do Claude Code
 ```
 
-**Regra de ouro:** código que serve tanto ao front quanto ao back (tipos, validação) vai em `packages/shared`, nunca duplicado.
+**Regra de ouro:** código que serve a mais de um pacote do site (tipos, validação) vai em `packages/shared`, nunca duplicado. Uma exceção conhecida: `packages/server` não consegue importar o `shared` depois de publicado (ADR-009) e mantém a própria checagem de CPF.
 
 ## Como rodar localmente
 
@@ -107,7 +123,7 @@ npm install
 npm run dev            # abre em http://localhost:5173 com hot-reload
 
 # 3. Rodar os testes
-npm run test           # unitários (shared + frontend)
+npm run test           # unitários e de componentes (shared, frontend, server, db)
 npm run test:e2e       # end-to-end (buida o site e testa no navegador)
 
 # 4. Checagens de qualidade (a CI roda isso em todo PR)
@@ -133,9 +149,10 @@ Nenhuma tela chama `fetch` direto. Tudo passa pela interface `DataProvider` (`pa
 
 - `StaticDataProvider` — lê os JSONs de `src/data/`; a pré-inscrição apenas simula sucesso (uso local e testes)
 - `SupabaseDataProvider` — **modo atual em todos os ambientes da Vercel** (desde 2026-10-25, #149). Conteúdo público continua vindo dos JSONs; a pré-inscrição é gravada na tabela `pre_registrations` do Supabase com a chave anônima (RLS só permite INSERT, nunca leitura; a leitura é pelo painel do Supabase ou pela service role)
-- `ApiDataProvider` — lerá da API Express (Fase 1+)
 
-A variável `VITE_DATA_PROVIDER` (`static` | `supabase` | `api`) escolhe a implementação. Isso significa que quando o backend chegar, **as telas não mudam** — só a implementação do provider. Atenção: um build sem `VITE_DATA_PROVIDER=supabase` volta a simular sucesso na pré-inscrição sem gravar nada.
+A variável `VITE_DATA_PROVIDER` (`static` | `supabase`) escolhe a implementação. Atenção: um build sem `VITE_DATA_PROVIDER=supabase` volta a simular sucesso na pré-inscrição sem gravar nada.
+
+Contas, trabalhos, painel e pagamentos não passam pelo `DataProvider`: cada um tem seu serviço em `src/services/` (`account.ts`, `submissions.ts`, `admin.ts`, `payments.ts`), que chama a função correspondente em `/api/v1/` com o token da conta logada.
 
 ### 3. Internacionalização (i18n)
 
@@ -144,7 +161,9 @@ A variável `VITE_DATA_PROVIDER` (`static` | `supabase` | `api`) escolhe a imple
 - Nenhum texto de interface é escrito direto no componente ("hardcoded"). Todo texto vem de `t('chave.da.traducao')` lendo os arquivos `src/locales/*.json`
 - Ao adicionar um texto novo, adicione a chave **nos 4 arquivos**
 - A primeira visita sempre renderiza pt-BR (ignoramos o idioma do navegador de propósito). A troca é pelas bandeirinhas na barra do topo e fica salva no `localStorage`
-- Conteúdo dinâmico (avisos) não é traduzido na Fase 0 — só a interface
+- O conteúdo (datas, áreas, equipe, avisos, textos da edição) também é traduzido: cada texto nos JSONs pode ser uma string só em português ou um objeto `{ "pt-BR", "en", "es", "zh-CN" }`, resolvido por `localize()` / `useLocalized()` com o português como reserva. Um teste de navegador falha se aparecer português nos outros idiomas
+- As traduções para mandarim foram feitas por máquina e precisam de revisão de um falante nativo (#23)
+- E-mails para quem se inscreve ou envia trabalho saem nos quatro idiomas; avisos para a organização e comunicados, só em português
 
 ### 4. Identidade visual por tokens + tema por edição
 
@@ -157,9 +176,30 @@ Por que assim? O site é permanente, mas **a paleta muda a cada edição** (requ
 
 Regras práticas: a identidade da edição atual entra no `theme` do evento (não no tokens.css); nunca coloque cor/fonte fixa num componente, sempre `var(--...)` — é isso que faz o tema por edição cascatear sem mudança de código.
 
+## Contas, trabalhos e painel da organização
+
+Prontos em desenvolvimento, ainda desligados em produção. Decisões em [ADR-007](docs/adr/007-accounts.md) e [ADR-008](docs/adr/008-submissions-and-organisation.md).
+
+- **Conta**: nome e e-mail; a senha é escolhida depois do link de confirmação. A conta é opcional para se inscrever e obrigatória para enviar trabalho.
+- **Trabalho**: os autores são uma lista ordenada com nome e e-mail, e qualquer um deles envia. Só quem enviou altera ou retira. As regras (prazo, páginas, limites) estão em `packages/frontend/src/data/submissionRules.json`, lidas pela página e pelo servidor. O arquivo fica num bucket privado.
+- **Avaliação**: não é às cegas. A organização indica um ou mais avaliadores por trabalho, nunca um autor dele. O formulário de avaliação ainda não existe.
+- **Painel** em `/:edição/painel`: inscrições, trabalhos, pessoas e papéis, comunicados e pedidos.
+
+| | Dono(a) do site | Administrador | Organizador | Avaliador |
+|---|---|---|---|---|
+| Abre o painel | Sim | Sim | Sim | Não |
+| Dá e tira papéis | Os três | Organizador e Avaliador | Avaliador | Nenhum |
+| Inscrições: cadastrar, mudar situação, excluir, ver CPF | Sim | Sim | Só vê a lista, sem documentos | Não |
+| Altera ou retira o trabalho de outra pessoa | Sim | Sim | Não | Não |
+| Indica avaliadores, encerra as submissões, envia comunicados | Sim | Sim | Sim | Não |
+| Corrige nome e instituição de outra conta, envia link de nova senha | De qualquer pessoa | De quem está abaixo | Não | Não |
+| Muda e-mail ou CPF de outra conta, define a senha | Sim | Não | Não | Não |
+
+Ninguém vê um papel acima do seu. O dono do site é marcado direto no banco (`users.is_platform_admin`), nunca pelo site.
+
 ## Onde fica cada conteúdo
 
-Na Fase 0, todo o conteúdo do site são arquivos JSON em `packages/frontend/src/data/`:
+O conteúdo do site são arquivos JSON em `packages/frontend/src/data/`:
 
 | Arquivo | Conteúdo | Observações |
 |---|---|---|
@@ -170,6 +210,8 @@ Na Fase 0, todo o conteúdo do site são arquivos JSON em `packages/frontend/src
 | `committee.json` | Organização/comitês | Agrupado por `role` na página |
 | `sponsors.json` | Realização/apoio | |
 | `news.json` | Avisos | `status: "PUBLISHED"` para aparecer; `bodyMd` é markdown |
+| `editais.json` | Editais e modelos | Os arquivos ficam em `public/docs/<ano>/` |
+| `submissionRules.json` | Regras de submissão | Prazo, modalidades, páginas, limites por pessoa; o servidor lê o mesmo arquivo |
 
 Textos de interface (menus, botões, mensagens) ficam em `src/locales/*.json` — **são coisas diferentes**: fixture é conteúdo do evento, locale é texto da interface.
 
@@ -177,8 +219,9 @@ Textos de interface (menus, botões, mensagens) ficam em `src/locales/*.json` �
 
 Testes não são opcionais neste projeto — a CI bloqueia PR com teste quebrado.
 
-- **Unitários (Vitest):** `packages/shared/src/**/*.test.ts` (CPF, validação) e `packages/frontend/src/**/*.test.{ts,tsx}` (componentes, providers). Rode com `npm run test`.
-- **E2E (Playwright):** `packages/e2e/tests/`. Simulam um usuário real no navegador (desktop Chrome + celular Pixel 7): navegação em todas as páginas, formulário de inscrição, troca de idioma, 404. Rode com `npm run test:e2e`. Para depurar visualmente: `cd packages/e2e && npx playwright test --ui`.
+- **Unitários e de componentes (Vitest):** `packages/shared` (CPF, validação), `packages/frontend` (telas e serviços), `packages/server` (regras de pagamento, contas, trabalhos e painel, com banco e e-mail simulados) e `packages/db` (lê o schema e os arquivos de migration). Rode com `npm run test`.
+- **E2E (Playwright):** `packages/e2e/tests/`. Simulam um usuário real no navegador (desktop Chrome + celular Pixel 7). Contra qualquer build: navegação, formulário de inscrição, troca de idioma, 404. Só contra desenvolvimento e previews, usando o banco `sieamb-dev`: contas, trabalhos, painel e notificações. Rode com `npm run test:e2e`. Para depurar visualmente: `cd packages/e2e && npx playwright test --ui`.
+- **Os testes de navegador dividem o banco de desenvolvimento com pessoas de verdade.** Por isso usam endereços próprios (`e2e+<execução>-…@sieamb.org`), que nunca recebem e-mail, apagam o que criaram num passo que roda sempre, e o que é sobre dado de teste fica só entre contas de teste. Dados de exemplo para olhar o painel: `npm run seed:demo -w @sieamb/e2e`.
 
 Se você mudar comportamento do site, atualize/adicione testes no mesmo PR.
 
@@ -234,7 +277,7 @@ gh pr create --base develop   # no corpo, escreva "Closes #11"
 
 ## CI/CD, ambientes e deploy
 
-**Ambientes (Vercel, plano gratuito, projeto `sieamb`):**
+**Ambientes (Vercel, plano gratuito, projeto `sieamb`; dois bancos Supabase: `sieamb-prod` para produção e `sieamb-dev` para desenvolvimento, previews, uso local e testes):**
 
 | Ambiente | URL | Branch | Quando atualiza |
 |---|---|---|---|
@@ -249,6 +292,12 @@ O domínio `sieamb.org` está registrado na Cloudflare (DNS também lá). A conf
 - **`ci.yml`** — roda em todo PR e push em main/develop: job `quality` (ESLint, TypeScript, testes unitários e de integração com Vitest) e job `e2e-smoke` (Playwright contra um build local).
 - **`e2e-preview.yml`** — dispara quando a Vercel termina um deploy (preview do PR, `develop` ou `main`) e roda a suíte Playwright **contra a URL publicada** (`BASE_URL`), inclusive os testes `@deployed` (rewrites de SPA, idioma persistido, fotos servidas, redirecionamento do www). O check `e2e-preview` aparece no PR.
 - **`branch-policy.yml`** — o GitHub não restringe a branch de origem de um PR, então este check falha quando um PR para `main` não vem de `develop` ou `hotfix/*`, e quando alguém tenta mergear `main` em `develop`.
+
+- **`db-backup.yml`** — backup semanal cifrado do banco de produção (domingo), e à mão antes de um release. Ver [docs/db-backups.md](docs/db-backups.md).
+- **`db-keepalive.yml`** e **`db-watchdog.yml`** — o plano gratuito do Supabase pausa um banco sem uso; o primeiro lê tabelas públicas a cada 4 horas, o segundo confere a cada 6 horas e reativa um banco pausado.
+- **`email-sweep.yml`** — dispara o job em segundo plano (reenvio de e-mails, lembretes, conferência de pagamentos) de hora em hora e pelo botão "Run workflow". **Quem mantém o horário de 10 em 10 minutos é o banco** (`pg_cron`, migration `20261118010000_background_job_schedule`): o GitHub, nesse intervalo, rodava umas três vezes por dia.
+
+**Migrations:** SQL escrito à mão em `packages/db/prisma/migrations/`, aplicado com `DIRECT_URL=<pooler de sessão do banco certo> npm run migrate:deploy -w @sieamb/db`. Confira para qual banco o endereço aponta antes de rodar. Em produção, sempre depois de um backup.
 
 **Checks obrigatórios** (ruleset `protect-main-develop`): `quality`, `e2e-smoke`, `e2e-preview` e `branch-policy` precisam estar verdes para mergear em `develop` ou em `main`. O `e2e-preview` deduz a URL do deploy a partir da branch (`sieamb-git-<branch>-sieamb.vercel.app`, `dev.sieamb.org`, `sieamb.org`), espera o `/version.json` servir o commit em teste e só então roda o Playwright, sem depender do app do Vercel no GitHub. As requisições de teste levam o header secreto `x-sieamb-e2e` (segredo `E2E_BYPASS_TOKEN` no GitHub Actions e no `.env.local`), que casa com uma regra *Bypass* no firewall do Vercel para a mitigação automática de DDoS não barrar nossos próprios testes. Issues fecham automaticamente só quando o PR de release chega na `main` (o GitHub só processa `Closes #N` na branch padrão).
 
