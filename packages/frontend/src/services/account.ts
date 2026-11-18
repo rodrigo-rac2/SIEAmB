@@ -68,7 +68,8 @@ export interface AccountSuggestion {
 
 export interface Account {
   /** Where this person may open the organisation area (#219). */
-  panels?: { platformAdmin: boolean; slugs: string[] };
+  /** Editions whose organisation area the person may open (`slugs`) and where they review (`reviewing`). */
+  panels?: { platformAdmin: boolean; slugs: string[]; reviewing?: string[] };
   user: AccountUser;
   registrations: AccountRegistration[];
   suggestions: AccountSuggestion[];
@@ -156,8 +157,25 @@ export const startRecovery = (input: {
 
 export const fetchAccount = (token: string): Promise<Account> => request('GET', 'me', { token });
 
-export const saveProfile = (token: string, input: ProfileInput): Promise<Account> =>
-  request('PUT', 'profile', { token, body: input });
+const accountListeners = new Set<(account: Account) => void>();
+
+/**
+ * Hears every change the person makes to their own account, with the account as it was saved.
+ * The top bar shows the first name and would otherwise keep the old one until a reload (#313).
+ * Returns the way to stop listening.
+ */
+export function onAccountChange(listener: (account: Account) => void): () => void {
+  accountListeners.add(listener);
+  return () => {
+    accountListeners.delete(listener);
+  };
+}
+
+export const saveProfile = async (token: string, input: ProfileInput): Promise<Account> => {
+  const account = await request<Account>('PUT', 'profile', { token, body: input });
+  for (const listener of accountListeners) listener(account);
+  return account;
+};
 
 export const savePassword = (token: string, password: string): Promise<unknown> =>
   request('POST', 'password', { token, body: { password } });

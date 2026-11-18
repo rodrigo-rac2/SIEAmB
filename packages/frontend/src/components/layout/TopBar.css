@@ -70,8 +70,19 @@
   justify-content: flex-end;
   align-items: center;
   gap: var(--space-4);
+  /* As tall as the name button, whatever it shows: waiting, a link or the button (#319). */
+  min-height: calc(28px + 2 * var(--space-1));
   padding-block: var(--space-1);
   border-top: 1px solid rgb(255 255 255 / 18%);
+}
+
+/* "Carregando…" with the spinner of the panel's waiting state, while the session or the name is read. */
+.topbar__waiting {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  opacity: 0.9;
+  cursor: progress;
 }
 
 .topbar__login,
