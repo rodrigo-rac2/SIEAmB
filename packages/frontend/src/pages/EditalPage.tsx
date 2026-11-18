@@ -10,6 +10,7 @@ import { useLocale, useLocalized } from '../hooks/useLocale';
 import { assetUrl } from '../lib/assets';
 import { getDataProvider } from '../services';
 import './EditalPage.css';
+import { Loading } from '../components/shared/Loading';
 
 /** Relative links in the edital body point at files under public/, not at SPA routes. */
 function resolveHref(href: string): string {
@@ -38,7 +39,7 @@ export function EditalPage() {
     return (
       <section className="section">
         <div className="container">
-          <p>{t('common.loading')}</p>
+          <Loading />
         </div>
       </section>
     );

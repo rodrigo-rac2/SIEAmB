@@ -236,7 +236,7 @@ export function RegistrationForm({
         </p>
       )}
 
-      <button className="reg-form__submit" type="submit" disabled={isSubmitting || accountPending}>
+      <button className="reg-form__submit" type="submit" disabled={isSubmitting || accountPending || authLoading}>
         {isSubmitting ? t('registration.submitting') : t('registration.submit')}
       </button>
     </form>

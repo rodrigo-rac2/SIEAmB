@@ -7,6 +7,7 @@ import { useEvent } from '../contexts/EventContext';
 import { useLocale, useLocalized } from '../hooks/useLocale';
 import { getDataProvider } from '../services';
 import '../components/news/NewsCard.css';
+import { Loading } from '../components/shared/Loading';
 
 export function EditaisPage() {
   const { t } = useTranslation();
@@ -31,7 +32,7 @@ export function EditaisPage() {
       <section className="section">
         <div className="container" style={{ maxWidth: '72ch' }}>
           {editais === null ? (
-            <p>{t('common.loading')}</p>
+            <Loading />
           ) : editais.length === 0 ? (
             <p role="status">{t('editais.empty', { edition: event.name })}</p>
           ) : (

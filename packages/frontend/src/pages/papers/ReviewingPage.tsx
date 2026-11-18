@@ -11,6 +11,7 @@ import { SubmissionError, browser, fetchReviewing, paperFileUrl, type ReviewPape
 import { NotFoundPage } from '../NotFoundPage';
 import '../account/Account.css';
 import './Papers.css';
+import { Loading, PageLoading } from '../../components/shared/Loading';
 
 /**
  * `/:event/avaliacoes`: the papers the organisers chose this person to review (#232).
@@ -45,7 +46,9 @@ export function ReviewingPage() {
   }, [accessToken, event]);
 
   if (!auth.enabled) return <NotFoundPage />;
-  if (auth.loading || !event) return null;
+  if (!event) return null;
+  // The session is still being read: say so, under the page's title (#324).
+  if (auth.loading) return <PageLoading title={t('reviewing.title')} />;
   if (!accessToken) {
     return <Navigate to={`/${event.slug}/conta/entrar?next=${encodeURIComponent(location.pathname)}`} replace />;
   }
@@ -72,7 +75,7 @@ export function ReviewingPage() {
               {error}
             </p>
           )}
-          {!papers && !error && <p role="status">{t('common.loading')}</p>}
+          {!papers && !error && <Loading />}
           {papers && papers.length === 0 && <p data-testid="nothing-to-review">{t('reviewing.none')}</p>}
           {papers && papers.length > 0 && <p>{t('reviewing.intro')}</p>}
           {papers?.map((paper) => (

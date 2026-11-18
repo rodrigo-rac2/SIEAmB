@@ -12,6 +12,7 @@ import { assetUrl } from '../lib/assets';
 import { accountsEnabled } from '../services/account';
 import { fetchWindow, type WindowState } from '../services/submissions';
 import './HomePage.css';
+import { Loading } from '../components/shared/Loading';
 
 /**
  * Reproduces the identity lockup typography for the pt-BR full name
@@ -43,6 +44,7 @@ export function HomePage() {
   const [edital, setEdital] = useState<Edital | null>(null);
   // Whether papers can be sent right now, and until when (#306). Null where the system is off.
   const [papers, setPapers] = useState<{ state: WindowState; closesAt: string } | null>(null);
+  const [papersUnknown, setPapersUnknown] = useState(false);
 
   useEffect(() => {
     if (!event) return;
@@ -62,7 +64,7 @@ export function HomePage() {
     fetchWindow(event.slug)
       .then((w) => active && setPapers(w))
       // Without the answer the page stays as it is without submissions: nothing is promised.
-      .catch(() => undefined);
+      .catch(() => active && setPapersUnknown(true));
     return () => {
       active = false;
     };
@@ -71,6 +73,9 @@ export function HomePage() {
   if (!event) return null;
   const base = `/${event.slug}`;
   const papersOpen = papers?.state === 'open';
+  // Asked and not answered yet. Until then the page shows neither "Edital publicado" nor
+  // "Submissões abertas", so that neither is drawn only to be replaced by the other (#324).
+  const papersPending = accountsEnabled() && !papers && !papersUnknown;
 
   const pdf = edital?.attachments.find((f) => f.format === 'pdf');
 
@@ -149,6 +154,13 @@ export function HomePage() {
                 {t('papers.send')}
               </Link>
             )}
+            {/* Its place is kept while the server is asked, so "Fazer inscrição" does not move when it comes. */}
+            {papersPending && (
+              <span className="hero__cta hero__cta--second hero__cta--waiting" aria-hidden="true" data-testid="hero-submit-waiting">
+                <span className="processing__spinner" />
+                <span className="hero__cta-ghost">{t('papers.send')}</span>
+              </span>
+            )}
           </p>
         </div>
       </section>
@@ -178,7 +190,15 @@ export function HomePage() {
         </section>
       )}
 
-      {edital && (
+      {edital && papersPending && (
+        <section className="edital-strip edital-strip--waiting" aria-busy="true" data-testid="edital-strip-waiting">
+          <div className="container edital-strip__inner">
+            <Loading />
+          </div>
+        </section>
+      )}
+
+      {edital && !papersPending && (
         <section className="edital-strip" aria-labelledby="edital-strip-title">
           <div className="container edital-strip__inner">
             <div className="edital-strip__text">

@@ -4,6 +4,8 @@
   gap: var(--space-2);
   border-bottom: 1px solid var(--color-border);
   margin-bottom: var(--space-5, 1.25rem);
+  /* The tabs come once the person's role is known (#324); their line is there from the start. */
+  min-height: 2.5rem;
 }
 
 .panel__tabs a {

@@ -22,6 +22,7 @@ import { NotFoundPage } from '../NotFoundPage';
 import '../../components/registration/RegistrationForm.css';
 import './Account.css';
 import { useAccountPaths } from './useAccountPaths';
+import { Loading, PageLoading } from '../../components/shared/Loading';
 
 const money = (cents: number, locale: string) =>
   new Intl.NumberFormat(locale, { style: 'currency', currency: 'BRL' }).format(cents / 100);
@@ -313,7 +314,9 @@ export function MyAreaPage() {
   }, [accessToken, message]);
 
   if (!auth.enabled) return <NotFoundPage />;
-  if (auth.loading || !paths.ready) return null;
+  // The session is still being read: say so, under the page's title (#324).
+  if (auth.loading) return <PageLoading title={t('account.area.title')} />;
+  if (!paths.ready) return null;
   if (!accessToken) {
     return <Navigate to={`${paths.login}?next=${encodeURIComponent(location.pathname)}`} replace />;
   }
@@ -351,7 +354,7 @@ export function MyAreaPage() {
               {error}
             </p>
           )}
-          {!account && !error && <p role="status">{t('common.loading')}</p>}
+          {!account && !error && <Loading />}
           {account && (
             <>
               {event && (toReview > 0 || account.panels?.platformAdmin || account.panels?.slugs.includes(event.slug)) && (

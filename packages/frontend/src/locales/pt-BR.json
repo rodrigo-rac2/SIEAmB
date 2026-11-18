@@ -95,6 +95,10 @@
     "rulesBody": "As regras de submissão, as áreas temáticas e o cronograma estão no edital.",
     "rulesCta": "Ler o edital de submissão",
     "templatesTitle": "Modelos para download",
+    "unknown": {
+      "title": "Não foi possível verificar as submissões agora",
+      "body": "Não conseguimos confirmar se as submissões estão abertas. Tente de novo em instantes."
+    },
     "state": {
       "open": {
         "title": "Submissões abertas",

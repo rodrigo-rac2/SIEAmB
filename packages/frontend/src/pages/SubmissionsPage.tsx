@@ -10,6 +10,7 @@ import { getDataProvider } from '../services';
 import { fetchWindow, type WindowState } from '../services/submissions';
 import './account/Account.css';
 import './SubmissionsPage.css';
+import { Loading } from '../components/shared/Loading';
 
 export function SubmissionsPage() {
   const { t } = useTranslation();
@@ -18,13 +19,15 @@ export function SubmissionsPage() {
   const auth = useAuth();
   // Where the submission system is on, the server says whether submissions are open.
   const [state, setState] = useState<WindowState | null>(null);
+  // The server could not say: the page must not claim anything about the window (#324).
+  const [unknown, setUnknown] = useState(false);
 
   useEffect(() => {
     if (!event || !auth.enabled) return;
     let active = true;
     fetchWindow(event.slug)
       .then((w) => active && setState(w.state))
-      .catch(() => undefined);
+      .catch(() => active && setUnknown(true));
     return () => {
       active = false;
     };
@@ -52,6 +55,19 @@ export function SubmissionsPage() {
                     {t('papers.send')}
                   </Link>
                 )}{' '}
+                <Link to={`/${event.slug}/meus-trabalhos`}>{t('papers.title')}</Link>
+              </p>
+            </div>
+          ) : auth.enabled && !unknown ? (
+            // Asked and not answered yet: no "opens soon" that the answer would then contradict (#324).
+            <div className="submissions-soon" data-testid="submissions-loading">
+              <Loading />
+            </div>
+          ) : auth.enabled && event ? (
+            <div className="submissions-soon" role="status" data-testid="submissions-unknown">
+              <h2>{t('submissions.unknown.title')}</h2>
+              <p>{t('submissions.unknown.body')}</p>
+              <p>
                 <Link to={`/${event.slug}/meus-trabalhos`}>{t('papers.title')}</Link>
               </p>
             </div>

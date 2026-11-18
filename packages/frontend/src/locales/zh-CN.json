@@ -95,6 +95,10 @@
     "rulesBody": "投稿规则、主题领域和日程安排详见征稿通知。",
     "rulesCta": "阅读征稿通知",
     "templatesTitle": "模板下载",
+    "unknown": {
+      "title": "暂时无法确认投稿状态",
+      "body": "我们无法确认投稿是否开放。请稍后再试。"
+    },
     "state": {
       "open": {
         "title": "投稿已开放",

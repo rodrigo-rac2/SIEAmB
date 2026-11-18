@@ -21,6 +21,7 @@ import { NotFoundPage } from '../NotFoundPage';
 import '../../components/registration/RegistrationForm.css';
 import '../account/Account.css';
 import './Papers.css';
+import { Loading, PageLoading } from '../../components/shared/Loading';
 
 const day = (iso: string, locale: string) =>
   new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeZone: 'America/Fortaleza' }).format(new Date(iso));
@@ -179,7 +180,9 @@ export function MyPapersPage() {
   }, [load]);
 
   if (!auth.enabled) return <NotFoundPage />;
-  if (auth.loading || !event) return null;
+  if (!event) return null;
+  // The session is still being read: say so, under the page's title (#324).
+  if (auth.loading) return <PageLoading title={t('papers.title')} />;
   if (!accessToken) {
     return <Navigate to={`/${event.slug}/conta/entrar?next=${encodeURIComponent(location.pathname)}`} replace />;
   }
@@ -221,7 +224,7 @@ export function MyPapersPage() {
               {error}
             </p>
           )}
-          {!papers && !error && <p role="status">{t('common.loading')}</p>}
+          {!papers && !error && <Loading />}
           {papers && (
             <>
               <p className="papers__limits" data-testid="paper-limits">

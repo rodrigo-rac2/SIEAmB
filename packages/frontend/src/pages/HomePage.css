@@ -414,3 +414,27 @@
     animation: none;
   }
 }
+
+/* While the server is asked whether papers can be sent (#324): the strip and the second button of
+   the hero keep their place and say they are waiting, and nothing is drawn that the answer replaces. */
+.edital-strip--waiting .edital-strip__inner {
+  min-height: 5.5rem;
+}
+
+.hero__cta--waiting {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.hero__cta--waiting .processing__spinner {
+  position: absolute;
+}
+
+/* The words only give the placeholder the width of the button that may come. */
+.hero__cta-ghost {
+  visibility: hidden;
+}

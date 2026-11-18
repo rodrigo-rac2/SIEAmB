@@ -708,6 +708,9 @@ describe('MyAreaPage', () => {
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(screen.queryByTestId('where')).not.toBeInTheDocument();
     expect(calls).toEqual([]);
+    // Meanwhile the page is not blank: its title and "Carregando…" (#324).
+    expect(screen.getByRole('heading', { level: 1, name: 'Minha área' })).toBeInTheDocument();
+    expect(screen.getByTestId('loading')).toHaveTextContent('Carregando…');
   });
 
   it('shows an unpaid registration with the link to pay', async () => {
@@ -911,6 +914,16 @@ describe('RegistrationForm with accounts (#210)', () => {
     await userEvent.type(screen.getByLabelText('CPF'), '52998224725');
     await userEvent.click(screen.getByRole('checkbox'));
   };
+
+  it('cannot be sent while the session is still being read (#324)', async () => {
+    enable();
+    stubApi({});
+    const view = mount('/2027/inscricoes/nova', <RegistrationForm onSuccess={vi.fn()} />, auth({ loading: true }));
+    expect(await screen.findByRole('button', { name: 'Enviar inscrição' })).toBeDisabled();
+    view.unmount();
+    mount('/2027/inscricoes/nova', <RegistrationForm onSuccess={vi.fn()} />);
+    expect(await screen.findByRole('button', { name: 'Enviar inscrição' })).toBeEnabled();
+  });
 
   it('stops with a message when the CPF already has a registration under another e-mail', async () => {
     enable();
