@@ -34,7 +34,7 @@ function renderProbe(path: string) {
 }
 
 /** A provider that cannot tell the editions without asking. */
-const mustAsk = () => vi.spyOn(StaticDataProvider.prototype, 'peekEvents').mockReturnValue(undefined);
+const mustAsk = () => vi.spyOn(StaticDataProvider.prototype, 'now', 'get').mockReturnValue(undefined);
 
 describe('EventProvider: the edition is there for the first paint (#329)', () => {
   // No awaiting in these: what is asserted is what the very first render drew.

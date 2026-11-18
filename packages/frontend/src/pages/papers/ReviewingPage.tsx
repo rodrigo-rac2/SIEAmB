@@ -1,4 +1,3 @@
-import type { ThematicArea } from '@sieamb/shared';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, Navigate, useLocation } from 'react-router-dom';
@@ -6,7 +5,7 @@ import { PageHeader } from '../../components/shared/PageHeader';
 import { useAuth } from '../../contexts/AuthContext';
 import { useEvent } from '../../contexts/EventContext';
 import { useLocalized } from '../../hooks/useLocale';
-import { getDataProvider } from '../../services';
+import { useContent } from '../../hooks/useContent';
 import { SubmissionError, browser, fetchReviewing, paperFileUrl, type ReviewPaper } from '../../services/submissions';
 import { NotFoundPage } from '../NotFoundPage';
 import '../account/Account.css';
@@ -25,7 +24,7 @@ export function ReviewingPage() {
   const l = useLocalized();
   const accessToken = auth.enabled ? auth.accessToken : null;
   const [papers, setPapers] = useState<ReviewPaper[] | null>(null);
-  const [areas, setAreas] = useState<ThematicArea[]>([]);
+  const areas = useContent('getThematicAreas', event?.id) ?? [];
   const [error, setError] = useState<string | null>(null);
 
   const message = (err: unknown) =>
@@ -34,7 +33,6 @@ export function ReviewingPage() {
   useEffect(() => {
     if (!accessToken || !event) return;
     let active = true;
-    void getDataProvider().getThematicAreas(event.id).then((found) => active && setAreas(found));
     fetchReviewing(accessToken, event.slug)
       .then((data) => active && setPapers(data.submissions))
       .catch((err) => active && setError(message(err)));

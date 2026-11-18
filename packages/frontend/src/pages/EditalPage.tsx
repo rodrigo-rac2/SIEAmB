@@ -1,14 +1,13 @@
-import { formatDate, localize, type Edital } from '@sieamb/shared';
-import { useEffect, useState } from 'react';
+import { formatDate, localize } from '@sieamb/shared';
 import { useTranslation } from 'react-i18next';
 import Markdown from 'react-markdown';
 import { Link, useParams } from 'react-router-dom';
 import { EditalFiles } from '../components/editais/EditalFiles';
 import { PageHeader } from '../components/shared/PageHeader';
 import { useEvent } from '../contexts/EventContext';
+import { useContent } from '../hooks/useContent';
 import { useLocale, useLocalized } from '../hooks/useLocale';
 import { assetUrl } from '../lib/assets';
-import { getDataProvider } from '../services';
 import './EditalPage.css';
 import { Loading } from '../components/shared/Loading';
 
@@ -23,12 +22,7 @@ export function EditalPage() {
   const locale = useLocale();
   const { event } = useEvent();
   const { editalSlug } = useParams<{ editalSlug: string }>();
-  const [edital, setEdital] = useState<Edital | null | undefined>(undefined);
-
-  useEffect(() => {
-    if (!event || !editalSlug) return;
-    void getDataProvider().getEditalBySlug(event.id, editalSlug).then(setEdital);
-  }, [event, editalSlug]);
+  const edital = useContent('getEditalBySlug', event?.id, editalSlug);
 
   if (!event) return null;
   const back = (

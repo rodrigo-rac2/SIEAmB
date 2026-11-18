@@ -1,4 +1,3 @@
-import type { ThematicArea } from '@sieamb/shared';
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
@@ -6,7 +5,7 @@ import { PageHeader } from '../../components/shared/PageHeader';
 import { useAuth } from '../../contexts/AuthContext';
 import { useEvent } from '../../contexts/EventContext';
 import { useLocalized } from '../../hooks/useLocale';
-import { getDataProvider } from '../../services';
+import { useContent } from '../../hooks/useContent';
 import { fetchAccount } from '../../services/account';
 import {
   SubmissionError,
@@ -41,7 +40,7 @@ export function PaperFormPage() {
   const accessToken = auth.enabled ? auth.accessToken : null;
   const editing = Boolean(paperId);
 
-  const [areas, setAreas] = useState<ThematicArea[]>([]);
+  const areas = useContent('getThematicAreas', event?.id) ?? [];
   const [existing, setExisting] = useState<Paper | null>(null);
   const [ready, setReady] = useState(!editing);
   const [title, setTitle] = useState('');
@@ -58,11 +57,6 @@ export function PaperFormPage() {
   const [busy, setBusy] = useState(false);
   // The name of the account, on its way: someone quick to press Send must not lose their own name.
   const ownName = useRef<Promise<string>>(Promise.resolve(''));
-
-  useEffect(() => {
-    if (!event) return;
-    void getDataProvider().getThematicAreas(event.id).then(setAreas);
-  }, [event]);
 
   useEffect(() => {
     if (!accessToken || !event || !paperId) return;

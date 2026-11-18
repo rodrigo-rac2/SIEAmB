@@ -1,26 +1,18 @@
-import { sourceText, type CommitteeMember, type Founder } from '@sieamb/shared';
-import { useEffect, useState } from 'react';
+import { sourceText } from '@sieamb/shared';
 import { useTranslation } from 'react-i18next';
 import { PageHeader } from '../components/shared/PageHeader';
 import { PersonCard } from '../components/shared/PersonCard';
 import { useEvent } from '../contexts/EventContext';
+import { useContent } from '../hooks/useContent';
 import { useLocalized } from '../hooks/useLocale';
 import { firstAppearance, groupByRole } from '../lib/team';
-import { getDataProvider } from '../services';
 
 export function CommitteePage() {
   const { t } = useTranslation();
   const { event } = useEvent();
   const l = useLocalized();
-  const [members, setMembers] = useState<CommitteeMember[]>([]);
-  const [founders, setFounders] = useState<Founder[]>([]);
-
-  useEffect(() => {
-    if (!event) return;
-    const provider = getDataProvider();
-    void provider.getCommittee(event.id).then(setMembers);
-    void provider.getFounders().then(setFounders);
-  }, [event]);
+  const members = useContent('getCommittee', event?.id) ?? [];
+  const founders = useContent('getFounders') ?? [];
 
   if (!event) return null;
 

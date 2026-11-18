@@ -1,4 +1,3 @@
-import type { Edital, ImportantDate, NewsItem, Sponsor } from '@sieamb/shared';
 import { formatDate, formatDateList } from '@sieamb/shared';
 import { useEffect, useState, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -6,8 +5,8 @@ import { Link } from 'react-router-dom';
 import { NewsCard } from '../components/news/NewsCard';
 import { ImportantDatesTable } from '../components/shared/ImportantDatesTable';
 import { useEvent } from '../contexts/EventContext';
+import { useContent } from '../hooks/useContent';
 import { useLocale, useLocalized } from '../hooks/useLocale';
-import { getDataProvider } from '../services';
 import { assetUrl } from '../lib/assets';
 import { accountsEnabled } from '../services/account';
 import { fetchWindow, type WindowState } from '../services/submissions';
@@ -38,25 +37,15 @@ export function HomePage() {
   const l = useLocalized();
   const locale = useLocale();
   const { event } = useEvent();
-  const [dates, setDates] = useState<ImportantDate[]>([]);
-  const [news, setNews] = useState<NewsItem[]>([]);
-  const [sponsors, setSponsors] = useState<Sponsor[]>([]);
-  const [edital, setEdital] = useState<Edital | null>(null);
+  const dates = useContent('getImportantDates', event?.id) ?? [];
+  const news = (useContent('getPublishedNews', event?.id) ?? []).slice(0, 3);
+  const sponsors = useContent('getSponsors', event?.id) ?? [];
+  // Newest call of the edition drives the strip under the hero.
+  const editais = useContent('getEditais', event?.id) ?? [];
+  const edital = [...editais].sort((a, b) => b.publishedAt.localeCompare(a.publishedAt))[0] ?? null;
   // Whether papers can be sent right now, and until when (#306). Null where the system is off.
   const [papers, setPapers] = useState<{ state: WindowState; closesAt: string } | null>(null);
   const [papersUnknown, setPapersUnknown] = useState(false);
-
-  useEffect(() => {
-    if (!event) return;
-    const provider = getDataProvider();
-    void provider.getImportantDates(event.id).then(setDates);
-    void provider.getPublishedNews(event.id).then((items) => setNews(items.slice(0, 3)));
-    void provider.getSponsors(event.id).then(setSponsors);
-    // Newest call of the edition drives the strip under the hero.
-    void provider
-      .getEditais(event.id)
-      .then((list) => setEdital([...list].sort((a, b) => b.publishedAt.localeCompare(a.publishedAt))[0] ?? null));
-  }, [event]);
 
   useEffect(() => {
     if (!event || !accountsEnabled()) return;

@@ -1,20 +1,13 @@
-import type { AnaisEntry } from '@sieamb/shared';
-import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PageHeader } from '../components/shared/PageHeader';
 import { useEvent } from '../contexts/EventContext';
-import { getDataProvider } from '../services';
+import { useContent } from '../hooks/useContent';
 import { Loading } from '../components/shared/Loading';
 
 export function AnaisPage() {
   const { t } = useTranslation();
   const { event } = useEvent();
-  const [entries, setEntries] = useState<AnaisEntry[] | null>(null);
-
-  useEffect(() => {
-    if (!event) return;
-    void getDataProvider().getAnais(event.id).then(setEntries);
-  }, [event]);
+  const entries = useContent('getAnais', event?.id);
 
   if (!event) return null;
 
@@ -23,7 +16,7 @@ export function AnaisPage() {
       <PageHeader title={t('anais.title')} />
       <section className="section">
         <div className="container" style={{ maxWidth: '72ch' }}>
-          {entries === null ? (
+          {entries === undefined ? (
             <Loading />
           ) : entries.length === 0 ? (
             <p>{t('anais.empty', { event: event.name })}</p>

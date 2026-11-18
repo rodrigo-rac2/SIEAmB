@@ -1,4 +1,3 @@
-import type { ThematicArea } from '@sieamb/shared';
 import { formatCpf, maskCpf } from '@sieamb/shared';
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -9,7 +8,7 @@ import { Processing } from '../../components/shared/Processing';
 import { useAuth } from '../../contexts/AuthContext';
 import { useEvent } from '../../contexts/EventContext';
 import { useLocale, useLocalized } from '../../hooks/useLocale';
-import { getDataProvider } from '../../services';
+import { useContent } from '../../hooks/useContent';
 import {
   AUDIENCES,
   AdminError,
@@ -761,14 +760,10 @@ function PapersTab({ token, slug, message }: TabProps) {
   // Who can be chosen to review: the people with the Avaliador role in the edition (#232).
   const loadMembers = useCallback(() => fetchPanelMembers(token, slug), [token, slug]);
   const { data: people } = useLoad<PanelMembers>(loadMembers, message);
-  const [areas, setAreas] = useState<ThematicArea[]>([]);
+  const areas = useContent('getThematicAreas', event?.id) ?? [];
   // `?autor=<e-mail>` comes from the registrations list: the papers of that one person (#225).
   const [params] = useSearchParams();
   const [search, setSearch] = useState(params.get('autor') ?? '');
-
-  useEffect(() => {
-    if (event) void getDataProvider().getThematicAreas(event.id).then(setAreas);
-  }, [event]);
 
   if (!data) return error ? <Problem text={error} /> : <Loading />;
   const needle = search.trim().toLowerCase();
