@@ -935,3 +935,22 @@ describe('date reminders: 7 days and 1 day before a payment date', () => {
     expect(await deliverDueEmails(paid.deps, now)).toMatchObject({ sent: 0, skipped: 1 });
   });
 });
+
+describe('firstName (#292)', () => {
+  it.each([
+    ['Maria Clara de Souza', 'Maria'],
+    ['Prof. Dr. Maria Silva', 'Maria'],
+    ['Profa. Dra. Viviane Farias', 'Viviane'],
+    ['prof João', 'João'],
+    ['Dr.ª Ana', 'Ana'],
+    ['Me. Pedro Lima', 'Pedro'],
+    ['Professora Ausente', 'Ausente'],
+    ['  Dra.\nLuana  ', 'Luana'],
+    ['Prof.', ''],
+    ['', ''],
+    ['Drummond Andrade', 'Drummond'],
+    ['Mariana', 'Mariana'],
+  ])('greets %j as %j', (name, expected) => {
+    expect(firstName(name)).toBe(expected);
+  });
+});
