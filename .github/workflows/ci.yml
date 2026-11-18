@@ -19,8 +19,28 @@ jobs:
       - run: npm run typecheck
       - run: npm run test
 
-  e2e-smoke:
+  # The browser job runs in Playwright's own image of exactly the version the lockfile installs.
+  playwright-version:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.read.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: read
+        run: echo "version=$(node -p "require('./package-lock.json').packages['node_modules/@playwright/test'].version")" >> "$GITHUB_OUTPUT"
+
+  # Every project of the suite (#332): Chromium, Firefox and WebKit, desktop and phone. The image
+  # has the browsers and their system packages, so nothing comes from a package mirror (#337).
+  e2e-smoke:
+    needs: playwright-version
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v${{ needs.playwright-version.outputs.version }}-noble
+      options: --ipc=host
+    timeout-minutes: 25
+    env:
+      # Firefox refuses to start as root in a home that is not root's.
+      HOME: /root
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -28,18 +48,6 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      # Chromium, Firefox and WebKit (Safari's engine): every project of the suite (#332).
-      # The system packages come from the runner's Ubuntu mirror, which now and then crawls (#337):
-      # an attempt that stalls is cut after five minutes and tried again, twice at most.
-      - name: Install the browsers
-        timeout-minutes: 18
-        run: |
-          for attempt in 1 2 3; do
-            if timeout 300 npx playwright install --with-deps; then exit 0; fi
-            echo "::warning::Browser install attempt $attempt failed or stalled"
-          done
-          echo "::error::The browsers could not be installed in three attempts."
-          exit 1
       - run: npm run test -w @sieamb/e2e
       - uses: actions/upload-artifact@v4
         if: failure()
