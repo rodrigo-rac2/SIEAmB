@@ -10,6 +10,19 @@ describe('HomePage', () => {
     expect(screen.queryByText(/24\s?[–-]\s?26 de março/)).not.toBeInTheDocument();
   });
 
+  it('shows the theme of the edition under its name (#298)', async () => {
+    renderAtEvent('/2027/', <HomePage />);
+    expect(await screen.findByTestId('hero-motto')).toHaveTextContent(
+      'Tema: Diálogos globais sobre governança climática: desafios na gestão de desastres naturais',
+    );
+  });
+
+  it('shows no theme for an edition that has none', async () => {
+    renderAtEvent('/2025/', <HomePage />);
+    await screen.findAllByRole('heading');
+    expect(screen.queryByTestId('hero-motto')).not.toBeInTheDocument();
+  });
+
   it('calls out the published edital under the hero, with the read link, the PDF and an Editais card first (#137)', async () => {
     renderAtEvent('/2027/', <HomePage />);
     const strip = within(await screen.findByRole('region', { name: 'Edital de submissão e apresentação de trabalhos' }));
