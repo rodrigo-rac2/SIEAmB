@@ -6,7 +6,7 @@
 
 ## In short
 
-The II SIEAmB site is live at https://sieamb.org with the public pages, registration and payment. The submission system (accounts, papers, the organisers' panel, announcements) is finished and tested on https://dev.sieamb.org and **waits for Rodrigo's go to reach production**. That release is prepared as the draft pull request **#274**, with a production backup taken on 2026-11-17.
+The II SIEAmB site is live at https://sieamb.org with the public pages, registration and payment. The submission system (accounts, papers, the organisers' panel, announcements) is finished and tested on https://dev.sieamb.org and **waits for Rodrigo's go to reach production**. That release is prepared as the draft pull request **#274**, with a production backup taken on 2026-11-17. **Plan (Rodrigo, 2026-11-17 night): release on the evening of 2026-11-18**, after the team has tested on dev during the day and after more manual testing. Not before, and not without his word that evening.
 
 ## What is where
 
@@ -61,9 +61,9 @@ Nobody is shown a role above their own. Roles given to an address without an acc
 
 ## The release to production
 
-Prepared, not done. Rodrigo chose "prepare only" on 2026-11-17. The steps, in order, are in the draft pull request **#274**:
+Prepared, not done. Rodrigo chose "prepare only" on 2026-11-17 and set the release for the evening of 2026-11-18, once the team has tested enough on dev. Whatever the testing of that day finds is fixed on dev first and joins the release. The steps, in order, are in the draft pull request **#274**:
 
-1. Backup of `sieamb-prod` (taken on 2026-11-17, label `before-submissions-release`; take a new one if days have passed).
+1. Backup of `sieamb-prod`. One was taken on 2026-11-17 (label `before-submissions-release`); take a fresh one right before the release, since registrations and payments keep arriving.
 2. Ten migrations, `20261117010000_accounts` to `20261118010000_background_job_schedule`. They only add.
 3. The private storage bucket `submissions`.
 4. The two Vault secrets `sieamb_site_url` and `sieamb_cron_secret` on `sieamb-prod`, so the 10-minute job has something to call.

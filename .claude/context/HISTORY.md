@@ -12,6 +12,7 @@ Append a dated entry per working session. Newest first.
 - **Release prepared, not done**: Rodrigo chose "prepare only". Production backup taken, draft pull request #274 with the ordered steps.
 - **Backlog reviewed**: 11 issues closed (already live, or overtaken by what was built), 4 refreshed.
 - **Documentation brought up to date** (#284): ADR-009 on how the site runs, ADR-002, 005, 007 and 008, the README, CLAUDE.md, and STATUS rewritten.
+- **Closed for the day with the release set for the evening of 2026-11-18** (Rodrigo): the team tests the submission system on dev during the day, more manual testing follows, and only then production. Everything of the day is merged to `develop`; the only open pull request is the release draft #274.
 - Lessons: a shared dev database needs the tests to stay among themselves in every channel, e-mail included; "accepted by the mail service" is not "delivered"; a scheduled GitHub workflow is not a clock; a label that wraps its field is not an exact match for a browser test.
 
 ## 2026-11-17 — Accounts on dev (slice 1 of the submission system)
