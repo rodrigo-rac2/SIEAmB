@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { PageLayout } from './components/layout/PageLayout';
 import { AuthProvider } from './contexts/AuthContext';
@@ -32,20 +31,14 @@ import { ProgrammePage } from './pages/ProgrammePage';
 import { SubmissionsPage } from './pages/SubmissionsPage';
 import { ThematicAreasPage } from './pages/ThematicAreasPage';
 import { VenuePage } from './pages/VenuePage';
-import { getDataProvider } from './services';
+import { useCurrentEvent } from './hooks/useCurrentEvent';
 
 /** Redirects / to the configured current event. */
 function RootRedirect() {
-  const [slug, setSlug] = useState<string | null>(null);
+  const { current } = useCurrentEvent();
 
-  useEffect(() => {
-    void getDataProvider()
-      .getCurrentEvent()
-      .then((e) => setSlug(e.slug));
-  }, []);
-
-  if (!slug) return null;
-  return <Navigate to={`/${slug}/`} replace />;
+  if (!current) return null;
+  return <Navigate to={`/${current.slug}/`} replace />;
 }
 
 export function App() {

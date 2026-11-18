@@ -737,7 +737,8 @@ describe('MyAreaPage', () => {
       'href',
       '/2027/inscricoes/pagar?t=3f2b8c1e-9a4d-4e7f-8b21-6c5d4e3f2a10',
     );
-    expect(calls[0]).toMatchObject({ url: '/api/v1/account/me', authorization: 'Bearer access-token-1' });
+    // The page asks for the papers' rules too, in no promised order.
+    expect(calls).toContainEqual(expect.objectContaining({ url: '/api/v1/account/me', authorization: 'Bearer access-token-1' }));
     expect(screen.queryByTestId('no-registration')).not.toBeInTheDocument();
   });
 

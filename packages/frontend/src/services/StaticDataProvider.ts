@@ -28,6 +28,7 @@ import sponsors from '../data/sponsors.json';
 import thematicAreas from '../data/thematicAreas.json';
 
 const EVENTS = events as EventSummary[];
+const newestFirst = () => [...EVENTS].sort((a, b) => b.edition - a.edition);
 const NEWS = news as NewsItem[];
 const EDITAIS = editais as Edital[];
 
@@ -44,7 +45,11 @@ export class StaticDataProvider implements DataProvider {
   }
 
   async getEvents(): Promise<EventSummary[]> {
-    return [...EVENTS].sort((a, b) => b.edition - a.edition);
+    return newestFirst();
+  }
+
+  peekEvents(): EventSummary[] | undefined {
+    return newestFirst();
   }
 
   async getEventBySlug(slug: string): Promise<EventSummary | null> {

@@ -24,6 +24,12 @@ export interface DataProvider {
   getFounders(): Promise<Founder[]>;
 
   getEvents(): Promise<EventSummary[]>;
+  /**
+   * The editions, newest first, when they can be told without waiting (they ship with the site),
+   * so the first paint already has them (#329). A provider that has to ask leaves this out or
+   * answers `undefined`, and callers wait for `getEvents()`.
+   */
+  peekEvents?(): EventSummary[] | undefined;
   getEventBySlug(slug: string): Promise<EventSummary | null>;
   getCurrentEvent(): Promise<EventSummary>;
 
