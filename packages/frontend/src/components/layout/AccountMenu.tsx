@@ -77,7 +77,16 @@ export function AccountMenu({
         <span className="account-menu__name">{name}</span>
         <span className="account-menu__caret" aria-hidden="true" />
       </button>
-      <ul id={listId} className="account-menu__list" hidden={!open}>
+      {/* Choosing a link closes the list even when it is the page already open, where the address
+          does not change (#326). The click bubbles up from the link; the list itself is not a control. */}
+      <ul
+        id={listId}
+        className="account-menu__list"
+        hidden={!open}
+        onClick={(event) => {
+          if ((event.target as Element).closest('a')) setOpen(false);
+        }}
+      >
         <li>
           <Link to={`${base}/minha-area`}>{t('account.nav.myArea')}</Link>
         </li>
