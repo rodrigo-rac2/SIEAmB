@@ -36,12 +36,6 @@
   color: var(--color-ink);
 }
 
-.hero__tagline {
-  color: #e6efe9;
-  font-size: var(--text-lg);
-  margin-bottom: var(--space-2);
-}
-
 .hero__meta {
   color: #cfe3d7;
   font-size: var(--text-sm);
@@ -107,10 +101,6 @@
 
 .hero--light .hero__title {
   color: var(--color-ink);
-}
-
-.hero--light .hero__tagline {
-  color: var(--color-ink-secondary);
 }
 
 .hero--light .hero__meta {

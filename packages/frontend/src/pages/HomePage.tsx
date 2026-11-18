@@ -133,7 +133,6 @@ export function HomePage() {
               {t('home.mottoLabel')} <q>{l(event.motto)}</q>
             </p>
           )}
-          <p className="hero__tagline">{t('home.heroTagline')}</p>
           <p className="hero__meta">
             <span>{formatDateList(event.startsAt, event.endsAt, locale)}</span>
             {event.venue && <span>{l(event.venue)}</span>}

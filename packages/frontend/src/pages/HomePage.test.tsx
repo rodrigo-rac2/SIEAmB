@@ -74,10 +74,15 @@ describe('HomePage', () => {
     );
   });
 
-  it('shows no theme for an edition that has none', async () => {
+  it('shows each edition its own theme: last edition\'s line is not on 2027 (#308)', async () => {
+    renderAtEvent('/2027/', <HomePage />);
+    expect(await screen.findByTestId('hero-motto')).not.toHaveTextContent('Ciência, gestão e sustentabilidade');
+    expect(screen.queryByText(/Ciência, gestão e sustentabilidade dos recursos naturais/)).not.toBeInTheDocument();
+  });
+
+  it('keeps the 2025 theme on the 2025 archive', async () => {
     renderAtEvent('/2025/', <HomePage />);
-    await screen.findAllByRole('heading');
-    expect(screen.queryByTestId('hero-motto')).not.toBeInTheDocument();
+    expect(await screen.findByTestId('hero-motto')).toHaveTextContent('Tema: Ciência, gestão e sustentabilidade dos recursos naturais');
   });
 
   it('calls out the published edital under the hero, with the read link, the PDF and an Editais card first (#137)', async () => {
