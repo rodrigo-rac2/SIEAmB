@@ -22,7 +22,13 @@ jobs:
     outputs:
       url: ${{ steps.target.outputs.url }}
       sha: ${{ steps.target.outputs.sha }}
+      playwright: ${{ steps.playwright.outputs.version }}
     steps:
+      - uses: actions/checkout@v4
+      # The browser jobs run in Playwright's own image of exactly the version the lockfile installs.
+      - name: Read the Playwright version from the lockfile
+        id: playwright
+        run: echo "version=$(node -p "require('./package-lock.json').packages['node_modules/@playwright/test'].version")" >> "$GITHUB_OUTPUT"
       - name: Resolve the deployment URL for this ref
         id: target
         env:
@@ -55,23 +61,25 @@ jobs:
           exit 1
 
   # One job per browser project, side by side (#332): the three engines on a desktop and a
-  # phone of each mobile family. `engine` is what Playwright has to install for the project.
+  # phone of each mobile family. They run in Playwright's image, which has the browsers and
+  # their system packages already: nothing is installed from a package mirror during the run (#337).
   browsers:
     needs: deployment
     name: e2e-preview (${{ matrix.project }})
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    container:
+      image: mcr.microsoft.com/playwright:v${{ needs.deployment.outputs.playwright }}-noble
+      # Chromium needs more shared memory than a container gets by default.
+      options: --ipc=host
+    timeout-minutes: 25
     strategy:
       # A failure on one browser says nothing about the others: let them all finish.
       fail-fast: false
       matrix:
-        include:
-          - { project: chromium, engine: chromium }
-          - { project: firefox, engine: firefox }
-          - { project: webkit, engine: webkit }
-          - { project: mobile, engine: chromium }
-          - { project: mobile-safari, engine: webkit }
+        project: [chromium, firefox, webkit, mobile, mobile-safari]
     env:
+      # Firefox refuses to start as root in a home that is not root's.
+      HOME: /root
       # Every test address of this job carries it, so the job removes its own data and nobody
       # else's (#227, #248). The job index keeps the projects of one run apart: they share the
       # dev database while they run.
@@ -83,7 +91,6 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps ${{ matrix.engine }}
       - name: Playwright (${{ matrix.project }}) against ${{ needs.deployment.outputs.url }}
         env:
           BASE_URL: ${{ needs.deployment.outputs.url }}
