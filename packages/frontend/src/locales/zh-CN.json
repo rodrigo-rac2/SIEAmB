@@ -57,7 +57,7 @@
     "editalBadge": "征稿通知已发布",
     "papersBadge": "投稿开放中",
     "papersTitle": "向 {{event}} 投稿",
-    "papersBody": "科学论文或扩展摘要，截止日期为 {{date}}。投稿前请阅读征稿启事。",
+    "papersBody": "科学论文或扩展摘要，截止日期为 {{date}}。投稿前请阅读征稿通知。",
     "editalRead": "阅读征稿通知",
     "quickEditais": "征稿通知",
     "quickEditaisDesc": "征稿通知、规则与投稿模板。",
