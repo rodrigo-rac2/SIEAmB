@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { formatDateRange } from '@sieamb/shared';
+import { useCurrentEvent } from '../../hooks/useCurrentEvent';
 import { useLocale, useLocalized } from '../../hooks/useLocale';
 import { useAuth } from '../../contexts/AuthContext';
 import { useEvent } from '../../contexts/EventContext';
 import { firstName } from '../../lib/names';
 import { showsEditionsLink } from '../../lib/nav';
-import { getDataProvider } from '../../services';
 import { fetchAccount, onAccountChange, type Account } from '../../services/account';
 import { AccountMenu } from './AccountMenu';
 import { LanguageSwitcher } from './LanguageSwitcher';
@@ -24,20 +24,9 @@ export function TopBar() {
 
   // Accounts, papers and the organisers' panel belong to the current edition. From the archive of
   // an older one the account links lead there, not to pages that edition never had (#314).
-  const [home, setHome] = useState<string | null>(null);
-  const [homeUnknown, setHomeUnknown] = useState(false);
-  useEffect(() => {
-    let active = true;
-    getDataProvider()
-      .getCurrentEvent()
-      .then((current) => active && setHome(current.slug))
-      .catch(() => active && setHomeUnknown(true));
-    return () => {
-      active = false;
-    };
-  }, []);
+  const { current, settled } = useCurrentEvent();
   // If the current edition cannot be told, the edition on screen is the best there is.
-  const accountSlug = home ?? (homeUnknown ? (event?.slug ?? null) : null);
+  const accountSlug = current?.slug ?? (settled ? (event?.slug ?? null) : null);
 
   // The account of who is logged in: the first name for the button, and which pages its list
   // offers (#252, #311, #315). The server decides again when a page is opened; this only shows the doors.
