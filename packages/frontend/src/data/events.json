@@ -57,6 +57,12 @@
     "name": "SIEAmb 2025",
     "fullName": "1º Seminário Internacional de Estudos Ambientais",
     "edition": 1,
+    "motto": {
+      "pt-BR": "Ciência, gestão e sustentabilidade dos recursos naturais",
+      "en": "Science, management and sustainability of natural resources",
+      "es": "Ciencia, gestión y sostenibilidad de los recursos naturales",
+      "zh-CN": "自然资源的科学、管理与可持续发展"
+    },
     "aboutMd": {
       "pt-BR": "**1º Seminário Internacional de Estudos Ambientais: A Governança Ambiental da China e do Brasil frente à crise climática.**\n\nOs estudos submetidos ao evento foram avaliados em duas etapas, sendo a primeira revisão de conteúdo e a segunda revisão textual e de forma. O evento aceitou trabalhos na íntegra em formato de artigo e resultados iniciais de pesquisas em desenvolvimento no formato de resumos expandidos, nos idiomas português, inglês e espanhol. Os trabalhos aprovados foram publicados nos anais do evento e os melhores artigos indicados para publicação como capítulo de livro.\n\nO ano de 2025 marcou o primeiro ano de realização do seminário, em formato remoto, com participação de pesquisadores vinculados à Xi'an Jiaotong-Liverpool University, da província de Jiangsu, China, à UFPB e à Unicamp.",
       "en": "**1st International Seminar on Environmental Studies: Environmental Governance in China and Brazil in the face of the climate crisis.**\n\nThe studies submitted to the event were assessed in two stages: a first review of content and a second review of text and form. The event accepted full papers in article format and early results of ongoing research as extended abstracts, in Portuguese, English and Spanish. Approved papers were published in the event proceedings and the best articles were recommended for publication as book chapters.\n\n2025 marked the first year of the seminar, held remotely, with researchers from Xi'an Jiaotong-Liverpool University, in Jiangsu province, China, from UFPB and from Unicamp.",
