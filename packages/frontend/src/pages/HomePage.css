@@ -21,6 +21,19 @@
   margin-bottom: var(--space-3);
 }
 
+.hero__motto {
+  max-width: 46rem;
+  margin-bottom: var(--space-3);
+  color: #ffffff;
+  font-size: var(--text-xl, 1.25rem);
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.hero--light .hero__motto {
+  color: var(--color-ink);
+}
+
 .hero__tagline {
   color: #e6efe9;
   font-size: var(--text-lg);

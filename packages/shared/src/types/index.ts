@@ -54,6 +54,8 @@ export interface EventSummary {
   endsAt: string; // ISO
   /** Presentation text of this edition (markdown). Shown on the About page under the general text. */
   aboutMd: LocalizedText | null;
+  /** The edition's theme, shown on the home page under its name (#298). */
+  motto?: LocalizedText | null;
   venue: LocalizedText | null;
   /** True for remote editions: the venue page shows the streaming link instead of an address. */
   isOnline: boolean;
