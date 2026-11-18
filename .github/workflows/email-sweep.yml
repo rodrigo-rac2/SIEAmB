@@ -1,14 +1,18 @@
 name: Payment background job
 
-# Every 10 minutes each site is asked to (#185, #187):
+# The job that each site runs in the background (#185, #187):
 #   1. re-check open payments at Mercado Pago, in case a notification never arrived;
 #   2. record the reminders that are due (only where REMINDERS_ENABLED=true, never at night);
 #   3. send the e-mails that are still owed.
-# The endpoint answers with counts only. GitHub may start scheduled runs late;
-# that only delays a retry, since e-mails are first sent when the status changes.
+#
+# Since #273 the DATABASE starts it every 10 minutes (pg_cron, migration
+# 20261118010000_background_job_schedule). GitHub starts scheduled runs late or not at all:
+# on 2026-11-17 this workflow, then on `*/10`, ran three times in a day. It stays as an hourly
+# second line and as the way to start the job by hand ("Run workflow"). Two starts at once are
+# safe: every e-mail is claimed before it is sent.
 on:
   schedule:
-    - cron: '*/10 * * * *'
+    - cron: '17 * * * *'
   workflow_dispatch:
 
 permissions:

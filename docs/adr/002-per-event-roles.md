@@ -2,6 +2,17 @@
 
 **Date:** 2026-09-13 · **Status:** Accepted (schema change for Phase 1)
 
+> **What is in use on 2026-11-17** (ADR-008, decisions 8 to 9a). The model below holds: one platform flag and roles per edition in `event_members`. Three of the roles are used so far, under the names the site shows:
+>
+> | In the site | In the database | Opens the panel | Gives and takes |
+> |---|---|---|---|
+> | Dono(a) do site (the owner) | `users.is_platform_admin` | Yes, in every edition | Administrador, Organizador, Avaliador |
+> | Administrador | `ADMIN` | Yes | Organizador, Avaliador |
+> | Organizador | `ORGANIZER` | Yes, with less | Avaliador |
+> | Avaliador | `REVIEWER` | No. Has "Trabalhos para avaliar" | Nothing |
+>
+> `ORGANIZER` did not exist when this record was written; it was added with the panel for the people who follow registrations and papers without deciding about them. `SCIENTIFIC_CHAIR`, `AREA_CHAIR`, `EDITOR`, `FINANCE` and `STAFF` are in the enum and unused: the committee asked for a simpler set. Nobody is shown a role above their own (#275). The owner is set in the database, never from the site. What each one may do to registrations, papers and other people's accounts is in ADR-008.
+
 ## Context
 
 The platform hosts every edition (ADR-001) and committees change yearly: a 2025 reviewer is not a 2027 reviewer, the empresa júnior handling payments may change, and one person often holds several hats (Thays: scientific committee + reviewer). The original schema had a single global `users.role` enum (ADMIN/EDITOR/REVIEWER/PARTICIPANT), which cannot express any of that, and "participant" was modelled as a role although it is a fact about registrations.

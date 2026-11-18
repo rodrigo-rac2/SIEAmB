@@ -18,6 +18,9 @@ jobs:
   e2e-preview:
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    env:
+      # Every test address of this run carries it, so the run can remove its own data (#227, #248).
+      E2E_RUN_ID: r${{ github.run_id }}a${{ github.run_attempt }}
     steps:
       - uses: actions/checkout@v4
       - name: Resolve the deployment URL for this ref
@@ -60,7 +63,19 @@ jobs:
         env:
           BASE_URL: ${{ steps.target.outputs.url }}
           E2E_BYPASS_TOKEN: ${{ secrets.E2E_BYPASS_TOKEN }}
+          # The account tests (#208) read their confirmation links from the dev login
+          # service; they skip themselves on production.
+          SUPABASE_DEV_URL: ${{ secrets.SUPABASE_DEV_URL }}
+          SUPABASE_DEV_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_DEV_SERVICE_ROLE_KEY }}
         run: npm run test -w @sieamb/e2e
+      # A run cancelled by a newer push never reaches Playwright's teardown (#248):
+      # this step runs whatever happened, removes the run's data and fails if any is left.
+      - name: Remove this run's test data
+        if: always()
+        env:
+          SUPABASE_DEV_URL: ${{ secrets.SUPABASE_DEV_URL }}
+          SUPABASE_DEV_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_DEV_SERVICE_ROLE_KEY }}
+        run: npm run cleanup:run -w @sieamb/e2e
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

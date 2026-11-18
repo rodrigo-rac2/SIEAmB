@@ -1,12 +1,12 @@
 # ADR-006: Records are marked as deleted, never erased
 
-**Date:** 2026-11-16 · **Status:** Proposed, not built · **Issue:** #204
+**Date:** 2026-11-16 · **Status:** Accepted. Built on dev for registrations and papers on 2026-11-17 (#219, #216; see ADR-008); users, reviews and announcements do not have it yet · **Issue:** #204
 
 ## Context
 
 On 2026-11-16 four test registrations had to be removed from the production database by hand, with their payments and e-mails, one of them already paid. The only trace left is a local copy of the rows and a note on #166. Rodrigo asked that the system support deleting without losing the record, for registrations today and for everything the submission system adds (users, submissions, reviews, announcements). His starting idea was a status column with Active, Inactive and Deleted.
 
-## Decisions (proposed)
+## Decisions
 
 1. **Deletion is a mark beside the status, not one more status.** Each table gets `deleted_at` (null while the record is alive), `deleted_by` and `deleted_reason` ("test", "duplicate", "asked by the person"). The `status` column keeps describing the life of the record (a user Active or Inactive, a submission Draft, Submitted, Accepted), so a deleted record keeps the status it had and can be restored exactly as it was. A single column would lose that.
 2. **Everything ignores deleted records by default**: lists, counts, reminders, e-mails, exports. One shared query helper, so a new screen cannot forget the filter.
