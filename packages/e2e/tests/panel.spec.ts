@@ -265,6 +265,7 @@ test.describe('organisation panel @panel', () => {
     await logIn(page, email);
     await expect(page.getByTestId('panel-link')).toBeVisible();
     // The same door is in the top bar, on every page (#252).
+    await page.getByTestId('account-menu').click();
     await expect(page.getByTestId('topbar-panel')).toHaveAttribute('href', `/${EVENT}/painel`);
     await page.getByTestId('topbar-panel').click();
     await expect(page.getByTestId('panel-counts')).toBeVisible();

@@ -163,9 +163,25 @@ test.describe('accounts @accounts', () => {
     await expect(page.getByTestId('registration-card')).toBeVisible();
     // Nothing scrolls sideways, on a phone least of all.
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
-    // Sair is in the top bar on every page (#253), and at the foot of Minha área: here, the top bar one.
+    // Sair is behind the first name in the top bar, on every page (#253, #311), and at the foot of
+    // Minha área: here, the top bar one. An author's list has no panel.
+    const account = page.getByRole('navigation', { name: 'Sua conta' });
+    const name = page.getByTestId('account-menu');
+    await expect(name).toHaveText('Conta');
+    await expect(name).toHaveAttribute('aria-expanded', 'false');
+    await expect(account.getByRole('list')).toBeHidden();
+    await name.click();
+    await expect(name).toHaveAttribute('aria-expanded', 'true');
+    await expect(account.getByRole('listitem')).toHaveText(['Minha área', 'Meus trabalhos', 'Sair']);
+    // The list is in front of the white menu row, not behind it: its first link can really be pressed.
+    await account.getByRole('link', { name: 'Minha área' }).click({ trial: true });
     await expect(page.getByTestId('topbar-panel')).toHaveCount(0);
-    await page.locator('.topbar').getByRole('button', { name: 'Sair' }).click();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
+    await page.keyboard.press('Escape');
+    await expect(account.getByRole('list')).toBeHidden();
+    await expect(name).toBeFocused();
+    await name.click();
+    await account.getByRole('button', { name: 'Sair' }).click();
     await expect(page).toHaveURL(new RegExp(`/${EVENT}/conta/entrar`));
     await page.goto(`/${EVENT}/conta/confirmar?token_hash=${link.hashed_token}&type=signup`);
     await expect(page.getByRole('heading', { name: 'Este link não vale mais' })).toBeVisible();

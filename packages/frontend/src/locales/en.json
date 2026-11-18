@@ -293,6 +293,8 @@
     "sentHint": "If the message does not arrive in a few minutes, check your spam folder or ask again.",
     "nav": {
       "login": "Log in or create account",
+      "menu": "Your account",
+      "account": "My account",
       "myArea": "My area",
       "logout": "Log out"
     },

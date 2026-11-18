@@ -133,16 +133,110 @@ describe('accounts switched off', () => {
     mount('/2027/', <TopBar />, auth({ enabled: false }));
     await screen.findByText(/2027/);
     expect(screen.queryByRole('link', { name: 'Entrar ou criar conta' })).not.toBeInTheDocument();
+    expect(screen.queryByTestId('topbar-account')).not.toBeInTheDocument();
   });
 });
 
 describe('top bar', () => {
-  it('offers Entrar when logged out and Minha área when logged in', async () => {
+  const list = () => within(screen.getByRole('navigation', { name: 'Sua conta' })).queryByRole('list');
+  const openMenu = async () => {
+    await userEvent.click(await screen.findByTestId('account-menu'));
+    return within(list()!);
+  };
+
+  it('keeps the first line as it was: dates, editions and languages; the account has a line of its own (#311)', async () => {
+    stubApi({ me: { body: account() } });
+    const view = mount('/2027/', <TopBar />, auth(LOGGED_IN));
+    await screen.findByTestId('account-menu');
+    const first = within(view.container.querySelector<HTMLElement>('.topbar__inner')!);
+    expect(first.getByText(/2027/)).toBeInTheDocument();
+    expect(first.getByRole('link', { name: 'Edições Anteriores' })).toBeInTheDocument();
+    expect(first.getAllByRole('button')).toHaveLength(4);
+    expect(first.queryByTestId('account-menu')).not.toBeInTheDocument();
+    expect(first.queryByTestId('bell')).not.toBeInTheDocument();
+    // Second line: the bell, then the name.
+    const second = screen.getByTestId('topbar-account');
+    expect(Array.from(second.children).map((el) => el.getAttribute('data-testid') ?? el.className)).toEqual(['bell', 'account-menu']);
+  });
+
+  it('offers Entrar when logged out, and the first name with a list of the person\'s pages when logged in', async () => {
     const { unmount } = mount('/2027/', <TopBar />);
-    expect(await screen.findByRole('link', { name: 'Entrar ou criar conta' })).toHaveAttribute('href', '/2027/conta/entrar');
+    const login = await screen.findByRole('link', { name: 'Entrar ou criar conta' });
+    expect(login).toHaveAttribute('href', '/2027/conta/entrar');
+    expect(screen.getByTestId('topbar-account')).toContainElement(login);
+    expect(screen.queryByTestId('account-menu')).not.toBeInTheDocument();
     unmount();
+    stubApi({ me: { body: account() } });
     mount('/2027/', <TopBar />, auth(LOGGED_IN));
-    expect(await screen.findByRole('link', { name: 'Minha área' })).toHaveAttribute('href', '/2027/minha-area');
+    const button = await screen.findByRole('button', { name: 'Maria' });
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+    // Closed: the list is hidden from everyone, screen readers included, and the button points at it.
+    expect(list()).not.toBeInTheDocument();
+    expect(document.getElementById(button.getAttribute('aria-controls')!)).not.toBeVisible();
+    const items = await openMenu();
+    expect(button).toHaveAttribute('aria-expanded', 'true');
+    expect(document.getElementById(button.getAttribute('aria-controls')!)).toBe(list());
+    expect(items.getByRole('link', { name: 'Minha área' })).toHaveAttribute('href', '/2027/minha-area');
+    expect(items.getByRole('link', { name: 'Meus trabalhos' })).toHaveAttribute('href', '/2027/meus-trabalhos');
+    expect(items.getAllByRole('listitem').map((li) => li.textContent)).toEqual(['Minha área', 'Meus trabalhos', 'Sair']);
+    // A list of links, not an application menu: no menu roles that would promise arrow keys.
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    expect(screen.queryByRole('menuitem')).not.toBeInTheDocument();
+  });
+
+  it('skips a title in the name, and says "Minha conta" while the account is not known or cannot be read', async () => {
+    stubApi({ me: { body: account({ user: { ...account().user, fullName: 'Profa. Viviane Farias' } }) } });
+    const first = mount('/2027/', <TopBar />, auth(LOGGED_IN));
+    expect(await screen.findByRole('button', { name: 'Viviane' })).toBeInTheDocument();
+    first.unmount();
+    stubApi({ me: { status: 500, body: { error: 'server_error' } } });
+    mount('/2027/', <TopBar />, auth(LOGGED_IN));
+    const button = await screen.findByTestId('account-menu');
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(button).toHaveTextContent('Minha conta');
+    // The e-mail is never put on the bar.
+    expect(screen.getByTestId('topbar-account')).not.toHaveTextContent('@');
+  });
+
+  it('closes with Escape (focus back on the name), a press elsewhere, focus leaving, and the button again', async () => {
+    stubApi({ me: { body: account() } });
+    mount(
+      '/2027/',
+      <>
+        <TopBar />
+        <button type="button">fora</button>
+      </>,
+      auth(LOGGED_IN),
+    );
+    const items = await openMenu();
+    items.getByRole('link', { name: 'Minha área' }).focus();
+    await userEvent.keyboard('{Escape}');
+    expect(list()).not.toBeInTheDocument();
+    expect(screen.getByTestId('account-menu')).toHaveFocus();
+
+    await openMenu();
+    await userEvent.click(document.body);
+    expect(list()).not.toBeInTheDocument();
+
+    // With the keyboard: Tab goes through the items in order, and past the last one it closes.
+    await openMenu();
+    await userEvent.tab();
+    expect(screen.getByRole('link', { name: 'Minha área' })).toHaveFocus();
+    await userEvent.tab();
+    await userEvent.tab();
+    expect(screen.getByRole('button', { name: 'Sair' })).toHaveFocus();
+    expect(list()).toBeInTheDocument();
+    await userEvent.tab();
+    expect(screen.getByRole('button', { name: 'fora' })).toHaveFocus();
+    expect(list()).not.toBeInTheDocument();
+
+    await openMenu();
+    await userEvent.click(screen.getByTestId('account-menu'));
+    expect(list()).not.toBeInTheDocument();
+    // Escape with the list closed does nothing, and takes no focus.
+    screen.getByRole('button', { name: 'fora' }).focus();
+    await userEvent.keyboard('{Escape}');
+    expect(screen.getByRole('button', { name: 'fora' })).toHaveFocus();
   });
 
   it.each([
@@ -150,48 +244,41 @@ describe('top bar', () => {
     ['the platform owner', { platformAdmin: true, slugs: [] }, true],
     ['someone with a role in another edition only', { platformAdmin: false, slugs: ['2025'] }, false],
     ['someone with no role', { platformAdmin: false, slugs: [] }, false],
-  ])('links to the panel beside Minha área for %s: %j (#252)', async (_name, panels, shown) => {
+  ])('has the panel in the list for %s: %j (#252)', async (_name, panels, shown) => {
     const calls = stubApi({ me: { body: account({ panels }) } });
     mount('/2027/', <TopBar />, auth(LOGGED_IN));
-    await screen.findByRole('link', { name: 'Minha área' });
-    await waitFor(() => expect(calls.some((c) => c.url === '/api/v1/account/me')).toBe(true));
+    await screen.findByRole('button', { name: 'Maria' });
+    expect(calls.some((c) => c.url === '/api/v1/account/me')).toBe(true);
+    const items = await openMenu();
     if (shown) {
-      const link = await screen.findByTestId('topbar-panel');
-      expect(link).toHaveTextContent('Painel');
+      const link = items.getByTestId('topbar-panel');
+      expect(link).toHaveTextContent('Painel da organização');
       expect(link).toHaveAttribute('href', '/2027/painel');
+      expect(items.getAllByRole('listitem').map((li) => li.textContent)).toEqual(['Minha área', 'Meus trabalhos', 'Painel da organização', 'Sair']);
     } else {
-      await new Promise((resolve) => setTimeout(resolve, 50));
-      expect(screen.queryByTestId('topbar-panel')).not.toBeInTheDocument();
+      expect(items.queryByTestId('topbar-panel')).not.toBeInTheDocument();
     }
   });
 
-  it('has Sair as its last item when logged in, which logs out; and none when logged out (#253)', async () => {
+  it('logs out from the list, and has no Sair when logged out (#253)', async () => {
     stubApi({ me: { body: account() } });
     const out = mount('/2027/', <TopBar />);
     await screen.findByRole('link', { name: 'Entrar ou criar conta' });
-    expect(screen.queryByRole('button', { name: 'Sair' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Sair')).not.toBeInTheDocument();
     out.unmount();
     const state = auth(LOGGED_IN);
-    const view = mount('/2027/', <TopBar />, state);
-    const leave = await screen.findByRole('button', { name: 'Sair' });
-    const items = Array.from(view.container.querySelectorAll('.topbar__actions > *'));
-    expect(items.at(-1)).toBe(leave);
-    await userEvent.click(leave);
+    mount('/2027/', <TopBar />, state);
+    const items = await openMenu();
+    await userEvent.click(items.getByRole('button', { name: 'Sair' }));
     expect(state.signOut).toHaveBeenCalledTimes(1);
+    expect(list()).not.toBeInTheDocument();
   });
 
-  it('shows no panel link, and asks the server nothing, when logged out; nor when the account cannot be read', async () => {
+  it('asks the server nothing when logged out', async () => {
     const calls = stubApi({});
-    const out = mount('/2027/', <TopBar />);
+    mount('/2027/', <TopBar />);
     await screen.findByRole('link', { name: 'Entrar ou criar conta' });
     expect(calls.filter((c) => c.url.includes('/account/me'))).toEqual([]);
-    expect(screen.queryByTestId('topbar-panel')).not.toBeInTheDocument();
-    out.unmount();
-    stubApi({ me: { status: 500, body: { error: 'server_error' } } });
-    mount('/2027/', <TopBar />, auth(LOGGED_IN));
-    await screen.findByRole('link', { name: 'Minha área' });
-    await new Promise((resolve) => setTimeout(resolve, 50));
-    expect(screen.queryByTestId('topbar-panel')).not.toBeInTheDocument();
   });
 });
 

@@ -293,6 +293,8 @@
     "sentHint": "Se a mensagem não chegar em alguns minutos, confira a caixa de spam ou peça de novo.",
     "nav": {
       "login": "Entrar ou criar conta",
+      "menu": "Sua conta",
+      "account": "Minha conta",
       "myArea": "Minha área",
       "logout": "Sair"
     },
