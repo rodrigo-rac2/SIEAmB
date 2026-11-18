@@ -5,6 +5,7 @@ import { formatDateRange } from '@sieamb/shared';
 import { useLocale, useLocalized } from '../../hooks/useLocale';
 import { useAuth } from '../../contexts/AuthContext';
 import { useEvent } from '../../contexts/EventContext';
+import { firstName } from '../../lib/names';
 import { showsEditionsLink } from '../../lib/nav';
 import { fetchAccount } from '../../services/account';
 import { AccountMenu } from './AccountMenu';
@@ -24,7 +25,7 @@ export function TopBar() {
   const accessToken = auth.enabled ? auth.accessToken : null;
   const slug = event?.slug;
   const [panel, setPanel] = useState(false);
-  // The first name for the account menu (#311); the e-mail stands in until the account is read.
+  // The first name for the account menu (#311); "Minha conta" stands in until the account is read.
   const [name, setName] = useState<string | null>(null);
   useEffect(() => {
     setPanel(false);
@@ -35,7 +36,7 @@ export function TopBar() {
       .then((account) => {
         if (!active) return;
         setPanel(Boolean(account.panels?.platformAdmin || account.panels?.slugs.includes(slug)));
-        setName(account.user.fullName.trim().split(/\s+/)[0] || null);
+        setName(firstName(account.user.fullName) || null);
       })
       .catch(() => undefined);
     return () => {
@@ -67,7 +68,7 @@ export function TopBar() {
               <NotificationsBell slug={event.slug} />
               <AccountMenu
                 slug={event.slug}
-                name={name ?? auth.email ?? t('account.nav.myArea')}
+                name={name ?? t('account.nav.account')}
                 panel={panel}
                 onSignOut={() => void auth.signOut()}
               />

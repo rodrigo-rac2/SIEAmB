@@ -294,7 +294,8 @@
     "sentHint": "Si el mensaje no llega en unos minutos, revise la carpeta de spam o pídalo de nuevo.",
     "nav": {
       "login": "Entrar o crear cuenta",
-      "menuOf": "Menú de la cuenta de {{name}}",
+      "menu": "Su cuenta",
+      "account": "Mi cuenta",
       "myArea": "Mi área",
       "logout": "Salir"
     },
