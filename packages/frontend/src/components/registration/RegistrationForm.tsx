@@ -37,6 +37,8 @@ export function RegistrationForm({
   const accountEmail = sessionEmail ? sessionEmail.toLowerCase() : null;
   const tokenRef = useRef(accessToken);
   tokenRef.current = accessToken;
+  // While the account's data is on its way the form cannot be sent: the name may still be missing.
+  const [accountPending, setAccountPending] = useState(false);
 
   const {
     register,
@@ -58,6 +60,7 @@ export function RegistrationForm({
     const token = tokenRef.current;
     if (!token) return;
     let active = true;
+    setAccountPending(true);
     const fillEmpty = (field: 'fullName' | 'cpf' | 'passport' | 'institution', value: string | null | undefined) => {
       if (value && !getValues(field)) setValue(field, value);
     };
@@ -71,9 +74,13 @@ export function RegistrationForm({
         if (user.passport && !getValues('cpf')) setValue('country', user.country);
       })
       // The form still works without the account's data.
-      .catch(() => undefined);
+      .catch(() => undefined)
+      .finally(() => {
+        if (active) setAccountPending(false);
+      });
     return () => {
       active = false;
+      setAccountPending(false);
     };
   }, [accountEmail, getValues, setValue]);
 
@@ -229,7 +236,7 @@ export function RegistrationForm({
         </p>
       )}
 
-      <button className="reg-form__submit" type="submit" disabled={isSubmitting}>
+      <button className="reg-form__submit" type="submit" disabled={isSubmitting || accountPending}>
         {isSubmitting ? t('registration.submitting') : t('registration.submit')}
       </button>
     </form>

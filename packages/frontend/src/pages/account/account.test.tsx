@@ -727,7 +727,10 @@ describe('RegistrationForm with accounts (#210)', () => {
     );
     mount('/2027/inscricoes/nova', <RegistrationForm onSuccess={vi.fn()} />, auth(LOGGED_IN));
     await userEvent.type(await screen.findByLabelText(/Nome completo/), 'Nome Digitado');
+    // Not sendable until the account's data has arrived.
+    expect(screen.getByRole('button', { name: /Enviar inscrição/ })).toBeDisabled();
     release();
+    await waitFor(() => expect(screen.getByRole('button', { name: /Enviar inscrição/ })).toBeEnabled());
     await waitFor(() => expect(screen.getByLabelText('Instituição')).toHaveValue('UFCG'));
     expect(screen.getByLabelText(/Nome completo/)).toHaveValue('Nome Digitado');
     expect(screen.getByLabelText('CPF')).toHaveValue('529.982.247-25');
