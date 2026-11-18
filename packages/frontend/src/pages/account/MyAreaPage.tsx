@@ -1,4 +1,5 @@
 import { formatCpf, maskCpf } from '@sieamb/shared';
+import { Processing } from '../../components/shared/Processing';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, Navigate, useLocation } from 'react-router-dom';
@@ -113,6 +114,7 @@ function Suggestion({
           >
             {t('account.area.noAccess')}
           </button>
+          <Processing when={busy} />
         </div>
       )}
     </div>
@@ -246,9 +248,12 @@ function ProfileForm({
           {t('account.area.saved')}
         </p>
       )}
-      <button className="reg-form__submit" type="submit" disabled={busy}>
-        {busy ? t('common.loading') : t('common.save')}
-      </button>
+      <span className="account__actions">
+        <button className="reg-form__submit" type="submit" disabled={busy}>
+          {t('common.save')}
+        </button>
+        <Processing when={busy} />
+      </span>
     </form>
   );
 }

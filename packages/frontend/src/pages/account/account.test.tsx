@@ -56,7 +56,9 @@ interface Call {
 }
 
 /** Answers /api/v1/account/<action> from a table; records every call. */
-function stubApi(answers: Record<string, { status?: number; body: unknown } | (() => { status?: number; body: unknown })>) {
+function stubApi(
+  answers: Record<string, { status?: number; body: unknown } | (() => { status?: number; body: unknown } | Promise<{ status?: number; body: unknown }>)>,
+) {
   const calls: Call[] = [];
   vi.stubGlobal(
     'fetch',
@@ -70,7 +72,7 @@ function stubApi(answers: Record<string, { status?: number; body: unknown } | ((
         authorization: headers.get('authorization'),
       });
       const entry = answers[action];
-      const answer = typeof entry === 'function' ? entry() : entry;
+      const answer = typeof entry === 'function' ? await entry() : entry;
       if (!answer) return new Response(JSON.stringify({ error: 'not_found' }), { status: 404 });
       return new Response(JSON.stringify(answer.body), { status: answer.status ?? 200 });
     }),
@@ -611,6 +613,40 @@ describe('MyAreaPage', () => {
     expect(await screen.findByText(/encaminhado à organização/)).toBeInTheDocument();
     expect(calls.find((c) => c.url.endsWith('link-request'))!.body).toEqual({ registrationId: 'reg-9', noAccess: true });
     expect(screen.queryByRole('button', { name: 'Sim, é minha' })).not.toBeInTheDocument();
+  });
+
+  it('says "Processando…" on the card and the form while their request is on its way (#291)', async () => {
+    let releaseLink!: () => void;
+    const linkGate = new Promise<void>((r) => (releaseLink = r));
+    let releaseSave!: () => void;
+    const saveGate = new Promise<void>((r) => (releaseSave = r));
+    stubApi({
+      me: { body: account({ suggestions: [suggestion(null)] }) },
+      'link-request': async () => {
+        await linkGate;
+        return { status: 202, body: { ok: true, request: 'PENDING', maskedEmail: 'a•••@outlook.com' } };
+      },
+      profile: async () => {
+        await saveGate;
+        return { body: account() };
+      },
+    });
+    mount('/2027/minha-area', <MyAreaPage />, auth(LOGGED_IN));
+    const card = await screen.findByTestId('suggestion-card');
+    await userEvent.click(within(card).getByRole('button', { name: 'Sim, é minha' }));
+    expect(await within(card).findByTestId('processing')).toHaveTextContent('Processando…');
+    expect(within(card).getByRole('button', { name: 'Sim, é minha' })).toBeDisabled();
+    expect(within(card).getByRole('button', { name: 'Não tenho mais acesso a esse e-mail' })).toBeDisabled();
+    releaseLink();
+    await waitFor(() => expect(within(card).queryByTestId('processing')).not.toBeInTheDocument());
+
+    await userEvent.type(screen.getByLabelText('Instituição'), 'UFCG');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    const form = screen.getByRole('button', { name: 'Salvar' }).closest('form')!;
+    expect(await within(form).findByTestId('processing')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Salvar' })).toBeDisabled();
+    releaseSave();
+    await waitFor(() => expect(screen.queryByTestId('processing')).not.toBeInTheDocument());
   });
 
   it('saves the profile with a CPF, and then shows the document as locked', async () => {

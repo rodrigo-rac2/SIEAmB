@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Link, Navigate, useLocation, useSearchParams } from 'react-router-dom';
 import { PageHeader } from '../../components/shared/PageHeader';
 import { PasswordInput } from '../../components/shared/PasswordInput';
+import { Processing } from '../../components/shared/Processing';
 import { useAuth } from '../../contexts/AuthContext';
 import { useEvent } from '../../contexts/EventContext';
 import { useLocale, useLocalized } from '../../hooks/useLocale';
@@ -98,21 +99,6 @@ function Problem({ text }: { text: string | null }) {
     <p className="reg-form__error reg-form__error--global" role="alert">
       {text}
     </p>
-  ) : null;
-}
-
-/**
- * "Processando…" with a spinner, while something asked of the server is on its way (#278).
- * The line, form or box it sits in is shaded and cannot be clicked until it is gone: see
- * `.panel__processing` in Panel.css. No `role="status"`: that one is for the result.
- */
-function Processing({ when }: { when: boolean }) {
-  const { t } = useTranslation();
-  return when ? (
-    <span className="panel__processing" aria-live="polite" data-testid="processing">
-      <span className="panel__spinner" aria-hidden="true" />
-      {t('common.processing')}
-    </span>
   ) : null;
 }
 
