@@ -5,23 +5,60 @@ import { HomePage } from './HomePage';
 
 afterEach(() => {
   vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
 });
 
 describe('HomePage', () => {
-  it('offers to send a paper beside the registration, where the submission system is on (#244)', async () => {
+  const on = (state: 'open' | 'closed' | 'not_open' | 'fails') => {
     vi.stubEnv('VITE_ACCOUNTS_ENABLED', 'true');
     vi.stubEnv('VITE_SUPABASE_URL', 'https://example.supabase.co');
     vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'anon');
+    const fetchMock = vi.fn(async () =>
+      state === 'fails'
+        ? new Response('{}', { status: 500 })
+        : new Response(JSON.stringify({ state, opensAt: '2026-11-15T00:00:00-03:00', closesAt: '2027-01-18T23:59:59-03:00' }), { status: 200 }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    return fetchMock;
+  };
+
+  it('while papers can be sent: a button in the hero and a "Submissões abertas" call-out with the deadline (#244, #306)', async () => {
+    on('open');
     renderAtEvent('/2027/', <HomePage />);
-    expect(await screen.findByTestId('hero-submit')).toHaveAttribute('href', '/2027/submissoes');
+    expect(await screen.findByTestId('hero-submit')).toHaveAttribute('href', '/2027/meus-trabalhos/novo');
     expect(screen.getByTestId('hero-submit')).toHaveTextContent('Enviar trabalho');
+    const strip = screen.getByTestId('papers-open-badge').closest('section')!;
+    expect(screen.getByTestId('papers-open-badge')).toHaveTextContent('Submissões abertas');
+    expect(within(strip).getByRole('heading', { name: 'Envie seu trabalho ao II SIEAmB' })).toBeInTheDocument();
+    expect(strip).toHaveTextContent('Artigo científico ou resumo expandido, até 18 de janeiro de 2027.');
+    expect(within(strip).getByTestId('papers-open-cta')).toHaveAttribute('href', '/2027/meus-trabalhos/novo');
+    // The edital stays one click away, as a secondary link.
+    expect(within(strip).getByRole('link', { name: 'Ler o edital' })).toHaveAttribute('href', '/2027/editais/submissao-e-apresentacao-de-trabalhos');
+    expect(within(strip).getByRole('link', { name: 'Edital em PDF' })).toBeInTheDocument();
+    expect(strip).not.toHaveTextContent('Edital publicado');
+    // Nothing about more time than the published date.
+    expect(strip).not.toHaveTextContent(/prorrog/i);
   });
 
-  it('offers no way into the submission system where it is off', async () => {
+  it.each(['closed', 'not_open', 'fails'] as const)('submissions %s: no button to send, and the strip is the plain "Edital publicado"', async (state) => {
+    const fetchMock = on(state);
+    renderAtEvent('/2027/', <HomePage />);
+    expect(await screen.findByText('Edital publicado')).toBeInTheDocument();
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    expect(screen.queryByTestId('hero-submit')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('papers-open-badge')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('papers-open-cta')).not.toBeInTheDocument();
+  });
+
+  it('offers no way into the submission system where it is off, and does not ask the server', async () => {
     vi.stubEnv('VITE_ACCOUNTS_ENABLED', 'false');
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
     renderAtEvent('/2027/', <HomePage />);
     await screen.findByText('24, 25 e 26 de março de 2027');
     expect(screen.queryByTestId('hero-submit')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('papers-open-badge')).not.toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('spells the event days out in the hero, as the committee asked', async () => {
