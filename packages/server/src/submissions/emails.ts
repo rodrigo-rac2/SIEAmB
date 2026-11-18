@@ -10,6 +10,8 @@ export interface SubmissionEmailData {
   /** Who sent or changed the paper. */
   mainAuthor: string;
   url: string;
+  /** False for an author with no account on the site: the button then creates one (#292). */
+  hasAccount?: boolean;
 }
 
 interface Copy {
@@ -20,6 +22,9 @@ interface Copy {
 
 interface LocaleCopy {
   greeting: (name: string) => string;
+  /** For an author with no account: what to do, and the button that does it (#292). */
+  noAccount: string;
+  createAccount: string;
   signature: (eventName: string) => string;
   kinds: Record<SubmissionEmailKind, Copy>;
 }
@@ -27,6 +32,8 @@ interface LocaleCopy {
 const COPY: Record<'pt-BR' | 'en' | 'es' | 'zh-CN', LocaleCopy> = {
   'pt-BR': {
     greeting: (name) => (name ? `Olá, ${name}.` : 'Olá.'),
+    noAccount: 'Você ainda não tem conta no site com este e-mail. Crie uma, com este mesmo e-mail, para acompanhar o trabalho.',
+    createAccount: 'Criar conta com este e-mail',
     signature: (event) => `Comissão organizadora do ${event}`,
     kinds: {
       received: {
@@ -58,6 +65,8 @@ const COPY: Record<'pt-BR' | 'en' | 'es' | 'zh-CN', LocaleCopy> = {
   },
   en: {
     greeting: (name) => (name ? `Hello, ${name}.` : 'Hello.'),
+    noAccount: 'You do not have an account on the website with this e-mail yet. Create one, with this same e-mail, to follow the paper.',
+    createAccount: 'Create an account with this e-mail',
     signature: (event) => `${event} organising committee`,
     kinds: {
       received: {
@@ -89,6 +98,8 @@ const COPY: Record<'pt-BR' | 'en' | 'es' | 'zh-CN', LocaleCopy> = {
   },
   es: {
     greeting: (name) => (name ? `Hola, ${name}.` : 'Hola.'),
+    noAccount: 'Todavía no tiene una cuenta en el sitio con este correo. Cree una, con este mismo correo, para seguir el trabajo.',
+    createAccount: 'Crear una cuenta con este correo',
     signature: (event) => `Comisión organizadora del ${event}`,
     kinds: {
       received: {
@@ -120,6 +131,8 @@ const COPY: Record<'pt-BR' | 'en' | 'es' | 'zh-CN', LocaleCopy> = {
   },
   'zh-CN': {
     greeting: (name) => (name ? `${name}，您好。` : '您好。'),
+    noAccount: '您尚未使用此电子邮箱在网站注册账户。请使用同一电子邮箱创建账户，以便跟进稿件。',
+    createAccount: '使用此电子邮箱创建账户',
     signature: (event) => `${event} 组委会`,
     kinds: {
       received: {
@@ -158,8 +171,9 @@ export function renderSubmissionEmail(kind: SubmissionEmailKind, locale: string,
     subject: part.subject(data),
     ...layoutEmail({
       greeting: copy.greeting(data.firstName),
-      paragraphs: part.body(data),
-      linkLabel: part.linkLabel,
+      // A withdrawn paper is gone: no reason to send someone to create an account for it.
+      paragraphs: data.hasAccount !== false || kind === 'withdrawn' ? part.body(data) : [...part.body(data), copy.noAccount],
+      linkLabel: data.hasAccount !== false || kind === 'withdrawn' ? part.linkLabel : copy.createAccount,
       link: data.url,
       signature: copy.signature(data.eventName),
     }),

@@ -485,15 +485,26 @@ async function announce(
       title: submission.title,
       mainAuthor: main,
     };
-    const mails: OutboxMail[] = submission.authors.map((author) => ({
-      to: author.email,
-      dedupeKey: `submission:${submission.id}:${stamp}:${author.email}`,
-      ...renderSubmissionEmail(kind, submission.locale, {
-        ...base,
-        firstName: firstName(author.fullName),
-        url: `${site(deps)}/${encodeURIComponent(event.slug)}/meus-trabalhos`,
-      }),
-    }));
+    // An author with no account gets a button that creates one and then shows Meus trabalhos (#292).
+    const withAccount = new Set(
+      (await deps.store.findUsersByEmail(submission.authors.map((a) => a.email))).map((u) => u.email.toLowerCase()),
+    );
+    const papers = `/${encodeURIComponent(event.slug)}/meus-trabalhos`;
+    const mails: OutboxMail[] = submission.authors.map((author) => {
+      const hasAccount = withAccount.has(author.email.toLowerCase());
+      return {
+        to: author.email,
+        dedupeKey: `submission:${submission.id}:${stamp}:${author.email}`,
+        ...renderSubmissionEmail(kind, submission.locale, {
+          ...base,
+          firstName: firstName(author.fullName),
+          hasAccount,
+          url: hasAccount
+            ? `${site(deps)}${papers}`
+            : `${site(deps)}/${encodeURIComponent(event.slug)}/conta/criar?next=${encodeURIComponent(papers)}`,
+        }),
+      };
+    });
     // A paper of test accounts is announced to test organisers only (#255).
     const organisers = audienceFor(
       submission.authors.map((a) => a.email),

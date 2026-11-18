@@ -498,7 +498,10 @@ async function accountUpdate(request: Request, deps: AdminDeps): Promise<Respons
   }
   const fields = Object.keys(patch);
   if (fields.length === 0) return json(200, { ok: true, changed: false });
-  // The login service first: it is the one that knows whether the address is taken.
+  // An address another account already has (#289): asked here, because Supabase Auth answers it with
+  // a 500 and a database error, not with a clear "in use".
+  if (patch.email && (await deps.store.findUserByEmail(patch.email))) return json(409, { error: 'email_in_use' });
+  // Then the login service: it still knows best whether the address is taken.
   if (patch.email && (await deps.auth.setEmail(target.id, patch.email)) === 'in_use') return json(409, { error: 'email_in_use' });
   try {
     await deps.store.updateAccount(target.id, patch, deps.now());
