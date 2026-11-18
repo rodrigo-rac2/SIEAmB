@@ -305,8 +305,10 @@ test.describe('i18n @smoke', () => {
     await expect(page.getByRole('heading', { name: /Thays Alves da Silva/ })).toContainText(
       'Coordenação da equipe',
     );
-    await expect(page.getByRole('heading', { name: 'Arthur Lobato de Andrade' })).toBeVisible();
-    await expect(page.locator('img[src*="team/arthur-lobato"]')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Lara Maria Almeida Ferreira' })).toBeVisible();
+    await expect(page.locator('img[src*="team/lara-ferreira"]')).toBeVisible();
+    // Arthur left the media team on 2026-11-18 (#297).
+    await expect(page.getByRole('heading', { name: 'Arthur Lobato de Andrade' })).toHaveCount(0);
     // Najara is a founder, on the scientific committee and a reviewer: name three times, bio once.
     await expect(page.getByRole('heading', { name: 'Ma. Najara Escarião Agripino' })).toHaveCount(
       3,
