@@ -692,6 +692,55 @@ describe('RegistrationForm with accounts (#210)', () => {
     expect(onSuccess.mock.calls[0]![1]).toBe('novo@gmail.com');
   });
 
+  it('locks the e-mail to the account at once, keeps what was typed, and registers with the account e-mail (#290)', async () => {
+    enable();
+    // The account's data never arrives: the e-mail must still be the account's.
+    stubApi({ me: { status: 500, body: { error: 'server_error' } }, 'registration-check': { body: { duplicate: false } } });
+    const onSuccess = vi.fn();
+    mount('/2027/inscricoes/nova', <RegistrationForm onSuccess={onSuccess} />, auth({ email: 'Maria@UFCG.edu.br', accessToken: 'access-token-1' }));
+    const email = (await screen.findByLabelText(/E-mail/)) as HTMLInputElement;
+    expect(email).toHaveValue('maria@ufcg.edu.br');
+    expect(email).toHaveAttribute('readonly');
+    await userEvent.type(screen.getByLabelText(/Nome completo/), 'Maria Clara de Souza');
+    await userEvent.type(email, 'outro@gmail.com');
+    expect(email).toHaveValue('maria@ufcg.edu.br');
+    await userEvent.type(screen.getByLabelText('CPF'), '52998224725');
+    await userEvent.click(screen.getByRole('checkbox'));
+    await userEvent.click(screen.getByRole('button', { name: /Enviar inscrição/ }));
+    await waitFor(() => expect(onSuccess).toHaveBeenCalled());
+    expect(onSuccess.mock.calls[0]![1]).toBe('maria@ufcg.edu.br');
+  });
+
+  it('fills empty fields from the account and never overwrites what was typed (#290)', async () => {
+    enable();
+    let release!: () => void;
+    const gate = new Promise<void>((r) => (release = r));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: string) => {
+        if (String(input).includes('/account/me')) {
+          await gate;
+          return new Response(JSON.stringify({ user: { email: 'maria@ufcg.edu.br', fullName: 'Maria da Conta', cpf: '52998224725', passport: null, country: 'BR', institution: 'UFCG' }, registrations: [] }), { status: 200 });
+        }
+        return new Response('{}', { status: 404 });
+      }),
+    );
+    mount('/2027/inscricoes/nova', <RegistrationForm onSuccess={vi.fn()} />, auth(LOGGED_IN));
+    await userEvent.type(await screen.findByLabelText(/Nome completo/), 'Nome Digitado');
+    release();
+    await waitFor(() => expect(screen.getByLabelText('Instituição')).toHaveValue('UFCG'));
+    expect(screen.getByLabelText(/Nome completo/)).toHaveValue('Nome Digitado');
+    expect(screen.getByLabelText('CPF')).toHaveValue('529.982.247-25');
+    expect(screen.getByLabelText(/E-mail/)).toHaveValue('maria@ufcg.edu.br');
+  });
+
+  it('keeps the e-mail locked while the session is still being read', async () => {
+    enable();
+    stubApi({});
+    mount('/2027/inscricoes/nova', <RegistrationForm onSuccess={vi.fn()} />, auth({ loading: true }));
+    expect(await screen.findByLabelText(/E-mail/)).toHaveAttribute('readonly');
+  });
+
   it('does not ask the server at all where accounts are off', async () => {
     const calls = stubApi({});
     const onSuccess = vi.fn();
