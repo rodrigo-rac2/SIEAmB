@@ -161,6 +161,53 @@ describe('who sees the panel', () => {
     expect(screen.queryByRole('navigation', { name: 'Painel da organização' })).not.toBeInTheDocument();
   });
 
+  it('offers no tab until the role is known: a visitor with no role never sees the panel\'s menu (#324)', async () => {
+    const role = held({ status: 404, body: { error: 'not_found' } });
+    const rows = held({ status: 404, body: { error: 'not_found' } });
+    stubApi({ members: role.answer, registrations: rows.answer });
+    panel('registrations');
+    const nav = await screen.findByRole('navigation', { name: 'Painel da organização' });
+    expect(nav).toHaveAttribute('aria-busy', 'true');
+    expect(within(nav).queryAllByRole('link')).toEqual([]);
+    expect(screen.getByTestId('loading')).toHaveTextContent('Carregando…');
+    role.release();
+    rows.release();
+    expect(await screen.findByRole('heading', { name: /não encontrada|404/i })).toBeInTheDocument();
+  });
+
+  it('shows all the tabs of an administrator at once, Pedidos included, not one after the others (#324)', async () => {
+    const role = held(members('ADMIN'));
+    stubApi({ members: role.answer, registrations: list([]) });
+    panel('registrations');
+    await screen.findByTestId('panel-counts');
+    const nav = screen.getByRole('navigation', { name: 'Painel da organização' });
+    expect(within(nav).queryAllByRole('link')).toEqual([]);
+    role.release();
+    await waitFor(() =>
+      expect(within(nav).getAllByRole('link').map((a) => a.textContent)).toEqual(['Inscrições', 'Trabalhos', 'Pessoas e papéis', 'Comunicados', 'Pedidos']),
+    );
+    expect(nav).toHaveAttribute('aria-busy', 'false');
+  });
+
+  it('still offers the common tabs when the role cannot be read for another reason', async () => {
+    stubApi({ members: { status: 500, body: { error: 'server_error' } }, registrations: list([]) });
+    panel('registrations');
+    const nav = await screen.findByRole('navigation', { name: 'Painel da organização' });
+    await waitFor(() =>
+      expect(within(nav).getAllByRole('link').map((a) => a.textContent)).toEqual(['Inscrições', 'Trabalhos', 'Pessoas e papéis', 'Comunicados']),
+    );
+  });
+
+  it('says "Carregando…" under its title while the session is read, with nothing asked of the server (#324)', async () => {
+    const calls = stubApi({});
+    panel('registrations', auth({ loading: true, accessToken: null }));
+    expect(await screen.findByRole('heading', { level: 1, name: 'Painel da organização' })).toBeInTheDocument();
+    expect(screen.getByTestId('loading')).toHaveTextContent('Carregando…');
+    expect(screen.queryByRole('navigation', { name: 'Painel da organização' })).not.toBeInTheDocument();
+    expect(screen.queryByTestId('where')).not.toBeInTheDocument();
+    expect(calls).toEqual([]);
+  });
+
   it('offers the Pedidos tab to an administrator only', async () => {
     stubApi({ members: members('ADMIN'), registrations: list([]) });
     const admin = panel('registrations');

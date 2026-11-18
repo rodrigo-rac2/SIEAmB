@@ -95,6 +95,10 @@
     "rulesBody": "The submission rules, thematic areas and schedule are in the call for papers.",
     "rulesCta": "Read the call for papers",
     "templatesTitle": "Templates to download",
+    "unknown": {
+      "title": "We could not check the submissions right now",
+      "body": "We could not confirm whether submissions are open. Please try again in a moment."
+    },
     "state": {
       "open": {
         "title": "Submissions are open",

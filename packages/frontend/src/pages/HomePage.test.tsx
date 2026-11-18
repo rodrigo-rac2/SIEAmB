@@ -40,6 +40,36 @@ describe('HomePage', () => {
     expect(strip).not.toHaveTextContent(/prorrog/i);
   });
 
+  it.each([
+    ['open', 'Submissões abertas'],
+    ['closed', 'Edital publicado'],
+  ] as const)('while the server is asked, shows neither strip; then only the %s one (#324)', async (state, shown) => {
+    vi.stubEnv('VITE_ACCOUNTS_ENABLED', 'true');
+    vi.stubEnv('VITE_SUPABASE_URL', 'https://example.supabase.co');
+    vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'anon');
+    let give!: (response: Response) => void;
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>((resolve) => (give = resolve))));
+    renderAtEvent('/2027/', <HomePage />);
+    const waiting = await screen.findByTestId('edital-strip-waiting');
+    expect(waiting).toHaveTextContent('Carregando…');
+    expect(waiting).toHaveAttribute('aria-busy', 'true');
+    // Nothing that the answer could replace is on the page yet.
+    expect(screen.queryByText('Edital publicado')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('papers-open-badge')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('hero-submit')).not.toBeInTheDocument();
+    // The hero keeps the place of the button, hidden from screen readers and not a link.
+    const ghost = screen.getByTestId('hero-submit-waiting');
+    expect(ghost).toHaveAttribute('aria-hidden', 'true');
+    expect(ghost.tagName).toBe('SPAN');
+    expect(screen.getByRole('link', { name: 'Fazer inscrição' })).toBeInTheDocument();
+    give(new Response(JSON.stringify({ state, opensAt: '2026-11-15T00:00:00-03:00', closesAt: '2027-01-18T23:59:59-03:00' }), { status: 200 }));
+    expect(await screen.findByText(shown)).toBeInTheDocument();
+    expect(screen.queryByTestId('edital-strip-waiting')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('hero-submit-waiting')).not.toBeInTheDocument();
+    expect(screen.queryByText(state === 'open' ? 'Edital publicado' : 'Submissões abertas')).not.toBeInTheDocument();
+    expect(screen.queryAllByTestId('hero-submit')).toHaveLength(state === 'open' ? 1 : 0);
+  });
+
   it.each(['closed', 'not_open', 'fails'] as const)('submissions %s: no button to send, and the strip is the plain "Edital publicado"', async (state) => {
     const fetchMock = on(state);
     renderAtEvent('/2027/', <HomePage />);
@@ -58,6 +88,10 @@ describe('HomePage', () => {
     await screen.findByText('24, 25 e 26 de março de 2027');
     expect(screen.queryByTestId('hero-submit')).not.toBeInTheDocument();
     expect(screen.queryByTestId('papers-open-badge')).not.toBeInTheDocument();
+    // Nothing is asked, so nothing waits: the strip is there from the start.
+    expect(await screen.findByText('Edital publicado')).toBeInTheDocument();
+    expect(screen.queryByTestId('edital-strip-waiting')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('hero-submit-waiting')).not.toBeInTheDocument();
     expect(fetchMock).not.toHaveBeenCalled();
   });
 

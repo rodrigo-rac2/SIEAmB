@@ -797,6 +797,31 @@ describe('SubmissionsPage', () => {
     expect(within(box).getByRole('link', { name: 'Meus trabalhos' })).toHaveAttribute('href', '/2027/meus-trabalhos');
   });
 
+  it('says "Carregando…" while the server is asked, never "em breve" that the answer would contradict (#324)', async () => {
+    let give!: (response: Response) => void;
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>((resolve) => (give = resolve))));
+    mount(...PAGE, <SubmissionsPage />);
+    const waiting = await screen.findByTestId('submissions-loading');
+    expect(waiting).toHaveTextContent('Carregando…');
+    expect(screen.queryByText('As submissões abrem em breve')).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Enviar trabalho' })).not.toBeInTheDocument();
+    give(new Response(JSON.stringify({ state: 'open', opensAt: '', closesAt: '' }), { status: 200 }));
+    expect(await screen.findByTestId('submissions-open')).toHaveTextContent('Submissões abertas');
+    expect(screen.queryByTestId('submissions-loading')).not.toBeInTheDocument();
+    expect(screen.queryByText('As submissões abrem em breve')).not.toBeInTheDocument();
+  });
+
+  it('claims nothing about the window when the server cannot say, and still leads to Meus trabalhos (#324)', async () => {
+    stubApi({ rules: { status: 500, body: { error: 'server_error' } } });
+    mount(...PAGE, <SubmissionsPage />);
+    const box = await screen.findByTestId('submissions-unknown');
+    expect(box).toHaveTextContent('Não foi possível verificar as submissões agora');
+    expect(within(box).getByRole('link', { name: 'Meus trabalhos' })).toHaveAttribute('href', '/2027/meus-trabalhos');
+    expect(screen.queryByText('As submissões abrem em breve')).not.toBeInTheDocument();
+    expect(screen.queryByText('Submissões abertas')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('submissions-loading')).not.toBeInTheDocument();
+  });
+
   it('offers only Meus trabalhos once they are closed', async () => {
     stubApi({ rules: { body: { state: 'closed', opensAt: '', closesAt: '' } } });
     mount(...PAGE, <SubmissionsPage />);

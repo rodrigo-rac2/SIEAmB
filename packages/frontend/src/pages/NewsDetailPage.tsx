@@ -7,6 +7,7 @@ import { PageHeader } from '../components/shared/PageHeader';
 import { useEvent } from '../contexts/EventContext';
 import { useLocale, useLocalized } from '../hooks/useLocale';
 import { getDataProvider } from '../services';
+import { Loading } from '../components/shared/Loading';
 
 export function NewsDetailPage() {
   const { t } = useTranslation();
@@ -27,7 +28,7 @@ export function NewsDetailPage() {
     return (
       <section className="section">
         <div className="container">
-          <p>{t('common.loading')}</p>
+          <Loading />
         </div>
       </section>
     );

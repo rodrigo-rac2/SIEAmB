@@ -8,6 +8,7 @@ import { useLocale } from '../../hooks/useLocale';
 import { AccountError, fetchNotifications, markNotificationsRead, type SiteNotification } from '../../services/account';
 import { NotFoundPage } from '../NotFoundPage';
 import './Account.css';
+import { Loading, PageLoading } from '../../components/shared/Loading';
 
 /** Where a notice leads, inside the edition it is about. */
 export function noticeLink(notice: SiteNotification): string | null {
@@ -52,7 +53,9 @@ export function NotificationsPage() {
   }, [token, t]);
 
   if (!auth.enabled) return <NotFoundPage />;
-  if (auth.loading || !event) return null;
+  if (!event) return null;
+  // The session is still being read: say so, under the page's title (#324).
+  if (auth.loading) return <PageLoading title={t('notifications.title')} />;
   if (!token) return <Navigate to={`/${event.slug}/conta/entrar?next=${encodeURIComponent(location.pathname)}`} replace />;
 
   return (
@@ -65,7 +68,7 @@ export function NotificationsPage() {
               {error}
             </p>
           )}
-          {!items && !error && <p role="status">{t('common.loading')}</p>}
+          {!items && !error && <Loading />}
           {items?.length === 0 && <p data-testid="no-notifications">{t('notifications.none')}</p>}
           {items?.map((notice) => {
             const link = noticeLink(notice);

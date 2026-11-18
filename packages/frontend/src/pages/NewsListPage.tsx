@@ -5,6 +5,7 @@ import { NewsCard } from '../components/news/NewsCard';
 import { PageHeader } from '../components/shared/PageHeader';
 import { useEvent } from '../contexts/EventContext';
 import { getDataProvider } from '../services';
+import { Loading } from '../components/shared/Loading';
 
 export function NewsListPage() {
   const { t } = useTranslation();
@@ -24,7 +25,7 @@ export function NewsListPage() {
       <section className="section">
         <div className="container">
           {news === null ? (
-            <p>{t('common.loading')}</p>
+            <Loading />
           ) : news.length === 0 ? (
             <p>{t('news.empty')}</p>
           ) : (

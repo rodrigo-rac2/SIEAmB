@@ -95,6 +95,10 @@
     "rulesBody": "Las normas de envío, las áreas temáticas y el cronograma están en la convocatoria.",
     "rulesCta": "Leer la convocatoria",
     "templatesTitle": "Plantillas para descargar",
+    "unknown": {
+      "title": "No fue posible verificar los envíos ahora",
+      "body": "No pudimos confirmar si los envíos están abiertos. Inténtelo de nuevo en unos instantes."
+    },
     "state": {
       "open": {
         "title": "Envíos abiertos",

@@ -23,6 +23,7 @@ import { AuthorList, newAuthorRow, toAuthorInput, type AuthorRow } from './Autho
 import '../../components/registration/RegistrationForm.css';
 import '../account/Account.css';
 import './Papers.css';
+import { PageLoading } from '../../components/shared/Loading';
 
 /**
  * `/:event/meus-trabalhos/novo` and `/:event/meus-trabalhos/:paperId`: send a paper,
@@ -120,7 +121,9 @@ export function PaperFormPage() {
   );
 
   if (!auth.enabled) return <NotFoundPage />;
-  if (auth.loading || !event) return null;
+  if (!event) return null;
+  // The session is still being read: say so, under the page's title (#324).
+  if (auth.loading) return <PageLoading title={t(editing ? 'papers.editTitle' : 'papers.send')} />;
   if (!accessToken) {
     return <Navigate to={`/${event.slug}/conta/entrar?next=${encodeURIComponent(location.pathname)}`} replace />;
   }

@@ -54,6 +54,7 @@ import { NotFoundPage } from '../NotFoundPage';
 import '../../components/registration/RegistrationForm.css';
 import '../account/Account.css';
 import './Panel.css';
+import { Loading, PageLoading } from '../../components/shared/Loading';
 
 export type PanelTab = 'registrations' | 'papers' | 'people' | 'announcements' | 'requests';
 
@@ -367,7 +368,7 @@ function RegistrationsTab(props: TabProps) {
   const [bulkNote, setBulkNote] = useState<string | null>(null);
   const [bulkError, setBulkError] = useState<string | null>(null);
 
-  if (!data) return error ? <Problem text={error} /> : <p role="status">{t('common.loading')}</p>;
+  if (!data) return error ? <Problem text={error} /> : <Loading />;
   const admin = data.role === 'ADMIN';
   const needle = search.trim().toLowerCase();
   const rows = data.registrations.filter(
@@ -769,7 +770,7 @@ function PapersTab({ token, slug, message }: TabProps) {
     if (event) void getDataProvider().getThematicAreas(event.id).then(setAreas);
   }, [event]);
 
-  if (!data) return error ? <Problem text={error} /> : <p role="status">{t('common.loading')}</p>;
+  if (!data) return error ? <Problem text={error} /> : <Loading />;
   const needle = search.trim().toLowerCase();
   const rows = data.submissions.filter(
     (s) => !needle || `${s.number} ${s.title} ${s.authors.map((a) => `${a.fullName} ${a.email}`).join(' ')}`.toLowerCase().includes(needle),
@@ -1155,7 +1156,7 @@ function PeopleTab({ token, slug, message }: TabProps) {
   const busy = busyKey !== null;
   const [search, setSearch] = useState('');
 
-  if (!data) return error ? <Problem text={error} /> : <p role="status">{t('common.loading')}</p>;
+  if (!data) return error ? <Problem text={error} /> : <Loading />;
 
   const run = async (key: string, work: () => Promise<string | null>): Promise<boolean> => {
     setBusyKey(key);
@@ -1319,7 +1320,7 @@ function RequestsTab({ token, slug, message }: TabProps) {
   const [busyId, setBusyId] = useState<string | null>(null);
   const busy = busyId !== null;
 
-  if (!data) return error ? <Problem text={error} /> : <p role="status">{t('common.loading')}</p>;
+  if (!data) return error ? <Problem text={error} /> : <Loading />;
   const decide = async (id: string, approve: boolean) => {
     setBusyId(id);
     setError(null);
@@ -1382,7 +1383,7 @@ function AnnouncementsTab({ token, slug, message }: TabProps) {
   const [note, setNote] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  if (!data) return error ? <Problem text={error} /> : <p role="status">{t('common.loading')}</p>;
+  if (!data) return error ? <Problem text={error} /> : <Loading />;
   const count = data.counts[audience];
 
   const send = async () => {
@@ -1494,6 +1495,9 @@ export function PanelPage({ tab }: { tab: PanelTab }) {
   const location = useLocation();
   const token = auth.enabled ? auth.accessToken : null;
   const [admin, setAdmin] = useState(false);
+  // Whether the answer about this person's role is in. Until then no tab is offered: someone with
+  // no role would see the panel's menu before "page not found", and "Pedidos" would arrive late (#324).
+  const [roleKnown, setRoleKnown] = useState(false);
   const [denied, setDenied] = useState(false);
 
   const message = useCallback(
@@ -1510,15 +1514,26 @@ export function PanelPage({ tab }: { tab: PanelTab }) {
     let active = true;
     // Decides which tabs to offer; the server decides again on every call.
     fetchPanelMembers(token, event.slug)
-      .then((m) => active && setAdmin(m.role === 'ADMIN'))
-      .catch((err: unknown) => active && err instanceof AdminError && err.code === 'not_found' && setDenied(true));
+      .then((m) => {
+        if (!active) return;
+        setAdmin(m.role === 'ADMIN');
+        setRoleKnown(true);
+      })
+      .catch((err: unknown) => {
+        if (!active) return;
+        if (err instanceof AdminError && err.code === 'not_found') setDenied(true);
+        // Any other failure: the tabs everyone with a role has, and each tab reports its own error.
+        else setRoleKnown(true);
+      });
     return () => {
       active = false;
     };
   }, [token, event]);
 
   if (!auth.enabled || denied) return <NotFoundPage />;
-  if (auth.loading || !event) return null;
+  if (!event) return null;
+  // The session is still being read: say so, under the page's title (#324).
+  if (auth.loading) return <PageLoading title={t('panel.title')} />;
   if (!token) return <Navigate to={`/${event.slug}/conta/entrar?next=${encodeURIComponent(location.pathname)}`} replace />;
 
   const base = `/${event.slug}/painel`;
@@ -1535,12 +1550,13 @@ export function PanelPage({ tab }: { tab: PanelTab }) {
       <PageHeader title={t('panel.title')} />
       <section className="section">
         <div className="container">
-          <nav className="panel__tabs" aria-label={t('panel.title')}>
-            {TABS.filter((x) => !x.adminOnly || admin).map((x) => (
-              <Link key={x.tab} to={`${base}${x.path}`} aria-current={x.tab === tab ? 'page' : undefined}>
-                {t(`panel.tabs.${x.tab}`)}
-              </Link>
-            ))}
+          <nav className="panel__tabs" aria-label={t('panel.title')} aria-busy={!roleKnown}>
+            {roleKnown &&
+              TABS.filter((x) => !x.adminOnly || admin).map((x) => (
+                <Link key={x.tab} to={`${base}${x.path}`} aria-current={x.tab === tab ? 'page' : undefined}>
+                  {t(`panel.tabs.${x.tab}`)}
+                </Link>
+              ))}
           </nav>
           {content}
         </div>

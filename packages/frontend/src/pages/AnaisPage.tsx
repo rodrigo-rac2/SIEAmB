@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { PageHeader } from '../components/shared/PageHeader';
 import { useEvent } from '../contexts/EventContext';
 import { getDataProvider } from '../services';
+import { Loading } from '../components/shared/Loading';
 
 export function AnaisPage() {
   const { t } = useTranslation();
@@ -23,7 +24,7 @@ export function AnaisPage() {
       <section className="section">
         <div className="container" style={{ maxWidth: '72ch' }}>
           {entries === null ? (
-            <p>{t('common.loading')}</p>
+            <Loading />
           ) : entries.length === 0 ? (
             <p>{t('anais.empty', { event: event.name })}</p>
           ) : (
