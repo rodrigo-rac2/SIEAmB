@@ -1,9 +1,29 @@
 import { screen, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderAtEvent } from '../test/render';
 import { HomePage } from './HomePage';
 
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
 describe('HomePage', () => {
+  it('offers to send a paper beside the registration, where the submission system is on (#244)', async () => {
+    vi.stubEnv('VITE_ACCOUNTS_ENABLED', 'true');
+    vi.stubEnv('VITE_SUPABASE_URL', 'https://example.supabase.co');
+    vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'anon');
+    renderAtEvent('/2027/', <HomePage />);
+    expect(await screen.findByTestId('hero-submit')).toHaveAttribute('href', '/2027/submissoes');
+    expect(screen.getByTestId('hero-submit')).toHaveTextContent('Enviar trabalho');
+  });
+
+  it('offers no way into the submission system where it is off', async () => {
+    vi.stubEnv('VITE_ACCOUNTS_ENABLED', 'false');
+    renderAtEvent('/2027/', <HomePage />);
+    await screen.findByText('24, 25 e 26 de março de 2027');
+    expect(screen.queryByTestId('hero-submit')).not.toBeInTheDocument();
+  });
+
   it('spells the event days out in the hero, as the committee asked', async () => {
     renderAtEvent('/2027/', <HomePage />);
     expect(await screen.findByText('24, 25 e 26 de março de 2027')).toBeInTheDocument();

@@ -9,6 +9,7 @@ import { useEvent } from '../contexts/EventContext';
 import { useLocale, useLocalized } from '../hooks/useLocale';
 import { getDataProvider } from '../services';
 import { assetUrl } from '../lib/assets';
+import { accountsEnabled } from '../services/account';
 import './HomePage.css';
 
 /**
@@ -121,11 +122,19 @@ export function HomePage() {
             <span>{formatDateList(event.startsAt, event.endsAt, locale)}</span>
             {event.venue && <span>{l(event.venue)}</span>}
           </p>
-          {event.settings.registrationOpen && (
-            <Link className="hero__cta" to={`${base}/inscricoes`}>
-              {t('registration.registerCta')}
-            </Link>
-          )}
+          <p className="hero__actions">
+            {event.settings.registrationOpen && (
+              <Link className="hero__cta" to={`${base}/inscricoes`}>
+                {t('registration.registerCta')}
+              </Link>
+            )}
+            {/* Where the submission system is on, the way into it sits beside the registration (#244). */}
+            {accountsEnabled() && (
+              <Link className="hero__cta hero__cta--second" to={`${base}/submissoes`} data-testid="hero-submit">
+                {t('papers.send')}
+              </Link>
+            )}
+          </p>
         </div>
       </section>
 

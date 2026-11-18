@@ -2,6 +2,8 @@
 
 **Date:** 2026-09-13 · **Status:** Accepted (Phase 2 design) · **Evidence:** `docs/research/peer-review-brazilian-events.md`
 
+> **Changed on 2026-11-17 (#232, asked by the organising committee):** the review is **not blind** and a paper needs **one reviewer or more**, as many as the organisers choose. Decision 1 (anonymised file, anonymisation checks) and the "2 reviewers per paper by default" and third-reviewer-on-divergence parts of decisions 3 and 4 no longer apply. What was built is in ADR-008, "Review". The review form (decision 2) is still the plan and is not built.
+
 ## Context
 
 Rodrigo's own reviewer experience (objective scores against criteria + comments to authors + a general recommendation) matched what a research pass over JEMS/SBC, Even3, Doity, Galoá, SIGEventos, ANPAD calls and real Brazilian review forms (CBIS, Congresso Brasileiro de Custos, IFES) shows is the consensus. The original plan §6 had three hard-coded scores and no gate/confidence/best-paper fields, asked for two PDFs at submission, and had no desk-check, divergence or "accepted pending registration" states.
