@@ -1457,15 +1457,25 @@ describe('the owner changes what nobody else does: e-mail, CPF and password (#27
     expect(sent).toEqual([]);
   });
 
-  it('puts the login back on the old address when the account cannot take the new one', async () => {
+  it('answers "in use" for the address of another account without asking the login service (#289)', async () => {
     const { deps, tokens, store, auth } = setup();
-    // The login service does not know the address, but an account row already has it.
-    store.users.push({ id: 'user-orphan', email: 'orfa@ufcg.edu.br', fullName: 'Conta Órfã' });
-    const response = await post(deps, 'account-update', tokens.platform, { userId: NOBODY.id, email: 'orfa@ufcg.edu.br' });
+    const response = await post(deps, 'account-update', tokens.platform, { userId: NOBODY.id, email: REVIEWER.email.toUpperCase() });
     expect(response.status).toBe(409);
     expect(await body(response)).toEqual({ error: 'email_in_use' });
+    expect(auth.emails).toEqual([]);
+    expect(store.users.find((u) => u.id === NOBODY.id)!.email).toBe(NOBODY.email);
+    expect(store.audits).toEqual([]);
+  });
+
+  it('puts the login back on the old address when the account cannot take the change', async () => {
+    const { deps, tokens, store, auth } = setup();
+    // A new address nobody has, together with a CPF another account has: the account row refuses.
+    store.users.find((u) => u.id === REVIEWER.id)!.cpf = '52998224725';
+    const response = await post(deps, 'account-update', tokens.platform, { userId: NOBODY.id, email: 'nova@ufcg.edu.br', cpf: '52998224725' });
+    expect(response.status).toBe(409);
+    expect(await body(response)).toEqual({ error: 'document_in_use' });
     expect(auth.emails).toEqual([
-      { userId: NOBODY.id, email: 'orfa@ufcg.edu.br' },
+      { userId: NOBODY.id, email: 'nova@ufcg.edu.br' },
       { userId: NOBODY.id, email: NOBODY.email },
     ]);
     expect(store.users.find((u) => u.id === NOBODY.id)!.email).toBe(NOBODY.email);

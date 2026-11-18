@@ -151,9 +151,11 @@ export class SupabaseAuthGateway implements AuthGateway {
       method: 'PUT',
       body: JSON.stringify({ email, email_confirm: true }),
     });
-    if (response.status === 422) {
-      const answer = (await response.json().catch(() => ({}))) as { error_code?: string };
-      if (answer.error_code === 'email_exists') return 'in_use';
+    // In use: documented as 422 `email_exists`; seen on 2026-11-18 as 500 with the database's
+    // unique-violation code 23505 (#289).
+    if (response.status === 422 || response.status === 500) {
+      const answer = (await response.json().catch(() => ({}))) as { error_code?: string; code?: string };
+      if (answer.error_code === 'email_exists' || answer.code === '23505') return 'in_use';
     }
     if (!response.ok) throw new Error(`auth_email_failed: ${response.status}`);
     return 'ok';
