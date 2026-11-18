@@ -23,7 +23,9 @@
 
 .hero__motto {
   max-width: 46rem;
-  margin-bottom: var(--space-3);
+  margin: 0 auto var(--space-3);
+  text-align: center;
+  text-wrap: balance;
   color: #ffffff;
   font-size: var(--text-xl, 1.25rem);
   font-weight: 600;
