@@ -135,7 +135,7 @@ npm run build
 npm run preview
 ```
 
-Para os testes E2E na primeira vez: `npx playwright install chromium`.
+Para os testes E2E na primeira vez: `npx playwright install` (Chromium, Firefox e WebKit).
 
 ## Como o site funciona (conceitos-chave)
 
@@ -220,7 +220,7 @@ Textos de interface (menus, botões, mensagens) ficam em `src/locales/*.json` �
 Testes não são opcionais neste projeto — a CI bloqueia PR com teste quebrado.
 
 - **Unitários e de componentes (Vitest):** `packages/shared` (CPF, validação), `packages/frontend` (telas e serviços), `packages/server` (regras de pagamento, contas, trabalhos e painel, com banco e e-mail simulados) e `packages/db` (lê o schema e os arquivos de migration). Rode com `npm run test`.
-- **E2E (Playwright):** `packages/e2e/tests/`. Simulam um usuário real no navegador (desktop Chrome + celular Pixel 7). Contra qualquer build: navegação, formulário de inscrição, troca de idioma, 404. Só contra desenvolvimento e previews, usando o banco `sieamb-dev`: contas, trabalhos, painel e notificações. Rode com `npm run test:e2e`. Para depurar visualmente: `cd packages/e2e && npx playwright test --ui`.
+- **E2E (Playwright):** `packages/e2e/tests/`. Simulam um usuário real no navegador (Chrome, Firefox e Safari no desktop, celular Pixel 7 e iPhone 14; o Safari é o motor WebKit do Playwright, não um iPhone de verdade). Um navegador só: `npx playwright test --project=webkit`. Contra qualquer build: navegação, formulário de inscrição, troca de idioma, 404. Só contra desenvolvimento e previews, usando o banco `sieamb-dev`: contas, trabalhos, painel e notificações. Rode com `npm run test:e2e`. Para depurar visualmente: `cd packages/e2e && npx playwright test --ui`.
 - **Os testes de navegador dividem o banco de desenvolvimento com pessoas de verdade.** Por isso usam endereços próprios (`e2e+<execução>-…@sieamb.org`), que nunca recebem e-mail, apagam o que criaram num passo que roda sempre, e o que é sobre dado de teste fica só entre contas de teste. Dados de exemplo para olhar o painel: `npm run seed:demo -w @sieamb/e2e`.
 
 Se você mudar comportamento do site, atualize/adicione testes no mesmo PR.
@@ -319,7 +319,7 @@ Para rodar a suíte E2E contra qualquer ambiente publicado: `BASE_URL=https://de
 | Problema | Solução |
 |---|---|
 | `npm run dev` falha após pull | `npm install` (dependências novas no lockfile) |
-| E2E falha com "Executable doesn't exist" | `npx playwright install chromium` |
+| E2E falha com "Executable doesn't exist" | `npx playwright install` |
 | Site publicado não mostra minha mudança | Cache do CDN (até 10 min). Confira em aba anônima |
 | Erro de tipo em `@sieamb/shared` | O shared não tem build separado — confira `tsconfig` e reinicie o TS server do editor |
 | Testes E2E passam local e falham na CI | CI usa `locale: 'pt-BR'` e viewport mobile também — rode `npx playwright test` completo, não só um projeto |
