@@ -33,7 +33,14 @@ export function NotificationsBell({ slug }: { slug: string }) {
     <Link
       className="topbar__editions"
       to={`/${slug}/notificacoes`}
-      aria-label={unread > 0 ? t('notifications.bellUnread', { count: unread }) : t('notifications.title')}
+      // Past 99 the badge says "99+", and the server stops counting at 100: the label says the same (#317).
+      aria-label={
+        unread > 99
+          ? t('notifications.bellUnreadMany')
+          : unread > 0
+            ? t('notifications.bellUnread', { count: unread })
+            : t('notifications.title')
+      }
       data-testid="bell"
     >
       <span aria-hidden="true">🔔</span>

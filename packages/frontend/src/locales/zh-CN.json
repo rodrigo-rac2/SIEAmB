@@ -747,6 +747,7 @@
     "unknown": "有一条新消息。",
     "bellUnread_one": "通知：{{count}} 条未读",
     "bellUnread_other": "通知：{{count}} 条未读",
+    "bellUnreadMany": "通知：超过 99 条未读",
     "kinds": {
       "submission.received": "已收到第 {{number}} 号论文“{{title}}”。",
       "submission.updated": "第 {{number}} 号论文“{{title}}”已由 {{mainAuthor}} 修改。",

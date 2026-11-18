@@ -747,6 +747,7 @@
     "unknown": "There is something new for you.",
     "bellUnread_one": "Notifications: {{count}} unread",
     "bellUnread_other": "Notifications: {{count}} unread",
+    "bellUnreadMany": "Notifications: more than 99 unread",
     "kinds": {
       "submission.received": "Paper no. {{number}}, \"{{title}}\", was received.",
       "submission.updated": "Paper no. {{number}}, \"{{title}}\", was changed by {{mainAuthor}}.",
