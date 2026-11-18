@@ -380,6 +380,21 @@ describe('top bar', () => {
     }
   });
 
+  it('closes when a link is chosen, even the one of the page already open (#326)', async () => {
+    stubApi({ me: { body: account() } });
+    // The top bar sits on Minha área itself: choosing it changes no address.
+    mount('/2027/minha-area', <TopBar />, auth(LOGGED_IN));
+    const items = await openMenu();
+    await userEvent.click(items.getByRole('link', { name: 'Minha área' }));
+    expect(list()).not.toBeInTheDocument();
+    expect(screen.getByTestId('account-menu')).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByTestId('where')).not.toBeInTheDocument();
+    // A press on the list that is not on a link (its padding, the line above Sair) leaves it open.
+    await openMenu();
+    await userEvent.click(list()!);
+    expect(list()).toBeInTheDocument();
+  });
+
   it('logs out from the list, and has no Sair when logged out (#253)', async () => {
     stubApi({ me: { body: account() } });
     const out = mount('/2027/', <TopBar />);

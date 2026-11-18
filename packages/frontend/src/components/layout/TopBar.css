@@ -70,8 +70,10 @@
   justify-content: flex-end;
   align-items: center;
   gap: var(--space-4);
-  /* As tall as the name button, whatever it shows: waiting, a link or the button (#319). */
-  min-height: calc(28px + 2 * var(--space-1));
+  /* One height whatever it shows: waiting, a link or the name button, which is a little over
+     28 px tall with its text (#319). Measured on dev: the bar grew 1.4 px when the name came. */
+  box-sizing: border-box;
+  height: calc(30px + 2 * var(--space-1));
   padding-block: var(--space-1);
   border-top: 1px solid rgb(255 255 255 / 18%);
 }
