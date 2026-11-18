@@ -27,9 +27,10 @@ People registered and heard nothing back, and the ones who registered before pay
 
 ## Consequences
 
-- Up to 10 minutes can pass between a status change and its e-mail when the first attempt fails, more when GitHub starts a scheduled run late.
-- The job depends on GitHub Actions and on two secrets (`CRON_SECRET_PROD`, `CRON_SECRET_DEV`) matching the Vercel variable.
+- Up to 10 minutes can pass between a status change and its e-mail when the first attempt fails.
+- The job depends on the database's scheduler and on two Vault secrets per database (decision 5) matching the site's address and its `CRON_SECRET`. A restored or new database has neither until someone sets them. The scheduler fails silently; the hourly GitHub run, which turns red when an e-mail could not be sent, is what tells us.
+- **An e-mail the sender accepts and then drops is recorded as sent** (#261, seen on 2026-11-17 when the daily limit was reached): nothing on our side notices and nothing is retried. Detecting it needs Resend's webhook or a status check by message id. Not built.
 - Reminder dates come from the fee table only. Dates that depend on being an author (the authors' registration deadline) are not covered until the submission system knows who the authors are.
-- Resend's free plan has a daily and a monthly limit. Announcements to everyone, when they exist, must respect it or the plan changes.
+- Resend's free plan allows about 100 e-mails a day. It was used up on 2026-11-17 by the automatic tests mailing the real organisers on dev (#255, fixed), which also stopped production's e-mails for some hours, because dev and production share the account. Rodrigo upgraded the plan the same day. They still share it.
 - There is no automated check of a real inbox yet. A specialised service (testmail.app or MailSlurp) was chosen over Gmail for that and is not set up.
-- There is no unsubscribe link. A person stops the reminders by paying or by answering the e-mail. This needs a decision before announcements to everyone exist.
+- There is no unsubscribe link. A person stops the reminders by paying or by answering the e-mail. Announcements exist since ADR-008 and have none either; each says why the person receives it. Still to decide.
