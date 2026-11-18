@@ -26,3 +26,19 @@
   padding: 0 var(--space-2);
   border-radius: var(--radius-sm);
 }
+
+/*
+ * Under 360 px (the smallest phones, or a desktop zoomed to 400%), where it no longer fits: the date may break onto two lines
+ * and long words may break, so the table never gets wider than the page (#316, WCAG 1.4.10).
+ */
+@media (max-width: 359px) {
+  .dates-table__date {
+    white-space: normal;
+    width: 40%;
+    padding-right: var(--space-3);
+  }
+
+  .dates-table td {
+    overflow-wrap: anywhere;
+  }
+}

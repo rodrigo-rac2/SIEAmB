@@ -57,7 +57,7 @@
     "editalBadge": "征稿通知已发布",
     "papersBadge": "投稿开放中",
     "papersTitle": "向 {{event}} 投稿",
-    "papersBody": "科学论文或扩展摘要，截止日期为 {{date}}。投稿前请阅读征稿启事。",
+    "papersBody": "科学论文或扩展摘要，截止日期为 {{date}}。投稿前请阅读征稿通知。",
     "editalRead": "阅读征稿通知",
     "quickEditais": "征稿通知",
     "quickEditaisDesc": "征稿通知、规则与投稿模板。",
@@ -751,6 +751,7 @@
     "unknown": "有一条新消息。",
     "bellUnread_one": "通知：{{count}} 条未读",
     "bellUnread_other": "通知：{{count}} 条未读",
+    "bellUnreadMany": "通知：超过 99 条未读",
     "kinds": {
       "submission.received": "已收到第 {{number}} 号论文“{{title}}”。",
       "submission.updated": "第 {{number}} 号论文“{{title}}”已由 {{mainAuthor}} 修改。",

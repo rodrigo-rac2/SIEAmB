@@ -15,6 +15,7 @@ export function AccountMenu({
   slug,
   name,
   panel,
+  reviewing,
   onSignOut,
 }: {
   slug: string;
@@ -22,6 +23,8 @@ export function AccountMenu({
   name: string;
   /** Whether this person may open the organisers' panel of the edition. */
   panel: boolean;
+  /** Whether this person has the Avaliador role in the edition. */
+  reviewing: boolean;
   onSignOut: () => void;
 }) {
   const { t } = useTranslation();
@@ -81,6 +84,13 @@ export function AccountMenu({
         <li>
           <Link to={`${base}/meus-trabalhos`}>{t('papers.title')}</Link>
         </li>
+        {reviewing && (
+          <li>
+            <Link to={`${base}/avaliacoes`} data-testid="topbar-reviewing">
+              {t('reviewing.title')}
+            </Link>
+          </li>
+        )}
         {panel && (
           <li>
             <Link to={`${base}/painel`} data-testid="topbar-panel">

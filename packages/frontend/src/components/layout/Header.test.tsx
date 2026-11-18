@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import '../../i18n';
 import { renderAtEvent } from '../../test/render';
@@ -32,13 +32,16 @@ describe('Header + TopBar (fixtures)', () => {
       </>,
     );
     const nav = await screen.findByRole('navigation', { name: 'principal' });
-    expect(within(nav).getAllByRole('link').map((a) => a.textContent)).toEqual([
-      'Início',
-      'Equipe',
-      'Anais',
-      'Datas Importantes',
-      'Contato',
-    ]);
+    // The menu is drawn before the edition is known; wait for the edition's own.
+    await waitFor(() =>
+      expect(within(nav).getAllByRole('link').map((a) => a.textContent)).toEqual([
+        'Início',
+        'Equipe',
+        'Anais',
+        'Datas Importantes',
+        'Contato',
+      ]),
+    );
     expect(screen.queryByRole('link', { name: 'Edições Anteriores' })).toBeNull();
   });
 

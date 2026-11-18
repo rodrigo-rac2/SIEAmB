@@ -327,16 +327,21 @@ export class SupabaseAccountStore implements AccountStore {
     }
   }
 
-  async listPanels(userId: string): Promise<{ platformAdmin: boolean; slugs: string[] }> {
+  async listPanels(userId: string): Promise<{ platformAdmin: boolean; slugs: string[]; reviewing: string[] }> {
     const users = await this.request<{ is_platform_admin: boolean }[]>(
       `users?id=eq.${q(userId)}&select=is_platform_admin&limit=1`,
     );
-    const rows = await this.request<{ event: { slug: string } | null }[]>(
-      `event_members?user_id=eq.${q(userId)}&role=in.(ADMIN,ORGANIZER)&select=event:events(slug)`,
+    const rows = await this.request<{ role: string; event: { slug: string } | null }[]>(
+      `event_members?user_id=eq.${q(userId)}&select=role,event:events(slug)`,
     );
+    const slugsOf = (roles: string[]) => [
+      ...new Set(rows.flatMap((r) => (r.event && roles.includes(r.role) ? [r.event.slug] : []))),
+    ];
     return {
       platformAdmin: Boolean(users[0]?.is_platform_admin),
-      slugs: [...new Set(rows.flatMap((r) => (r.event ? [r.event.slug] : [])))],
+      slugs: slugsOf(['ADMIN', 'ORGANIZER']),
+      // Where the person holds the Avaliador role: the site offers them the papers to review (#315).
+      reviewing: slugsOf(['REVIEWER']),
     };
   }
 
