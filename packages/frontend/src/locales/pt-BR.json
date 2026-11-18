@@ -747,6 +747,7 @@
     "unknown": "Há uma novidade para você.",
     "bellUnread_one": "Notificações: {{count}} não lida",
     "bellUnread_other": "Notificações: {{count}} não lidas",
+    "bellUnreadMany": "Notificações: mais de 99 não lidas",
     "kinds": {
       "submission.received": "O trabalho nº {{number}}, \"{{title}}\", foi recebido.",
       "submission.updated": "O trabalho nº {{number}}, \"{{title}}\", foi alterado por {{mainAuthor}}.",

@@ -109,7 +109,14 @@ describe('bell', () => {
     stubApi({ notifications: { body: { unread: 100, items: [] } } });
     const many = mount('/2027/', <NotificationsBell slug="2027" />);
     await waitFor(() => expect(screen.getByTestId('bell')).toHaveTextContent('99+'));
+    // The label read aloud agrees with the badge, and never names the 100 the server stops at (#317).
+    expect(screen.getByTestId('bell')).toHaveAccessibleName('Notificações: mais de 99 não lidas');
     many.unmount();
+    stubApi({ notifications: { body: { unread: 99, items: [] } } });
+    const edge = mount('/2027/', <NotificationsBell slug="2027" />);
+    expect(await screen.findByRole('link', { name: 'Notificações: 99 não lidas' })).toHaveTextContent('99');
+    expect(screen.getByTestId('bell')).not.toHaveTextContent('99+');
+    edge.unmount();
     stubApi({ notifications: { body: { unread: 0, items: [] } } });
     mount('/2027/', <NotificationsBell slug="2027" />);
     expect(await screen.findByRole('link', { name: 'Notificações' })).not.toHaveTextContent(/\d/);
