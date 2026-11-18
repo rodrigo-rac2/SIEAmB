@@ -117,3 +117,39 @@ describe('schema.prisma conventions', () => {
     );
   });
 });
+
+describe('the background job schedule (#273)', () => {
+  const sql = readFileSync(new URL('../prisma/migrations/20261118010000_background_job_schedule/migration.sql', import.meta.url), 'utf8');
+  // Comments explain how the secrets are set by hand; what runs is the rest.
+  const code = sql
+    .split('\n')
+    .filter((line) => !line.trim().startsWith('--'))
+    .join('\n');
+
+  it('runs every 10 minutes under one name, so applying it twice leaves one job', () => {
+    expect(code).toContain("cron.schedule('sieamb-background-job', '*/10 * * * *', 'SELECT private.run_background_job()')");
+    expect(code.match(/cron\.schedule\(/g)).toHaveLength(1);
+  });
+
+  it('carries no address and no secret: both come from the Vault of each database', () => {
+    expect(code).not.toMatch(/https?:\/\//);
+    expect(code).not.toMatch(/sieamb\.org/);
+    expect(code).toContain("WHERE name = 'sieamb_site_url'");
+    expect(code).toContain("WHERE name = 'sieamb_cron_secret'");
+    // Without them it calls nothing.
+    expect(code).toMatch(/IF coalesce\(site, ''\) = '' OR coalesce\(secret, ''\) = '' THEN\s+RETURN NULL;/);
+  });
+
+  it('is out of reach of the REST API and of anyone logged in or not', () => {
+    expect(code).toContain('CREATE OR REPLACE FUNCTION private.run_background_job()');
+    expect(code).not.toMatch(/FUNCTION public\./);
+    expect(code).toContain('REVOKE ALL ON SCHEMA private FROM PUBLIC, anon, authenticated;');
+    expect(code).toContain('REVOKE ALL ON FUNCTION private.run_background_job() FROM PUBLIC, anon, authenticated;');
+    expect(code).toContain("SET search_path = ''");
+  });
+
+  it('is skipped where the scheduler does not exist, like the shadow database', () => {
+    expect(code).toMatch(/FROM pg_available_extensions WHERE name IN \('pg_cron', 'pg_net', 'supabase_vault'\)\) < 3 THEN[\s\S]*?RETURN;/);
+  });
+});
+

@@ -27,7 +27,8 @@ export const POST = (request: Request): Promise<Response> => {
       notify: deps.notify,
       log: deps.log,
       sweepOutbox: outbox
-        ? // 40 per run, every 10 minutes: an announcement to 200 people is out within the hour.
+        ? // 40 per run, every 10 minutes (the database starts it, #273): what an announcement could not send
+          // in its own request (#281) is out within the hour.
           (now) => deliverDueOutbox({ outbox, mailer: emails.mailer, log: deps.log }, now, 40)
         : undefined,
     },
