@@ -437,29 +437,6 @@
     "sortOrder": 20
   },
   {
-    "id": "c27-med-arthur",
-    "eventId": "evt-2027",
-    "name": "Arthur Lobato de Andrade",
-    "role": {
-      "pt-BR": "Equipe de Mídias",
-      "en": "Media Team",
-      "es": "Equipo de Medios",
-      "zh-CN": "媒体团队"
-    },
-    "isCoordinator": false,
-    "institution": "UFRGS",
-    "bioMd": {
-      "pt-BR": "Estudante de Licenciatura em História na Universidade Federal do Rio Grande do Sul (UFRGS). Bolsista de Iniciação Científica CNPq no projeto de pesquisa \"Jacopo Gaetano Stefaneschi: um cardeal historiador do século XIV\", sob orientação do Prof. Dr. Igor Salomão Teixeira. Participa do grupo de extensão Ásia dos Impérios à Sociedade, construindo eventos, palestras e estudos sobre História Moderna da Ásia.",
-      "en": "Undergraduate student in History Teaching at the Federal University of Rio Grande do Sul (UFRGS). CNPq undergraduate research fellow in the project \"Jacopo Gaetano Stefaneschi: a 14th-century cardinal historian\", supervised by Prof. Dr. Igor Salomão Teixeira. Member of the outreach group Asia from Empires to Society, organising events, lectures and studies on Modern Asian History.",
-      "es": "Estudiante del Profesorado en Historia en la Universidad Federal de Rio Grande do Sul (UFRGS). Becario de Iniciación Científica CNPq en el proyecto de investigación \"Jacopo Gaetano Stefaneschi: un cardenal historiador del siglo XIV\", bajo la orientación del Prof. Dr. Igor Salomão Teixeira. Participa en el grupo de extensión Asia de los Imperios a la Sociedad, organizando eventos, charlas y estudios sobre Historia Moderna de Asia.",
-      "zh-CN": "南里奥格兰德联邦大学（UFRGS）历史教育专业本科生。CNPq 本科科研项目“Jacopo Gaetano Stefaneschi：一位十四世纪的红衣主教史学家”奖学金获得者，导师为 Igor Salomão Teixeira 教授。参与“亚洲：从帝国到社会”推广小组，组织有关亚洲近代史的活动、讲座与研究。"
-    },
-    "photoUrl": "team/arthur-lobato.jpg",
-    "lattesUrl": "http://lattes.cnpq.br/6263703658435277",
-    "orcidUrl": null,
-    "sortOrder": 21
-  },
-  {
     "id": "c25-org-najara",
     "eventId": "evt-2025",
     "name": "Ma. Najara Escarião Agripino",
