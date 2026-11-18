@@ -182,7 +182,7 @@ export class FakeAccountStore implements AccountStore {
     for (const n of this.notices) if (n.userId === userId && !n.readAt) n.readAt = now.toISOString();
   }
   invitesApplied: string[] = [];
-  panels = { platformAdmin: false, slugs: [] as string[] };
+  panels = { platformAdmin: false, slugs: [] as string[], reviewing: [] as string[] };
   async applyRoleInvites(_userId: string, email: string) {
     this.invitesApplied.push(email);
   }

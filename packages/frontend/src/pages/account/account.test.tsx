@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactElement } from 'react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
@@ -7,7 +7,7 @@ import { RegistrationForm } from '../../components/registration/RegistrationForm
 import { TopBar } from '../../components/layout/TopBar';
 import { AuthContext, type AuthState } from '../../contexts/AuthContext';
 import { EventProvider } from '../../contexts/EventContext';
-import type { Account } from '../../services/account';
+import { saveProfile, type Account } from '../../services/account';
 import { LinkPage } from './LinkPage';
 import { LoginPage, safeNext } from './LoginPage';
 import { MyAreaPage } from './MyAreaPage';
@@ -137,6 +137,20 @@ describe('accounts switched off', () => {
   });
 });
 
+/** The account answer waits until the test gives it; every other call is answered "not found" at once. */
+function slowAccount() {
+  let give: (response: Response) => void = () => undefined;
+  vi.stubGlobal(
+    'fetch',
+    vi.fn((input: string) =>
+      input.endsWith('/account/me')
+        ? new Promise<Response>((resolve) => (give = resolve))
+        : Promise.resolve(new Response(JSON.stringify({ error: 'not_found' }), { status: 404 })),
+    ),
+  );
+  return (body: Account) => give(new Response(JSON.stringify(body), { status: 200 }));
+}
+
 describe('top bar', () => {
   const list = () => within(screen.getByRole('navigation', { name: 'Sua conta' })).queryByRole('list');
   const openMenu = async () => {
@@ -184,18 +198,124 @@ describe('top bar', () => {
     expect(screen.queryByRole('menuitem')).not.toBeInTheDocument();
   });
 
-  it('skips a title in the name, and says "Minha conta" while the account is not known or cannot be read', async () => {
+  it('skips a title in the name; "Minha conta" only when the account cannot be read, and never the e-mail', async () => {
     stubApi({ me: { body: account({ user: { ...account().user, fullName: 'Profa. Viviane Farias' } }) } });
     const first = mount('/2027/', <TopBar />, auth(LOGGED_IN));
     expect(await screen.findByRole('button', { name: 'Viviane' })).toBeInTheDocument();
     first.unmount();
     stubApi({ me: { status: 500, body: { error: 'server_error' } } });
     mount('/2027/', <TopBar />, auth(LOGGED_IN));
-    const button = await screen.findByTestId('account-menu');
-    await new Promise((resolve) => setTimeout(resolve, 50));
-    expect(button).toHaveTextContent('Minha conta');
-    // The e-mail is never put on the bar.
+    expect(await screen.findByRole('button', { name: 'Minha conta' })).toBeInTheDocument();
     expect(screen.getByTestId('topbar-account')).not.toHaveTextContent('@');
+  });
+
+  it('says "Carregando…" while the session is read and while the account is read, with nothing to press meanwhile (#319)', async () => {
+    // The session is not known yet: neither Entrar nor a name, and the line is already there.
+    const early = mount('/2027/', <TopBar />, auth({ loading: true }));
+    expect(await screen.findByTestId('topbar-waiting')).toHaveTextContent('Carregando…');
+    expect(screen.getByTestId('topbar-account')).toContainElement(screen.getByTestId('topbar-waiting'));
+    expect(screen.queryByRole('link', { name: 'Entrar ou criar conta' })).not.toBeInTheDocument();
+    expect(screen.queryByTestId('account-menu')).not.toBeInTheDocument();
+    early.unmount();
+
+    // Logged in, the account still on its way.
+    const answer = slowAccount();
+    mount('/2027/', <TopBar />, auth(LOGGED_IN));
+    expect(await screen.findByTestId('topbar-waiting')).toHaveTextContent('Carregando…');
+    expect(screen.queryByTestId('account-menu')).not.toBeInTheDocument();
+    expect(screen.queryByText('Minha conta')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('bell')).not.toBeInTheDocument();
+    answer(account({ panels: { platformAdmin: false, slugs: ['2027'] } }));
+    // The list is complete from the first time it can be opened: the panel is already in it.
+    const items = await openMenu();
+    expect(screen.queryByTestId('topbar-waiting')).not.toBeInTheDocument();
+    expect(items.getByTestId('topbar-panel')).toBeInTheDocument();
+  });
+
+  it('keeps the name and the list when the session is renewed, and forgets them when someone else logs in (#319)', async () => {
+    stubApi({ me: { body: account({ panels: { platformAdmin: false, slugs: ['2027'] } }) } });
+    const tree = (state: AuthState) => (
+      <AuthContext.Provider value={state}>
+        <MemoryRouter initialEntries={['/2027/']}>
+          <Routes>
+            <Route path="/:eventSlug/*" element={<EventProvider><TopBar /></EventProvider>} />
+          </Routes>
+        </MemoryRouter>
+      </AuthContext.Provider>
+    );
+    const view = render(tree(auth(LOGGED_IN)));
+    await screen.findByRole('button', { name: 'Maria' });
+    // A renewed session: same person, new token, and the answer is slow.
+    const answer = slowAccount();
+    view.rerender(tree(auth({ ...LOGGED_IN, accessToken: 'access-token-2' })));
+    expect(screen.getByRole('button', { name: 'Maria' })).toBeInTheDocument();
+    expect(screen.queryByTestId('topbar-waiting')).not.toBeInTheDocument();
+    await userEvent.click(screen.getByTestId('account-menu'));
+    expect(screen.getByTestId('topbar-panel')).toBeInTheDocument();
+    answer(account({ user: { ...account().user, fullName: 'Mariana Souza' } }));
+    expect(await screen.findByRole('button', { name: 'Mariana' })).toBeInTheDocument();
+    // Someone else: nothing of the previous person stays on screen while theirs is read.
+    slowAccount();
+    view.rerender(tree(auth({ email: 'outra@ufcg.edu.br', accessToken: 'access-token-3' })));
+    expect(await screen.findByTestId('topbar-waiting')).toBeInTheDocument();
+    expect(screen.queryByText('Mariana')).not.toBeInTheDocument();
+  });
+
+  it('shows a name changed in Minha área at once, without a reload (#313)', async () => {
+    const calls = stubApi({
+      me: { body: account() },
+      profile: { body: account({ user: { ...account().user, fullName: 'Profa. Beatriz Lima' } }) },
+    });
+    mount('/2027/', <TopBar />, auth(LOGGED_IN));
+    await screen.findByRole('button', { name: 'Maria' });
+    await act(async () => {
+      await saveProfile('access-token-1', { fullName: 'Profa. Beatriz Lima' });
+    });
+    expect(screen.getByRole('button', { name: 'Beatriz' })).toBeInTheDocument();
+    expect(calls.filter((c) => c.url === '/api/v1/account/me')).toHaveLength(1);
+  });
+
+  it('a failed save changes nothing in the bar', async () => {
+    stubApi({ me: { body: account() }, profile: { status: 400, body: { error: 'invalid_name' } } });
+    mount('/2027/', <TopBar />, auth(LOGGED_IN));
+    await screen.findByRole('button', { name: 'Maria' });
+    await act(async () => {
+      await saveProfile('access-token-1', { fullName: 'x' }).catch(() => undefined);
+    });
+    expect(screen.getByRole('button', { name: 'Maria' })).toBeInTheDocument();
+  });
+
+  it('from the archive of an older edition, the account links lead to the current one (#314)', async () => {
+    const out = mount('/2025/', <TopBar />);
+    expect(await screen.findByRole('link', { name: 'Entrar ou criar conta' })).toHaveAttribute('href', '/2027/conta/entrar');
+    out.unmount();
+    stubApi({ me: { body: account({ panels: { platformAdmin: false, slugs: ['2027'], reviewing: ['2027'] } }) } });
+    mount('/2025/', <TopBar />, auth(LOGGED_IN));
+    const items = await openMenu();
+    expect(items.getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual([
+      '/2027/minha-area',
+      '/2027/meus-trabalhos',
+      '/2027/avaliacoes',
+      '/2027/painel',
+    ]);
+    expect(screen.getByTestId('bell')).toHaveAttribute('href', '/2027/notificacoes');
+  });
+
+  it.each([
+    ['a reviewer of this edition', { platformAdmin: false, slugs: [], reviewing: ['2027'] }, true],
+    ['a reviewer of another edition only', { platformAdmin: false, slugs: [], reviewing: ['2029'] }, false],
+    ['an organiser who does not review', { platformAdmin: false, slugs: ['2027'], reviewing: [] }, false],
+    ['an answer from before the server said it', { platformAdmin: false, slugs: [] }, false],
+  ])('offers the papers to review to %s: %j (#315)', async (_name, panels, shown) => {
+    stubApi({ me: { body: account({ panels }) } });
+    mount('/2027/', <TopBar />, auth(LOGGED_IN));
+    const items = await openMenu();
+    if (shown) {
+      expect(items.getByTestId('topbar-reviewing')).toHaveAttribute('href', '/2027/avaliacoes');
+      expect(items.getAllByRole('listitem').map((li) => li.textContent)).toEqual(['Minha área', 'Meus trabalhos', 'Trabalhos para avaliar', 'Sair']);
+    } else {
+      expect(items.queryByTestId('topbar-reviewing')).not.toBeInTheDocument();
+    }
   });
 
   it('closes with Escape (focus back on the name), a press elsewhere, focus leaving, and the button again', async () => {

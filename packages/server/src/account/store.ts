@@ -121,8 +121,8 @@ export interface AccountStore {
    * real ones (#219). Only called for a confirmed e-mail.
    */
   applyRoleInvites(userId: string, email: string): Promise<void>;
-  /** The editions whose organisation area this account may open. */
-  listPanels(userId: string): Promise<{ platformAdmin: boolean; slugs: string[] }>;
+  /** The editions whose organisation area this account may open, and those where it is a reviewer. */
+  listPanels(userId: string): Promise<{ platformAdmin: boolean; slugs: string[]; reviewing: string[] }>;
 
   /** The latest notices of an account, newest first (#221). */
   listNotifications(userId: string, limit: number): Promise<AccountNotification[]>;

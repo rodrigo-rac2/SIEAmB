@@ -263,6 +263,15 @@ describe('who is logged in', () => {
 });
 
 describe('me', () => {
+  it('says where the person organises and where they review, so the site can offer those pages (#252, #315)', async () => {
+    const { deps, auth, store } = setup();
+    const token = auth.login(USER);
+    store.addProfile(USER);
+    store.panels = { platformAdmin: false, slugs: ['2027'], reviewing: ['2027', '2029'] };
+    const data = await body(await handleAccount(call('GET', 'me', { token }), 'me', deps));
+    expect(data.panels).toEqual({ platformAdmin: false, slugs: ['2027'], reviewing: ['2027', '2029'] });
+  });
+
   it('links a registration made with the same e-mail and shows it with the pay link', async () => {
     const { deps, auth, store } = setup();
     const token = auth.login(USER);
