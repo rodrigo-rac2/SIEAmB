@@ -11,7 +11,28 @@ import {
 } from './handlers';
 import { maskEmail, openEmail, sealEmail } from './people';
 import { RULES, areaName, areaRefs, rulesFor, submissionClock, windowState } from './rules';
-import { EVENT, MAIN, NOW, ORGANISER, OTHER, call, docx, pdf, setup } from './testing';
+import { cpfFrom } from '../account/testing';
+import { NO_DOCUMENT } from '../core/document';
+import {
+  EVENT,
+  MAIN,
+  MAIN_CPF,
+  NOW,
+  ORGANISER,
+  OTHER,
+  OTHER_CPF,
+  SPARE_CPF,
+  call,
+  cpfOnly,
+  docx,
+  line,
+  passportOnly,
+  pdf,
+  setup,
+} from './testing';
+
+/** A different valid CPF for each number: the document typed for an author who has no account. */
+const cpfOf = (n: number): string => cpfFrom(String(300400500 + n * 17));
 
 interface Answer {
   submission: Record<string, unknown>;
@@ -117,7 +138,7 @@ describe('router', () => {
 
   it('turns an unexpected failure into a 500 without leaking it', async () => {
     const { deps, tokens, store, logs } = setup();
-    store.listByAuthorEmail = async () => {
+    store.listByIdentity = async () => {
       throw new Error('boom: secret');
     };
     const response = await handleSubmissions(call('GET', 'mine', { token: tokens.main, query: '?eventSlug=2027' }), 'mine', deps);
@@ -259,7 +280,7 @@ describe('sending a paper', () => {
   it('tells every author and every organiser, by e-mail and in the site', async () => {
     const { save, store, sent, outbox } = await ready();
     store.organisers = [{ userId: ORGANISER.id, email: ORGANISER.email, fullName: 'Viviane Farias' }];
-    await save(paper({ coauthors: [{ fullName: 'João Lima', email: OTHER.email }, { fullName: 'Sem Conta', email: 'semconta@ufrn.br' }] }));
+    await save(paper({ coauthors: [{ fullName: 'João Lima', email: OTHER.email }, { fullName: 'Sem Conta', email: 'semconta@ufrn.br', cpf: cpfOf(1) }] }));
     expect(sent.map((m) => m.to).sort()).toEqual([OTHER.email, MAIN.email, 'semconta@ufrn.br', ORGANISER.email].sort());
     const toAuthor = sent.find((m) => m.to === OTHER.email)!;
     expect(toAuthor.subject).toMatch(/^Trabalho nº \d+ recebido \(II SIEAmB\)$/);
@@ -332,7 +353,7 @@ describe('sending a paper', () => {
   });
 
   it('accepts four co-authors and refuses the fifth (five authors in all)', async () => {
-    const people = (n: number) => Array.from({ length: n }, (_, i) => ({ fullName: `Coautor ${i}`, email: `c${i}@ufpb.br` }));
+    const people = (n: number) => Array.from({ length: n }, (_, i) => ({ fullName: `Coautor ${i}`, email: `c${i}@ufpb.br`, cpf: cpfOf(10 + i) }));
     const four = await ready();
     expect((await four.save(paper({ coauthors: people(4) }))).status).toBe(201);
     expect(four.store.submissions[0]!.authors).toHaveLength(5);
@@ -440,9 +461,9 @@ describe('limits of the edital', () => {
 
   it('counts the first-author limit for whoever is first in the list, not for who sends', async () => {
     const { save, store } = await ready();
-    const prof = { fullName: 'Profa. Ana Reis', email: 'ana@ufrn.br' };
+    const prof = { fullName: 'Profa. Ana Reis', email: 'ana@ufrn.br', cpf: cpfOf(2) };
     for (let i = 1; i <= 3; i += 1) {
-      store.seed({ title: `Da professora ${i}`, userId: 'someone', authors: [{ position: 1, ...prof }] });
+      store.seed({ title: `Da professora ${i}`, userId: 'someone', authors: [line(1, prof.fullName, prof.email, cpfOnly(prof.cpf))] });
     }
     // Maria sends, the professor is first: the professor's three are what counts.
     const refused = await save(paper({ authors: [prof, ME] }));
@@ -456,7 +477,7 @@ describe('limits of the edital', () => {
     const { save, store } = await ready();
     for (let i = 1; i <= 3; i += 1) store.seed({ title: `Trabalho anterior ${i}` });
     // Maria already has three as first author; as second author she can still be in more.
-    expect((await save(paper({ authors: [{ fullName: 'Profa. Ana Reis', email: 'ana@ufrn.br' }, ME] }))).status).toBe(201);
+    expect((await save(paper({ authors: [{ fullName: 'Profa. Ana Reis', email: 'ana@ufrn.br', cpf: cpfOf(2) }, ME] }))).status).toBe(201);
     expect(store.submissions.at(-1)!.authors.map((a) => a.email)).toEqual(['ana@ufrn.br', MAIN.email]);
   });
 
@@ -529,13 +550,16 @@ describe('limits of the edital', () => {
 
 describe('anyone among the authors can send', () => {
   const PROF = { fullName: 'Prof. Carlos Meira', email: 'carlos.meira@ufcg.edu.br' };
+  const PROF_CPF = cpfOf(3);
+  /** As the form sends him: with the document the sender typed. */
+  const PROF_TYPED = { ...PROF, cpf: PROF_CPF };
   const JOAO = { fullName: 'João Lima', email: OTHER.email };
   const THEIRS = `2027/${OTHER.id}/cccccccc-0000-4000-8000-000000000003.pdf`;
 
   it('takes a paper sent by the second author, with a first author who has no account', async () => {
     const { save, store, files, tokens, sent: mails, outbox, deps } = await ready();
     files.objects.set(THEIRS, await pdf(5));
-    const response = await save(paper({ authors: [PROF, JOAO], filePath: THEIRS }), tokens.other);
+    const response = await save(paper({ authors: [PROF_TYPED, JOAO], filePath: THEIRS }), tokens.other);
     expect(response.status).toBe(201);
     expect((await body(response)).submission).toMatchObject({
       position: 2,
@@ -557,10 +581,13 @@ describe('anyone among the authors can send', () => {
   });
 
   it('shows the paper to the first author once they create an account with that e-mail', async () => {
-    const { save, files, tokens, auth, deps } = await ready();
+    const { save, files, tokens, auth, deps, store } = await ready();
     files.objects.set(THEIRS, await pdf(5));
-    await save(paper({ authors: [PROF, JOAO], filePath: THEIRS }), tokens.other);
-    const token = auth.login({ id: 'user-prof', email: PROF.email, emailConfirmed: true }, 'tok-prof');
+    await save(paper({ authors: [PROF_TYPED, JOAO], filePath: THEIRS }), tokens.other);
+    const prof = { id: 'user-prof', email: PROF.email, emailConfirmed: true };
+    // The account is made with the same address and the same document the sender typed.
+    store.addUser(prof, cpfOnly(PROF_CPF));
+    const token = auth.login(prof, 'tok-prof');
     const list = await body(await handleSubmissions(call('GET', 'mine', { token, query: '?eventSlug=2027' }), 'mine', deps));
     expect(list.submissions).toHaveLength(1);
     // He sees it, as first author, and it is the sender who changes it (#250).
@@ -570,7 +597,7 @@ describe('anyone among the authors can send', () => {
 
   it('keeps the sender wherever they put themselves among five authors', async () => {
     const { save, store } = await ready();
-    const others = Array.from({ length: 4 }, (_, i) => ({ fullName: `Autor ${i}`, email: `a${i}@ufpb.br` }));
+    const others = Array.from({ length: 4 }, (_, i) => ({ fullName: `Autor ${i}`, email: `a${i}@ufpb.br`, cpf: cpfOf(20 + i) }));
     expect((await save(paper({ authors: [others[0], others[1], ME, others[2], others[3]] }))).status).toBe(201);
     expect(store.submissions[0]!.authors.map((a) => a.position)).toEqual([1, 2, 3, 4, 5]);
     expect(store.submissions[0]!.authors[2]).toMatchObject({ email: MAIN.email, position: 3 });
@@ -579,7 +606,8 @@ describe('anyone among the authors can send', () => {
   it('takes the name typed for the sender, since the list is what goes in the proceedings', async () => {
     const { save, store } = await ready();
     await save(paper({ authors: [{ fullName: 'Maria C. de Souza', email: MAIN.email.toUpperCase() }] }));
-    expect(store.submissions[0]!.authors).toEqual([{ position: 1, fullName: 'Maria C. de Souza', email: MAIN.email }]);
+    // The document is the account's, whatever the form sent.
+    expect(store.submissions[0]!.authors).toEqual([line(1, 'Maria C. de Souza', MAIN.email, cpfOnly(MAIN_CPF))]);
   });
 });
 
@@ -661,10 +689,15 @@ describe('name suggestions for the author list', () => {
   it('saves a picked person with their real e-mail, and tells them', async () => {
     const { save, store, deps, tokens, sent: mails } = await ready();
     store.people = known;
-    const { people } = (await body(await search(deps, tokens.main, 'Rodrigo Alves'))) as unknown as { people: { fullName: string; ref: string }[] };
+    // He has an account that says who he is: nothing is typed for him.
+    store.addUser({ id: 'user-rodrigo', email: 'rodrigo.costa@ufcg.edu.br', emailConfirmed: true }, cpfOnly(SPARE_CPF));
+    const { people } = (await body(await search(deps, tokens.main, 'Rodrigo Alves'))) as unknown as { people: { fullName: string; ref: string; hasDocument: boolean }[] };
+    expect(people[0]!.hasDocument).toBe(true);
     const response = await save(paper({ authors: [ME, { fullName: people[0]!.fullName, ref: people[0]!.ref }] }));
     expect(response.status).toBe(201);
-    expect(store.submissions[0]!.authors[1]).toEqual({ position: 2, fullName: 'Rodrigo Alves Costa', email: 'rodrigo.costa@ufcg.edu.br' });
+    expect(store.submissions[0]!.authors[1]).toEqual(line(2, 'Rodrigo Alves Costa', 'rodrigo.costa@ufcg.edu.br', cpfOnly(SPARE_CPF)));
+    // His document is in the answer to nobody.
+    expect(JSON.stringify(await body(response))).not.toContain(SPARE_CPF);
     expect(mails.map((m) => m.to)).toContain('rodrigo.costa@ufcg.edu.br');
   });
 
@@ -696,7 +729,7 @@ describe('changing a paper', () => {
 
   it('lets the main author change the text and the authors and keep the file', async () => {
     const { save, id, store, sent: mails, number } = await sent();
-    const response = await save(paper({ id, filePath: undefined, title: 'Governança da água: versão revista', coauthors: [{ fullName: 'Ana Reis', email: 'ana@ufrn.br' }] }));
+    const response = await save(paper({ id, filePath: undefined, title: 'Governança da água: versão revista', coauthors: [{ fullName: 'Ana Reis', email: 'ana@ufrn.br', cpf: cpfOf(4) }] }));
     expect(response.status).toBe(200);
     expect(store.submissions).toHaveLength(1);
     expect(store.submissions[0]).toMatchObject({ title: 'Governança da água: versão revista', filePath: PATH, filePages: 5, number });
@@ -1221,7 +1254,8 @@ describe('a paper of test accounts is announced to test organisers only (#255)',
     ctx.store.organisers = [REAL_ORG, TEST_ORG];
     ctx.files.objects.set(THEIRS, await pdf(5));
     const token = ctx.auth.login(testAuthor, 'tok-test-author');
-    const data = paper({ authors: [{ fullName: 'Autora E2E', email: testAuthor.email }, { fullName: 'Coautor E2E', email: 'e2e+r1a1-coautor-cd34@sieamb.org' }], filePath: THEIRS });
+    ctx.store.addUser(testAuthor, cpfOnly(cpfOf(30)));
+    const data = paper({ authors: [{ fullName: 'Autora E2E', email: testAuthor.email }, { fullName: 'Coautor E2E', email: 'e2e+r1a1-coautor-cd34@sieamb.org', cpf: cpfOf(31) }], filePath: THEIRS });
     const first = await body(await ctx.save(data, token));
     const id = first.submission.id as string;
     await ctx.save({ ...data, id, filePath: undefined, title: 'Trabalho de teste E2E (revisto)' }, token);
@@ -1242,8 +1276,541 @@ describe('a paper of test accounts is announced to test organisers only (#255)',
     ctx.store.organisers = [REAL_ORG, TEST_ORG];
     ctx.files.objects.set(THEIRS, await pdf(5));
     const token = ctx.auth.login(testAuthor, 'tok-test-author');
-    await ctx.save(paper({ authors: [{ fullName: 'Autora E2E', email: testAuthor.email }, { fullName: 'Ana Reis', email: 'ana@ufrn.br' }], filePath: THEIRS }), token);
+    ctx.store.addUser(testAuthor, cpfOnly(cpfOf(30)));
+    await ctx.save(paper({ authors: [{ fullName: 'Autora E2E', email: testAuthor.email }, { fullName: 'Ana Reis', email: 'ana@ufrn.br', cpf: cpfOf(4) }], filePath: THEIRS }), token);
     expect(ctx.sent.map((m) => m.to).sort()).toEqual(['ana@ufrn.br', ORGANISER.email].sort());
-    expect(ctx.outbox.notifications.map((n) => n.userId).sort()).toEqual([ORGANISER.id, TEST_ORG.userId].sort());
+    // The author has an account, so she is told in the site as well.
+    expect(ctx.outbox.notifications.map((n) => n.userId).sort()).toEqual([ORGANISER.id, TEST_ORG.userId, testAuthor.id].sort());
+  });
+});
+
+// ───────────────────────────── Who each author is (ADR-010) ─────────────────────────────
+
+describe('every author has a document (ADR-010, decision 7)', () => {
+  const ANA = { fullName: 'Ana Reis', email: 'ana@ufrn.br' };
+
+  it('refuses to send for an account that has not said who the person is', async () => {
+    const { save, store, auth, files } = await ready();
+    const fresh = { id: 'user-fresh', email: 'nova@ufcg.edu.br', emailConfirmed: true };
+    store.addUser(fresh);
+    files.objects.set(`2027/${fresh.id}/x.pdf`, await pdf(5));
+    const response = await save(paper({ authors: [{ fullName: 'Nova Pessoa', email: fresh.email }], filePath: `2027/${fresh.id}/x.pdf` }), auth.login(fresh, 'tok-fresh'));
+    expect(response.status).toBe(409);
+    expect(await body(response)).toEqual({ error: 'document_required' });
+    expect(store.submissions).toEqual([]);
+  });
+
+  it('stores the document typed for an author without an account, in its stored shape', async () => {
+    const { save, store } = await ready();
+    expect((await save(paper({ coauthors: [{ ...ANA, cpf: '123.456.789-09' }] }))).status).toBe(201);
+    expect(store.submissions[0]!.authors).toEqual([
+      line(1, ME.fullName, MAIN.email, cpfOnly(MAIN_CPF)),
+      line(2, ANA.fullName, ANA.email, cpfOnly(SPARE_CPF)),
+    ]);
+  });
+
+  it('takes a passport with its country, or both documents', async () => {
+    const { save, store } = await ready();
+    await save(paper({ coauthors: [{ ...ANA, passport: 'ab 123-456', country: 'pt' }] }));
+    expect(store.submissions[0]!.authors[1]!.document).toEqual(passportOnly('AB123456', 'PT'));
+    await save(paper({ title: 'Outro trabalho, com os dois documentos', coauthors: [{ fullName: 'Bia Luz', email: 'bia@ufrn.br', cpf: SPARE_CPF, passport: 'ZZ999999', country: 'US' }] }));
+    expect(store.submissions[1]!.authors[1]!.document).toEqual({ cpf: SPARE_CPF, passport: 'ZZ999999', country: 'US' });
+  });
+
+  it.each([
+    ['no document', {}, 400, 'author_document_required'],
+    ['a CPF with wrong check digits', { cpf: '390.533.447-06' }, 400, 'author_invalid_cpf'],
+    ['a CPF of repeated digits', { cpf: '00000000000' }, 400, 'author_invalid_cpf'],
+    ['a passport without its country', { passport: 'AB123456' }, 400, 'author_invalid_country'],
+    ['a passport from Brazil', { passport: 'AB123456', country: 'BR' }, 400, 'author_invalid_country'],
+    ['a passport that is too short', { passport: 'A1', country: 'PT' }, 400, 'author_invalid_passport'],
+    ['a good passport next to a bad CPF', { cpf: '12345678900', passport: 'AB123456', country: 'PT' }, 400, 'author_invalid_cpf'],
+  ])('refuses an author with %s, naming the person, and writes nothing', async (_name, document, status, error) => {
+    const { save, store } = await ready();
+    const response = await save(paper({ coauthors: [{ ...ANA, ...document }] }));
+    expect(response.status).toBe(status);
+    expect(await body(response)).toEqual({ error, name: 'Ana Reis' });
+    expect(store.submissions).toEqual([]);
+  });
+
+  it('an address that has an account takes the account\'s document, whatever was typed for it', async () => {
+    const { save, store } = await ready();
+    // Typed for João: nothing, then someone else's CPF, then nonsense that is still a valid CPF.
+    for (const [i, typed] of [{}, { cpf: SPARE_CPF }, { cpf: cpfOf(40) }].entries()) {
+      const response = await save(paper({ title: `Trabalho de número ${i} com o João`, coauthors: [{ fullName: 'João Lima', email: OTHER.email, ...typed }] }));
+      expect(response.status).toBe(201);
+      expect(store.submissions[i]!.authors[1]!.document).toEqual(cpfOnly(OTHER_CPF));
+    }
+  });
+
+  it('answers the same whether the document typed for an account holder is right or wrong: nothing to learn by trying', async () => {
+    const right = await ready();
+    const wrong = await ready();
+    const a = await right.save(paper({ coauthors: [{ fullName: 'João Lima', email: OTHER.email, cpf: OTHER_CPF }] }));
+    const b = await wrong.save(paper({ coauthors: [{ fullName: 'João Lima', email: OTHER.email, cpf: SPARE_CPF }] }));
+    const strip = (answer: Answer) => ({ ...answer.submission, id: 0, number: 0 });
+    expect([a.status, strip(await body(a))]).toEqual([b.status, strip(await body(b))]);
+  });
+
+  it('refuses a document that belongs to an account under another address, naming that address masked', async () => {
+    const { save, store } = await ready();
+    const response = await save(paper({ coauthors: [{ fullName: 'João com outro e-mail', email: 'joao.outro@gmail.com', cpf: OTHER_CPF }] }));
+    expect(response.status).toBe(409);
+    expect(await body(response)).toEqual({ error: 'author_other_email', name: 'João com outro e-mail', maskedEmail: maskEmail(OTHER.email) });
+    expect(JSON.stringify(await body(await save(paper({ coauthors: [{ fullName: 'J', email: 'joao.outro@gmail.com', cpf: OTHER_CPF }] }))))).not.toContain(OTHER.email);
+    expect(store.submissions).toEqual([]);
+  });
+
+  it('does the same for a passport held by an account, and takes the same number from another country', async () => {
+    const { save, store } = await ready();
+    store.addUser({ id: 'user-pt', email: 'joana@uc.pt', emailConfirmed: true }, passportOnly('AB123456', 'PT'));
+    const held = await save(paper({ coauthors: [{ fullName: 'Joana', email: 'joana.silva@gmail.com', passport: 'AB123456', country: 'PT' }] }));
+    expect(await body(held)).toEqual({ error: 'author_other_email', name: 'Joana', maskedEmail: maskEmail('joana@uc.pt') });
+    expect((await save(paper({ coauthors: [{ fullName: 'Outra pessoa', email: 'outra@uv.es', passport: 'AB123456', country: 'ES' }] }))).status).toBe(201);
+  });
+
+  it('the sender cannot list their own document under another address either', async () => {
+    const { save } = await ready();
+    const response = await save(paper({ coauthors: [{ fullName: 'Maria, de novo', email: 'maria.clara@gmail.com', cpf: MAIN_CPF }] }));
+    // Her account holds that CPF: it is refused like any other account's.
+    expect(await body(response)).toEqual({ error: 'author_other_email', name: 'Maria, de novo', maskedEmail: maskEmail(MAIN.email) });
+  });
+
+  it('refuses the same document twice in one paper, under two addresses', async () => {
+    const { save, store } = await ready();
+    const response = await save(paper({ coauthors: [{ ...ANA, cpf: SPARE_CPF }, { fullName: 'Ana R.', email: 'ana.reis@gmail.com', cpf: SPARE_CPF }] }));
+    expect(response.status).toBe(400);
+    expect(await body(response)).toEqual({ error: 'duplicate_author', name: 'Ana R.' });
+    expect(store.submissions).toEqual([]);
+  });
+
+  it('refuses the same passport twice, and the same person once by CPF and once by CPF and passport', async () => {
+    const { save } = await ready();
+    const twice = await save(paper({ coauthors: [{ ...ANA, passport: 'AB123456', country: 'PT' }, { fullName: 'Ana R.', email: 'a2@x.org', passport: 'ab-123456', country: 'pt' }] }));
+    expect(await body(twice)).toEqual({ error: 'duplicate_author', name: 'Ana R.' });
+    const mixed = await save(paper({ coauthors: [{ ...ANA, cpf: SPARE_CPF }, { fullName: 'Ana R.', email: 'a2@x.org', cpf: SPARE_CPF, passport: 'AB123456', country: 'PT' }] }));
+    expect(await body(mixed)).toEqual({ error: 'duplicate_author', name: 'Ana R.' });
+  });
+
+  it('two authors with different kinds of document are two people', async () => {
+    const { save } = await ready();
+    expect((await save(paper({ coauthors: [{ ...ANA, cpf: SPARE_CPF }, { fullName: 'Bia Luz', email: 'bia@uc.pt', passport: 'AB123456', country: 'PT' }] }))).status).toBe(201);
+  });
+
+  it('hands the database every author with all that says who they are, to count the limits when it writes', async () => {
+    const { save, store } = await ready();
+    await save(paper({ coauthors: [{ ...ANA, cpf: SPARE_CPF, passport: 'AB123456', country: 'PT' }] }));
+    expect(store.saves).toHaveLength(1);
+    expect(store.saves[0]!.check).toEqual({
+      maxAsMain: R.maxAsMainAuthor,
+      maxAsCoauthor: R.maxAsCoauthor,
+      identities: [
+        { emails: [MAIN.email], cpfs: [MAIN_CPF], passports: [] },
+        { emails: [ANA.email], cpfs: [SPARE_CPF], passports: ['PT:AB123456'] },
+      ],
+    });
+  });
+
+  it(`stops after too many saves in an hour`, async () => {
+    const { save, store } = await ready();
+    store.submissions = [];
+    let last = 0;
+    for (let i = 0; i < 61; i += 1) last = (await save(paper({ title: 'x' }))).status;
+    expect(last).toBe(429);
+  });
+});
+
+describe('changing a paper keeps who its authors are', () => {
+  const ANA = { fullName: 'Ana Reis', email: 'ana@ufrn.br' };
+  const start = async () => {
+    const ctx = await ready();
+    const first = await body(await ctx.save(paper({ coauthors: [{ ...ANA, cpf: SPARE_CPF }] })));
+    return { ...ctx, id: first.submission.id as string };
+  };
+
+  it('keeps the document of a line whose address did not change, with nothing typed again', async () => {
+    const { save, store, id } = await start();
+    const response = await save(paper({ id, filePath: undefined, title: 'Governança da água: versão revista', coauthors: [{ ...ANA, fullName: 'Ana M. Reis' }] }));
+    expect(response.status).toBe(200);
+    expect(store.submissions[0]!.authors[1]).toEqual(line(2, 'Ana M. Reis', ANA.email, cpfOnly(SPARE_CPF)));
+  });
+
+  it('asks for the document again when the address of the line changes', async () => {
+    const { save, store, id } = await start();
+    const response = await save(paper({ id, filePath: undefined, coauthors: [{ fullName: 'Ana Reis', email: 'ana.nova@ufrn.br' }] }));
+    expect(response.status).toBe(400);
+    expect(await body(response)).toEqual({ error: 'author_document_required', name: 'Ana Reis' });
+    expect(store.submissions[0]!.authors[1]!.email).toBe(ANA.email);
+  });
+
+  it('takes a corrected document typed for the same address', async () => {
+    const { save, store, id } = await start();
+    expect((await save(paper({ id, filePath: undefined, coauthors: [{ ...ANA, cpf: cpfOf(50) }] }))).status).toBe(200);
+    expect(store.submissions[0]!.authors[1]!.document).toEqual(cpfOnly(cpfOf(50)));
+  });
+
+  it('tells whoever sent it, and only them, what is on record for each author; never the document itself', async () => {
+    const { deps, tokens, store, id, save } = await start();
+    await save(paper({ id, filePath: undefined, coauthors: [{ ...ANA }, { fullName: 'João Lima', email: OTHER.email }] }));
+    store.submissions[0]!.authors.push(line(4, 'De antes', 'antes@ufrn.br'));
+    const one = (token: string) => handleSubmissions(call('GET', 'one', { token, query: `?eventSlug=2027&id=${id}` }), 'one', deps);
+    const sender = await body(await one(tokens.main));
+    expect(sender.submission.authorDocuments).toEqual([
+      { position: 1, state: 'account' },
+      // Typed by the sender for someone without an account: a hint, to recognise it.
+      { position: 2, state: 'typed', hint: '***.456.789-**' },
+      // The document of an account is never shown, not even as a hint.
+      { position: 3, state: 'account' },
+      { position: 4, state: 'missing' },
+    ]);
+    const text = JSON.stringify(sender);
+    for (const secret of [SPARE_CPF, OTHER_CPF, MAIN_CPF]) expect(text).not.toContain(secret);
+    // A co-author sees the paper and nothing about documents.
+    const coauthor = await body(await one(tokens.other));
+    expect(coauthor.submission).not.toHaveProperty('authorDocuments');
+    expect(JSON.stringify(coauthor)).not.toContain('***');
+  });
+
+  it('an administrator correcting a paper leaves alone a line from before documents existed, and still needs one for a new line', async () => {
+    const { save, store, tokens } = await ready();
+    store.organisers = [{ userId: ORGANISER.id, email: ORGANISER.email, fullName: 'Viviane' }];
+    const old = store.seed({ authors: [line(1, 'Maria', MAIN.email), line(2, 'Sem Documento', 'antiga@ufrn.br')] });
+    const fixed = await save(paper({ id: old.id, filePath: undefined, title: 'Título corrigido pela organização', authors: [{ fullName: 'Maria', email: MAIN.email }, { fullName: 'Sem Documento', email: 'antiga@ufrn.br' }] }), tokens.organiser);
+    expect(fixed.status).toBe(200);
+    expect(store.submissions[0]!.authors[1]).toEqual(line(2, 'Sem Documento', 'antiga@ufrn.br', NO_DOCUMENT));
+    const added = await save(paper({ id: old.id, filePath: undefined, authors: [{ fullName: 'Maria', email: MAIN.email }, { fullName: 'Nova na lista', email: 'nova@ufrn.br' }] }), tokens.organiser);
+    expect(await body(added)).toEqual({ error: 'author_document_required', name: 'Nova na lista' });
+  });
+
+  it('the sender of a paper from before documents existed must now say who each author is', async () => {
+    const { save, store } = await ready();
+    const old = store.seed({ authors: [line(1, 'Maria', MAIN.email), line(2, 'Sem Documento', 'antiga@ufrn.br')] });
+    const response = await save(paper({ id: old.id, filePath: undefined, authors: [{ fullName: 'Maria', email: MAIN.email }, { fullName: 'Sem Documento', email: 'antiga@ufrn.br' }] }));
+    expect(await body(response)).toEqual({ error: 'author_document_required', name: 'Sem Documento' });
+  });
+});
+
+describe('the limits are counted per person, not per address (ADR-010, decision 8)', () => {
+  const ANA = { fullName: 'Ana Reis', email: 'ana@ufrn.br' };
+
+  it('someone listed as first author under three addresses with one CPF cannot be first in a fourth paper', async () => {
+    const { save, store } = await ready();
+    for (let i = 0; i < R.maxAsMainAuthor; i += 1) {
+      store.seed({ title: `Da Ana ${i}`, userId: 'someone', authors: [line(1, 'Ana Reis', `ana${i}@gmail.com`, cpfOnly(SPARE_CPF))] });
+    }
+    const response = await save(paper({ authors: [{ ...ANA, cpf: SPARE_CPF }, ME] }));
+    expect(response.status).toBe(409);
+    expect(await body(response)).toEqual({ error: 'too_many_as_main', name: 'Ana Reis', max: R.maxAsMainAuthor });
+    expect(store.submissions).toHaveLength(R.maxAsMainAuthor);
+  });
+
+  it('the same with a passport and its country; the same number of another country is someone else', async () => {
+    const { save, store } = await ready();
+    for (let i = 0; i < R.maxAsCoauthor; i += 1) {
+      store.seed({ title: `Com a Joana ${i}`, userId: 'someone', authors: [line(1, 'Líder', `lider${i}@x.org`, cpfOnly(cpfOf(60 + i))), line(2, 'Joana', `joana${i}@uc.pt`, passportOnly('AB123456', 'PT'))] });
+    }
+    const sixth = await save(paper({ coauthors: [{ fullName: 'Joana', email: 'joana@uc.pt', passport: 'ab 123-456', country: 'PT' }] }));
+    expect(await body(sixth)).toEqual({ error: 'coauthor_limit', name: 'Joana', max: R.maxAsCoauthor });
+    expect((await save(paper({ coauthors: [{ fullName: 'Juana', email: 'juana@uv.es', passport: 'AB123456', country: 'ES' }] }))).status).toBe(201);
+  });
+
+  it('an account holder is counted by the address and by the document: papers listing them elsewhere count too', async () => {
+    const { save, store } = await ready();
+    // João is first author of two papers under his address and of one under another, by his CPF.
+    store.seed({ title: 'Do João 1', userId: OTHER.id, authors: [line(1, 'João', OTHER.email, cpfOnly(OTHER_CPF))] });
+    store.seed({ title: 'Do João 2', userId: OTHER.id, authors: [line(1, 'João', OTHER.email, cpfOnly(OTHER_CPF))] });
+    store.seed({ title: 'Do João, por outro endereço', userId: 'someone', authors: [line(1, 'João', 'joao.lima@gmail.com', cpfOnly(OTHER_CPF))] });
+    const response = await save(paper({ authors: [{ fullName: 'João Lima', email: OTHER.email }, ME] }));
+    expect(await body(response)).toEqual({ error: 'too_many_as_main', name: 'João Lima', max: R.maxAsMainAuthor });
+  });
+
+  it('someone with a CPF and a passport is one person on lines that carry only one of them', async () => {
+    const { save, store } = await ready();
+    store.addUser({ id: 'user-both', email: 'bia@uc.pt', emailConfirmed: true }, { cpf: SPARE_CPF, passport: 'AB123456', country: 'PT' });
+    store.seed({ title: 'Pela CPF', userId: 'someone', authors: [line(1, 'Bia', 'bia1@x.org', cpfOnly(SPARE_CPF))] });
+    store.seed({ title: 'Pelo passaporte', userId: 'someone', authors: [line(1, 'Bia', 'bia2@x.org', passportOnly('AB123456', 'PT'))] });
+    store.seed({ title: 'Pelo endereço', userId: 'someone', authors: [line(1, 'Bia', 'bia@uc.pt')] });
+    const response = await save(paper({ authors: [{ fullName: 'Bia Luz', email: 'bia@uc.pt' }, ME] }));
+    expect(await body(response)).toEqual({ error: 'too_many_as_main', name: 'Bia Luz', max: R.maxAsMainAuthor });
+  });
+
+  it('a line from before documents existed still counts, by its address', async () => {
+    const { save, store } = await ready();
+    for (let i = 0; i < R.maxAsMainAuthor; i += 1) store.seed({ title: `Antigo ${i}`, userId: 'someone', authors: [line(1, 'Ana Reis', ANA.email)] });
+    expect(await body(await save(paper({ authors: [{ ...ANA, cpf: SPARE_CPF }, ME] })))).toEqual({ error: 'too_many_as_main', name: 'Ana Reis', max: R.maxAsMainAuthor });
+  });
+
+  it('withdrawn papers and the paper being changed are not counted', async () => {
+    const { save, store } = await ready();
+    for (let i = 0; i < R.maxAsMainAuthor; i += 1) store.seed({ title: `Meu ${i}` });
+    store.submissions[0]!.deletedAt = NOW.toISOString();
+    expect((await save(paper({ coauthors: [] }))).status).toBe(201);
+    // Three stand now: changing one of them is not a fourth.
+    const id = store.submissions.at(-1)!.id;
+    expect((await save(paper({ id, filePath: undefined, title: 'O mesmo, com outro título bem diferente', coauthors: [] }))).status).toBe(200);
+    expect(await body(await save(paper({ title: 'Um quarto trabalho como primeira autora', coauthors: [] })))).toMatchObject({ error: 'too_many_as_main' });
+  });
+
+  it('the count made when the paper is written decides, even if the early one let it through', async () => {
+    const { save, store } = await ready();
+    // Another save lands between the early count and the write: the early count sees two, the write sees three.
+    const list = store.listByIdentity.bind(store);
+    let landed = false;
+    store.listByIdentity = async (eventId, who) => {
+      const seen = await list(eventId, who);
+      if (!landed && who.emails.includes(MAIN.email)) {
+        landed = true;
+        store.seed({ title: 'Chegou no mesmo instante' });
+      }
+      return seen;
+    };
+    store.seed({ title: 'Meu 1' });
+    store.seed({ title: 'Meu 2' });
+    const response = await save(paper({ coauthors: [] }));
+    expect(response.status).toBe(409);
+    expect(await body(response)).toEqual({ error: 'too_many_as_main', name: ME.fullName, max: R.maxAsMainAuthor });
+    expect(store.submissions).toHaveLength(3);
+  });
+
+  it('a paper that vanished between the look and the write is "not found", not a crash', async () => {
+    const { save, store } = await ready();
+    const first = await body(await save(paper({ coauthors: [] })));
+    const real = store.save.bind(store);
+    store.save = async (...args) => {
+      store.submissions[0]!.deletedAt = NOW.toISOString();
+      return real(...args);
+    };
+    const response = await save(paper({ id: first.submission.id, filePath: undefined, coauthors: [] }));
+    expect(response.status).toBe(404);
+    expect(await body(response)).toEqual({ error: 'submission_not_found' });
+  });
+});
+
+describe('the waiting co-author (ADR-010, decision 9)', () => {
+  const ANA = { fullName: 'Ana Reis', email: 'ana@ufrn.br' };
+  const ana = { id: 'user-ana', email: ANA.email, emailConfirmed: true };
+  const mine = async (deps: SubmissionDeps, token: string) =>
+    body(await handleSubmissions(call('GET', 'mine', { token, query: '?eventSlug=2027' }), 'mine', deps));
+  const start = async (typed: Record<string, unknown> = { cpf: SPARE_CPF }) => {
+    const ctx = await ready();
+    const first = await body(await ctx.save(paper({ coauthors: [{ ...ANA, ...typed }] })));
+    return { ...ctx, id: first.submission.id as string };
+  };
+  const open = (deps: SubmissionDeps, token: string, action: 'one' | 'file', id: string) =>
+    handleSubmissions(call('GET', action, { token, query: `?eventSlug=2027&id=${id}` }), action, deps);
+
+  it('same address and the same CPF: the paper is hers to see, and she opens the file', async () => {
+    const { deps, store, auth, id } = await start();
+    store.addUser(ana, cpfOnly(SPARE_CPF));
+    const token = auth.login(ana, 'tok-ana');
+    const list = await mine(deps, token);
+    expect(list.submissions).toHaveLength(1);
+    expect(list.submissions[0]).toMatchObject({ position: 2, sentByMe: false, canEdit: false, authorIssues: [] });
+    expect(list.limits).toMatchObject({ asMain: 0, asCoauthor: 1 });
+    expect(list.waiting).toEqual({ otherDocument: 0, otherEmail: [] });
+    expect((await open(deps, token, 'one', id)).status).toBe(200);
+    expect((await open(deps, token, 'file', id)).status).toBe(200);
+  });
+
+  it('same address and the same passport, typed with spaces and small letters on one side', async () => {
+    const { deps, store, auth } = await start({ passport: 'ab 123-456', country: 'pt' });
+    store.addUser(ana, passportOnly('AB123456', 'PT'));
+    expect((await mine(deps, auth.login(ana, 'tok-ana'))).submissions).toHaveLength(1);
+  });
+
+  it('same address, another CPF: the paper keeps waiting, counts against her, and she cannot open it', async () => {
+    const { deps, store, auth, id } = await start();
+    store.addUser(ana, cpfOnly(cpfOf(70)));
+    const token = auth.login(ana, 'tok-ana');
+    const list = await mine(deps, token);
+    expect(list.submissions).toEqual([]);
+    expect(list.waiting).toEqual({ otherDocument: 1, otherEmail: [] });
+    // The place is hers by the address: it counts.
+    expect(list.limits).toMatchObject({ asMain: 0, asCoauthor: 1 });
+    // To her the paper does not exist: same answer as for a stranger.
+    for (const action of ['one', 'file'] as const) {
+      const response = await open(deps, token, action, id);
+      expect(response.status).toBe(404);
+      expect(await body(response)).toEqual({ error: 'submission_not_found' });
+    }
+    // Nothing of the paper is in what she is sent.
+    expect(JSON.stringify(list)).not.toContain('Governança');
+  });
+
+  it('whoever sent it sees which author no longer matches, on that paper only', async () => {
+    const { deps, store, tokens, save } = await start();
+    await save(paper({ title: 'Outro trabalho, sem problema algum nele', coauthors: [{ fullName: 'João Lima', email: OTHER.email }] }));
+    store.addUser(ana, cpfOnly(cpfOf(70)));
+    const list = await mine(deps, tokens.main);
+    expect(list.submissions.map((s) => s.authorIssues)).toEqual([[{ position: 2, fullName: 'Ana Reis' }], []]);
+    // João, a co-author of the second paper, is told nothing about anybody's document.
+    const joao = await mine(deps, tokens.other);
+    expect(joao.submissions.map((s) => s.authorIssues)).toEqual([[]]);
+  });
+
+  it('saving the paper again takes her account\'s document, shows it to her, and counts the limits again', async () => {
+    const { deps, store, auth, id, save } = await start();
+    store.addUser(ana, cpfOnly(cpfOf(70)));
+    const token = auth.login(ana, 'tok-ana');
+    expect((await save(paper({ id, filePath: undefined, coauthors: [{ ...ANA }] }))).status).toBe(200);
+    expect(store.submissions[0]!.authors[1]!.document).toEqual(cpfOnly(cpfOf(70)));
+    const list = await mine(deps, token);
+    expect(list.submissions).toHaveLength(1);
+    expect(list.waiting).toEqual({ otherDocument: 0, otherEmail: [] });
+  });
+
+  it('the correction is refused when, by her real document, she is already at the limit', async () => {
+    const { store, id, save } = await start();
+    store.addUser(ana, cpfOnly(cpfOf(70)));
+    for (let i = 0; i < R.maxAsCoauthor; i += 1) {
+      store.seed({ title: `Outros da Ana ${i}`, userId: 'someone', authors: [line(1, 'Líder', `l${i}@x.org`, cpfOnly(cpfOf(80 + i))), line(2, 'Ana', `ana.outra${i}@gmail.com`, cpfOnly(cpfOf(70)))] });
+    }
+    const response = await save(paper({ id, filePath: undefined, coauthors: [{ ...ANA }] }));
+    expect(response.status).toBe(409);
+    expect(await body(response)).toEqual({ error: 'coauthor_limit', name: 'Ana Reis', max: R.maxAsCoauthor });
+    // The line stays as it was: still waiting.
+    expect(store.submissions[0]!.authors[1]!.document).toEqual(cpfOnly(SPARE_CPF));
+  });
+
+  it('the same CPF under another address: she signs up, sees no paper, a hint of the address, and it counts', async () => {
+    const { deps, store, auth, id } = await start();
+    const other = { id: 'user-ana2', email: 'ana.reis@gmail.com', emailConfirmed: true };
+    store.addUser(other, cpfOnly(SPARE_CPF));
+    const token = auth.login(other, 'tok-ana2');
+    const list = await mine(deps, token);
+    expect(list.submissions).toEqual([]);
+    expect(list.waiting).toEqual({ otherDocument: 0, otherEmail: [{ maskedEmail: maskEmail(ANA.email), count: 1 }] });
+    expect(list.limits).toMatchObject({ asCoauthor: 1 });
+    expect(JSON.stringify(list)).not.toContain(ANA.email);
+    expect((await open(deps, token, 'one', id)).status).toBe(404);
+    expect((await open(deps, token, 'file', id)).status).toBe(404);
+  });
+
+  it('then the sender must use the address of her account: the old one is refused, the right one attaches', async () => {
+    const { deps, store, auth, id, save } = await start();
+    const other = { id: 'user-ana2', email: 'ana.reis@gmail.com', emailConfirmed: true };
+    store.addUser(other, cpfOnly(SPARE_CPF));
+    const again = await save(paper({ id, filePath: undefined, coauthors: [{ ...ANA, cpf: SPARE_CPF }] }));
+    expect(await body(again)).toEqual({ error: 'author_other_email', name: 'Ana Reis', maskedEmail: maskEmail(other.email) });
+    expect((await save(paper({ id, filePath: undefined, coauthors: [{ fullName: 'Ana Reis', email: other.email }] }))).status).toBe(200);
+    expect((await mine(deps, auth.login(other, 'tok-ana2'))).submissions).toHaveLength(1);
+  });
+
+  it('an account with a CPF and a passport matches a line that carries either, and not one that carries a wrong other', async () => {
+    const both = { cpf: SPARE_CPF, passport: 'AB123456', country: 'PT' };
+    for (const [typed, shown] of [
+      [{ cpf: SPARE_CPF }, 1],
+      [{ passport: 'AB123456', country: 'PT' }, 1],
+      [{ cpf: SPARE_CPF, passport: 'AB123456', country: 'PT' }, 1],
+      [{ cpf: SPARE_CPF, passport: 'ZZ999999', country: 'PT' }, 0],
+      [{ cpf: cpfOf(71), passport: 'AB123456', country: 'PT' }, 0],
+    ] as const) {
+      const { deps, store, auth } = await start(typed);
+      store.addUser(ana, both);
+      expect((await mine(deps, auth.login(ana, 'tok-ana'))).submissions, JSON.stringify(typed)).toHaveLength(shown);
+    }
+  });
+
+  it('a CPF account against a passport line cannot be told to be the same person: it waits, and counts by the address', async () => {
+    const { deps, store, auth } = await start({ passport: 'AB123456', country: 'PT' });
+    store.addUser(ana, cpfOnly(SPARE_CPF));
+    const list = await mine(deps, auth.login(ana, 'tok-ana'));
+    expect(list.submissions).toEqual([]);
+    expect(list.waiting).toEqual({ otherDocument: 1, otherEmail: [] });
+    expect(list.limits).toMatchObject({ asCoauthor: 1 });
+  });
+
+  it('an account that has not said who the person is sees no paper that names a document, and is told why', async () => {
+    const { deps, store, auth } = await start();
+    store.addUser(ana);
+    const list = await mine(deps, auth.login(ana, 'tok-ana'));
+    expect(list.submissions).toEqual([]);
+    expect(list.documentMissing).toBe(true);
+    expect(list.waiting).toEqual({ otherDocument: 1, otherEmail: [] });
+  });
+
+  it('a line from before documents existed still shows by its address alone', async () => {
+    const { deps, store, auth } = await ready();
+    store.seed({ authors: [line(1, 'Maria', MAIN.email), line(2, 'Ana', ANA.email)] });
+    store.addUser(ana, cpfOnly(SPARE_CPF));
+    const list = await mine(deps, auth.login(ana, 'tok-ana'));
+    expect(list.submissions).toHaveLength(1);
+    expect(list.waiting).toEqual({ otherDocument: 0, otherEmail: [] });
+  });
+
+  it('whoever sent a paper always sees it, even if their own line no longer matches their account', async () => {
+    const { deps, store, tokens, id } = await start();
+    // The owner corrected Maria's document after she sent the paper.
+    store.addUser(MAIN, cpfOnly(cpfOf(72)));
+    const list = await mine(deps, tokens.main);
+    expect(list.submissions).toHaveLength(1);
+    expect(list.submissions[0]).toMatchObject({ sentByMe: true, canEdit: true });
+    expect((await open(deps, tokens.main, 'one', id)).status).toBe(200);
+    expect((await open(deps, tokens.main, 'file', id)).status).toBe(200);
+  });
+
+  it('a withdrawn paper waits for nobody and counts for nobody', async () => {
+    const { deps, store, auth } = await start();
+    store.submissions[0]!.deletedAt = NOW.toISOString();
+    store.addUser(ana, cpfOnly(cpfOf(70)));
+    const list = await mine(deps, auth.login(ana, 'tok-ana'));
+    expect(list.waiting).toEqual({ otherDocument: 0, otherEmail: [] });
+    expect(list.limits).toMatchObject({ asMain: 0, asCoauthor: 0 });
+  });
+
+  it('a stranger with no line in the paper sees nothing and waits for nothing', async () => {
+    const { deps, store, auth, id } = await start();
+    const stranger = { id: 'user-stranger', email: 'estranho@ufrn.br', emailConfirmed: true };
+    store.addUser(stranger, cpfOnly(cpfOf(73)));
+    const token = auth.login(stranger, 'tok-stranger');
+    expect(await mine(deps, token)).toMatchObject({ submissions: [], waiting: { otherDocument: 0, otherEmail: [] }, limits: { asMain: 0, asCoauthor: 0 } });
+    expect((await open(deps, token, 'file', id)).status).toBe(404);
+  });
+});
+
+describe('who is sent an author\'s document (ADR-010, decision 10)', () => {
+  it('no answer to an author, a co-author or a reviewer carries any document', async () => {
+    const { save, deps, tokens, store } = await ready();
+    const first = await body(await save(paper({ coauthors: [{ fullName: 'João Lima', email: OTHER.email }, { fullName: 'Ana Reis', email: 'ana@ufrn.br', cpf: SPARE_CPF, passport: 'AB123456', country: 'PT' }] })));
+    const id = first.submission.id as string;
+    store.reviewers.set(id, [ORGANISER.id]);
+    const answers = [
+      first,
+      await body(await handleSubmissions(call('GET', 'mine', { token: tokens.main, query: '?eventSlug=2027' }), 'mine', deps)),
+      await body(await handleSubmissions(call('GET', 'mine', { token: tokens.other, query: '?eventSlug=2027' }), 'mine', deps)),
+      await body(await handleSubmissions(call('GET', 'one', { token: tokens.other, query: `?eventSlug=2027&id=${id}` }), 'one', deps)),
+      await body(await handleSubmissions(call('GET', 'reviewing', { token: tokens.organiser, query: '?eventSlug=2027' }), 'reviewing', deps)),
+    ];
+    for (const answer of answers) {
+      const text = JSON.stringify(answer);
+      for (const secret of [SPARE_CPF, MAIN_CPF, OTHER_CPF, 'AB123456', '"cpf"', '"passport"', '"document"']) expect(text).not.toContain(secret);
+    }
+  });
+
+  it('no e-mail and no notice about a paper carries a document', async () => {
+    const { save, store, sent, outbox } = await ready();
+    store.organisers = [{ userId: ORGANISER.id, email: ORGANISER.email, fullName: 'Viviane Farias' }];
+    await save(paper({ coauthors: [{ fullName: 'Ana Reis', email: 'ana@ufrn.br', cpf: SPARE_CPF }] }));
+    const everything = JSON.stringify([sent, outbox.notifications]);
+    for (const secret of [SPARE_CPF, MAIN_CPF, '123.456.789']) expect(everything).not.toContain(secret);
+  });
+
+  it('a suggestion says whether a person needs a document typed, never the document', async () => {
+    const { deps, tokens, store } = await ready();
+    store.people = [
+      { fullName: 'Rodrigo Com Conta', email: 'rodrigo@ufcg.edu.br', institution: 'UFCG' },
+      { fullName: 'Rodrigo Sem Documento', email: 'rodrigo2@ufcg.edu.br', institution: null },
+      { fullName: 'Rodrigo Sem Conta', email: 'rodrigo3@ufcg.edu.br', institution: null },
+    ];
+    store.addUser({ id: 'u-r1', email: 'rodrigo@ufcg.edu.br', emailConfirmed: true }, cpfOnly(SPARE_CPF));
+    store.addUser({ id: 'u-r2', email: 'rodrigo2@ufcg.edu.br', emailConfirmed: true });
+    const response = await handleSubmissions(call('GET', 'people', { token: tokens.main, query: '?eventSlug=2027&q=Rodrigo' }), 'people', deps);
+    const { people } = (await body(response)) as unknown as { people: { fullName: string; hasDocument: boolean }[] };
+    expect(people.map((p) => [p.fullName, p.hasDocument])).toEqual([
+      ['Rodrigo Com Conta', true],
+      ['Rodrigo Sem Documento', false],
+      ['Rodrigo Sem Conta', false],
+    ]);
+    expect(JSON.stringify(people)).not.toContain(SPARE_CPF);
   });
 });

@@ -1,8 +1,12 @@
 import { q, type RestClient } from '../core/rest';
+import type { PersonDocument } from '../core/document';
+import type { Identity } from './identity';
 import type { Modality } from './rules';
 import type {
-  Author,
+  AccountRef,
   FileStorage,
+  LimitCheck,
+  SaveResult,
   Organiser,
   Person,
   Submission,
@@ -31,12 +35,12 @@ interface Row {
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
-  submission_authors?: { position: number; full_name: string; email: string }[];
+  submission_authors?: { position: number; full_name: string; email: string; cpf: string | null; passport: string | null; country: string | null }[];
 }
 
 const COLUMNS =
   'id,number,event_id,user_id,title,title_en,modality,area_ref,abstract,keywords,keywords_en,file_path,file_name,file_pages,status,locale,created_at,updated_at,deleted_at';
-const WITH_AUTHORS = `${COLUMNS},submission_authors(position,full_name,email)`;
+const WITH_AUTHORS = `${COLUMNS},submission_authors(position,full_name,email,cpf,passport,country)`;
 
 const toSubmission = (row: Row): Submission => ({
   id: row.id,
@@ -59,23 +63,44 @@ const toSubmission = (row: Row): Submission => ({
   updatedAt: row.updated_at,
   deletedAt: row.deleted_at,
   authors: (row.submission_authors ?? [])
-    .map((a) => ({ position: a.position, fullName: a.full_name, email: a.email }))
+    .map((a) => ({
+      position: a.position,
+      fullName: a.full_name,
+      email: a.email,
+      document: { cpf: a.cpf, passport: a.passport, country: a.passport ? a.country : null },
+    }))
     .sort((a, b) => a.position - b.position),
 });
 
-const fields = (input: SubmissionInput) => ({
-  title: input.title,
-  title_en: input.titleEn,
-  modality: input.modality,
-  area_ref: input.areaRef,
-  abstract: input.abstract,
-  keywords: input.keywords,
-  keywords_en: input.keywordsEn,
-  file_path: input.filePath,
-  file_name: input.fileName,
-  file_pages: input.filePages,
-  locale: input.locale,
+/** A value inside PostgREST's `in.(…)`: quoted, so that a dot or a comma in it is just text. */
+const quoted = (value: string): string => `"${value.replace(/["\\]/g, '')}"`;
+
+interface AccountRow {
+  id: string;
+  email: string;
+  cpf: string | null;
+  passport: string | null;
+  country: string;
+}
+const ACCOUNT_REF = 'id,email,cpf,passport,country';
+const toAccountRef = (row: AccountRow): AccountRef => ({
+  id: row.id,
+  email: row.email,
+  // The country column is never empty; it only says something next to a passport.
+  document: { cpf: row.cpf, passport: row.passport, country: row.passport ? row.country : null },
 });
+
+/** The `or=(…)` filter for "has any of these addresses or documents"; null when there is nothing to ask by. */
+function anyOf(who: Identity): string | null {
+  const filters: string[] = [];
+  if (who.emails.length > 0) filters.push(`email.in.(${who.emails.map(quoted).join(',')})`);
+  if (who.cpfs.length > 0) filters.push(`cpf.in.(${who.cpfs.map(quoted).join(',')})`);
+  for (const key of who.passports) {
+    const [country, passport] = [key.slice(0, key.indexOf(':')), key.slice(key.indexOf(':') + 1)];
+    filters.push(`and(country.eq.${quoted(country)},passport.eq.${quoted(passport)})`);
+  }
+  return filters.length > 0 ? `(${filters.join(',')})` : null;
+}
 
 export class SupabaseSubmissionStore implements SubmissionStore {
   constructor(private readonly rest: RestClient) {}
@@ -88,9 +113,12 @@ export class SupabaseSubmissionStore implements SubmissionStore {
     return row ? { id: row.id, slug: row.slug, name: row.name, closedAt: row.submissions_closed_at } : null;
   }
 
-  async listByAuthorEmail(eventId: string, email: string): Promise<Submission[]> {
+  async listByIdentity(eventId: string, who: Identity): Promise<Submission[]> {
+    const any = anyOf(who);
+    if (!any) return [];
+    // Only lines of papers of this edition that still stand: the join does the choosing.
     const links = await this.rest.request<{ submission_id: string }[]>(
-      `submission_authors?email=eq.${q(email.toLowerCase())}&select=submission_id&limit=200`,
+      `submission_authors?or=${q(any)}&submissions.event_id=eq.${q(eventId)}&submissions.deleted_at=is.null&select=submission_id,submissions!inner(id)&limit=1000`,
     );
     if (links.length === 0) return [];
     const ids = [...new Set(links.map((l) => l.submission_id))].map(q).join(',');
@@ -134,56 +162,58 @@ export class SupabaseSubmissionStore implements SubmissionStore {
     return rows.map((r) => ({ fullName: r.full_name, email: r.email, institution: r.institution }));
   }
 
-  private async writeAuthors(submissionId: string, authors: Author[]): Promise<void> {
-    await this.rest.request<unknown[]>('submission_authors?select=id', {
-      method: 'POST',
-      body: JSON.stringify(
-        authors.map((a) => ({
-          submission_id: submissionId,
-          position: a.position,
-          full_name: a.fullName,
-          email: a.email,
-        })),
-      ),
-    });
-  }
-
-  async insert(eventId: string, userId: string, input: SubmissionInput, now: Date): Promise<Submission> {
-    const iso = now.toISOString();
-    const rows = await this.rest.request<Row[]>(`submissions?select=${COLUMNS}`, {
+  async save(
+    eventId: string,
+    userId: string,
+    id: string | null,
+    input: SubmissionInput,
+    check: LimitCheck,
+    now: Date,
+  ): Promise<SaveResult> {
+    // One call, one transaction: the limits are counted and the paper written together.
+    const answer = await this.rest.request<{ id?: string; refused?: string; position?: number }>('rpc/save_submission', {
       method: 'POST',
       body: JSON.stringify({
-        ...fields(input),
-        event_id: eventId,
-        user_id: userId,
-        created_at: iso,
-        updated_at: iso,
+        p_id: id,
+        p_event_id: eventId,
+        p_user_id: userId,
+        p_fields: {
+          title: input.title,
+          titleEn: input.titleEn,
+          modality: input.modality,
+          areaRef: input.areaRef,
+          abstract: input.abstract,
+          keywords: input.keywords,
+          keywordsEn: input.keywordsEn,
+          filePath: input.filePath,
+          fileName: input.fileName,
+          filePages: input.filePages,
+          locale: input.locale,
+        },
+        p_authors: input.authors.map((a, i) => ({
+          position: a.position,
+          fullName: a.fullName,
+          email: a.email,
+          cpf: a.document.cpf,
+          passport: a.document.passport,
+          country: a.document.passport ? a.document.country : null,
+          ...check.identities[i]!,
+        })),
+        p_max_as_main: check.maxAsMain,
+        p_max_as_coauthor: check.maxAsCoauthor,
+        p_now: now.toISOString(),
       }),
     });
-    const row = rows[0]!;
-    try {
-      await this.writeAuthors(row.id, input.authors);
-    } catch (error) {
-      // A paper without its authors must not exist: undo the first half.
-      await this.rest
-        .request<unknown>(`submissions?id=eq.${q(row.id)}`, { method: 'DELETE' })
-        .catch(() => undefined);
-      throw error;
+    if (!answer?.id) {
+      const refused = answer?.refused;
+      if (refused === 'too_many_as_main' || refused === 'coauthor_limit' || refused === 'submission_not_found') {
+        return { refused, position: answer.position ?? null };
+      }
+      throw new Error('save_submission_failed');
     }
-    return { ...toSubmission(row), authors: input.authors };
-  }
-
-  async update(id: string, input: SubmissionInput, now: Date): Promise<Submission> {
-    const rows = await this.rest.request<Row[]>(
-      `submissions?id=eq.${q(id)}&deleted_at=is.null&select=${COLUMNS}`,
-      { method: 'PATCH', body: JSON.stringify({ ...fields(input), updated_at: now.toISOString() }) },
-    );
-    if (!rows[0]) throw new Error('submission_not_found');
-    await this.rest.request<unknown>(`submission_authors?submission_id=eq.${q(id)}`, {
-      method: 'DELETE',
-    });
-    await this.writeAuthors(id, input.authors);
-    return { ...toSubmission(rows[0]), authors: input.authors };
+    const saved = await this.findById(answer.id);
+    if (!saved) throw new Error('save_submission_failed');
+    return { submission: saved };
   }
 
   async softDelete(id: string, userId: string, reason: string, now: Date): Promise<void> {
@@ -233,12 +263,22 @@ export class SupabaseSubmissionStore implements SubmissionStore {
     return rows.length > 0;
   }
 
-  async findUsersByEmail(emails: string[]): Promise<{ id: string; email: string }[]> {
+  async findAccountsByEmail(emails: string[]): Promise<AccountRef[]> {
     if (emails.length === 0) return [];
-    const list = emails.map((e) => `"${e.toLowerCase().replace(/["\\]/g, '')}"`).join(',');
-    return this.rest.request<{ id: string; email: string }[]>(
-      `users?email=in.(${q(list)})&select=id,email`,
-    );
+    const list = emails.map((e) => quoted(e.toLowerCase())).join(',');
+    const rows = await this.rest.request<AccountRow[]>(`users?email=in.(${q(list)})&select=${ACCOUNT_REF}`);
+    return rows.map(toAccountRef);
+  }
+
+  async findAccountsByDocument(documents: PersonDocument[]): Promise<AccountRef[]> {
+    const any = anyOf({
+      emails: [],
+      cpfs: [...new Set(documents.map((d) => d.cpf).filter((c): c is string => Boolean(c)))],
+      passports: [...new Set(documents.filter((d) => d.passport && d.country).map((d) => `${d.country}:${d.passport}`))],
+    });
+    if (!any) return [];
+    const rows = await this.rest.request<AccountRow[]>(`users?or=${q(any)}&select=${ACCOUNT_REF}&limit=200`);
+    return rows.map(toAccountRef);
   }
 }
 

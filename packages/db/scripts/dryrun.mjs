@@ -29,7 +29,6 @@ try {
   process.exitCode = 1;
 } finally {
   await client.query('ROLLBACK').catch(() => {});
-  const left = await client.query("SELECT to_regclass('public.signup_documents') AS t");
-  console.log('rolled back; signup_documents exists afterwards:', left.rows[0].t !== null);
+  console.log('rolled back');
   await client.end();
 }
