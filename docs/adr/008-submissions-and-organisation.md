@@ -6,6 +6,8 @@
 
 The edital says submissions opened on 15/11/2026 and close on 18/01/2027. The committee had not yet answered the nine open questions of the proposal sent to them, so Rodrigo decided (2026-11-17) to build with the edital's own values and let the team test on dev before going live. This record covers slices 2 to 4 of the plan in ADR-007: sending papers, the organisation area, and notifications with announcements. Review and results (slices "Avaliação" and "Resultados" of the proposal) are not built.
 
+> **Changed by ADR-010 (2026-11-19).** An author is no longer a name and an e-mail only (decision 3): every author has a document, the limits are counted per person and not per address, and a paper shows up for a co-author who creates an account with the listed address **and** the listed document. Only an Administrador is sent an author's document (decision 9). The rest stands.
+
 ## Decisions
 
 ### Submissions

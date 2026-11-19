@@ -4,14 +4,16 @@ import { join } from 'node:path';
 import { expect as baseExpect, test, type Page } from '@playwright/test';
 import { PDFDocument } from 'pdf-lib';
 import {
-  EVENT,
-  PASSWORD,
-  SERVICE_KEY,
-  SUPABASE_URL,
   admin,
   cleanupAccounts,
   createAccount,
+  EVENT,
   isTestDeployment,
+  PASSWORD,
+  randomCpf,
+  SERVICE_KEY,
+  SUPABASE_URL,
+  typedCpf,
   unique,
 } from './helpers';
 
@@ -58,6 +60,7 @@ test.describe('submissions @submissions', () => {
     made.push(senderEmail, knownEmail, profEmail);
     const stamp = Date.now().toString(36);
     const knownName = `Conhecida Sugerida ${stamp}`;
+    const profCpf = randomCpf();
     await createAccount(senderEmail, 'Autora Que Envia E2E');
     await createAccount(knownEmail, knownName);
     const title = `Trabalho de teste E2E ${Date.now()}`;
@@ -92,11 +95,21 @@ test.describe('submissions @submissions', () => {
     await expect(page.getByLabel('E-mail do autor 2')).toHaveValue('e•••@sieamb.org');
     // The address of the person suggested is nowhere in the page.
     expect(await page.content()).not.toContain(knownEmail);
+    // Her account says who she is, so nothing is asked about her (ADR-010); the sender's is the account's.
+    await expect(page.getByTestId('author-document').nth(1)).toHaveText('O documento desta pessoa já consta no cadastro.');
+    await expect(page.getByTestId('author-document').nth(0)).toHaveText('Seu documento é o da sua conta.');
+    await expect(page.getByLabel('CPF do autor 2')).toHaveCount(0);
 
     // 4. The professor, typed by hand, then moved up to be the first author.
     await page.getByRole('button', { name: 'Adicionar autor' }).click();
     await page.getByLabel('Nome do autor 3').fill('Prof. Sem Conta E2E');
     await page.getByLabel('E-mail do autor 3').fill(profEmail.toUpperCase());
+    // He has no account: the sender says who he is. Without it the paper is not sent.
+    await page.getByLabel('Arquivo do trabalho').setInputFiles(await pdfFile(5, 'sem documento.pdf'));
+    await page.getByRole('button', { name: 'Enviar trabalho' }).click();
+    await expect(page.getByRole('alert')).toHaveText('Informe o CPF ou o passaporte, com o país, de Prof. Sem Conta E2E.');
+    await page.getByLabel('CPF do autor 3').fill(profCpf);
+    await expect(page.getByLabel('CPF do autor 3')).toHaveValue(typedCpf(profCpf));
     await page.getByRole('button', { name: 'Subir autor 3' }).click();
     await page.getByRole('button', { name: 'Subir autor 2' }).click();
     await expect(page.getByLabel('Nome do autor 1')).toHaveValue('Prof. Sem Conta E2E');
@@ -128,15 +141,18 @@ test.describe('submissions @submissions', () => {
     await expect(card.getByRole('listitem')).toHaveText(['Prof. Sem Conta E2E', 'Autora Que Envia E2E', knownName]);
     await expect(page.getByTestId('paper-limits')).toContainText('Você é o primeiro autor em 0 de 3 trabalhos e consta nas demais posições em 1 de 5.');
     await expect(page.getByTestId('registration-notice')).toContainText('só entra na programação se pelo menos um dos autores estiver inscrito');
-    // In the database: the real addresses, lower-cased, in the order of the paper.
-    const saved = await admin<{ submission_authors: { position: number; email: string }[] }[]>(
-      `/rest/v1/submissions?title=eq.${encodeURIComponent(title)}&select=submission_authors(position,email)`,
+    // In the database: the real addresses, lower-cased, in the order of the paper, each with who the person is.
+    const saved = await admin<{ submission_authors: { position: number; email: string; cpf: string | null }[] }[]>(
+      `/rest/v1/submissions?title=eq.${encodeURIComponent(title)}&select=submission_authors(position,email,cpf)`,
     );
-    expect(saved[0]!.submission_authors.sort((x, y) => x.position - y.position).map((x) => x.email)).toEqual([
-      profEmail.toLowerCase(),
-      senderEmail,
-      knownEmail,
-    ]);
+    const lines = saved[0]!.submission_authors.sort((x, y) => x.position - y.position);
+    expect(lines.map((x) => x.email)).toEqual([profEmail.toLowerCase(), senderEmail, knownEmail]);
+    // The professor's is what the sender typed; the other two are the documents of their accounts.
+    const accounts = await admin<{ email: string; cpf: string }[]>(`/rest/v1/users?email=in.(${[senderEmail, knownEmail].map(encodeURIComponent).join(',')})&select=email,cpf`);
+    const cpfOf = (email: string) => accounts.find((a) => a.email === email)!.cpf;
+    expect(lines.map((x) => x.cpf)).toEqual([profCpf, cpfOf(senderEmail), cpfOf(knownEmail)]);
+    // And no page sent to the browser carried any of them.
+    for (const secret of [profCpf, cpfOf(knownEmail)]) expect(await page.content()).not.toContain(secret);
 
     // 7. The download is the file that was sent, under the name the author gave.
     const [download] = await Promise.all([page.waitForEvent('download'), card.getByRole('button', { name: 'Baixar o arquivo' }).click()]);
@@ -186,6 +202,10 @@ test.describe('submissions @submissions', () => {
     await expect(page.getByLabel('Título em português')).toHaveValue(title);
     await expect(page.getByLabel('Nome do autor 1')).toHaveValue('Prof. Sem Conta E2E');
     await expect(page.getByLabel('Nome do autor 2 (você)')).toHaveValue('Autora Que Envia E2E');
+    // What is on record about each author: a hint of what she typed for the professor, never the number.
+    await expect(page.getByTestId('author-document').nth(0)).toHaveText(new RegExp(`^Documento informado: \\*\\*\\*\\.${profCpf.slice(3, 6)}\\.${profCpf.slice(6, 9)}-\\*\\*`));
+    await expect(page.getByTestId('author-document').nth(2)).toHaveText('O documento desta pessoa já consta no cadastro.');
+    expect(await page.content()).not.toContain(profCpf);
     await page.getByLabel('Título em português').fill(`${title} (revisto)`);
     await page.getByRole('button', { name: 'Salvar alterações' }).click();
     await expect(page.getByTestId('paper-card')).toContainText(`${title} (revisto)`);
