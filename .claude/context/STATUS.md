@@ -1,12 +1,14 @@
 # SIEAmB — Current Status
 
-> Last updated: 2026-11-17, night. Update this file whenever something meaningful changes.
-> Decisions: `docs/adr/` (001 to 009). Session log: `.claude/context/HISTORY.md`. Backlog: GitHub Issues by milestone.
+> Last updated: 2026-11-19. Update this file whenever something meaningful changes.
+> Decisions: `docs/adr/` (001 to 010). Session log: `.claude/context/HISTORY.md`. Backlog: GitHub Issues by milestone.
 > The long narrative this file had until 2026-11-17 is kept, word for word, at the end of HISTORY.md.
 
 ## In short
 
 The II SIEAmB site is live at https://sieamb.org with the public pages, registration and payment. The submission system (accounts, papers, the organisers' panel, announcements) is finished and tested on https://dev.sieamb.org and **waits for Rodrigo's go to reach production**. That release is prepared as the draft pull request **#274**, with a production backup taken on 2026-11-17. **Plan (Rodrigo, 2026-11-17 night): release on the evening of 2026-11-18**, after the team has tested on dev during the day and after more manual testing. Not before, and not without his word that evening.
+
+**Changed on 2026-11-19:** testing on a real phone, Rodrigo found that an account could send a paper with nothing but an e-mail. He decided that a person is identified by a document (CPF or passport with its country) at sign-up and on every author line of a paper (ADR-010, issue #342, five parts: #343 to #347). **The release waits for that work**, for a hands-on pass on dev after it, and for his word. The edital says nothing about a document for co-authors: the committee should be told before the form asks.
 
 ## What is where
 
@@ -35,9 +37,10 @@ The II SIEAmB site is live at https://sieamb.org with the public pages, registra
 
 ## On dev, waiting for the release
 
-Decisions in ADR-007 (accounts) and ADR-008 (the rest).
+Decisions in ADR-007 (accounts), ADR-008 (the rest) and ADR-010 (who a person is).
 
-- **Accounts**: create with name and e-mail, choose the password after the link in the e-mail, log in, forgotten password, Minha área with the papers first, the registration, the pay link and the profile. A registration with the same confirmed e-mail joins the account; one under another e-mail with the same CPF or passport is offered and joined by a link sent to that e-mail. Signing up on the way to a page continues to it. Password fields have a show and hide button.
+- **Who a person is** (ADR-010): a CPF, a passport with its country, or both, read the same way in the browser, on the server and in the database. One account per document. Every author of a paper has one; the limits are counted per person; a co-author's place waits for the same e-mail and the same document.
+- **Accounts**: create with name, e-mail and document, choose the password after the link in the e-mail (where the document is confirmed or corrected), log in, forgotten password, Minha área with the papers first, the registration, the pay link and the profile. A registration with the same confirmed e-mail joins the account; one under another e-mail with the same CPF or passport is offered and joined by a link sent to that e-mail. Signing up on the way to a page continues to it. Password fields have a show and hide button.
 - **Papers**: rules in `submissionRules.json` (window 15/11/2026 to 18/01/2027, up to 5 authors, 3 papers as first author and 5 in any other place, 12 to 15 pages for an article and 4 to 6 for an expanded abstract, PDF or Word up to 10 MB). Authors are one ordered list with name and e-mail; any of them sends the paper; typing a name suggests people already in the system with the e-mail masked. Only whoever sent it changes or withdraws it; the other authors see and download it. The closing date is shown and does not lock; organisers close and reopen by a button.
 - **Review**: not blind. Organisers choose one reviewer or more per paper, never one of its authors. A paper with a reviewer is "em avaliação" and locked for its sender. The reviewer has `/:event/avaliacoes` with the file. **The review form is not built.**
 - **Panel** `/:event/painel`: registrations (list, search, spreadsheet, manual registration, manual status with a reason, soft delete and restore, reminders one by one or to everyone who owes), papers (authors and their registration, reviewers, file, close and reopen), people and roles, announcements, requests to join a registration to an account. Every action is in `audit_logs`. Whatever is being processed shades its line and says "Processando…".
@@ -64,13 +67,13 @@ Nobody is shown a role above their own. Roles given to an address without an acc
 Prepared, not done. Rodrigo chose "prepare only" on 2026-11-17 and set the release for the evening of 2026-11-18, once the team has tested enough on dev. Whatever the testing of that day finds is fixed on dev first and joins the release. The steps, in order, are in the draft pull request **#274**:
 
 1. Backup of `sieamb-prod`. One was taken on 2026-11-17 (label `before-submissions-release`); take a fresh one right before the release, since registrations and payments keep arriving.
-2. Ten migrations, `20261117010000_accounts` to `20261118010000_background_job_schedule`. They only add.
+2. Twelve migrations, `20261117010000_accounts` to `20261119020000_save_submission`. They add, with one exception: `20261119010000_identity_documents` rewrites passport numbers already in `pre_registrations` to upper case without separators (format only). Count the passport registrations on production first: their country is BR, because the form never asked, and is read as "not known".
 3. The private storage bucket `submissions`.
 4. The two Vault secrets `sieamb_site_url` and `sieamb_cron_secret` on `sieamb-prod`, so the 10-minute job has something to call.
 5. `VITE_ACCOUNTS_ENABLED` and `ACCOUNTS_ENABLED` on Vercel Production.
 6. Merge, deploy, check the live site without writing test data.
 7. Rodrigo creates his account on sieamb.org and it is marked `is_platform_admin`. Without an owner nobody can give Administrador.
-8. As owner, Rodrigo gives the roles by e-mail in "Pessoas e papéis": Najara Administrador, Thays Organizador, the reviewers Avaliador. Each person creates their own account with that address. No CPF and no temporary password are needed.
+8. As owner, Rodrigo gives the roles by e-mail in "Pessoas e papéis": Najara Administrador, Thays Organizador, the reviewers Avaliador. Each person creates their own account with that address and their own document (CPF or passport). No temporary password is needed.
 
 The 43 issues finished on dev close when that pull request reaches `main`.
 
@@ -81,7 +84,7 @@ The 43 issues finished on dev close when that pull request reaches `main`.
 - A boleto paid after its one-day order expires: is it credited? (#167)
 - The Vercel plan: Hobby forbids commercial use and caps functions at 12; we use 8 (#168).
 - A Pix key on the Mercado Pago account.
-- To confirm, from the hand-over checklist (#229): the edital's limits counted by place in the author list; a paper with a reviewer locked for its sender; "Retirar" taken from organisers together with "Alterar"; one manual reminder per person per day; registering with a CPF does not copy it to the account; no unsubscribe link in announcements and reminders.
+- To confirm, from the hand-over checklist (#229): the edital's limits counted by place in the author list; a paper with a reviewer locked for its sender; "Retirar" taken from organisers together with "Alterar"; one manual reminder per person per day; registering with a CPF does not copy it to the account (logged in, the form now takes the document from the account, ADR-010); no unsubscribe link in announcements and reminders.
 - When the committee announces the new schedule: change `closesAt` in `submissionRules.json`.
 - Remove `PAYMENTS_NOW` from Vercel Preview: it was for trying lot 1 before 10 November.
 - His own entry on the team page (#12).
