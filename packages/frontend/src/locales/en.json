@@ -658,7 +658,8 @@
       "withdrawConfirm": "Withdraw paper no. {{number}}? Its authors will be told.",
       "sameDocumentTitle": "Same person under more than one e-mail",
       "sameDocumentBody": "Documents with more than one e-mail among the authors. The limits of the call already count each as one person.",
-      "sameDocumentPapers": "no. {{numbers}}"
+      "sameDocumentPapers": "no. {{numbers}}",
+      "sameDocumentAccount": "account"
     },
     "people": {
       "role": "Role",

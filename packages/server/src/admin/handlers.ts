@@ -357,6 +357,17 @@ async function submissions(request: Request, deps: AdminDeps): Promise<Response>
       }
     }
   }
+  // The account that holds a listed document under yet another address is the same person too
+  // (#357): shown with no paper, since the place waits until the line says the account's e-mail.
+  if (admin && sameDocument.size > 0) {
+    for (const account of await deps.store.listAccounts()) {
+      const keys = [account.cpf ? `cpf:${account.cpf}` : null, account.passport ? `passport:${account.country}:${account.passport}` : null];
+      for (const key of keys) {
+        const group = key ? sameDocument.get(key) : undefined;
+        if (group && !group.lines.has(account.email)) group.lines.set(account.email, { email: account.email, fullName: account.fullName, papers: [] });
+      }
+    }
+  }
   return json(200, {
     role: ctx.role,
     // Closed by hand (#236): since when and by whom; null while open.

@@ -658,7 +658,8 @@
       "withdrawConfirm": "¿Retirar el trabajo n.º {{number}}? Se avisará a los autores.",
       "sameDocumentTitle": "Misma persona con más de un correo",
       "sameDocumentBody": "Documentos con más de un correo entre los autores. Los límites de la convocatoria ya cuentan cada uno como una sola persona.",
-      "sameDocumentPapers": "n.º {{numbers}}"
+      "sameDocumentPapers": "n.º {{numbers}}",
+      "sameDocumentAccount": "cuenta"
     },
     "people": {
       "role": "Rol",

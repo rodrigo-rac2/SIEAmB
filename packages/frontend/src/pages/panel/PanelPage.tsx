@@ -807,7 +807,7 @@ function PapersTab({ token, slug, message }: TabProps) {
                 <strong>{group.cpf ? `CPF ${formatCpf(group.cpf)}` : `${group.passport ?? ''} (${group.country ?? ''})`}</strong>
                 {': '}
                 {group.lines
-                  .map((line) => `${line.fullName} (${line.email}, ${t('panel.papers.sameDocumentPapers', { numbers: line.papers.join(', ') })})`)
+                  .map((line) => `${line.fullName} (${line.email}, ${line.papers.length ? t('panel.papers.sameDocumentPapers', { numbers: line.papers.join(', ') }) : t('panel.papers.sameDocumentAccount')})`)
                   .join('; ')}
               </li>
             ))}
