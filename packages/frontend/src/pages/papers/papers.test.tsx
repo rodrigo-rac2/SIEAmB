@@ -607,6 +607,39 @@ describe('PaperFormPage, suggestions of people already in the system', () => {
     ]);
   });
 
+  it('asks no document for a co-author whose e-mail already has an account with one, and sends none (#363)', async () => {
+    const known = '/api/v1/submissions/people?eventSlug=2027&email=ana%40ufpb.br';
+    const calls = stubApi({ ...api([]), [known]: { body: { known: true } } });
+    mount(...NEW, <PaperFormPage />);
+    await fill();
+    await secondAuthor();
+    await userEvent.type(screen.getByLabelText('Nome do autor 2'), 'Ana Reis');
+    await userEvent.type(screen.getByLabelText('E-mail do autor 2'), ' Ana@UFPB.br');
+    // Still asked while the address is being typed.
+    expect(screen.getByLabelText('CPF do autor 2')).toBeInTheDocument();
+    await userEvent.tab();
+    await waitFor(() => expect(screen.queryByLabelText('CPF do autor 2')).not.toBeInTheDocument());
+    expect(screen.queryByLabelText('Passaporte do autor 2')).not.toBeInTheDocument();
+    expect(screen.getAllByTestId('author-document')[1]).toHaveTextContent('Documento já cadastrado.');
+    expect(calls.filter((c) => c.url === known)).toHaveLength(1);
+    // Another address is another person: asked again, and an unknown one stays asked.
+    await userEvent.clear(screen.getByLabelText('E-mail do autor 2'));
+    await userEvent.type(screen.getByLabelText('E-mail do autor 2'), 'outra@ufpb.br');
+    await userEvent.tab();
+    expect(await screen.findByLabelText('CPF do autor 2')).toBeInTheDocument();
+    await waitFor(() => expect(calls.some((c) => c.url.endsWith('email=outra%40ufpb.br'))).toBe(true));
+    expect(screen.getByLabelText('CPF do autor 2')).toBeInTheDocument();
+    // Back to the known address: the paper goes with no document for that line.
+    await userEvent.clear(screen.getByLabelText('E-mail do autor 2'));
+    await userEvent.type(screen.getByLabelText('E-mail do autor 2'), 'ana@ufpb.br');
+    await userEvent.tab();
+    await waitFor(() => expect(screen.queryByLabelText('CPF do autor 2')).not.toBeInTheDocument());
+    await userEvent.upload(screen.getByLabelText('Arquivo do trabalho'), pdfFile());
+    await userEvent.click(screen.getByRole('button', { name: 'Enviar trabalho' }));
+    await screen.findByTestId('where');
+    expect((posted(calls).at(-1)!.body as { authors: unknown[] }).authors).toEqual([ME, { fullName: 'Ana Reis', email: 'ana@ufpb.br' }]);
+  });
+
   it('an answer that arrives after the field was left does not open the list; coming back shows it (#359)', async () => {
     const calls = stubApi(api());
     mount(...NEW, <PaperFormPage />);

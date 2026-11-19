@@ -208,6 +208,18 @@ export const searchPeople = (token: string, eventSlug: string, query: string): P
     .then((data) => data.people ?? [])
     .catch(() => []);
 
+/**
+ * Whether the account of this address already says who the person is (#363): then no
+ * document is typed for them. False when it does not, and on any failure.
+ */
+export const emailHasDocument = (token: string, eventSlug: string, email: string): Promise<boolean> =>
+  request<{ known?: boolean }>('GET', 'people', {
+    token,
+    query: `${slugQuery(eventSlug)}&email=${encodeURIComponent(email)}`,
+  })
+    .then((data) => data.known === true)
+    .catch(() => false);
+
 /** A paper as the person chosen to review it sees it: the authors by name, no e-mails. */
 export interface ReviewPaper {
   id: string;

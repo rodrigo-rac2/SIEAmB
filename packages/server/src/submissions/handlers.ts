@@ -360,6 +360,18 @@ async function people(request: Request, deps: SubmissionDeps): Promise<Response>
   const params = new URL(request.url).searchParams;
   const ctx = await context(request, deps, params.get('eventSlug'));
   if ('response' in ctx) return ctx.response;
+  // By address (#363): does this co-author's account already say who they are? Then the form
+  // asks no document for them, since the account's is the one kept (ADR-010, decision 7).
+  // Nothing else about the account is said, and it counts against the same hourly limit.
+  const email = text(params.get('email'), 200).toLowerCase();
+  if (email) {
+    if (!isEmail(email) || email === ctx.user.email.toLowerCase()) return json(200, { known: false });
+    if (!(await deps.hitRateLimit(sha256(`${deps.pepper}:people:${ctx.user.id}`), 3600, PEOPLE_SEARCHES_PER_HOUR))) {
+      return json(429, { error: 'too_many_attempts' });
+    }
+    const accounts = await deps.store.findAccountsByEmail([email]);
+    return json(200, { known: accounts.some((a) => a.email === email && hasDocument(a.document)) });
+  }
   const query = text(params.get('q'), 80);
   if (query.replace(/\s+/g, '').length < PEOPLE_MIN_LETTERS) return json(200, { people: [] });
   if (!(await deps.hitRateLimit(sha256(`${deps.pepper}:people:${ctx.user.id}`), 3600, PEOPLE_SEARCHES_PER_HOUR))) {
