@@ -88,18 +88,24 @@ export interface Account {
   institution: string | null;
   /** Digits only; null for someone who gave none. */
   cpf: string | null;
+  /** In its stored shape, with the country that issued it (ADR-010); null without one. */
+  passport: string | null;
+  country: string | null;
   owner: boolean;
 }
 
 export interface AccountPatch {
   fullName?: string;
   institution?: string | null;
-  /** Only the owner changes these two (#272). */
+  /** Only the owner changes these (#272, ADR-010). */
   email?: string;
   cpf?: string | null;
+  /** null takes the passport off the account, and its country with it. */
+  passport?: string | null;
+  country?: string;
 }
 
-/** The new e-mail or CPF already belongs to another account. */
+/** The new e-mail, CPF or passport already belongs to another account. */
 export class AccountConflictError extends Error {
   constructor() {
     super('account_conflict');

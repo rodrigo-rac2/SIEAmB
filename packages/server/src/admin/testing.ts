@@ -44,7 +44,7 @@ export class FakeAdminStore implements AdminStore {
     { eventId: EVENT.id, userId: REVIEWER.id, email: REVIEWER.email, fullName: 'Avaliador Um', role: 'REVIEWER' },
   ];
   invites: (Invite & { eventId: string })[] = [];
-  users: { id: string; email: string; fullName: string; institution?: string | null; cpf?: string | null; owner?: boolean }[] = [
+  users: { id: string; email: string; fullName: string; institution?: string | null; cpf?: string | null; passport?: string | null; country?: string; owner?: boolean }[] = [
     { id: ADMIN.id, email: ADMIN.email, fullName: 'Najara Escarião' },
     { id: ORGANISER.id, email: ORGANISER.email, fullName: 'Viviane Farias' },
     { id: REVIEWER.id, email: REVIEWER.email, fullName: 'Avaliador Um' },
@@ -57,6 +57,8 @@ export class FakeAdminStore implements AdminStore {
     fullName: u.fullName,
     institution: u.institution ?? null,
     cpf: u.cpf ?? null,
+    passport: u.passport ?? null,
+    country: u.passport ? (u.country ?? null) : null,
     owner: u.owner === true,
   });
   async listAccounts() {
@@ -69,10 +71,15 @@ export class FakeAdminStore implements AdminStore {
   async updateAccount(id: string, patch: AccountPatch) {
     const user = this.users.find((u) => u.id === id)!;
     const taken = this.users.some(
-      (u) => u.id !== id && ((patch.cpf && u.cpf === patch.cpf) || (patch.email && u.email === patch.email)),
+      (u) =>
+        u.id !== id &&
+        ((patch.cpf && u.cpf === patch.cpf) ||
+          (patch.email && u.email === patch.email) ||
+          (patch.passport && u.passport === patch.passport && u.country === patch.country)),
     );
     if (taken) throw new AccountConflictError();
     Object.assign(user, patch);
+    if (patch.passport === null) delete user.country;
     // The people lists read the name from the account, as the real one does with its join.
     for (const member of this.members) if (member.userId === id) Object.assign(member, { fullName: user.fullName, email: user.email });
   }

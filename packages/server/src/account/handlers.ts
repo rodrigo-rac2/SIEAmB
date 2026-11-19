@@ -1,8 +1,17 @@
 import { createHash, randomBytes } from 'node:crypto';
+import {
+  hasDocument,
+  isPassportCountry,
+  isValidCpf,
+  isValidPassport,
+  normalizeCpf,
+  normalizePassport,
+  readDocument,
+  type PersonDocument,
+} from '../core/document';
 import { emailLocale } from '../payments/emailTemplates';
 import { json, readJsonObject, type Log } from '../payments/http';
 import { firstName, isSendableEmail, type Mailer } from '../payments/notifications';
-import { isValidCpf } from '../payments/payer';
 import type { AuthGateway, AuthUser } from './auth';
 import { maskEmail, renderAccountEmail, type AccountEmailKind } from './emails';
 import {
@@ -37,6 +46,10 @@ export const LIMITS = {
   // e-mail address above are what stop someone hammering one person.
   perIp: { window: HOUR, max: 120 },
   checkPerIp: { window: HOUR, max: 30 },
+  // "This document already has an account" is always said; the masked address that goes
+  // with it is what could be collected, so it is what is rationed (ADR-010, decision 3).
+  documentHintPerIp: { window: HOUR, max: 10 },
+  documentHintPerDocument: { window: DAY, max: 5 },
   linkPerUser: { window: DAY, max: 5 },
   profilePerUser: { window: HOUR, max: 20 },
 } as const;
@@ -51,10 +64,6 @@ export const isEmail = (value: unknown): value is string =>
 
 export const text = (value: unknown, max: number): string =>
   typeof value === 'string' ? value.replace(/\s+/g, ' ').trim().slice(0, max) : '';
-
-// Not imported from @sieamb/shared: that package is an ES module and the Vercel
-// functions are built as CommonJS, so the import only fails once deployed.
-const normalizeCpf = (value: string): string => value.replace(/\D/g, '');
 
 export const sha256 = (value: string): string => createHash('sha256').update(value).digest('hex');
 
@@ -126,12 +135,18 @@ async function signup(request: Request, deps: AccountDeps): Promise<Response> {
   const fullName = text(body.fullName, 150);
   if (!isEmail(email)) return json(400, { error: 'invalid_email' });
   if (fullName.length < 3) return json(400, { error: 'invalid_name' });
+  // An account says who the person is from its first day (ADR-010): a CPF, a passport, or both.
+  const read = readDocument(body);
+  if ('problem' in read) return json(400, { error: read.problem });
   if (
     !(await allowed(deps, 'ip', clientIp(request), LIMITS.perIp)) ||
     !(await allowed(deps, 'signup', email, LIMITS.signupPerEmail))
   ) {
     return json(429, { error: 'too_many_attempts' });
   }
+  // One account per document. This is said outright, unlike who has an account by address.
+  const holder = await documentHolder(deps, read.document, email);
+  if (holder) return inUse(request, deps, holder);
 
   const event = await eventFor(deps, body.eventSlug);
   const locale = emailLocale(text(body.locale, 10));
@@ -144,6 +159,9 @@ async function signup(request: Request, deps: AccountDeps): Promise<Response> {
   try {
     const start = await deps.auth.startSignup(email, fullName);
     if (start.kind === 'link') {
+      // The document waits for whoever confirms the address, who will see it and may correct
+      // it before it is theirs. Until then it reserves nothing.
+      await deps.store.saveSignupDocument(email, read.document);
       await send(deps, 'confirm', email, locale, {
         ...base,
         url: `${site(deps)}/${slug}/conta/confirmar?token_hash=${encodeURIComponent(start.tokenHash)}&type=signup${onward}`,
@@ -222,11 +240,95 @@ export function registrationState(registration: OwnRegistration): RegistrationSt
   return 'UNPAID';
 }
 
-const documentOf = (profile: Profile) => ({
+/** The document of an account; the country only counts next to a passport. */
+const documentOf = (profile: Profile): PersonDocument => ({
   cpf: profile.cpf,
   passport: profile.passport,
-  country: profile.country,
+  country: profile.passport ? profile.country : null,
 });
+
+type InUse = { error: 'cpf_in_use' | 'passport_in_use'; email: string; key: string };
+
+/** Another account, under another address, that already holds one of these documents. */
+async function documentHolder(deps: AccountDeps, document: PersonDocument, email: string): Promise<InUse | null> {
+  const others = (await deps.store.findAccountsByDocument(document)).filter((a) => a.email !== email);
+  const byCpf = document.cpf ? others.find((a) => a.cpf === document.cpf) : undefined;
+  if (byCpf) return { error: 'cpf_in_use', email: byCpf.email, key: `cpf:${document.cpf}` };
+  const byPassport = document.passport
+    ? others.find((a) => a.passport === document.passport && a.country === document.country)
+    : undefined;
+  return byPassport
+    ? { error: 'passport_in_use', email: byPassport.email, key: `passport:${document.country}:${document.passport}` }
+    : null;
+}
+
+/** "Already registered", with the masked address of that account while the hints last. */
+async function inUse(request: Request, deps: AccountDeps, holder: InUse): Promise<Response> {
+  const hint =
+    (await allowed(deps, 'document-hint-ip', clientIp(request), LIMITS.documentHintPerIp)) &&
+    (await allowed(deps, 'document-hint', holder.key, LIMITS.documentHintPerDocument));
+  return json(409, { error: holder.error, ...(hint ? { maskedEmail: maskEmail(holder.email) } : {}) });
+}
+
+/**
+ * What a request adds to the document of an account (ADR-010, decision 5): each kind is
+ * given once. A kind the account already has must come as it is, or not at all; a kind it
+ * lacks is checked and taken. Returns the fields to write, or the refusal.
+ */
+function documentPatch(
+  profile: Profile,
+  body: Record<string, unknown>,
+): { patch: Pick<ProfilePatch, 'cpf' | 'passport' | 'country'>; added: PersonDocument } | { error: string; status: number } {
+  const cpf = normalizeCpf(body.cpf);
+  const passport = normalizePassport(body.passport);
+  const country = text(body.country, 2).toUpperCase();
+  const patch: Pick<ProfilePatch, 'cpf' | 'passport' | 'country'> = {};
+  if (cpf) {
+    if (profile.cpf) {
+      if (cpf !== profile.cpf) return { error: 'document_locked', status: 409 };
+    } else {
+      if (!isValidCpf(cpf)) return { error: 'invalid_cpf', status: 400 };
+      patch.cpf = cpf;
+    }
+  }
+  if (passport) {
+    if (profile.passport) {
+      if (passport !== profile.passport || country !== profile.country) return { error: 'document_locked', status: 409 };
+    } else {
+      if (!isValidPassport(passport)) return { error: 'invalid_passport', status: 400 };
+      if (!isPassportCountry(country)) return { error: 'invalid_country', status: 400 };
+      patch.passport = passport;
+      patch.country = country;
+    }
+  }
+  return { patch, added: { cpf: patch.cpf ?? null, passport: patch.passport ?? null, country: patch.country ?? null } };
+}
+
+/** Writes a profile change; a document another account holds comes back as the refusal to send. */
+async function writeProfile(
+  request: Request,
+  deps: AccountDeps,
+  user: AuthUser,
+  patch: ProfilePatch,
+  added: PersonDocument,
+): Promise<Response | null> {
+  if (Object.keys(patch).length === 0) return null;
+  if (hasDocument(added)) {
+    const holder = await documentHolder(deps, added, user.email);
+    if (holder) return inUse(request, deps, holder);
+  }
+  try {
+    await deps.store.updateProfile(user.id, patch);
+  } catch (error) {
+    if (!(error instanceof DocumentInUseError)) throw error;
+    // Someone took it between the look and the write: say which, if it can still be told.
+    const holder = await documentHolder(deps, added, user.email);
+    return holder ? inUse(request, deps, holder) : json(409, { error: 'document_in_use' });
+  }
+  // It is the account's now; nothing is left waiting under the address.
+  if (hasDocument(added)) await deps.store.deleteSignupDocument(user.email).catch(() => undefined);
+  return null;
+}
 
 async function describe(user: AuthUser, deps: AccountDeps): Promise<Record<string, unknown>> {
   // A registration made with this confirmed address is the person's own, and so is a
@@ -236,6 +338,9 @@ async function describe(user: AuthUser, deps: AccountDeps): Promise<Record<strin
   const profile = await deps.store.getProfile(user.id);
   if (!profile) throw new Error('account_profile_missing');
   const registrations = await deps.store.listRegistrations(user.id);
+  // An account from before documents were asked for, or one whose e-mail was just confirmed.
+  const documentMissing = !hasDocument(documentOf(profile));
+  const pendingDocument = documentMissing ? await deps.store.getSignupDocument(user.email) : null;
 
   const taken = new Set(registrations.map((r) => r.eventSlug));
   const requests = await deps.store.listLinkRequests(user.id);
@@ -254,8 +359,14 @@ async function describe(user: AuthUser, deps: AccountDeps): Promise<Record<strin
       passport: profile.passport,
       country: profile.country,
       institution: profile.institution,
-      // The document can be given once; after that only the organisers change it (#209).
+      // Each kind of document is given once; after that only the owner changes it (#209, ADR-010).
+      cpfLocked: Boolean(profile.cpf),
+      passportLocked: Boolean(profile.passport),
       documentLocked: Boolean(profile.cpf || profile.passport),
+      /** Nothing can be sent, and Minha área asks for it, until this is false. */
+      documentMissing,
+      /** What was typed when the account was asked for, to confirm or correct. */
+      pendingDocument,
     },
     registrations: registrations.map((r) => {
       const state = registrationState(r);
@@ -319,9 +430,6 @@ async function notificationsRead(request: Request, deps: AccountDeps): Promise<R
   return json(200, { ok: true });
 }
 
-const PASSPORT = /^[A-Z0-9]{5,20}$/;
-const COUNTRY = /^[A-Z]{2}$/;
-
 async function updateProfile(request: Request, deps: AccountDeps): Promise<Response> {
   const auth = await authenticate(request, deps);
   if ('response' in auth) return auth.response;
@@ -341,33 +449,10 @@ async function updateProfile(request: Request, deps: AccountDeps): Promise<Respo
   }
   if (body.institution !== undefined) patch.institution = text(body.institution, 200) || null;
 
-  const cpf = typeof body.cpf === 'string' ? normalizeCpf(body.cpf) : '';
-  const passport = text(body.passport, 30).toUpperCase().replace(/[\s.-]/g, '');
-  const country = text(body.country, 2).toUpperCase();
-  if (cpf || passport) {
-    const locked = Boolean(profile.cpf || profile.passport);
-    const same = cpf ? cpf === profile.cpf : passport === profile.passport && country === profile.country;
-    if (locked && !same) return json(409, { error: 'document_locked' });
-    if (!locked) {
-      if (cpf) {
-        if (!isValidCpf(cpf)) return json(400, { error: 'invalid_cpf' });
-        patch.cpf = cpf;
-        patch.country = 'BR';
-      } else {
-        if (!PASSPORT.test(passport)) return json(400, { error: 'invalid_passport' });
-        if (!COUNTRY.test(country) || country === 'BR') return json(400, { error: 'invalid_country' });
-        patch.passport = passport;
-        patch.country = country;
-      }
-    }
-  }
-
-  try {
-    if (Object.keys(patch).length > 0) await deps.store.updateProfile(user.id, patch);
-  } catch (error) {
-    if (error instanceof DocumentInUseError) return json(409, { error: 'document_in_use' });
-    throw error;
-  }
+  const document = documentPatch(profile, body);
+  if ('error' in document) return json(document.status, { error: document.error });
+  const refused = await writeProfile(request, deps, user, { ...patch, ...document.patch }, document.added);
+  if (refused) return refused;
   return json(200, await describe(user, deps));
 }
 
@@ -385,6 +470,16 @@ async function setPassword(request: Request, deps: AccountDeps): Promise<Respons
   const body = await readJsonObject(request);
   const password = typeof body.password === 'string' ? body.password : '';
   if (isWeakPassword(password, auth.user.email)) return json(400, { error: 'weak_password' });
+  // On the screen that follows the confirmation link the person also confirms, or corrects,
+  // the document typed when the account was asked for (ADR-010, decision 4). It is written
+  // first: a document that cannot be taken leaves the password as it was, to try again.
+  const profile = await deps.store.getProfile(auth.user.id);
+  if (profile) {
+    const document = documentPatch(profile, body);
+    if ('error' in document) return json(document.status, { error: document.error });
+    const refused = await writeProfile(request, deps, auth.user, document.patch, document.added);
+    if (refused) return refused;
+  }
   await deps.auth.setPassword(auth.user.id, password);
   deps.log('account_password_set', {});
   return json(200, { ok: true });
@@ -481,8 +576,8 @@ async function checkRegistration(request: Request, deps: AccountDeps): Promise<R
   const event = await deps.store.findEvent(text(body.eventSlug, 40));
   if (!event) return json(404, { error: 'event_not_found' });
   const email = text(body.email, 200).toLowerCase();
-  const cpf = typeof body.cpf === 'string' ? normalizeCpf(body.cpf) : '';
-  const passport = text(body.passport, 30).toUpperCase().replace(/[\s.-]/g, '');
+  const cpf = normalizeCpf(body.cpf);
+  const passport = normalizePassport(body.passport);
   const country = text(body.country, 2).toUpperCase();
   const query = cpf && isValidCpf(cpf) ? { cpf } : passport && country ? { passport, country } : null;
   if (!query) return json(200, { duplicate: false });

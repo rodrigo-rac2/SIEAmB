@@ -4,7 +4,7 @@ import { deliverWithin, notifyUsers, sendThroughOutbox, type OutboxDeps, type Ou
 import { emailLocale, layoutEmail } from '../payments/emailTemplates';
 import { json, readJsonObject, type Log } from '../payments/http';
 import { audienceFor, firstName, isTestAddress } from '../payments/notifications';
-import { isValidCpf } from '../payments/payer';
+import { isPassportCountry, isValidCpf, isValidPassport, normalizePassport } from '../core/document';
 import {
   AUDIENCES,
   AccountConflictError,
@@ -468,7 +468,9 @@ const accountNotice = (to: string, name: string, eventName: string, key: string,
 
 /**
  * An administrator corrects someone's name or institution (#269). The e-mail the person logs in
- * with and the CPF are only the owner's to change (#272): from anyone else they are ignored.
+ * with and the document (CPF, passport with its country) are only the owner's to change (#272,
+ * ADR-010): from anyone else they are ignored. The owner is how a wrong document is corrected,
+ * since the person gives each kind once.
  */
 async function accountUpdate(request: Request, deps: AdminDeps): Promise<Response> {
   const body = await readJsonObject(request);
@@ -486,6 +488,21 @@ async function accountUpdate(request: Request, deps: AdminDeps): Promise<Respons
     // Empty takes the document off the account, so the person can give the right one in Minha área.
     if (cpf && !isValidCpf(cpf)) return json(400, { error: 'invalid_cpf' });
     if ((cpf || null) !== target.cpf) patch.cpf = cpf || null;
+  }
+  if (owner && body.passport !== undefined) {
+    const passport = normalizePassport(body.passport);
+    const country = text(body.country, 2).toUpperCase();
+    if (!passport) {
+      // Empty takes the passport off the account, and its country with it.
+      if (target.passport) patch.passport = null;
+    } else {
+      if (!isValidPassport(passport)) return json(400, { error: 'invalid_passport' });
+      if (!isPassportCountry(country)) return json(400, { error: 'invalid_country' });
+      if (passport !== target.passport || country !== target.country) {
+        patch.passport = passport;
+        patch.country = country;
+      }
+    }
   }
   if (body.fullName !== undefined) {
     const fullName = text(body.fullName, 150);
@@ -508,7 +525,7 @@ async function accountUpdate(request: Request, deps: AdminDeps): Promise<Respons
   } catch (error) {
     // Nothing half done: the login goes back to the address the account still has.
     if (patch.email) await deps.auth.setEmail(target.id, target.email).catch(() => undefined);
-    if (error instanceof AccountConflictError) return json(409, { error: patch.cpf ? 'document_in_use' : 'email_in_use' });
+    if (error instanceof AccountConflictError) return json(409, { error: patch.cpf || patch.passport ? 'document_in_use' : 'email_in_use' });
     throw error;
   }
   await audit(deps, ctx, 'account.update', 'user', target.id, { email: target.email, fields, ...(patch.email ? { newEmail: patch.email } : {}) });
@@ -644,7 +661,7 @@ async function members(request: Request, deps: AdminDeps): Promise<Response> {
         fullName: a.fullName,
         institution: a.institution,
         // The document is only for the owner, who is the one who can reset it (#272).
-        ...(owner ? { cpf: a.cpf } : {}),
+        ...(owner ? { cpf: a.cpf, passport: a.passport, country: a.country } : {}),
         owner: owner && a.owner,
         roles: ROLES.filter((r) => (admin || r !== 'ADMIN') && all.some((m) => m.userId === a.id && m.role === r)),
         canEdit: mayActOn(viewer, { id: a.id, owner: a.owner, admin: adminIds.has(a.id) }),

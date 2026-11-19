@@ -39,9 +39,24 @@ export interface AccountUser {
   fullName: string;
   cpf: string | null;
   passport: string | null;
+  /** Of the passport; means nothing without one. */
   country: string;
   institution: string | null;
+  /** Each kind of document is given once (ADR-010). */
+  cpfLocked?: boolean;
+  passportLocked?: boolean;
   documentLocked: boolean;
+  /** No CPF and no passport yet: nothing can be sent until one is given. */
+  documentMissing?: boolean;
+  /** What was typed when the account was asked for, to confirm or correct. */
+  pendingDocument?: { cpf: string | null; passport: string | null; country: string | null } | null;
+}
+
+/** What a form holds for a document, as typed. */
+export interface DocumentInput {
+  cpf?: string;
+  passport?: string;
+  country?: string;
 }
 
 export interface AccountRegistration {
@@ -96,6 +111,9 @@ const KNOWN_ERRORS = [
   'email_not_confirmed',
   'document_locked',
   'document_in_use',
+  'document_required',
+  'cpf_in_use',
+  'passport_in_use',
   'already_registered',
   'registration_not_found',
   'link_not_found',
@@ -106,10 +124,32 @@ const KNOWN_ERRORS = [
 export type AccountErrorCode = (typeof KNOWN_ERRORS)[number] | 'generic';
 
 export class AccountError extends Error {
-  constructor(readonly code: AccountErrorCode) {
+  constructor(
+    readonly code: AccountErrorCode,
+    /** The address of the account that holds a document, masked; absent when the server keeps it. */
+    readonly maskedEmail?: string,
+  ) {
     super(code);
     this.name = 'AccountError';
   }
+}
+
+/**
+ * The text for an error of the account screens. "Already registered" names the masked
+ * address of that account when the server gave it, and says it plainly when it did not.
+ */
+export function accountErrorText(
+  t: (key: string, options?: Record<string, unknown>) => string,
+  error: unknown,
+  options: Record<string, unknown> = {},
+): string {
+  const code = error instanceof AccountError ? error.code : 'generic';
+  if (error instanceof AccountError && (code === 'cpf_in_use' || code === 'passport_in_use')) {
+    return error.maskedEmail
+      ? t(`account.errors.${code}`, { email: error.maskedEmail })
+      : t(`account.errors.${code}_plain`);
+  }
+  return t(`account.errors.${code}`, options);
 }
 
 async function request<T>(
@@ -130,12 +170,12 @@ async function request<T>(
   } catch {
     throw new AccountError('generic');
   }
-  const data = (await response.json().catch(() => ({}))) as { error?: string };
+  const data = (await response.json().catch(() => ({}))) as { error?: string; maskedEmail?: unknown };
   if (!response.ok) {
     const code = (KNOWN_ERRORS as readonly string[]).includes(data.error ?? '')
       ? (data.error as AccountErrorCode)
       : 'generic';
-    throw new AccountError(code);
+    throw new AccountError(code, typeof data.maskedEmail === 'string' ? data.maskedEmail : undefined);
   }
   return data as T;
 }
@@ -145,6 +185,10 @@ export const startSignup = (input: {
   fullName: string;
   locale: string;
   eventSlug: string;
+  /** Who the person is (ADR-010): a CPF, a passport with its country, or both. */
+  cpf?: string;
+  passport?: string;
+  country?: string;
   /** The page the person was going to, to continue there after the e-mail link. */
   next?: string;
 }): Promise<unknown> => request('POST', 'signup', { body: input });
@@ -177,8 +221,12 @@ export const saveProfile = async (token: string, input: ProfileInput): Promise<A
   return account;
 };
 
-export const savePassword = (token: string, password: string): Promise<unknown> =>
-  request('POST', 'password', { token, body: { password } });
+/**
+ * Sets the password. After the confirmation link of a new account it also carries the
+ * document the person confirmed or corrected on that screen (ADR-010).
+ */
+export const savePassword = (token: string, password: string, document: DocumentInput = {}): Promise<unknown> =>
+  request('POST', 'password', { token, body: { password, ...document } });
 
 export const requestRegistrationLink = (
   token: string,

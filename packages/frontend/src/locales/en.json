@@ -318,7 +318,7 @@
     },
     "signup": {
       "title": "Create account",
-      "intro": "Enter your name and e-mail. We will send a link to confirm the e-mail and choose your password.",
+      "intro": "Enter your name, your e-mail and your document. We will send a link to confirm the e-mail and choose a password.",
       "submit": "Send confirmation link",
       "sentTitle": "Check your e-mail",
       "sentBody": "If {{email}} can have an account, we sent a message with the link to continue."
@@ -379,8 +379,8 @@
       "followPayment": "See the payment",
       "registeredOn": "registered on {{date}}",
       "profileTitle": "My details",
-      "country": "Passport country (2-letter code)",
-      "documentHint": "Enter your CPF, or your passport if you have no CPF. Once saved, the document can only be changed by the organisers.",
+      "country": "Country of the passport",
+      "documentHint": "Enter the CPF, the passport with the country that issued it, or both. Once saved, each document can only be changed by the organisers.",
       "documentLockedHint": "To correct the document, contact the organisers.",
       "saved": "Details saved.",
       "suggestionBody": "We found a registration for the {{event}} with your document, made with the e-mail {{email}}. Is it yours?",
@@ -398,7 +398,7 @@
       "invalid_name": "Enter your full name.",
       "invalid_cpf": "Invalid CPF.",
       "invalid_passport": "Invalid passport.",
-      "invalid_country": "Enter the 2-letter code of the passport country.",
+      "invalid_country": "Choose the country of the passport.",
       "weak_password": "The password needs at least {{min}} characters and cannot contain your e-mail.",
       "too_many_attempts": "Too many attempts. Wait a little and try again.",
       "not_logged_in": "Your session has ended. Log in again.",
@@ -409,7 +409,19 @@
       "registration_not_found": "We could not find that registration.",
       "link_not_found": "This link is not valid.",
       "link_expired": "This link has expired. Ask for another one in My area.",
-      "cannot_link": "The registration could not be added to that account. Contact the organisers."
+      "cannot_link": "The registration could not be added to that account. Contact the organisers.",
+      "document_required": "Enter the CPF, or the passport with its country.",
+      "cpf_in_use": "This CPF is already registered with the e-mail {{email}}. Log in with that e-mail or recover the password.",
+      "cpf_in_use_plain": "This CPF is already registered to another account. Log in with the e-mail you used or contact the organisers.",
+      "passport_in_use": "This passport, from this country, is already registered with the e-mail {{email}}. Log in with that e-mail or recover the password.",
+      "passport_in_use_plain": "This passport, from this country, is already registered to another account. Log in with the e-mail you used or contact the organisers."
+    },
+    "document": {
+      "title": "Document",
+      "hint": "Enter the CPF, the passport with the country that issued it, or both. If you have a CPF, enter the CPF. Each person has a single account.",
+      "confirm": "Check the document entered when the account was requested and correct it if it is not yours. Once saved, only the organisers can change it.",
+      "missingTitle": "Your document is missing",
+      "missingBody": "To send papers, enter your CPF or your passport with its country below, under My details."
     }
   },
   "papers": {
@@ -622,7 +634,7 @@
     },
     "people": {
       "role": "Role",
-      "ownerFieldsHint": "E-mail and CPF: only you, as the site owner, change these. Leave the CPF empty to take it off the account.",
+      "ownerFieldsHint": "E-mail, CPF and passport: only you, as the site owner, change these. Leave the CPF or the passport empty to take it off the account.",
       "passwordSet": "Set password",
       "passwordSetFor": "Set the password of {{name}}",
       "passwordNew": "New password for {{name}}",
@@ -672,13 +684,15 @@
       "admin_only": "Only an administrator can do that.",
       "owner_only": "Only the site owner can do that.",
       "email_in_use": "There is already an account with that e-mail.",
-      "document_in_use": "That CPF is already on another account.",
+      "document_in_use": "That document is already on another account.",
       "weak_password": "Weak password: use at least 10 characters and do not use the person's e-mail.",
       "account_not_found": "Account not found.",
       "account_without_login": "That account has no access to the site yet.",
       "invalid_name": "Enter the full name.",
       "invalid_email": "Enter a valid e-mail.",
       "invalid_cpf": "Invalid CPF.",
+      "invalid_passport": "Invalid passport.",
+      "invalid_country": "Choose the country of the passport.",
       "document_required": "Enter the CPF or the passport.",
       "invalid_category": "Choose the category.",
       "invalid_status": "Choose the status.",

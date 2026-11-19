@@ -522,31 +522,128 @@ describe('LoginPage', () => {
 });
 
 describe('SignupPage', () => {
-  it('asks for name and e-mail only, and says to check the e-mail', async () => {
+  const SEND = { name: 'Enviar link de confirmação' };
+  const fillWho = async () => {
+    await userEvent.type(await screen.findByLabelText('Nome completo'), 'Maria Clara');
+    await userEvent.type(screen.getByLabelText('E-mail'), 'maria@ufcg.edu.br');
+  };
+
+  it('asks for name, e-mail and a document, never a password, and says to check the e-mail (ADR-010)', async () => {
     const calls = stubApi({ signup: { status: 202, body: { ok: true } } });
     mount('/2027/conta/criar', <SignupPage mode="signup" />);
     expect(screen.queryByLabelText(/Senha/)).not.toBeInTheDocument();
     await userEvent.type(await screen.findByLabelText('Nome completo'), 'Maria Clara');
     await userEvent.type(screen.getByLabelText('E-mail'), ' maria@ufcg.edu.br ');
-    await userEvent.click(screen.getByRole('button', { name: 'Enviar link de confirmação' }));
+    await userEvent.type(screen.getByLabelText('CPF'), '52998224725');
+    // The CPF takes its dots and dash as it is typed.
+    expect(screen.getByLabelText('CPF')).toHaveValue('529.982.247-25');
+    // No country is asked for while there is no passport.
+    expect(screen.queryByLabelText('País do passaporte')).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', SEND));
     expect(await screen.findByRole('heading', { name: 'Confira seu e-mail' })).toBeInTheDocument();
     expect(calls).toEqual([
       expect.objectContaining({
         method: 'POST',
         url: '/api/v1/account/signup',
-        body: { email: 'maria@ufcg.edu.br', fullName: 'Maria Clara', locale: 'pt-BR', eventSlug: '2027' },
+        body: { email: 'maria@ufcg.edu.br', fullName: 'Maria Clara', cpf: '529.982.247-25', locale: 'pt-BR', eventSlug: '2027' },
       }),
     ]);
+  });
+
+  it('takes a passport with its country, chosen from a list, and both documents together', async () => {
+    const calls = stubApi({ signup: { status: 202, body: { ok: true } } });
+    mount('/2027/conta/criar', <SignupPage mode="signup" />);
+    await fillWho();
+    await userEvent.type(screen.getByLabelText('CPF'), '52998224725');
+    await userEvent.type(screen.getByLabelText('Passaporte'), 'ab 123-456');
+    const country = screen.getByRole('combobox', { name: 'País do passaporte' });
+    expect(within(country).queryByRole('option', { name: 'Brasil' })).not.toBeInTheDocument();
+    await userEvent.selectOptions(country, 'Portugal');
+    await userEvent.click(screen.getByRole('button', SEND));
+    await screen.findByRole('heading', { name: 'Confira seu e-mail' });
+    expect(calls[0]!.body).toMatchObject({ cpf: '529.982.247-25', passport: 'ab 123-456', country: 'PT' });
+  });
+
+  it('sends a passport alone, with no CPF field in the request', async () => {
+    const calls = stubApi({ signup: { status: 202, body: { ok: true } } });
+    mount('/2027/conta/criar', <SignupPage mode="signup" />);
+    await fillWho();
+    await userEvent.type(screen.getByLabelText('Passaporte'), 'AB123456');
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'País do passaporte' }), 'Estados Unidos');
+    await userEvent.click(screen.getByRole('button', SEND));
+    await screen.findByRole('heading', { name: 'Confira seu e-mail' });
+    expect(calls[0]!.body).toEqual({ email: 'maria@ufcg.edu.br', fullName: 'Maria Clara', passport: 'AB123456', country: 'US', locale: 'pt-BR', eventSlug: '2027' });
+  });
+
+  it('forgets the country when the passport is cleared', async () => {
+    const calls = stubApi({ signup: { status: 202, body: { ok: true } } });
+    mount('/2027/conta/criar', <SignupPage mode="signup" />);
+    await fillWho();
+    await userEvent.type(screen.getByLabelText('CPF'), '52998224725');
+    await userEvent.type(screen.getByLabelText('Passaporte'), 'AB123456');
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'País do passaporte' }), 'Portugal');
+    await userEvent.clear(screen.getByLabelText('Passaporte'));
+    expect(screen.queryByRole('combobox', { name: 'País do passaporte' })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', SEND));
+    await screen.findByRole('heading', { name: 'Confira seu e-mail' });
+    expect(calls[0]!.body).not.toHaveProperty('passport');
+    expect(calls[0]!.body).not.toHaveProperty('country');
+  });
+
+  it.each([
+    ['no document', async () => undefined, 'Informe o CPF ou o passaporte com o país.'],
+    ['a CPF with wrong check digits', async () => userEvent.type(screen.getByLabelText('CPF'), '52998224726'), 'CPF inválido.'],
+    ['a CPF that is too short', async () => userEvent.type(screen.getByLabelText('CPF'), '5299822'), 'CPF inválido.'],
+    ['a passport with no country chosen', async () => userEvent.type(screen.getByLabelText('Passaporte'), 'AB123456'), 'Selecione o país do passaporte.'],
+    ['a passport that is too short', async () => userEvent.type(screen.getByLabelText('Passaporte'), 'A1'), 'Passaporte inválido.'],
+  ])('with %s, says why and sends nothing', async (_name, type, message) => {
+    const calls = stubApi({ signup: { status: 202, body: { ok: true } } });
+    mount('/2027/conta/criar', <SignupPage mode="signup" />);
+    await fillWho();
+    await type();
+    await userEvent.click(screen.getByRole('button', SEND));
+    expect(await screen.findByRole('alert')).toHaveTextContent(message);
+    expect(calls).toEqual([]);
+    expect(screen.queryByRole('heading', { name: 'Confira seu e-mail' })).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ['cpf_in_use', { maskedEmail: 'm•••@ufcg.edu.br' }, 'Este CPF já está cadastrado com o e-mail m•••@ufcg.edu.br. Entre com esse e-mail ou recupere a senha.'],
+    ['cpf_in_use', {}, 'Este CPF já está cadastrado em outra conta. Entre com o e-mail que você usou ou fale com a organização.'],
+    ['passport_in_use', { maskedEmail: 'j•••@uc.pt' }, 'Este passaporte, deste país, já está cadastrado com o e-mail j•••@uc.pt. Entre com esse e-mail ou recupere a senha.'],
+    ['passport_in_use', {}, 'Este passaporte, deste país, já está cadastrado em outra conta. Entre com o e-mail que você usou ou fale com a organização.'],
+  ])('says "%s" with what the server gave (%o), and stays on the form with what was typed', async (error, extra, message) => {
+    stubApi({ signup: { status: 409, body: { error, ...extra } } });
+    mount('/2027/conta/criar', <SignupPage mode="signup" />);
+    await fillWho();
+    await userEvent.type(screen.getByLabelText('CPF'), '52998224725');
+    await userEvent.click(screen.getByRole('button', SEND));
+    expect(await screen.findByRole('alert')).toHaveTextContent(message);
+    expect(screen.getByLabelText('CPF')).toHaveValue('529.982.247-25');
+    expect(screen.getByLabelText('E-mail')).toHaveValue('maria@ufcg.edu.br');
+    // The ways into the account that already exists are on the page.
+    expect(screen.getByRole('link', { name: 'Voltar para a entrada' })).toHaveAttribute('href', '/2027/conta/entrar');
+    expect(screen.getByRole('link', { name: 'Esqueci minha senha' })).toHaveAttribute('href', '/2027/conta/recuperar');
+    expect(screen.queryByRole('heading', { name: 'Confira seu e-mail' })).not.toBeInTheDocument();
+  });
+
+  it('never shows text given by the server as the masked address if it is not text', async () => {
+    stubApi({ signup: { status: 409, body: { error: 'cpf_in_use', maskedEmail: { evil: true } } } });
+    mount('/2027/conta/criar', <SignupPage mode="signup" />);
+    await fillWho();
+    await userEvent.type(screen.getByLabelText('CPF'), '52998224725');
+    await userEvent.click(screen.getByRole('button', SEND));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Este CPF já está cadastrado em outra conta.');
   });
 
   it('tells the server where the person was going, so the e-mail link leads on there (#246)', async () => {
     const calls = stubApi({ signup: { status: 202, body: { ok: true } } });
     mount('/2027/conta/criar?next=%2F2027%2Fmeus-trabalhos%2Fnovo', <SignupPage mode="signup" />);
-    await userEvent.type(await screen.findByLabelText('Nome completo'), 'Maria Clara');
-    await userEvent.type(screen.getByLabelText('E-mail'), 'maria@ufcg.edu.br');
-    await userEvent.click(screen.getByRole('button', { name: 'Enviar link de confirmação' }));
+    await fillWho();
+    await userEvent.type(screen.getByLabelText('CPF'), '52998224725');
+    await userEvent.click(screen.getByRole('button', SEND));
     await screen.findByRole('heading', { name: 'Confira seu e-mail' });
-    expect(calls[0]!.body).toEqual({ email: 'maria@ufcg.edu.br', fullName: 'Maria Clara', locale: 'pt-BR', eventSlug: '2027', next: '/2027/meus-trabalhos/novo' });
+    expect(calls[0]!.body).toEqual({ email: 'maria@ufcg.edu.br', fullName: 'Maria Clara', cpf: '529.982.247-25', locale: 'pt-BR', eventSlug: '2027', next: '/2027/meus-trabalhos/novo' });
   });
 
   it('starts with the e-mail of the registration just made', async () => {
@@ -557,9 +654,9 @@ describe('SignupPage', () => {
   it('shows the reason when the server refuses, and stays on the form', async () => {
     stubApi({ signup: { status: 429, body: { error: 'too_many_attempts' } } });
     mount('/2027/conta/criar', <SignupPage mode="signup" />);
-    await userEvent.type(await screen.findByLabelText('Nome completo'), 'Maria Clara');
-    await userEvent.type(screen.getByLabelText('E-mail'), 'maria@ufcg.edu.br');
-    await userEvent.click(screen.getByRole('button', { name: 'Enviar link de confirmação' }));
+    await fillWho();
+    await userEvent.type(screen.getByLabelText('CPF'), '52998224725');
+    await userEvent.click(screen.getByRole('button', SEND));
     expect(await screen.findByRole('alert')).toHaveTextContent(/Muitas tentativas/);
     expect(screen.getByLabelText('E-mail')).toBeInTheDocument();
   });
@@ -568,6 +665,8 @@ describe('SignupPage', () => {
     const calls = stubApi({ recover: { status: 202, body: { ok: true } } });
     mount('/2027/conta/recuperar', <SignupPage mode="recover" />);
     expect(screen.queryByLabelText('Nome completo')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('CPF')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Passaporte')).not.toBeInTheDocument();
     await userEvent.type(await screen.findByLabelText('E-mail'), 'maria@ufcg.edu.br');
     await userEvent.click(screen.getByRole('button', { name: 'Enviar link' }));
     expect(await screen.findByRole('status')).toHaveTextContent(/Se maria@ufcg.edu.br tiver uma conta/);
@@ -583,8 +682,11 @@ describe('PasswordPage', () => {
       state,
     );
 
+  /** An account that already says who the person is: the screen asks only for the password. */
+  const ME = { me: { body: account({ user: { ...account().user, cpf: '52998224725', documentLocked: true, documentMissing: false } }) } };
+
   it('shows each of the two passwords on its own', async () => {
-    stubApi({ password: { body: { ok: true } } });
+    stubApi({ ...ME, password: { body: { ok: true } } });
     open(auth(LOGGED_IN));
     const first = await screen.findByLabelText('Nova senha');
     const second = screen.getByLabelText('Repita a senha');
@@ -598,7 +700,7 @@ describe('PasswordPage', () => {
   });
 
   it('checks the link, then saves the password and goes to Minha área', async () => {
-    const calls = stubApi({ password: { body: { ok: true } } });
+    const calls = stubApi({ ...ME, password: { body: { ok: true } } });
     const state = auth(LOGGED_IN);
     open(state);
     await userEvent.type(await screen.findByLabelText('Nova senha'), 'uma-senha-bem-longa');
@@ -608,13 +710,15 @@ describe('PasswordPage', () => {
     expect(state.verifyLink).toHaveBeenCalledWith('abc123', 'signup');
     // Saving a password ends the session, so the page logs in again with the new one.
     expect(state.signIn).toHaveBeenCalledWith('maria@ufcg.edu.br', 'uma-senha-bem-longa');
-    expect(calls).toEqual([
+    expect(calls.filter((c) => c.url.endsWith('password'))).toEqual([
       expect.objectContaining({ url: '/api/v1/account/password', method: 'POST', authorization: 'Bearer access-token-1', body: { password: 'uma-senha-bem-longa' } }),
     ]);
+    // Nothing about a document is asked of an account that has one.
+    expect(screen.queryByTestId('confirm-document')).not.toBeInTheDocument();
   });
 
   it('goes on to the page the person was heading to when they had to create the account (#246)', async () => {
-    stubApi({ password: { body: { ok: true } } });
+    stubApi({ ...ME, password: { body: { ok: true } } });
     rememberNext('/2027/meus-trabalhos/novo');
     open(auth(LOGGED_IN));
     await userEvent.type(await screen.findByLabelText('Nova senha'), 'uma-senha-bem-longa');
@@ -624,7 +728,7 @@ describe('PasswordPage', () => {
   });
 
   it('follows the page named in the e-mail link, in a browser that remembers nothing, and never one outside the site', async () => {
-    stubApi({ password: { body: { ok: true } } });
+    stubApi({ ...ME, password: { body: { ok: true } } });
     const fill = async () => {
       await userEvent.type(await screen.findByLabelText('Nova senha'), 'uma-senha-bem-longa');
       await userEvent.type(screen.getByLabelText('Repita a senha'), 'uma-senha-bem-longa');
@@ -650,22 +754,139 @@ describe('PasswordPage', () => {
     ['nine characters', '123456789', '123456789', /pelo menos 10 caracteres/],
     ['two different passwords', 'uma-senha-bem-longa', 'outra-senha-bem-longa', 'As duas senhas não são iguais.'],
   ])('refuses %s without calling the server', async (_name, first, second, message) => {
-    const calls = stubApi({});
+    const calls = stubApi({ ...ME });
     open(auth(LOGGED_IN));
     await userEvent.type(await screen.findByLabelText('Nova senha'), first);
     await userEvent.type(screen.getByLabelText('Repita a senha'), second);
     await userEvent.click(screen.getByRole('button', { name: 'Salvar senha' }));
     expect(await screen.findByRole('alert')).toHaveTextContent(message);
-    expect(calls).toEqual([]);
+    expect(calls.filter((c) => c.url.endsWith('password'))).toEqual([]);
   });
 
   it('shows what the server refused', async () => {
-    stubApi({ password: { status: 400, body: { error: 'weak_password' } } });
+    stubApi({ ...ME, password: { status: 400, body: { error: 'weak_password' } } });
     open(auth(LOGGED_IN));
     await userEvent.type(await screen.findByLabelText('Nova senha'), 'maria-2027-xx');
     await userEvent.type(screen.getByLabelText('Repita a senha'), 'maria-2027-xx');
     await userEvent.click(screen.getByRole('button', { name: 'Salvar senha' }));
     expect(await screen.findByRole('alert')).toHaveTextContent(/não pode conter o seu e-mail/);
+  });
+
+  describe('a new account says who the person is (ADR-010)', () => {
+    const waiting = (pendingDocument: Account['user']['pendingDocument']) => ({
+      me: { body: account({ user: { ...account().user, documentMissing: true, pendingDocument } }) },
+    });
+    const GOOD = 'uma-senha-bem-longa';
+    const passwords = async () => {
+      await userEvent.type(await screen.findByLabelText('Nova senha'), GOOD);
+      await userEvent.type(screen.getByLabelText('Repita a senha'), GOOD);
+    };
+    const save = () => userEvent.click(screen.getByRole('button', { name: 'Salvar senha' }));
+
+    it('says "Carregando…" until the account answers, with no form to fill meanwhile', async () => {
+      let give!: (response: Response) => void;
+      vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>((resolve) => (give = resolve))));
+      open(auth(LOGGED_IN));
+      expect(await screen.findByTestId('loading')).toHaveTextContent('Carregando…');
+      expect(screen.queryByLabelText('Nova senha')).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('CPF')).not.toBeInTheDocument();
+      give(new Response(JSON.stringify(waiting({ cpf: '52998224725', passport: null, country: null }).me.body), { status: 200 }));
+      expect(await screen.findByLabelText('CPF')).toHaveValue('529.982.247-25');
+      expect(screen.queryByTestId('loading')).not.toBeInTheDocument();
+    });
+
+    it('shows the document typed when the account was asked for, and saves it with the password', async () => {
+      const calls = stubApi({ ...waiting({ cpf: '52998224725', passport: null, country: null }), password: { body: { ok: true } } });
+      open(auth(LOGGED_IN));
+      await passwords();
+      const group = screen.getByTestId('confirm-document');
+      expect(within(group).getByLabelText('CPF')).toHaveValue('529.982.247-25');
+      expect(group).toHaveTextContent('Confira o documento informado quando a conta foi pedida');
+      await save();
+      expect(await screen.findByTestId('where')).toHaveTextContent('/2027/minha-area');
+      expect(calls.find((c) => c.url.endsWith('password'))!.body).toEqual({ password: GOOD, cpf: '529.982.247-25' });
+    });
+
+    it('shows a waiting passport with its country chosen', async () => {
+      const calls = stubApi({ ...waiting({ cpf: null, passport: 'AB123456', country: 'PT' }), password: { body: { ok: true } } });
+      open(auth(LOGGED_IN));
+      await passwords();
+      expect(screen.getByLabelText('Passaporte')).toHaveValue('AB123456');
+      expect(screen.getByRole('combobox', { name: 'País do passaporte' })).toHaveValue('PT');
+      await save();
+      await screen.findByTestId('where');
+      expect(calls.find((c) => c.url.endsWith('password'))!.body).toEqual({ password: GOOD, passport: 'AB123456', country: 'PT' });
+    });
+
+    it('lets the person correct a document that is not theirs before it is saved', async () => {
+      const calls = stubApi({ ...waiting({ cpf: '11144477735', passport: null, country: null }), password: { body: { ok: true } } });
+      open(auth(LOGGED_IN));
+      await passwords();
+      await userEvent.clear(screen.getByLabelText('CPF'));
+      await userEvent.type(screen.getByLabelText('CPF'), '52998224725');
+      await save();
+      await screen.findByTestId('where');
+      expect(calls.find((c) => c.url.endsWith('password'))!.body).toEqual({ password: GOOD, cpf: '529.982.247-25' });
+    });
+
+    it('asks for the document with empty fields when none is waiting, and does not save without one', async () => {
+      const calls = stubApi({ ...waiting(null), password: { body: { ok: true } } });
+      open(auth(LOGGED_IN));
+      await passwords();
+      expect(screen.getByLabelText('CPF')).toHaveValue('');
+      await save();
+      expect(await screen.findByRole('alert')).toHaveTextContent('Informe o CPF ou o passaporte com o país.');
+      expect(calls.filter((c) => c.url.endsWith('password'))).toEqual([]);
+    });
+
+    it.each([
+      ['an invalid CPF', async () => { await userEvent.clear(screen.getByLabelText('CPF')); await userEvent.type(screen.getByLabelText('CPF'), '52998224726'); }, 'CPF inválido.'],
+      ['a passport without its country', async () => userEvent.type(screen.getByLabelText('Passaporte'), 'AB123456'), 'Selecione o país do passaporte.'],
+    ])('refuses %s without calling the server', async (_name, change, message) => {
+      const calls = stubApi({ ...waiting({ cpf: '52998224725', passport: null, country: null }), password: { body: { ok: true } } });
+      open(auth(LOGGED_IN));
+      await passwords();
+      await change();
+      await save();
+      expect(await screen.findByRole('alert')).toHaveTextContent(message);
+      expect(calls.filter((c) => c.url.endsWith('password'))).toEqual([]);
+    });
+
+    it('says the document is already registered when another account confirmed it first, and stays to correct it', async () => {
+      stubApi({
+        ...waiting({ cpf: '52998224725', passport: null, country: null }),
+        password: { status: 409, body: { error: 'cpf_in_use', maskedEmail: 'o•••@ufcg.edu.br' } },
+      });
+      const state = auth(LOGGED_IN);
+      open(state);
+      await passwords();
+      await save();
+      expect(await screen.findByRole('alert')).toHaveTextContent('Este CPF já está cadastrado com o e-mail o•••@ufcg.edu.br.');
+      expect(screen.getByLabelText('CPF')).toHaveValue('529.982.247-25');
+      expect(screen.getByRole('button', { name: 'Salvar senha' })).toBeEnabled();
+      expect(state.signIn).not.toHaveBeenCalled();
+    });
+
+    it('still asks for the document when the account cannot be read: the server decides', async () => {
+      const calls = stubApi({ me: { status: 500, body: { error: 'server_error' } }, password: { body: { ok: true } } });
+      open(auth(LOGGED_IN));
+      await passwords();
+      await userEvent.type(screen.getByLabelText('CPF'), '52998224725');
+      await save();
+      await screen.findByTestId('where');
+      expect(calls.find((c) => c.url.endsWith('password'))!.body).toEqual({ password: GOOD, cpf: '529.982.247-25' });
+    });
+
+    it('a forgotten password never asks for a document, nor reads the account for one', async () => {
+      const calls = stubApi({ password: { body: { ok: true } } });
+      open(auth(LOGGED_IN), 'recovery');
+      await passwords();
+      expect(screen.queryByTestId('confirm-document')).not.toBeInTheDocument();
+      await save();
+      await screen.findByTestId('where');
+      expect(calls.map((c) => c.url)).toEqual(['/api/v1/account/password']);
+      expect(calls[0]!.body).toEqual({ password: GOOD });
+    });
   });
 
   it('says the link is no longer valid when it was used or expired, with a way to ask again', async () => {
@@ -876,7 +1097,7 @@ describe('MyAreaPage', () => {
   });
 
   it('saves the profile with a CPF, and then shows the document as locked', async () => {
-    const saved = account({ user: { ...account().user, cpf: '52998224725', institution: 'UFCG', documentLocked: true } });
+    const saved = account({ user: { ...account().user, cpf: '52998224725', institution: 'UFCG', documentLocked: true, cpfLocked: true } });
     const calls = stubApi({ me: { body: account() }, profile: { body: saved } });
     mount('/2027/minha-area', <MyAreaPage />, auth(LOGGED_IN));
     await userEvent.type(await screen.findByLabelText('Instituição'), 'UFCG');
@@ -900,6 +1121,95 @@ describe('MyAreaPage', () => {
     await userEvent.type(await screen.findByLabelText('CPF'), '52998224725');
     await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
     expect(await screen.findByRole('alert')).toHaveTextContent(/já está em outra conta/);
+  });
+
+  describe('the document (ADR-010)', () => {
+    const SAVE = { name: 'Salvar' };
+
+    it('an account from before is told its document is missing, with what waits for it filled in', async () => {
+      stubApi({ me: { body: account({ user: { ...account().user, documentMissing: true, pendingDocument: { cpf: null, passport: 'AB123456', country: 'PT' } } }) } });
+      mount('/2027/minha-area', <MyAreaPage />, auth(LOGGED_IN));
+      const notice = await screen.findByTestId('document-missing');
+      expect(notice).toHaveTextContent('Falta informar seu documento');
+      expect(within(notice).getByRole('link', { name: 'Meus dados' })).toHaveAttribute('href', '#meus-dados');
+      expect(screen.getByRole('heading', { name: 'Meus dados' })).toHaveAttribute('id', 'meus-dados');
+      expect(screen.getByLabelText('Passaporte')).toHaveValue('AB123456');
+      expect(screen.getByRole('combobox', { name: 'País do passaporte' })).toHaveValue('PT');
+    });
+
+    it('an account with a document sees no such notice', async () => {
+      stubApi({ me: { body: account({ user: { ...account().user, cpf: '52998224725', documentLocked: true, cpfLocked: true, documentMissing: false } }) } });
+      mount('/2027/minha-area', <MyAreaPage />, auth(LOGGED_IN));
+      await screen.findByLabelText('CPF');
+      expect(screen.queryByTestId('document-missing')).not.toBeInTheDocument();
+    });
+
+    it('someone with a CPF sees it locked and can still add a passport with its country', async () => {
+      const before = account({ user: { ...account().user, cpf: '52998224725', documentLocked: true, cpfLocked: true } });
+      const after = account({ user: { ...before.user, passport: 'AB123456', country: 'PT', passportLocked: true } });
+      const calls = stubApi({ me: { body: before }, profile: { body: after } });
+      mount('/2027/minha-area', <MyAreaPage />, auth(LOGGED_IN));
+      expect(await screen.findByLabelText('CPF')).toBeDisabled();
+      expect(screen.getByLabelText('CPF')).toHaveValue('529.982.247-25');
+      expect(screen.getByLabelText('Passaporte')).toBeEnabled();
+      await userEvent.type(screen.getByLabelText('Passaporte'), 'ab 123-456');
+      await userEvent.selectOptions(screen.getByRole('combobox', { name: 'País do passaporte' }), 'Portugal');
+      await userEvent.click(screen.getByRole('button', SAVE));
+      await waitFor(() => expect(screen.getByLabelText('Passaporte')).toBeDisabled());
+      // The CPF the account already has is not sent again.
+      expect(calls.find((c) => c.url.endsWith('profile'))!.body).toEqual({ fullName: 'Maria Clara de Souza', institution: '', passport: 'ab 123-456', country: 'PT' });
+      expect(screen.getByLabelText('Passaporte')).toHaveValue('AB123456');
+      expect(screen.getByRole('combobox', { name: 'País do passaporte' })).toBeDisabled();
+      expect(screen.getByText('Para corrigir o documento, fale com a organização.')).toBeInTheDocument();
+    });
+
+    it('someone with a passport sees it locked, with its country, and can add a CPF', async () => {
+      const before = account({ user: { ...account().user, passport: 'AB123456', country: 'PT', documentLocked: true, passportLocked: true } });
+      const calls = stubApi({ me: { body: before }, profile: { body: account({ user: { ...before.user, cpf: '52998224725', cpfLocked: true } }) } });
+      mount('/2027/minha-area', <MyAreaPage />, auth(LOGGED_IN));
+      expect(await screen.findByLabelText('Passaporte')).toBeDisabled();
+      expect(screen.getByRole('combobox', { name: 'País do passaporte' })).toHaveValue('PT');
+      await userEvent.type(screen.getByLabelText('CPF'), '52998224725');
+      await userEvent.click(screen.getByRole('button', SAVE));
+      await waitFor(() => expect(screen.getByLabelText('CPF')).toBeDisabled());
+      expect(calls.find((c) => c.url.endsWith('profile'))!.body).toEqual({ fullName: 'Maria Clara de Souza', institution: '', cpf: '529.982.247-25' });
+    });
+
+    it.each([
+      ['an invalid CPF', async () => userEvent.type(screen.getByLabelText('CPF'), '52998224726'), 'CPF inválido.'],
+      ['a passport without its country', async () => userEvent.type(screen.getByLabelText('Passaporte'), 'AB123456'), 'Selecione o país do passaporte.'],
+      ['a passport that is too short', async () => { await userEvent.type(screen.getByLabelText('Passaporte'), 'A1'); await userEvent.selectOptions(screen.getByRole('combobox', { name: 'País do passaporte' }), 'Portugal'); }, 'Passaporte inválido.'],
+    ])('refuses %s without calling the server', async (_name, type, message) => {
+      const calls = stubApi({ me: { body: account() } });
+      mount('/2027/minha-area', <MyAreaPage />, auth(LOGGED_IN));
+      await screen.findByLabelText('CPF');
+      await type();
+      await userEvent.click(screen.getByRole('button', SAVE));
+      expect(await screen.findByRole('alert')).toHaveTextContent(message);
+      expect(calls.filter((c) => c.url.endsWith('profile'))).toEqual([]);
+    });
+
+    it('says a document is already registered with the masked address the server gave', async () => {
+      stubApi({ me: { body: account() }, profile: { status: 409, body: { error: 'passport_in_use', maskedEmail: 'j•••@uc.pt' } } });
+      mount('/2027/minha-area', <MyAreaPage />, auth(LOGGED_IN));
+      await userEvent.type(await screen.findByLabelText('Passaporte'), 'AB123456');
+      await userEvent.selectOptions(screen.getByRole('combobox', { name: 'País do passaporte' }), 'Portugal');
+      await userEvent.click(screen.getByRole('button', SAVE));
+      expect(await screen.findByRole('alert')).toHaveTextContent('Este passaporte, deste país, já está cadastrado com o e-mail j•••@uc.pt.');
+    });
+
+    it('saving only the name of an account without a document is allowed, and the notice stays', async () => {
+      const missing = account({ user: { ...account().user, documentMissing: true } });
+      const calls = stubApi({ me: { body: missing }, profile: { body: account({ user: { ...missing.user, fullName: 'Maria C. Souza' } }) } });
+      mount('/2027/minha-area', <MyAreaPage />, auth(LOGGED_IN));
+      const name = await screen.findByLabelText('Nome completo');
+      await userEvent.clear(name);
+      await userEvent.type(name, 'Maria C. Souza');
+      await userEvent.click(screen.getByRole('button', SAVE));
+      expect(await screen.findByText('Dados salvos.')).toBeInTheDocument();
+      expect(calls.find((c) => c.url.endsWith('profile'))!.body).toEqual({ fullName: 'Maria C. Souza', institution: '' });
+      expect(screen.getByTestId('document-missing')).toBeInTheDocument();
+    });
   });
 
   it('says the session ended when the server no longer accepts the token', async () => {

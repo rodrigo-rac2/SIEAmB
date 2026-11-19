@@ -1019,7 +1019,55 @@ describe('people tab', () => {
       institution: '',
       email: 'pessoa.nova@ufrn.br',
       cpf: '',
+      passport: '',
     });
+  });
+
+  it('the owner sets, corrects and takes off a passport with its country (ADR-010)', async () => {
+    const withPassport = members('ADMIN', true);
+    withPassport.body.accounts = withPassport.body.accounts.map((a) => (a.userId === 'u5' ? { ...a, passport: 'AB123456', country: 'PT' } : a));
+    const calls = stubApi({ members: withPassport, 'account-update': { body: { ok: true, changed: true } } });
+    panel('people');
+    const pessoa = await row('Pessoa Comum');
+    await userEvent.click(within(pessoa).getByRole('button', { name: 'Editar os dados de Pessoa Comum' }));
+    const passport = within(pessoa).getByLabelText('Passaporte');
+    expect(passport).toHaveValue('AB123456');
+    const country = within(pessoa).getByRole('combobox', { name: 'País do passaporte' });
+    expect(country).toHaveValue('PT');
+    // Brazil is never a passport country.
+    expect(within(country).queryByRole('option', { name: 'Brasil' })).not.toBeInTheDocument();
+    await userEvent.selectOptions(country, 'Espanha');
+    await userEvent.click(within(pessoa).getByRole('button', { name: 'Salvar' }));
+    expect(await screen.findByRole('status')).toHaveTextContent('Dados atualizados.');
+    expect(calls.find((c) => c.url.endsWith('account-update'))!.body).toMatchObject({ userId: 'u5', passport: 'AB123456', country: 'ES', cpf: '' });
+  });
+
+  it('a passport typed by the owner cannot be saved without its country, and clearing it sends no country', async () => {
+    const calls = stubApi({ members: members('ADMIN', true), 'account-update': { body: { ok: true, changed: true } } });
+    panel('people');
+    const pessoa = await row('Pessoa Comum');
+    await userEvent.click(within(pessoa).getByRole('button', { name: 'Editar os dados de Pessoa Comum' }));
+    // No country is asked for while there is no passport.
+    expect(within(pessoa).queryByRole('combobox', { name: 'País do passaporte' })).not.toBeInTheDocument();
+    await userEvent.type(within(pessoa).getByLabelText('Passaporte'), 'AB123456');
+    expect(within(pessoa).getByRole('button', { name: 'Salvar' })).toBeDisabled();
+    await userEvent.selectOptions(within(pessoa).getByRole('combobox', { name: 'País do passaporte' }), 'Portugal');
+    expect(within(pessoa).getByRole('button', { name: 'Salvar' })).toBeEnabled();
+    await userEvent.clear(within(pessoa).getByLabelText('Passaporte'));
+    expect(within(pessoa).queryByRole('combobox', { name: 'País do passaporte' })).not.toBeInTheDocument();
+    await userEvent.click(within(pessoa).getByRole('button', { name: 'Salvar' }));
+    await screen.findByRole('status');
+    const sent = calls.find((c) => c.url.endsWith('account-update'))!.body!;
+    expect(sent).toMatchObject({ passport: '' });
+    expect(sent).not.toHaveProperty('country');
+  });
+
+  it('an administrator is offered no passport field either', async () => {
+    stubApi({ members: members('ADMIN') });
+    panel('people');
+    const pessoa = await row('Pessoa Comum');
+    await userEvent.click(within(pessoa).getByRole('button', { name: 'Editar os dados de Pessoa Comum' }));
+    expect(within(pessoa).queryByLabelText('Passaporte')).not.toBeInTheDocument();
   });
 
   it('masks the CPF as it is typed, stops at eleven digits and does not save half a number (#280)', async () => {
@@ -1039,7 +1087,9 @@ describe('people tab', () => {
 
   it.each([
     ['email_in_use', 'Já existe uma conta com esse e-mail.'],
-    ['document_in_use', 'Esse CPF já está em outra conta.'],
+    ['document_in_use', 'Esse documento já está em outra conta.'],
+    ['invalid_passport', 'Passaporte inválido.'],
+    ['invalid_country', 'Selecione o país do passaporte.'],
     ['invalid_cpf', 'CPF'],
   ])('keeps the owner\'s form open and explains %s', async (code, text) => {
     stubApi({ members: members('ADMIN', true), 'account-update': { status: 409, body: { error: code } } });

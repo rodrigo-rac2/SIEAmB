@@ -3,7 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { Link, useSearchParams } from 'react-router-dom';
 import { PageHeader } from '../../components/shared/PageHeader';
 import { useAuth } from '../../contexts/AuthContext';
-import { AccountError, startRecovery, startSignup } from '../../services/account';
+import { DocumentFields, NO_DOCUMENT, documentInput, documentProblem } from '../../components/account/DocumentFields';
+import { accountErrorText, startRecovery, startSignup } from '../../services/account';
 import { NotFoundPage } from '../NotFoundPage';
 import '../../components/registration/RegistrationForm.css';
 import './Account.css';
@@ -11,9 +12,10 @@ import { rememberNext } from './nextPage';
 import { useAccountPaths } from './useAccountPaths';
 
 /**
- * `/:event/conta/criar` and `/:event/conta/recuperar`: both only ask for the
- * address and answer "check your e-mail", whatever the address is. The password
- * is chosen after the link in the e-mail, never here.
+ * `/:event/conta/criar` and `/:event/conta/recuperar`: both answer "check your e-mail",
+ * whatever the address is. The password is chosen after the link in the e-mail, never here.
+ * A new account also says who the person is, by CPF or passport (ADR-010): a document
+ * that another account holds is refused here, with that account's address masked.
  */
 export function SignupPage({ mode }: { mode: 'signup' | 'recover' }) {
   const { t, i18n } = useTranslation();
@@ -22,6 +24,7 @@ export function SignupPage({ mode }: { mode: 'signup' | 'recover' }) {
   const [params] = useSearchParams();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState(params.get('email') ?? '');
+  const [document, setDocument] = useState(NO_DOCUMENT);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
@@ -36,17 +39,19 @@ export function SignupPage({ mode }: { mode: 'signup' | 'recover' }) {
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     setError(null);
+    // Said here, before anything is sent: the server would refuse it for the same reason.
+    const problem = signup ? documentProblem(document) : null;
+    if (problem) return setError(t(`account.errors.${problem}`));
     setBusy(true);
     try {
       const common = { email: email.trim(), locale: i18n.language, eventSlug: paths.slug };
       const next = params.get('next');
       await (signup
-        ? startSignup({ ...common, fullName: fullName.trim(), ...(next ? { next } : {}) })
+        ? startSignup({ ...common, fullName: fullName.trim(), ...documentInput(document), ...(next ? { next } : {}) })
         : startRecovery(common));
       setSent(true);
     } catch (err) {
-      const code = err instanceof AccountError ? err.code : 'generic';
-      setError(t(`account.errors.${code}`));
+      setError(accountErrorText(t, err));
     } finally {
       setBusy(false);
     }
@@ -91,6 +96,12 @@ export function SignupPage({ mode }: { mode: 'signup' | 'recover' }) {
                     required
                   />
                 </div>
+                {signup && (
+                  <>
+                    <DocumentFields idPrefix="signup" value={document} onChange={setDocument} disabled={busy} />
+                    <p className="reg-form__hint">{t('account.document.hint')}</p>
+                  </>
+                )}
                 {error && (
                   <p className="reg-form__error reg-form__error--global" role="alert">
                     {error}
@@ -108,6 +119,8 @@ export function SignupPage({ mode }: { mode: 'signup' | 'recover' }) {
           )}
           <p className="account__links">
             <Link to={paths.login}>{t('account.backToLogin')}</Link>
+            {/* Someone told their document already has an account needs the way back into it. */}
+            {signup && <Link to={paths.recover}>{t('account.login.forgot')}</Link>}
           </p>
         </div>
       </section>

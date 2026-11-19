@@ -118,13 +118,15 @@ const unique = async <T>(work: () => Promise<T>): Promise<T> => {
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const ACCOUNT_COLUMNS = 'id,email,full_name,institution,cpf,is_platform_admin';
+const ACCOUNT_COLUMNS = 'id,email,full_name,institution,cpf,passport,country,is_platform_admin';
 interface AccountRow {
   id: string;
   email: string;
   full_name: string;
   institution: string | null;
   cpf: string | null;
+  passport: string | null;
+  country: string;
   is_platform_admin: boolean;
 }
 const toAccount = (row: AccountRow): Account => ({
@@ -133,6 +135,9 @@ const toAccount = (row: AccountRow): Account => ({
   fullName: row.full_name,
   institution: row.institution,
   cpf: row.cpf,
+  passport: row.passport,
+  // The column is never empty; it only says something next to a passport.
+  country: row.passport ? row.country : null,
   owner: row.is_platform_admin,
 });
 
@@ -353,6 +358,11 @@ export class SupabaseAdminStore implements AdminStore {
     if (patch.institution !== undefined) body.institution = patch.institution;
     if (patch.email !== undefined) body.email = patch.email;
     if (patch.cpf !== undefined) body.cpf = patch.cpf;
+    if (patch.passport !== undefined) {
+      body.passport = patch.passport;
+      // Without a passport the country goes back to what the column holds for everybody else.
+      body.country = patch.passport ? patch.country : 'BR';
+    }
     try {
       await this.rest.request<unknown>(`users?id=eq.${q(id)}`, { method: 'PATCH', body: JSON.stringify(body) });
     } catch (error) {
