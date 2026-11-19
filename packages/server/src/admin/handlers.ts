@@ -4,7 +4,7 @@ import { deliverWithin, notifyUsers, sendThroughOutbox, type OutboxDeps, type Ou
 import { emailLocale, layoutEmail } from '../payments/emailTemplates';
 import { json, readJsonObject, type Log } from '../payments/http';
 import { audienceFor, firstName, isTestAddress } from '../payments/notifications';
-import { isPassportCountry, isValidCpf, isValidPassport, normalizePassport } from '../core/document';
+import { isPassportCountry, isValidCpf, isValidPassport, normalizePassport, readDocument } from '../core/document';
 import {
   AUDIENCES,
   AccountConflictError,
@@ -157,11 +157,11 @@ async function registrationCreate(request: Request, deps: AdminDeps): Promise<Re
   const email = text(body.email, 200).toLowerCase();
   if (fullName.length < 5) return json(400, { error: 'invalid_name' });
   if (!isEmail(email)) return json(400, { error: 'invalid_email' });
-  const cpf = typeof body.cpf === 'string' ? body.cpf.replace(/\D/g, '') : '';
-  const passport = text(body.passport, 30).toUpperCase().replace(/[\s.-]/g, '');
-  const country = (text(body.country, 2) || 'BR').toUpperCase();
-  if (cpf && !isValidCpf(cpf)) return json(400, { error: 'invalid_cpf' });
-  if (!cpf && !passport) return json(400, { error: 'document_required' });
+  // Who the person is, by the rules of every other document (ADR-010): a CPF, a passport
+  // with the country that issued it, or both.
+  const read = readDocument(body);
+  if ('problem' in read) return json(400, { error: read.problem });
+  const { cpf, passport, country } = read.document;
   const category = text(body.category, 40);
   if (!CATEGORIES.includes(category)) return json(400, { error: 'invalid_category' });
   const manualStatus = body.manualStatus ? MANUAL.find((s) => s === body.manualStatus) : null;
@@ -174,9 +174,10 @@ async function registrationCreate(request: Request, deps: AdminDeps): Promise<Re
       eventId: ctx.event.id,
       fullName,
       email,
-      cpf: cpf || null,
-      passport: cpf ? null : passport,
-      country: cpf ? 'BR' : country,
+      cpf,
+      passport,
+      // The column holds BR for whoever has no passport.
+      country: passport ? country! : 'BR',
       institution: text(body.institution, 200) || null,
       category,
       modality: 'ONLINE',

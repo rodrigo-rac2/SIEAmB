@@ -161,7 +161,7 @@ export class FakeAccountStore implements AccountStore {
       (r) =>
         (!eventId || r.eventId === eventId) &&
         ((query.cpf && r.cpf === query.cpf) ||
-          (query.passport && r.passport === query.passport && r.country === query.country)),
+          (query.passport && r.passport === query.passport && (r.country === query.country || r.country === 'BR'))),
     );
   }
   async findRegistration(id: string) {

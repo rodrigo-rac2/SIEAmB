@@ -1,3 +1,4 @@
+import { CountrySelect } from '../shared/CountrySelect';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   maskCpf,
@@ -39,12 +40,16 @@ export function RegistrationForm({
   tokenRef.current = accessToken;
   // While the account's data is on its way the form cannot be sent: the name may still be missing.
   const [accountPending, setAccountPending] = useState(false);
+  // Logged in, the document is the account's (ADR-010, decision 11): what the account has is
+  // shown and cannot be changed here, so a registration and its account say the same person.
+  const [locked, setLocked] = useState<{ cpf: boolean; passport: boolean }>({ cpf: false, passport: false });
 
   const {
     register,
     handleSubmit,
     getValues,
     setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
@@ -61,17 +66,21 @@ export function RegistrationForm({
     if (!token) return;
     let active = true;
     setAccountPending(true);
-    const fillEmpty = (field: 'fullName' | 'cpf' | 'passport' | 'institution', value: string | null | undefined) => {
+    const fillEmpty = (field: 'fullName' | 'institution', value: string | null | undefined) => {
       if (value && !getValues(field)) setValue(field, value);
     };
     fetchAccount(token)
       .then(({ user }) => {
         if (!active) return;
         fillEmpty('fullName', user.fullName);
-        fillEmpty('cpf', user.cpf ? maskCpf(user.cpf) : null);
-        fillEmpty('passport', user.passport);
         fillEmpty('institution', user.institution);
-        if (user.passport && !getValues('cpf')) setValue('country', user.country);
+        // The account's document replaces whatever was typed; a kind the account lacks stays free.
+        if (user.cpf) setValue('cpf', maskCpf(user.cpf));
+        if (user.passport) {
+          setValue('passport', user.passport);
+          setValue('country', user.country);
+        }
+        setLocked({ cpf: Boolean(user.cpf), passport: Boolean(user.passport) });
       })
       // The form still works without the account's data.
       .catch(() => undefined)
@@ -83,6 +92,10 @@ export function RegistrationForm({
       setAccountPending(false);
     };
   }, [accountEmail, getValues, setValue]);
+
+  const passport = watch('passport') ?? '';
+  const country = watch('country') ?? '';
+  const hasPassport = passport.trim() !== '';
 
   if (!event) return null;
 
@@ -129,7 +142,7 @@ export function RegistrationForm({
     const err = errors[field];
     if (!err) return null;
     const msg = err.message ?? '';
-    if (msg === 'invalid_cpf' || msg === 'cpf_or_passport_required' || msg === 'consent_required') {
+    if (['invalid_cpf', 'invalid_passport', 'invalid_country', 'cpf_or_passport_required', 'consent_required'].includes(msg)) {
       return t(`registration.errors.${msg}`);
     }
     return t(`registration.errors.${String(field)}`, { defaultValue: t('common.error') });
@@ -168,6 +181,7 @@ export function RegistrationForm({
             type="text"
             inputMode="numeric"
             placeholder="000.000.000-00"
+            readOnly={locked.cpf}
             {...register('cpf', {
               // Format while typing; the schema strips the mask again before validating.
               onChange: (e: ChangeEvent<HTMLInputElement>) => {
@@ -179,10 +193,27 @@ export function RegistrationForm({
         </div>
         <div className="reg-form__field">
           <label htmlFor="passport">{t('registration.passport')}</label>
-          <input id="passport" type="text" {...register('passport')} />
+          <input id="passport" type="text" autoCapitalize="characters" maxLength={30} readOnly={locked.passport} {...register('passport')} />
+          {errKey('passport') && <p className="reg-form__error">{errKey('passport')}</p>}
         </div>
       </div>
-      <p className="reg-form__hint">{t('registration.cpfOrPassportHint')}</p>
+      {/* The country is asked for only with a passport, and chosen from a list (ADR-010). */}
+      {hasPassport && (
+        <div className="reg-form__field">
+          <label htmlFor="country">{t('account.area.country')}</label>
+          <CountrySelect
+            id="country"
+            // BR is what the field holds when no country was chosen: it is never a passport country.
+            value={country === 'BR' ? '' : country}
+            onChange={(code) => setValue('country', code || 'BR', { shouldValidate: Boolean(errors.country) })}
+            disabled={locked.passport}
+          />
+          {errKey('country') && <p className="reg-form__error">{errKey('country')}</p>}
+        </div>
+      )}
+      <p className="reg-form__hint">
+        {locked.cpf || locked.passport ? t('registration.accountDocumentHint') : t('registration.cpfOrPassportHint')}
+      </p>
 
       <div className="reg-form__field">
         <label htmlFor="institution">{t('registration.institution')}</label>

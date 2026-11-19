@@ -205,6 +205,33 @@ describe('registering someone by hand', () => {
     expect(store.registrations[0]).toMatchObject({ manualStatus: 'EXEMPT', manualReason: 'palestrante convidado', manualBy: ADMIN.id, manualAt: NOW.toISOString() });
   });
 
+  it('takes a CPF and a passport together, and reads them by the rules of every other document (ADR-010)', async () => {
+    const { deps, tokens, store } = setup();
+    expect((await post(deps, 'registration-create', tokens.admin, person({ cpf: '529.982.247-25', passport: 'ab 123-456', country: 'us' }))).status).toBe(201);
+    expect(store.registrations[0]).toMatchObject({ cpf: '52998224725', passport: 'AB123456', country: 'US' });
+  });
+
+  it.each([
+    ['no document', { cpf: '', passport: '' }, 'document_required'],
+    ['a passport without its country', { cpf: '', passport: 'AB123456' }, 'invalid_country'],
+    ['a passport from Brazil', { cpf: '', passport: 'AB123456', country: 'BR' }, 'invalid_country'],
+    ['a country that does not exist', { cpf: '', passport: 'AB123456', country: 'ZZ' }, 'invalid_country'],
+    ['a passport that is too short', { cpf: '', passport: 'A1', country: 'PT' }, 'invalid_passport'],
+    ['an invalid CPF next to a good passport', { cpf: '12345678900', passport: 'AB123456', country: 'PT' }, 'invalid_cpf'],
+  ])('refuses a registration by hand with %s', async (_name, document, error) => {
+    const { deps, tokens, store } = setup();
+    const response = await post(deps, 'registration-create', tokens.admin, person(document));
+    expect(response.status).toBe(400);
+    expect(await body(response)).toEqual({ error });
+    expect(store.registrations).toEqual([]);
+  });
+
+  it('a CPF alone is stored with no passport and BR in the country column', async () => {
+    const { deps, tokens, store } = setup();
+    await post(deps, 'registration-create', tokens.admin, person({ cpf: '52998224725', country: 'PT' }));
+    expect(store.registrations[0]).toMatchObject({ cpf: '52998224725', passport: null, country: 'BR' });
+  });
+
   it('takes a passport and its country for someone without a CPF', async () => {
     const { deps, tokens, store } = setup();
     expect((await post(deps, 'registration-create', tokens.admin, person({ cpf: '', passport: 'ab 123-456', country: 'pt' }))).status).toBe(201);

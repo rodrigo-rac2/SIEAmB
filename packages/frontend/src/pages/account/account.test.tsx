@@ -1319,6 +1319,66 @@ describe('RegistrationForm with accounts (#210)', () => {
     expect(screen.getByLabelText(/E-mail/)).toHaveValue('maria@ufcg.edu.br');
   });
 
+  describe('the document comes from the account (ADR-010, decision 11)', () => {
+    const me = (user: Partial<Account['user']>) => ({ me: { body: account({ user: { ...account().user, fullName: 'Maria da Conta', ...user } }) } });
+
+    it('shows the account\'s CPF locked, replaces one typed before it arrived, and registers with it', async () => {
+      enable();
+      let release!: () => void;
+      const gate = new Promise<void>((r) => (release = r));
+      const calls: string[] = [];
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (input: string, init: RequestInit = {}) => {
+          calls.push(`${init.method ?? 'GET'} ${String(input)} ${typeof init.body === 'string' ? init.body : ''}`);
+          if (String(input).includes('/account/me')) {
+            await gate;
+            return new Response(JSON.stringify(me({ cpf: '52998224725', documentLocked: true, cpfLocked: true }).me.body), { status: 200 });
+          }
+          if (String(input).includes('registration-check')) return new Response(JSON.stringify({ duplicate: false }), { status: 200 });
+          return new Response('{}', { status: 404 });
+        }),
+      );
+      const onSuccess = vi.fn();
+      mount('/2027/inscricoes/nova', <RegistrationForm onSuccess={onSuccess} />, auth(LOGGED_IN));
+      // Someone quick types another CPF while the account is still on its way.
+      await userEvent.type(await screen.findByLabelText('CPF'), '11144477735');
+      release();
+      await waitFor(() => expect(screen.getByLabelText('CPF')).toHaveValue('529.982.247-25'));
+      expect(screen.getByLabelText('CPF')).toHaveAttribute('readonly');
+      expect(screen.getByText('Este documento é o da sua conta e vai junto com a inscrição.')).toBeInTheDocument();
+      // The passport the account does not have can still be given.
+      expect(screen.getByLabelText('Passaporte')).not.toHaveAttribute('readonly');
+      await userEvent.click(screen.getByRole('checkbox'));
+      await userEvent.click(screen.getByRole('button', { name: /Enviar inscrição/ }));
+      await waitFor(() => expect(onSuccess).toHaveBeenCalled());
+      expect(calls.find((c) => c.includes('registration-check'))).toContain('"cpf":"52998224725"');
+    });
+
+    it('shows the account\'s passport and its country locked', async () => {
+      enable();
+      stubApi({ ...me({ passport: 'AB123456', country: 'PT', documentLocked: true, passportLocked: true }), 'registration-check': { body: { duplicate: false } } });
+      mount('/2027/inscricoes/nova', <RegistrationForm onSuccess={vi.fn()} />, auth(LOGGED_IN));
+      await waitFor(() => expect(screen.getByLabelText('Passaporte')).toHaveValue('AB123456'));
+      expect(screen.getByLabelText('Passaporte')).toHaveAttribute('readonly');
+      const country = screen.getByRole('combobox', { name: 'País do passaporte' });
+      expect(country).toHaveValue('PT');
+      expect(country).toBeDisabled();
+      // The CPF the account does not have stays free.
+      expect(screen.getByLabelText('CPF')).not.toHaveAttribute('readonly');
+    });
+
+    it('leaves both fields free for an account from before documents were asked for', async () => {
+      enable();
+      stubApi(me({ documentMissing: true }));
+      mount('/2027/inscricoes/nova', <RegistrationForm onSuccess={vi.fn()} />, auth(LOGGED_IN));
+      await waitFor(() => expect(screen.getByLabelText(/Nome completo/)).toHaveValue('Maria da Conta'));
+      expect(screen.getByLabelText('CPF')).not.toHaveAttribute('readonly');
+      expect(screen.getByLabelText('Passaporte')).not.toHaveAttribute('readonly');
+      expect(screen.getByText(/Informe o CPF, ou o passaporte com o país/)).toBeInTheDocument();
+    });
+  });
+
   it('keeps the e-mail locked while the session is still being read', async () => {
     enable();
     stubApi({});

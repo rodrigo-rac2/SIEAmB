@@ -273,7 +273,9 @@ export class SupabaseAccountStore implements AccountStore {
     const filters: string[] = [];
     if (query.cpf) filters.push(`cpf.eq.${q(query.cpf)}`);
     if (query.passport && query.country) {
-      filters.push(`and(passport.eq.${q(query.passport)},country.eq.${q(query.country)})`);
+      // The country it was registered with, or BR: what the public form stored before it
+      // asked for a country, read as "not known" (ADR-010, decision 11).
+      filters.push(`and(passport.eq.${q(query.passport)},country.in.(${q(query.country)},BR))`);
     }
     if (filters.length === 0) return [];
     const scope = eventId ? `&event_id=eq.${q(eventId)}` : '';

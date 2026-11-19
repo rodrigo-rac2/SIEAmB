@@ -147,7 +147,7 @@
     "email": "E-mail",
     "cpf": "CPF",
     "passport": "Passaporte",
-    "cpfOrPassportHint": "Informe CPF (brasileiros) ou passaporte (estrangeiros).",
+    "cpfOrPassportHint": "Informe o CPF, ou o passaporte com o país que o emitiu. Quem tem CPF informa o CPF.",
     "country": "País",
     "countryChoose": "Selecione o país",
     "institution": "Instituição",
@@ -159,6 +159,8 @@
     "paymentNote": "O pagamento da taxa é feito pelo Mercado Pago logo após o envio do formulário, com cartão ou boleto.",
     "errors": {
       "invalid_cpf": "CPF inválido. Confira os dígitos.",
+      "invalid_passport": "Passaporte inválido.",
+      "invalid_country": "Selecione o país do passaporte.",
       "cpf_or_passport_required": "Informe CPF ou passaporte.",
       "fullName": "Informe seu nome completo.",
       "email": "Informe um e-mail válido.",
@@ -169,6 +171,7 @@
     },
     "lotRange": "de {{from}} a {{until}}",
     "accountEmailHint": "A inscrição usa o e-mail da sua conta.",
+    "accountDocumentHint": "Este documento é o da sua conta e vai junto com a inscrição.",
     "accountCta": "Para acompanhar sua inscrição e enviar trabalhos, crie sua conta com o mesmo e-mail:",
     "goToArea": "Ver minha inscrição em Minha área"
   },
