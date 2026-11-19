@@ -607,6 +607,20 @@ describe('PaperFormPage, suggestions of people already in the system', () => {
     ]);
   });
 
+  it('an answer that arrives after the field was left does not open the list; coming back shows it (#359)', async () => {
+    const calls = stubApi(api());
+    mount(...NEW, <PaperFormPage />);
+    const name = await secondAuthor();
+    await userEvent.type(name, 'Rodrigo');
+    // On to the e-mail before the answer is back.
+    await userEvent.click(screen.getByLabelText('E-mail do autor 2'));
+    await waitFor(() => expect(searches(calls).length).toBeGreaterThan(0));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    noSuggestions();
+    await userEvent.click(name);
+    expect(await suggestions()).toHaveLength(2);
+  });
+
   it('is only a suggestion: a new person can be typed right over it', async () => {
     const calls = stubApi(api());
     mount(...NEW, <PaperFormPage />);
