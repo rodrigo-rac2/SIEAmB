@@ -392,7 +392,7 @@
       "noAccess": "我已无法使用该邮箱",
       "requestSent": "我们已向 {{email}} 发送确认链接。请打开该邮件并确认，以将注册关联到此账户。",
       "requestOrganiser": "您的请求已转交组委会，他们会核实并回复。",
-      "papersBody": "提交论文，或查看您已提交以及您被列为作者的论文。",
+      "papersBody": "提交论文或查看您的论文。",
       "sendNew": "提交新论文"
     },
     "errors": {
@@ -432,7 +432,7 @@
     "send": "提交论文",
     "editTitle": "修改论文",
     "edit": "修改",
-    "none": "您尚未提交任何论文，也未被列为任何论文的作者。",
+    "none": "您还没有论文。",
     "number": "第 {{number}} 号论文",
     "authorPosition": "您是第 {{n}} 作者",
     "sentOn": "提交于 {{date}}",
@@ -442,8 +442,8 @@
     "withdraw": "撤回论文",
     "withdrawConfirm": "确定撤回这篇论文吗？它将不再评审。",
     "withdrawYes": "是的，撤回",
-    "limits": "您在 {{maxAsMain}} 篇中的 {{asMain}} 篇论文中为第一作者，在 {{maxAsCoauthor}} 篇中的 {{asCoauthor}} 篇中列于其他位置。",
-    "limitReached": "您已达到征稿通知允许的论文数量上限。",
+    "limits": "您是 {{asMain}}/{{maxAsMain}} 篇论文的第一作者，{{asCoauthor}}/{{maxAsCoauthor}} 篇论文的合作者。",
+    "limitReached": "您已达到征稿通知的论文数量上限。",
     "window": {
       "open": "投稿开放至 {{date}}。",
       "open_late": "投稿通道已开放。",
@@ -538,7 +538,7 @@
       "duplicate_author": "{{name}} 在作者中出现了不止一次。",
       "too_many_authors": "每篇论文最多允许 {{max}} 位作者。",
       "too_many_as_main": "{{name}} 已是 {{max}} 篇论文的第一作者，已达征稿通知的上限。",
-      "coauthor_limit": "{{name}} 已在 {{max}} 篇论文中列于第一作者以外的位置，已达征稿通知的上限。",
+      "coauthor_limit": "{{name}} 已是 {{max}} 篇论文的合作者，已达征稿通知的上限。",
       "duplicate_title": "其中一位作者已提交过同名论文（第 {{number}} 号）。每篇论文只能提交一次。",
       "upload_failed": "无法上传文件。请检查网络连接后重试。",
       "document_required": "请先在“我的专区”填写 CPF 或护照再投稿。",

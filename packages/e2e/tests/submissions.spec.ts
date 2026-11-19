@@ -70,7 +70,7 @@ test.describe('submissions @submissions', () => {
     await page.getByRole('link', { name: 'Meus trabalhos' }).first().click();
     await expect(page.getByTestId('no-papers')).toBeVisible();
     await expect(page.getByTestId('registration-notice')).toContainText('A inscrição pode ser feita a qualquer momento.');
-    await expect(page.getByTestId('paper-limits')).toContainText('Você é o primeiro autor em 0 de 3 trabalhos e consta nas demais posições em 0 de 5.');
+    await expect(page.getByTestId('paper-limits')).toContainText('Você é primeiro autor em 0 de 3 trabalhos. É coautor em 0 de 5.');
 
     // 2. The form starts with the sender alone, by the name of the account.
     await page.getByRole('link', { name: 'Enviar trabalho' }).click();
@@ -139,7 +139,7 @@ test.describe('submissions @submissions', () => {
     await expect(card).toContainText('você é o 2º autor');
     await expect(card).toContainText('Resumo expandido E2E.pdf · 5 páginas');
     await expect(card.getByRole('listitem')).toHaveText(['Prof. Sem Conta E2E', 'Autora Que Envia E2E', knownName]);
-    await expect(page.getByTestId('paper-limits')).toContainText('Você é o primeiro autor em 0 de 3 trabalhos e consta nas demais posições em 1 de 5.');
+    await expect(page.getByTestId('paper-limits')).toContainText('Você é primeiro autor em 0 de 3 trabalhos. É coautor em 1 de 5.');
     await expect(page.getByTestId('registration-notice')).toContainText('Trabalhos aprovados exigem ao menos um autor inscrito');
     // In the database: the real addresses, lower-cased, in the order of the paper, each with who the person is.
     const saved = await admin<{ submission_authors: { position: number; email: string; cpf: string | null }[] }[]>(
@@ -182,7 +182,7 @@ test.describe('submissions @submissions', () => {
     await expect(coCard).toContainText('você é o 3º autor · só quem enviou pode alterar');
     await expect(coCard.getByRole('link', { name: 'Alterar' })).toHaveCount(0);
     await expect(coCard.getByRole('button', { name: 'Retirar o trabalho' })).toHaveCount(0);
-    await expect(coPage.getByTestId('paper-limits')).toContainText('consta nas demais posições em 1 de 5');
+    await expect(coPage.getByTestId('paper-limits')).toContainText('É coautor em 1 de 5');
     const [coDownload] = await Promise.all([coPage.waitForEvent('download'), coCard.getByRole('button', { name: 'Baixar o arquivo' }).click()]);
     expect(coDownload.suggestedFilename()).toBe('Resumo expandido E2E.pdf');
     const editHref = await card.getByRole('link', { name: 'Alterar' }).getAttribute('href');
@@ -216,7 +216,7 @@ test.describe('submissions @submissions', () => {
     await page.getByRole('button', { name: 'Retirar o trabalho' }).click();
     await page.getByRole('button', { name: 'Sim, retirar' }).click();
     await expect(page.getByTestId('no-papers')).toBeVisible();
-    await expect(page.getByTestId('paper-limits')).toContainText('consta nas demais posições em 0 de 5');
+    await expect(page.getByTestId('paper-limits')).toContainText('É coautor em 0 de 5');
     const rows = await admin<{ deleted_at: string | null; deleted_reason: string | null }[]>(
       `/rest/v1/submissions?title=eq.${encodeURIComponent(`${title} (revisto)`)}&select=deleted_at,deleted_reason`,
     );

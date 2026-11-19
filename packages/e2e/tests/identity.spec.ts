@@ -145,7 +145,7 @@ test.describe('identity by document @identity', () => {
     await expect(card).toBeVisible();
     await expect(card).toContainText('você é o 2º autor');
     await expect(card.getByRole('link', { name: 'Alterar' })).toHaveCount(0);
-    await expect(coPage.getByTestId('paper-limits')).toContainText('consta nas demais posições em 1 de 5');
+    await expect(coPage.getByTestId('paper-limits')).toContainText('É coautor em 1 de 5');
     for (const id of ['document-missing', 'waiting-other-document', 'waiting-other-email']) {
       await expect(coPage.getByTestId(id)).toHaveCount(0);
     }
@@ -177,7 +177,7 @@ test.describe('identity by document @identity', () => {
       'Você consta em 1 trabalho com outro documento. Peça a correção a quem enviou.',
     );
     await expect(coPage.getByTestId('paper-card')).toHaveCount(0);
-    await expect(coPage.getByTestId('paper-limits')).toContainText('consta nas demais posições em 1 de 5');
+    await expect(coPage.getByTestId('paper-limits')).toContainText('É coautor em 1 de 5');
     expect(await coPage.content()).not.toContain(title);
     // The server gives him neither the paper nor its file.
     const token = await coPage.evaluate(() => JSON.parse(localStorage.getItem('sieamb-auth')!).access_token as string);
@@ -310,7 +310,7 @@ test.describe('identity by document @identity', () => {
     await page.getByRole('button', { name: 'Subir autor 2' }).click();
     await page.getByLabel('Arquivo do trabalho').setInputFiles(await pdfFile(5, 'Quarto.pdf'));
     await page.getByRole('button', { name: 'Enviar trabalho' }).click();
-    await expect(page.getByRole('alert')).toHaveText('Pessoa de Muitos E-mails já é o primeiro autor em 3 trabalhos, o limite do edital.');
+    await expect(page.getByRole('alert')).toHaveText('Pessoa de Muitos E-mails já é primeiro autor em 3 trabalhos, o limite do edital.');
     // In second place the same person is within the other limit: the paper goes.
     await page.getByRole('button', { name: 'Descer autor 1' }).click();
     await page.getByRole('button', { name: 'Enviar trabalho' }).click();

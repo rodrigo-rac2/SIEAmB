@@ -143,7 +143,7 @@ describe('MyPapersPage', () => {
     expect(screen.getByTestId('registration-notice')).toHaveTextContent('A inscrição pode ser feita a qualquer momento.');
     expect(screen.getByRole('link', { name: 'Enviar trabalho' })).toHaveAttribute('href', '/2027/meus-trabalhos/novo');
     expect(screen.getByTestId('paper-limits')).toHaveTextContent('abertas até 18 de janeiro de 2027');
-    expect(screen.getByTestId('paper-limits')).toHaveTextContent('Você é o primeiro autor em 0 de 3 trabalhos e consta nas demais posições em 0 de 5.');
+    expect(screen.getByTestId('paper-limits')).toHaveTextContent('Você é primeiro autor em 0 de 3 trabalhos. É coautor em 0 de 5.');
     expect(calls.find((c) => c.url.includes('/submissions/mine'))).toMatchObject({ url: '/api/v1/submissions/mine?eventSlug=2027', authorization: 'Bearer access-token-1' });
   });
 
@@ -261,7 +261,7 @@ describe('MyPapersPage', () => {
   it('hides the send button only when both limits of the edital are used up, and says why', async () => {
     stubApi({ mine: { body: mine({ limits: { asMain: 3, maxAsMain: 3, asCoauthor: 5, maxAsCoauthor: 5 } }) }, me: account(null) });
     mount(...LIST, <MyPapersPage />);
-    expect(await screen.findByText('Você já consta no número máximo de trabalhos que o edital permite.')).toBeInTheDocument();
+    expect(await screen.findByText('Você atingiu o limite de trabalhos do edital.')).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Enviar trabalho' })).not.toBeInTheDocument();
   });
 
@@ -508,8 +508,8 @@ describe('PaperFormPage, new paper', () => {
 
   it.each([
     [{ error: 'wrong_page_count', pages: 9, minPages: 4, maxPages: 6 }, 400, 'O arquivo tem 9 páginas. Nesta modalidade, o edital pede de 4 a 6.'],
-    [{ error: 'coauthor_limit', name: 'João Lima', max: 5 }, 409, 'João Lima já consta em 5 trabalhos fora da primeira posição, o limite do edital.'],
-    [{ error: 'too_many_as_main', name: 'Prof. Carlos Meira', max: 3 }, 409, 'Prof. Carlos Meira já é o primeiro autor em 3 trabalhos, o limite do edital.'],
+    [{ error: 'coauthor_limit', name: 'João Lima', max: 5 }, 409, 'João Lima já é coautor em 5 trabalhos, o limite do edital.'],
+    [{ error: 'too_many_as_main', name: 'Prof. Carlos Meira', max: 3 }, 409, 'Prof. Carlos Meira já é primeiro autor em 3 trabalhos, o limite do edital.'],
     [{ error: 'duplicate_author', name: 'João Lima' }, 400, 'João Lima aparece mais de uma vez entre os autores.'],
     [{ error: 'sender_not_listed' }, 400, 'Você precisa estar na lista de autores, com o e-mail da sua conta.'],
     [{ error: 'invalid_author' }, 400, 'Confira o nome e o e-mail de cada autor.'],
