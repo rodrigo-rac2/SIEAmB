@@ -149,6 +149,7 @@
     "passport": "Passaporte",
     "cpfOrPassportHint": "Informe CPF (brasileiros) ou passaporte (estrangeiros).",
     "country": "País",
+    "countryChoose": "Selecione o país",
     "institution": "Instituição",
     "consent": "Autorizo o uso dos meus dados (nome, e-mail, CPF ou passaporte) para a organização do evento e para o envio de informações sobre as inscrições, conforme a LGPD.",
     "submit": "Enviar inscrição",

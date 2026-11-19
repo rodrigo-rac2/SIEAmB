@@ -6,7 +6,7 @@ Plataforma web do **SIEAmB**, evento científico promovido pela UFCG (Programa d
 
 🗂️ **Backlog:** [GitHub Issues](https://github.com/rodrigo-rac2/SIEAmB/issues) organizadas por [milestones](https://github.com/rodrigo-rac2/SIEAmB/milestones) (ver [Backlog e processo](#backlog-e-processo))
 
-🧭 **Decisões técnicas:** [docs/adr/](docs/adr/) (ADR-001 a ADR-009) · o plano original de agosto de 2026, mantido como histórico, está em [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md)
+🧭 **Decisões técnicas:** [docs/adr/](docs/adr/) (ADR-001 a ADR-010) · o plano original de agosto de 2026, mantido como histórico, está em [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md)
 
 📌 **Status atual e histórico:** [.claude/context/STATUS.md](.claude/context/STATUS.md) e [.claude/context/HISTORY.md](.claude/context/HISTORY.md)
 
@@ -83,7 +83,7 @@ SIEAmB/
 │   ├── payments/            #   pedidos, status, webhook do Mercado Pago, job em segundo plano
 │   └── registrations/       #   aviso de inscrição recebida
 ├── docs/
-│   ├── adr/                 # Decisões técnicas (001 a 009): leia antes de mudar como algo funciona
+│   ├── adr/                 # Decisões técnicas (001 a 010): leia antes de mudar como algo funciona
 │   ├── db-backups.md        # Como o backup é feito e como restaurar
 │   └── IMPLEMENTATION_PLAN.md   # Plano de agosto de 2026, mantido como histórico
 ├── packages/
@@ -107,7 +107,7 @@ SIEAmB/
 └── CLAUDE.md                # Convenções para sessões do Claude Code
 ```
 
-**Regra de ouro:** código que serve a mais de um pacote do site (tipos, validação) vai em `packages/shared`, nunca duplicado. Uma exceção conhecida: `packages/server` não consegue importar o `shared` depois de publicado (ADR-009) e mantém a própria checagem de CPF.
+**Regra de ouro:** código que serve a mais de um pacote do site (tipos, validação) vai em `packages/shared`, nunca duplicado. Uma exceção conhecida: `packages/server` não consegue importar o `shared` depois de publicado (ADR-009) e mantém a própria leitura de documentos (CPF, passaporte, país) em `core/document.ts`. As duas cópias são testadas contra o mesmo arquivo de casos, `packages/shared/src/utils/document.vectors.json` (ADR-010).
 
 ## Como rodar localmente
 

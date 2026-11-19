@@ -149,6 +149,7 @@
     "passport": "护照",
     "cpfOrPassportHint": "请填写 CPF（巴西人）或护照号（外国人）。",
     "country": "国家",
+    "countryChoose": "请选择国家",
     "institution": "所属机构",
     "consent": "我同意主办方使用我的数据（姓名、电子邮箱、CPF或护照号）用于会议组织及发送注册相关信息，依据巴西《通用数据保护法》（LGPD）。",
     "submit": "提交注册",
