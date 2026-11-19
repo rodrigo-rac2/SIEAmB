@@ -79,7 +79,12 @@ The 43 issues finished on dev close when that pull request reaches `main`.
 
 ## Waiting on Rodrigo
 
-- To create his account on sieamb.org, so it can be marked as the owner, and then give the roles (steps 7 and 8 of the release).
+- Paused on 2026-11-19 while the team and the authors use the live site. The owner account is set (step 7). Step 8 is partly done: eight reviewers were given Avaliador by e-mail; Najara (Administrador) and Thays (Organizador) are Rodrigo's to give in "Pessoas e papéis", unless he already did (one other invitation was waiting before the eight).
+- The one registration with a passport has its country stored as BR (unknown): correct it in the panel.
+- Check in the Resend dashboard that the eight invitations were delivered.
+- "Validate the passport number if filled contains the country code" (2026-11-19) was read as "a filled passport requires its country", which is enforced. Confirm that is what was meant.
+- The edital says nothing about co-authors' documents; Najara should know the form asks for them.
+- Open, low priority: #341 (panel tabs empty for a moment), #328 (hero buttons shift when the fonts arrive), a refusal on screen stays in Portuguese after switching language (not filed).
 - One real low-value payment and its refund, and sending the pay link to the people who registered before payments existed (#166). The R$ 30 boleto test and the R$ 70 card test are still to be refunded.
 - A boleto paid after its one-day order expires: is it credited? (#167)
 - The Vercel plan: Hobby forbids commercial use and caps functions at 12; we use 8 (#168).
