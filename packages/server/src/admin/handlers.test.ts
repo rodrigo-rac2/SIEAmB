@@ -1498,6 +1498,83 @@ describe('the owner changes what nobody else does: e-mail, CPF and password (#27
     expect(store.users.find((u) => u.id === NOBODY.id)!.cpf).toBeNull();
   });
 
+  it('sets, replaces and takes off a passport with its country (ADR-010)', async () => {
+    const { deps, tokens, store } = setup();
+    const user = () => store.users.find((u) => u.id === NOBODY.id)!;
+    expect(await body(await post(deps, 'account-update', tokens.platform, { userId: NOBODY.id, passport: 'ab 123-456', country: 'pt' }))).toEqual({ ok: true, changed: true });
+    expect(user()).toMatchObject({ passport: 'AB123456', country: 'PT' });
+    // The audit line says which fields changed, never the number.
+    expect(store.audits.at(-1)!.meta.fields).toEqual(['passport', 'country']);
+    expect(JSON.stringify(store.audits)).not.toContain('AB123456');
+    // The same again changes nothing.
+    expect(await body(await post(deps, 'account-update', tokens.platform, { userId: NOBODY.id, passport: 'AB123456', country: 'PT' }))).toEqual({ ok: true, changed: false });
+    // The country alone can be corrected.
+    expect(await body(await post(deps, 'account-update', tokens.platform, { userId: NOBODY.id, passport: 'AB123456', country: 'ES' }))).toEqual({ ok: true, changed: true });
+    expect(user()).toMatchObject({ passport: 'AB123456', country: 'ES' });
+    // Empty takes it off, and the country with it.
+    expect(await body(await post(deps, 'account-update', tokens.platform, { userId: NOBODY.id, passport: '' }))).toEqual({ ok: true, changed: true });
+    expect(user().passport).toBeNull();
+    expect(user().country).toBeUndefined();
+    // Taking off what is not there changes nothing.
+    expect(await body(await post(deps, 'account-update', tokens.platform, { userId: NOBODY.id, passport: '' }))).toEqual({ ok: true, changed: false });
+  });
+
+  it.each([
+    ['a passport that is too short', { passport: 'A1', country: 'PT' }, 'invalid_passport'],
+    ['a passport without a country', { passport: 'AB123456' }, 'invalid_country'],
+    ['a passport from Brazil', { passport: 'AB123456', country: 'BR' }, 'invalid_country'],
+    ['a country that does not exist', { passport: 'AB123456', country: 'ZZ' }, 'invalid_country'],
+  ])('refuses %s and writes nothing', async (_name, data, error) => {
+    const { deps, tokens, store } = setup();
+    const response = await post(deps, 'account-update', tokens.platform, { userId: NOBODY.id, ...data });
+    expect(response.status).toBe(400);
+    expect(await body(response)).toEqual({ error });
+    expect(store.users.find((u) => u.id === NOBODY.id)!.passport ?? null).toBeNull();
+    expect(store.audits).toEqual([]);
+  });
+
+  it('refuses a passport another account has, and takes the same number from another country', async () => {
+    const { deps, tokens, store } = setup();
+    Object.assign(store.users.find((u) => u.id === REVIEWER.id)!, { passport: 'AB123456', country: 'PT' });
+    const taken = await post(deps, 'account-update', tokens.platform, { userId: NOBODY.id, passport: 'AB123456', country: 'PT' });
+    expect(taken.status).toBe(409);
+    expect(await body(taken)).toEqual({ error: 'document_in_use' });
+    expect((await post(deps, 'account-update', tokens.platform, { userId: NOBODY.id, passport: 'AB123456', country: 'ES' })).status).toBe(200);
+  });
+
+  it('keeps the CPF when only the passport changes, and the other way round', async () => {
+    const { deps, tokens, store } = setup();
+    const user = () => store.users.find((u) => u.id === NOBODY.id)!;
+    await post(deps, 'account-update', tokens.platform, { userId: NOBODY.id, cpf: CPF, passport: 'AB123456', country: 'PT' });
+    expect(user()).toMatchObject({ cpf: CPF, passport: 'AB123456', country: 'PT' });
+    await post(deps, 'account-update', tokens.platform, { userId: NOBODY.id, passport: '' });
+    expect(user()).toMatchObject({ cpf: CPF, passport: null });
+    await post(deps, 'account-update', tokens.platform, { userId: NOBODY.id, passport: 'ZZ999999', country: 'US' });
+    await post(deps, 'account-update', tokens.platform, { userId: NOBODY.id, cpf: '' });
+    expect(user()).toMatchObject({ cpf: null, passport: 'ZZ999999', country: 'US' });
+  });
+
+  it('an administrator\'s passport and country are ignored, like the CPF', async () => {
+    const { deps, tokens, store } = setup();
+    const response = await post(deps, 'account-update', tokens.admin, { userId: NOBODY.id, passport: 'AB123456', country: 'PT' });
+    expect(await body(response)).toEqual({ ok: true, changed: false });
+    expect(store.users.find((u) => u.id === NOBODY.id)!.passport ?? null).toBeNull();
+  });
+
+  it('shows the passport and its country in the list to the owner only', async () => {
+    const { deps, tokens, store } = setup();
+    Object.assign(store.users.find((u) => u.id === NOBODY.id)!, { passport: 'AB123456', country: 'PT' });
+    const asOwner = (await body(await get(deps, 'members', tokens.platform))) as unknown as { accounts: Record<string, unknown>[] };
+    expect(asOwner.accounts.find((a) => a.userId === NOBODY.id)).toMatchObject({ passport: 'AB123456', country: 'PT' });
+    // Someone without a passport has no country to show, whatever the column holds.
+    expect(asOwner.accounts.find((a) => a.userId === REVIEWER.id)).toMatchObject({ passport: null, country: null });
+    for (const token of [tokens.admin, tokens.organiser]) {
+      const text = JSON.stringify(await body(await get(deps, 'members', token)));
+      expect(text).not.toContain('AB123456');
+      expect(text).not.toContain('"passport"');
+    }
+  });
+
   it('shows the CPF in the list to the owner only', async () => {
     const { deps, tokens, store } = setup();
     store.users.find((u) => u.id === NOBODY.id)!.cpf = CPF;

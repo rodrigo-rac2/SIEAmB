@@ -12,7 +12,11 @@ import {
   type AccountDeps,
 } from './handlers';
 import type { PaymentStatus } from '../payments/status';
-import { CPF, EVENT, NOW, OLD_EVENT, OTHER_CPF, USER, call, setup } from './testing';
+import { CPF, EVENT, NOW, OLD_EVENT, OTHER_CPF, USER, call, cpfFrom, setup } from './testing';
+
+/** A third CPF with valid check digits: the one a new person signs up with. */
+const NEW_CPF = '39053344705';
+const OTHER_USER = { id: 'user-2', email: 'outra@ufcg.edu.br', emailConfirmed: true };
 
 interface Answer {
   user: Record<string, unknown>;
@@ -66,7 +70,14 @@ describe('router', () => {
 describe('signup', () => {
   const signup = (over: Record<string, unknown> = {}, ip?: string) =>
     call('POST', 'signup', {
-      body: { email: 'Nova.Pessoa@UFCG.edu.br ', fullName: '  Nova   Pessoa ', locale: 'pt-BR', eventSlug: '2027', ...over },
+      body: {
+        email: 'Nova.Pessoa@UFCG.edu.br ',
+        fullName: '  Nova   Pessoa ',
+        cpf: '390.533.447-05',
+        locale: 'pt-BR',
+        eventSlug: '2027',
+        ...over,
+      },
       ip,
     });
 
@@ -203,6 +214,174 @@ describe('signup', () => {
       expect(key).toMatch(/^[0-9a-f]{64}$/);
     }
     expect([...store.hits.keys()]).toContain(sha256('test-pepper:signup:nova.pessoa@ufcg.edu.br'));
+  });
+});
+
+describe('test CPFs', () => {
+  it('cpfFrom makes the known examples and only valid numbers', async () => {
+    const { isValidCpf } = await import('../core/document');
+    expect(cpfFrom('529982247')).toBe(CPF);
+    expect(cpfFrom('111444777')).toBe(OTHER_CPF);
+    expect(cpfFrom('390533447')).toBe(NEW_CPF);
+    for (let i = 0; i < 200; i += 1) expect(isValidCpf(cpfFrom(String(100000000 + i * 4391)))).toBe(true);
+  });
+});
+
+describe('signup: who the person is (ADR-010)', () => {
+  const signup = (over: Record<string, unknown> = {}, ip?: string) =>
+    call('POST', 'signup', {
+      body: { email: 'nova@ufcg.edu.br', fullName: 'Nova Pessoa', locale: 'pt-BR', eventSlug: '2027', ...over },
+      ip,
+    });
+
+  it.each([
+    ['no document at all', {}, 'document_required'],
+    ['empty fields', { cpf: ' ', passport: '', country: 'PT' }, 'document_required'],
+    ['a CPF with wrong check digits', { cpf: '529.982.247-26' }, 'invalid_cpf'],
+    ['a CPF of repeated digits', { cpf: '000.000.000-00' }, 'invalid_cpf'],
+    ['a CPF that is not text', { cpf: 39053344705 }, 'document_required'],
+    ['a passport without a country', { passport: 'AB123456' }, 'invalid_country'],
+    ['a passport with Brazil as its country', { passport: 'AB123456', country: 'BR' }, 'invalid_country'],
+    ['a passport with a country that does not exist', { passport: 'AB123456', country: 'ZZ' }, 'invalid_country'],
+    ['a passport that is too short', { passport: 'A1', country: 'PT' }, 'invalid_passport'],
+    ['a good CPF next to a bad passport', { cpf: NEW_CPF, passport: 'A1', country: 'PT' }, 'invalid_passport'],
+    ['a good passport next to a bad CPF', { cpf: '12345678900', passport: 'AB123456', country: 'PT' }, 'invalid_cpf'],
+  ])('refuses %s, creates nothing and mails nothing', async (_name, document, error) => {
+    const { deps, auth, sent, store } = setup();
+    const response = await handleAccount(signup(document), 'signup', deps);
+    expect(response.status).toBe(400);
+    expect(await body(response)).toEqual({ error });
+    expect(auth.signups).toEqual([]);
+    expect(sent).toEqual([]);
+    expect(store.signupDocuments.size).toBe(0);
+  });
+
+  it.each([
+    ['a CPF', { cpf: '390.533.447-05' }, { cpf: NEW_CPF, passport: null, country: null }],
+    ['a passport with its country', { passport: 'ab 123-456', country: 'pt' }, { cpf: null, passport: 'AB123456', country: 'PT' }],
+    ['both', { cpf: NEW_CPF, passport: 'AB123456', country: 'US' }, { cpf: NEW_CPF, passport: 'AB123456', country: 'US' }],
+    ['a CPF with a country nobody asked for', { cpf: NEW_CPF, country: 'PT' }, { cpf: NEW_CPF, passport: null, country: null }],
+  ])('accepts %s and keeps it waiting under the address, in its stored shape', async (_name, document, waiting) => {
+    const { deps, auth, sent, store } = setup();
+    const response = await handleAccount(signup(document), 'signup', deps);
+    expect(response.status).toBe(202);
+    expect(auth.signups).toEqual(['nova@ufcg.edu.br']);
+    expect(sent).toHaveLength(1);
+    expect(store.signupDocuments.get('nova@ufcg.edu.br')).toEqual(waiting);
+    // It is not anybody's yet: no account holds it.
+    expect(await store.findAccountsByDocument(waiting)).toEqual([]);
+  });
+
+  it('says "CPF already registered", with the masked address, when another account holds the CPF', async () => {
+    const { deps, auth, sent, store } = setup();
+    store.addProfile(OTHER_USER).cpf = NEW_CPF;
+    const response = await handleAccount(signup({ cpf: NEW_CPF }), 'signup', deps);
+    expect(response.status).toBe(409);
+    expect(await body(response)).toEqual({ error: 'cpf_in_use', maskedEmail: maskEmail(OTHER_USER.email) });
+    expect(JSON.stringify(await body(await handleAccount(signup({ cpf: NEW_CPF }), 'signup', deps)))).not.toContain(OTHER_USER.email);
+    expect(auth.signups).toEqual([]);
+    expect(sent).toEqual([]);
+    expect(store.signupDocuments.size).toBe(0);
+  });
+
+  it('says "passport already registered" only for the same number AND country', async () => {
+    const { deps, store } = setup();
+    const other = store.addProfile(OTHER_USER);
+    other.passport = 'AB123456';
+    other.country = 'PT';
+    const same = await handleAccount(signup({ passport: 'ab-123456', country: 'pt' }), 'signup', deps);
+    expect(same.status).toBe(409);
+    expect(await body(same)).toEqual({ error: 'passport_in_use', maskedEmail: maskEmail(OTHER_USER.email) });
+    // The same number issued by another country is another person.
+    expect((await handleAccount(signup({ passport: 'AB123456', country: 'ES' }), 'signup', deps)).status).toBe(202);
+  });
+
+  it('names the CPF when both the CPF and the passport are held by others', async () => {
+    const { deps, store } = setup();
+    store.addProfile(OTHER_USER).cpf = NEW_CPF;
+    const third = store.addProfile({ id: 'user-3', email: 'terceira@ufcg.edu.br', emailConfirmed: true });
+    third.passport = 'AB123456';
+    third.country = 'PT';
+    const response = await handleAccount(signup({ cpf: NEW_CPF, passport: 'AB123456', country: 'PT' }), 'signup', deps);
+    expect(await body(response)).toEqual({ error: 'cpf_in_use', maskedEmail: maskEmail(OTHER_USER.email) });
+  });
+
+  it('is not in the way of the same person asking again with the address of their own account', async () => {
+    const { deps, auth, sent, store } = setup();
+    auth.accounts.set(USER.email, true);
+    store.addProfile(USER).cpf = CPF;
+    const response = await handleAccount(signup({ email: USER.email, cpf: CPF }), 'signup', deps);
+    // The quiet answer of always, and the "you already have an account" e-mail.
+    expect(response.status).toBe(202);
+    expect(await body(response)).toEqual({ ok: true });
+    expect(sent[0]!.subject).not.toContain('Confirme');
+    // An account that exists keeps its own document: nothing is left waiting for it.
+    expect(store.signupDocuments.size).toBe(0);
+  });
+
+  it('a document that only waits under an unconfirmed address blocks nobody', async () => {
+    const { deps, store } = setup();
+    expect((await handleAccount(signup({ email: 'primeira@ufcg.edu.br', cpf: NEW_CPF }), 'signup', deps)).status).toBe(202);
+    // Someone else asks with the same CPF: nobody has confirmed it, so nobody holds it.
+    expect((await handleAccount(signup({ email: 'segunda@ufcg.edu.br', cpf: NEW_CPF }), 'signup', deps)).status).toBe(202);
+    expect([...store.signupDocuments.keys()]).toEqual(['primeira@ufcg.edu.br', 'segunda@ufcg.edu.br']);
+  });
+
+  it('the last request for an address replaces the document that was waiting', async () => {
+    const { deps, store } = setup();
+    await handleAccount(signup({ cpf: NEW_CPF }, '198.51.100.1'), 'signup', deps);
+    await handleAccount(signup({ cpf: OTHER_CPF }, '198.51.100.2'), 'signup', deps);
+    expect(store.signupDocuments.get('nova@ufcg.edu.br')).toEqual({ cpf: OTHER_CPF, passport: null, country: null });
+  });
+
+  it(`gives the masked address ${LIMITS.documentHintPerIp.max} times an hour to one caller, then only the refusal`, async () => {
+    const { deps, store } = setup();
+    // A different held CPF each time, so that only the limit per caller is reached.
+    const held = Array.from({ length: 11 }, (_, i) => cpfFrom(String(100200300 + i * 1111)));
+    held.forEach((cpf, i) => {
+      store.addProfile({ id: `holder-${i}`, email: `dona${i}@ufcg.edu.br`, emailConfirmed: true }).cpf = cpf;
+    });
+    for (let i = 0; i < LIMITS.documentHintPerIp.max; i += 1) {
+      const answer = await body(await handleAccount(signup({ email: `n${i}@ufcg.edu.br`, cpf: held[i] }), 'signup', deps));
+      expect(answer).toEqual({ error: 'cpf_in_use', maskedEmail: maskEmail(`dona${i}@ufcg.edu.br`) });
+    }
+    const after = await handleAccount(signup({ email: 'n99@ufcg.edu.br', cpf: held[10] }), 'signup', deps);
+    expect(after.status).toBe(409);
+    expect(await body(after)).toEqual({ error: 'cpf_in_use' });
+    // Another caller still gets it.
+    const elsewhere = await handleAccount(signup({ email: 'n98@ufcg.edu.br', cpf: held[10] }, '198.51.100.50'), 'signup', deps);
+    expect(await body(elsewhere)).toEqual({ error: 'cpf_in_use', maskedEmail: maskEmail('dona10@ufcg.edu.br') });
+  });
+
+  it(`gives the masked address of one document ${LIMITS.documentHintPerDocument.max} times a day, whoever asks`, async () => {
+    const { deps, store } = setup();
+    store.addProfile(OTHER_USER).cpf = NEW_CPF;
+    for (let i = 0; i < LIMITS.documentHintPerDocument.max; i += 1) {
+      const answer = await body(await handleAccount(signup({ email: `n${i}@ufcg.edu.br`, cpf: NEW_CPF }, `198.51.100.${i}`), 'signup', deps));
+      expect(answer.maskedEmail).toBe(maskEmail(OTHER_USER.email));
+    }
+    const after = await handleAccount(signup({ email: 'n99@ufcg.edu.br', cpf: NEW_CPF }, '198.51.100.99'), 'signup', deps);
+    expect(await body(after)).toEqual({ error: 'cpf_in_use' });
+  });
+
+  it('keeps no document in the rate-limit keys', async () => {
+    const { deps, store } = setup();
+    store.addProfile(OTHER_USER).cpf = NEW_CPF;
+    await handleAccount(signup({ cpf: NEW_CPF }), 'signup', deps);
+    for (const key of store.hits.keys()) {
+      expect(key).toMatch(/^[0-9a-f]{64}$/);
+      expect(key).not.toContain(NEW_CPF);
+    }
+    expect([...store.hits.keys()]).toContain(sha256(`test-pepper:document-hint:cpf:${NEW_CPF}`));
+  });
+
+  it('the answer does not depend on whether the address has an account, only on the document', async () => {
+    const { deps, auth, store } = setup();
+    auth.accounts.set('conhecida@ufcg.edu.br', true);
+    store.addProfile({ id: 'user-9', email: 'conhecida@ufcg.edu.br', emailConfirmed: true });
+    const known = await handleAccount(signup({ email: 'conhecida@ufcg.edu.br', cpf: NEW_CPF }), 'signup', deps);
+    const unknown = await handleAccount(signup({ email: 'desconhecida@ufcg.edu.br', cpf: NEW_CPF }, '198.51.100.9'), 'signup', deps);
+    expect([known.status, await body(known)]).toEqual([unknown.status, await body(unknown)]);
   });
 });
 
@@ -360,7 +539,7 @@ describe('profile', () => {
     const response = await put({ fullName: ' Maria  Clara ', institution: 'UFCG', cpf: '529.982.247-25' });
     expect(response.status).toBe(200);
     expect(store.profiles.get(USER.id)).toMatchObject({ fullName: 'Maria Clara', institution: 'UFCG', cpf: CPF, country: 'BR' });
-    expect((await body(response)).user.documentLocked).toBe(true);
+    expect((await body(response)).user).toMatchObject({ documentLocked: true, cpfLocked: true, passportLocked: false, documentMissing: false });
   });
 
   it.each([
@@ -384,27 +563,116 @@ describe('profile', () => {
     expect(store.profiles.get(USER.id)).toMatchObject({ passport: 'AB123456', country: 'PT', cpf: null });
   });
 
-  it('does not let the person change the document once it is saved', async () => {
+  it('each kind of document is given once: a saved CPF cannot be changed', async () => {
     const { put, store } = start();
     await put({ cpf: CPF });
     const changed = await put({ cpf: OTHER_CPF });
     expect(changed.status).toBe(409);
     expect(await body(changed)).toEqual({ error: 'document_locked' });
-    const swapped = await put({ passport: 'AB123456', country: 'PT' });
-    expect(swapped.status).toBe(409);
     expect(store.profiles.get(USER.id)).toMatchObject({ cpf: CPF, passport: null });
     // Sending the same document again with other fields is fine.
     expect((await put({ cpf: CPF, institution: 'UFPB' })).status).toBe(200);
     expect(store.profiles.get(USER.id)?.institution).toBe('UFPB');
   });
 
-  it('refuses a CPF that another account already has, without saying whose', async () => {
+  it('someone with a CPF can still add a passport, once', async () => {
     const { put, store } = start();
-    store.addProfile({ id: 'user-2', email: 'outra@ufcg.edu.br', emailConfirmed: true }).cpf = CPF;
+    await put({ cpf: CPF });
+    const added = await put({ passport: 'ab 123-456', country: 'pt' });
+    expect(added.status).toBe(200);
+    expect(store.profiles.get(USER.id)).toMatchObject({ cpf: CPF, passport: 'AB123456', country: 'PT' });
+    expect((await body(added)).user).toMatchObject({ cpfLocked: true, passportLocked: true });
+    // And then neither changes: not the number, not the country.
+    expect(await body(await put({ passport: 'ZZ999999', country: 'PT' }))).toEqual({ error: 'document_locked' });
+    expect(await body(await put({ passport: 'AB123456', country: 'ES' }))).toEqual({ error: 'document_locked' });
+    expect(store.profiles.get(USER.id)).toMatchObject({ cpf: CPF, passport: 'AB123456', country: 'PT' });
+    // The same ones again are fine.
+    expect((await put({ cpf: CPF, passport: 'AB123456', country: 'PT' })).status).toBe(200);
+  });
+
+  it('someone with a passport can still add a CPF, once, and keeps the country of the passport', async () => {
+    const { put, store } = start();
+    await put({ passport: 'AB123456', country: 'PT' });
+    expect((await put({ cpf: CPF })).status).toBe(200);
+    expect(store.profiles.get(USER.id)).toMatchObject({ cpf: CPF, passport: 'AB123456', country: 'PT' });
+    expect(await body(await put({ cpf: OTHER_CPF }))).toEqual({ error: 'document_locked' });
+  });
+
+  it('takes a CPF and a passport together', async () => {
+    const { put, store } = start();
+    expect((await put({ cpf: CPF, passport: 'AB123456', country: 'US' })).status).toBe(200);
+    expect(store.profiles.get(USER.id)).toMatchObject({ cpf: CPF, passport: 'AB123456', country: 'US' });
+  });
+
+  it('writes nothing when one of the two is wrong', async () => {
+    const { put, store } = start();
+    expect(await body(await put({ cpf: CPF, passport: 'A1', country: 'PT' }))).toEqual({ error: 'invalid_passport' });
+    expect(await body(await put({ cpf: '12345678900', passport: 'AB123456', country: 'PT' }))).toEqual({ error: 'invalid_cpf' });
+    expect(store.profiles.get(USER.id)).toMatchObject({ cpf: null, passport: null });
+  });
+
+  it('refuses a CPF that another account already has, with that account’s masked address', async () => {
+    const { put, store } = start();
+    store.addProfile(OTHER_USER).cpf = CPF;
     const response = await put({ cpf: CPF });
     expect(response.status).toBe(409);
-    expect(await body(response)).toEqual({ error: 'document_in_use' });
+    expect(await body(response)).toEqual({ error: 'cpf_in_use', maskedEmail: maskEmail(OTHER_USER.email) });
     expect(store.profiles.get(USER.id)?.cpf).toBeNull();
+  });
+
+  it('refuses a passport that another account already has, and takes the same number from another country', async () => {
+    const { put, store } = start();
+    const other = store.addProfile(OTHER_USER);
+    other.passport = 'AB123456';
+    other.country = 'PT';
+    const response = await put({ passport: 'AB123456', country: 'PT' });
+    expect(response.status).toBe(409);
+    expect(await body(response)).toEqual({ error: 'passport_in_use', maskedEmail: maskEmail(OTHER_USER.email) });
+    expect(store.profiles.get(USER.id)?.passport).toBeNull();
+    expect((await put({ passport: 'AB123456', country: 'ES' })).status).toBe(200);
+  });
+
+  it('a document taken between the look and the write is still refused, by the database', async () => {
+    const { put, store } = start();
+    // Nobody holds it when it is looked up...
+    const lookups = store.findAccountsByDocument.bind(store);
+    let first = true;
+    store.findAccountsByDocument = async (document) => {
+      if (first) {
+        first = false;
+        return [];
+      }
+      return lookups(document);
+    };
+    // ...and another account has it by the time it is written.
+    store.addProfile(OTHER_USER).cpf = CPF;
+    const response = await put({ cpf: CPF });
+    expect(response.status).toBe(409);
+    expect(await body(response)).toEqual({ error: 'cpf_in_use', maskedEmail: maskEmail(OTHER_USER.email) });
+    expect(store.profiles.get(USER.id)?.cpf).toBeNull();
+  });
+
+  it('says a document is missing on an account from before, and shows what waits for it', async () => {
+    const { put, store, token, deps } = start();
+    await store.saveSignupDocument(USER.email, { cpf: CPF, passport: null, country: null });
+    const before = await body(await handleAccount(call('GET', 'me', { token }), 'me', deps));
+    expect(before.user).toMatchObject({
+      documentMissing: true,
+      documentLocked: false,
+      pendingDocument: { cpf: CPF, passport: null, country: null },
+    });
+    // Once given, nothing waits any more, and the waiting line is gone.
+    const after = await body(await put({ cpf: CPF }));
+    expect(after.user).toMatchObject({ documentMissing: false, pendingDocument: null, cpf: CPF });
+    expect(store.signupDocuments.size).toBe(0);
+  });
+
+  it('never shows the waiting document of another address', async () => {
+    const { store, token, deps } = start();
+    await store.saveSignupDocument(OTHER_USER.email, { cpf: OTHER_CPF, passport: null, country: null });
+    const answer = await body(await handleAccount(call('GET', 'me', { token }), 'me', deps));
+    expect(answer.user.pendingDocument).toBeNull();
+    expect(JSON.stringify(answer)).not.toContain(OTHER_CPF);
   });
 });
 
@@ -440,6 +708,106 @@ describe('password', () => {
   it('accepts exactly the minimum length', async () => {
     const { post } = start();
     expect((await post('x'.repeat(PASSWORD_MIN))).status).toBe(200);
+  });
+});
+
+describe('password, on the screen that follows the confirmation link (ADR-010)', () => {
+  const GOOD = 'uma-senha-bem-longa';
+  const start = () => {
+    const ctx = setup();
+    const token = ctx.auth.login(USER);
+    ctx.store.addProfile(USER);
+    const post = (data: Record<string, unknown>) =>
+      handleAccount(call('POST', 'password', { token, body: data }), 'password', ctx.deps);
+    return { ...ctx, post };
+  };
+
+  it('takes the confirmed document with the password, and nothing waits any more', async () => {
+    const { post, store, auth } = start();
+    await store.saveSignupDocument(USER.email, { cpf: CPF, passport: null, country: null });
+    expect((await post({ password: GOOD, cpf: '529.982.247-25' })).status).toBe(200);
+    expect(store.profiles.get(USER.id)).toMatchObject({ cpf: CPF, passport: null });
+    expect(auth.passwords).toEqual([{ userId: USER.id, password: GOOD }]);
+    expect(store.signupDocuments.size).toBe(0);
+  });
+
+  it('takes a corrected document over the one that was waiting', async () => {
+    const { post, store } = start();
+    // Typed by whoever asked for the account, which may not be who confirmed the e-mail.
+    await store.saveSignupDocument(USER.email, { cpf: OTHER_CPF, passport: null, country: null });
+    expect((await post({ password: GOOD, cpf: CPF })).status).toBe(200);
+    expect(store.profiles.get(USER.id)?.cpf).toBe(CPF);
+  });
+
+  it('takes a passport with its country, or both kinds', async () => {
+    const { post, store } = start();
+    expect((await post({ password: GOOD, cpf: CPF, passport: 'ab 123-456', country: 'pt' })).status).toBe(200);
+    expect(store.profiles.get(USER.id)).toMatchObject({ cpf: CPF, passport: 'AB123456', country: 'PT' });
+  });
+
+  it.each([
+    ['an invalid CPF', { cpf: '529.982.247-26' }, 400, 'invalid_cpf'],
+    ['a passport without a country', { passport: 'AB123456' }, 400, 'invalid_country'],
+    ['a passport from Brazil', { passport: 'AB123456', country: 'BR' }, 400, 'invalid_country'],
+  ])('with %s, sets no password and writes no document', async (_name, document, status, error) => {
+    const { post, store, auth } = start();
+    const response = await post({ password: GOOD, ...document });
+    expect(response.status).toBe(status);
+    expect(await body(response)).toEqual({ error });
+    expect(auth.passwords).toEqual([]);
+    expect(store.profiles.get(USER.id)).toMatchObject({ cpf: null, passport: null });
+  });
+
+  it('a weak password is refused before any document is written', async () => {
+    const { post, store } = start();
+    expect(await body(await post({ password: 'curta', cpf: CPF }))).toEqual({ error: 'weak_password' });
+    expect(store.profiles.get(USER.id)?.cpf).toBeNull();
+  });
+
+  it('a document that another account confirmed first is refused, and the password is not set', async () => {
+    const { post, store, auth } = start();
+    store.addProfile(OTHER_USER).cpf = CPF;
+    const response = await post({ password: GOOD, cpf: CPF });
+    expect(response.status).toBe(409);
+    expect(await body(response)).toEqual({ error: 'cpf_in_use', maskedEmail: maskEmail(OTHER_USER.email) });
+    expect(auth.passwords).toEqual([]);
+    expect(store.profiles.get(USER.id)?.cpf).toBeNull();
+  });
+
+  it('asking for an account in someone else’s name locks nothing onto them', async () => {
+    const { deps, store, auth } = start();
+    // Somebody asks for an account for Maria's address with a CPF of their choosing...
+    await handleAccount(
+      call('POST', 'signup', { body: { email: USER.email, fullName: 'Não Sou Eu', cpf: OTHER_CPF, eventSlug: '2027' } }),
+      'signup',
+      deps,
+    );
+    // ...and until Maria says so herself, her account has no document.
+    expect(store.profiles.get(USER.id)).toMatchObject({ cpf: null, passport: null });
+    const token = auth.login(USER);
+    const seen = await body(await handleAccount(call('GET', 'me', { token }), 'me', deps));
+    expect(seen.user).toMatchObject({ documentMissing: true, pendingDocument: { cpf: OTHER_CPF } });
+    // She corrects it on the screen, and that is what is kept.
+    await handleAccount(call('POST', 'password', { token, body: { password: GOOD, cpf: CPF } }), 'password', deps);
+    expect(store.profiles.get(USER.id)?.cpf).toBe(CPF);
+  });
+
+  it('a recovery link sets a new password without touching the document', async () => {
+    const { post, store, auth } = start();
+    store.profiles.get(USER.id)!.cpf = CPF;
+    expect((await post({ password: GOOD })).status).toBe(200);
+    expect(store.profiles.get(USER.id)?.cpf).toBe(CPF);
+    expect(auth.passwords).toHaveLength(1);
+    // And a document sent along that is not the account's is refused, not swapped in.
+    expect(await body(await post({ password: GOOD, cpf: OTHER_CPF }))).toEqual({ error: 'document_locked' });
+    expect(auth.passwords).toHaveLength(1);
+  });
+
+  it('still sets the password of an account whose profile row is missing', async () => {
+    const ctx = setup();
+    const token = ctx.auth.login(USER);
+    const response = await handleAccount(call('POST', 'password', { token, body: { password: GOOD } }), 'password', ctx.deps);
+    expect(response.status).toBe(200);
   });
 });
 

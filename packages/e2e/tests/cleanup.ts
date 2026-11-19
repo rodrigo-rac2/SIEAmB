@@ -78,6 +78,7 @@ export async function leftovers(scope: Scope): Promise<Record<string, number>> {
     submission_authors: await count(`submission_authors?email=like.${like}${age}`),
     event_member_invites: await count(`event_member_invites?email=like.${like}${age}`),
     outbox_emails: await count(`outbox_emails?to_email=like.${like}${age}`),
+    signup_documents: await count(`signup_documents?email=like.${like}${age}`),
   };
   // Accounts at the login service that have no row of ours any more would not show above.
   return Object.fromEntries(Object.entries(found).filter(([, n]) => n > 0));
@@ -108,6 +109,8 @@ export async function removeTestData(scope: Scope): Promise<{ users: number; reg
   await api(`/rest/v1/submission_authors?email=like.${like}${age}`, { method: 'DELETE' });
   await api(`/rest/v1/event_member_invites?email=like.${like}${age}`, { method: 'DELETE' });
   await api(`/rest/v1/outbox_emails?to_email=like.${like}${age}`, { method: 'DELETE' });
+  // The document typed at sign-up by a test address that never confirmed its e-mail (ADR-010).
+  await api(`/rest/v1/signup_documents?email=like.${like}${age}`, { method: 'DELETE' });
 
   await each(registrations, async (slice) => {
     // Payment e-mails and link requests go with the payment and the registration (cascade).

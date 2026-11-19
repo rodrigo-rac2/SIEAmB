@@ -8,6 +8,8 @@ Sending a paper, seeing one's own registration and everything the organisers do 
 
 Rodrigo's decisions (2026-11-16): an account is optional to register and required to submit; a person who comes back with another e-mail must be recognised ("we have a registration under this person, is that you?") and the registration brought into the account, reliably.
 
+> **Changed by ADR-010 (2026-11-19).** Sign-up now also asks who the person is, by CPF or passport (decision 2 said "name and e-mail only"); a document that another account holds is said to be registered, with that account's address masked (decision 4 still holds for addresses, not for documents); and each kind of document is given once, so someone with a CPF may still add a passport (decision 6). The rest stands.
+
 ## Decisions
 
 1. **Supabase Auth holds the accounts and the passwords.** Our tables never store a password. `public.users` mirrors `auth.users` through the trigger that already existed. The browser logs in directly at Supabase Auth; every other account action goes through `/api/v1/account/<action>`, which checks the access token with Supabase on each call.

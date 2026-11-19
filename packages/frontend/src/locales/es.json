@@ -318,7 +318,7 @@
     },
     "signup": {
       "title": "Crear cuenta",
-      "intro": "Informe su nombre y su correo. Enviaremos un enlace para confirmar el correo y elegir la contraseña.",
+      "intro": "Indique su nombre, su correo y su documento. Enviaremos un enlace para confirmar el correo y elegir la contraseña.",
       "submit": "Enviar enlace de confirmación",
       "sentTitle": "Revise su correo",
       "sentBody": "Si {{email}} puede tener una cuenta, enviamos un mensaje con el enlace para continuar."
@@ -379,8 +379,8 @@
       "followPayment": "Ver el pago",
       "registeredOn": "inscripción hecha el {{date}}",
       "profileTitle": "Mis datos",
-      "country": "País del pasaporte (sigla de 2 letras)",
-      "documentHint": "Informe el CPF, o el pasaporte si no tiene CPF. Una vez guardado, el documento solo puede ser modificado por la organización.",
+      "country": "País del pasaporte",
+      "documentHint": "Indique el CPF, el pasaporte con el país que lo emitió, o ambos. Una vez guardado, cada documento solo puede ser cambiado por la organización.",
       "documentLockedHint": "Para corregir el documento, hable con la organización.",
       "saved": "Datos guardados.",
       "suggestionBody": "Encontramos una inscripción en el {{event}} con su documento, hecha con el correo {{email}}. ¿Es suya?",
@@ -398,7 +398,7 @@
       "invalid_name": "Informe su nombre completo.",
       "invalid_cpf": "CPF inválido.",
       "invalid_passport": "Pasaporte inválido.",
-      "invalid_country": "Informe la sigla de 2 letras del país del pasaporte.",
+      "invalid_country": "Seleccione el país del pasaporte.",
       "weak_password": "La contraseña necesita al menos {{min}} caracteres y no puede contener su correo.",
       "too_many_attempts": "Demasiados intentos. Espere un poco e intente de nuevo.",
       "not_logged_in": "Su sesión terminó. Entre de nuevo.",
@@ -409,7 +409,19 @@
       "registration_not_found": "No encontramos esa inscripción.",
       "link_not_found": "Este enlace no es válido.",
       "link_expired": "Este enlace expiró. Pida otro en Mi área.",
-      "cannot_link": "No fue posible unir la inscripción a esa cuenta. Hable con la organización."
+      "cannot_link": "No fue posible unir la inscripción a esa cuenta. Hable con la organización.",
+      "document_required": "Indique el CPF o el pasaporte con su país.",
+      "cpf_in_use": "Este CPF ya está registrado con el correo {{email}}. Entre con ese correo o recupere la contraseña.",
+      "cpf_in_use_plain": "Este CPF ya está registrado en otra cuenta. Entre con el correo que usó o hable con la organización.",
+      "passport_in_use": "Este pasaporte, de este país, ya está registrado con el correo {{email}}. Entre con ese correo o recupere la contraseña.",
+      "passport_in_use_plain": "Este pasaporte, de este país, ya está registrado en otra cuenta. Entre con el correo que usó o hable con la organización."
+    },
+    "document": {
+      "title": "Documento",
+      "hint": "Indique el CPF, el pasaporte con el país que lo emitió, o ambos. Quien tiene CPF indica el CPF. Cada persona tiene una sola cuenta.",
+      "confirm": "Revise el documento indicado cuando se pidió la cuenta y corríjalo si no es el suyo. Una vez guardado, solo la organización puede cambiarlo.",
+      "missingTitle": "Falta indicar su documento",
+      "missingBody": "Para enviar trabajos, indique abajo, en Mis datos, su CPF o su pasaporte con el país."
     }
   },
   "papers": {
@@ -622,7 +634,7 @@
     },
     "people": {
       "role": "Rol",
-      "ownerFieldsHint": "Correo y CPF: solo usted, como dueño(a) del sitio, los cambia. Deje el CPF vacío para quitarlo de la cuenta.",
+      "ownerFieldsHint": "Correo, CPF y pasaporte: solo usted, como dueño(a) del sitio, los cambia. Deje el CPF o el pasaporte vacío para quitarlo de la cuenta.",
       "passwordSet": "Definir contraseña",
       "passwordSetFor": "Definir la contraseña de {{name}}",
       "passwordNew": "Nueva contraseña de {{name}}",
@@ -672,13 +684,15 @@
       "admin_only": "Solo un administrador puede hacer eso.",
       "owner_only": "Solo el dueño del sitio puede hacer eso.",
       "email_in_use": "Ya existe una cuenta con ese correo.",
-      "document_in_use": "Ese CPF ya está en otra cuenta.",
+      "document_in_use": "Ese documento ya está en otra cuenta.",
       "weak_password": "Contraseña débil: use al menos 10 caracteres y no use el correo de la persona.",
       "account_not_found": "Cuenta no encontrada.",
       "account_without_login": "Esa cuenta aún no tiene acceso al sitio.",
       "invalid_name": "Informe el nombre completo.",
       "invalid_email": "Informe un correo válido.",
       "invalid_cpf": "CPF inválido.",
+      "invalid_passport": "Pasaporte inválido.",
+      "invalid_country": "Seleccione el país del pasaporte.",
       "document_required": "Informe el CPF o el pasaporte.",
       "invalid_category": "Elija la categoría.",
       "invalid_status": "Elija la situación.",

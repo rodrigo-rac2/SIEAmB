@@ -2,6 +2,7 @@ import { parseRows } from '../core/rest';
 import type { PaymentStatus } from '../payments/status';
 import {
   DocumentInUseError,
+  type DocumentHolder,
   type AccountNotification,
   type AccountStore,
   type DocumentQuery,
@@ -13,6 +14,7 @@ import {
   type ProfilePatch,
   type RegistrationMatch,
 } from './store';
+import type { PersonDocument } from '../core/document';
 
 const UNIQUE_VIOLATION = '23505';
 
@@ -117,6 +119,8 @@ export class SupabaseAccountStore implements AccountStore {
         ...(init.body
           ? { 'Content-Type': 'application/json', Prefer: 'return=representation' }
           : {}),
+        // What a call asks for itself (an upsert, no rows back) comes last and wins.
+        ...init.headers,
       },
     });
     if (!response.ok) {
@@ -166,6 +170,48 @@ export class SupabaseAccountStore implements AccountStore {
       }
       throw error;
     }
+  }
+
+  async findAccountsByDocument(document: PersonDocument): Promise<DocumentHolder[]> {
+    const filters: string[] = [];
+    if (document.cpf) filters.push(`cpf.eq.${q(document.cpf)}`);
+    if (document.passport && document.country) {
+      filters.push(`and(passport.eq.${q(document.passport)},country.eq.${q(document.country)})`);
+    }
+    if (filters.length === 0) return [];
+    // At most one account per CPF and one per passport: two rows at the very most.
+    return this.request<DocumentHolder[]>(
+      `users?or=(${filters.join(',')})&select=id,email,cpf,passport,country&limit=5`,
+    );
+  }
+
+  async saveSignupDocument(email: string, document: PersonDocument): Promise<void> {
+    await this.request<unknown[]>('signup_documents?on_conflict=email&select=email', {
+      method: 'POST',
+      // The last request for an address replaces the one before.
+      headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
+      body: JSON.stringify({
+        email: email.toLowerCase(),
+        cpf: document.cpf,
+        passport: document.passport,
+        country: document.passport ? document.country : null,
+        created_at: new Date().toISOString(),
+      }),
+    });
+  }
+
+  async getSignupDocument(email: string): Promise<PersonDocument | null> {
+    const rows = await this.request<PersonDocument[]>(
+      `signup_documents?email=eq.${q(email.toLowerCase())}&select=cpf,passport,country&limit=1`,
+    );
+    return rows[0] ?? null;
+  }
+
+  async deleteSignupDocument(email: string): Promise<void> {
+    await this.request<unknown[]>(`signup_documents?email=eq.${q(email.toLowerCase())}`, {
+      method: 'DELETE',
+      headers: { Prefer: 'return=minimal' },
+    });
   }
 
   async linkRegistrationsByEmail(userId: string, email: string): Promise<number> {

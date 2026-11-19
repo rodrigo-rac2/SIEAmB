@@ -74,8 +74,10 @@ export interface PanelMembers {
     email: string;
     fullName: string;
     institution: string | null;
-    /** Sent to the owner only, who is the one who can change it (#272). */
+    /** Sent to the owner only, who is the one who can change them (#272, ADR-010). */
     cpf?: string | null;
+    passport?: string | null;
+    country?: string | null;
     owner: boolean;
     roles: MemberRole[];
     canEdit: boolean;
@@ -98,6 +100,8 @@ const KNOWN_ERRORS = [
   'invalid_name',
   'invalid_email',
   'invalid_cpf',
+  'invalid_passport',
+  'invalid_country',
   'document_required',
   'invalid_category',
   'invalid_status',
@@ -224,7 +228,7 @@ export const updateAccount = (
   token: string,
   slug: string,
   userId: string,
-  data: { fullName: string; institution: string; email?: string; cpf?: string },
+  data: { fullName: string; institution: string; email?: string; cpf?: string; passport?: string; country?: string },
 ) =>
   request<{ ok: true; changed: boolean }>('POST', 'account-update', token, slug, { userId, ...data });
 /** Sends the person the e-mail to choose a new password (#270). */

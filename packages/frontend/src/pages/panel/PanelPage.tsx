@@ -53,6 +53,7 @@ import { NotFoundPage } from '../NotFoundPage';
 import '../../components/registration/RegistrationForm.css';
 import '../account/Account.css';
 import './Panel.css';
+import { CountrySelect } from '../../components/shared/CountrySelect';
 import { Loading, PageLoading } from '../../components/shared/Loading';
 
 export type PanelTab = 'registrations' | 'papers' | 'people' | 'announcements' | 'requests';
@@ -912,7 +913,7 @@ function AccountRow({
   processing: boolean;
   onGive: (role: MemberRole) => void;
   onTake: (role: MemberRole) => void;
-  onSave: (data: { fullName: string; institution: string; email?: string; cpf?: string }) => Promise<boolean>;
+  onSave: (data: { fullName: string; institution: string; email?: string; cpf?: string; passport?: string; country?: string }) => Promise<boolean>;
   onPasswordLink: () => void;
   onPasswordSet: (password: string) => Promise<boolean>;
 }) {
@@ -920,6 +921,8 @@ function AccountRow({
   const [mode, setMode] = useState<'view' | 'edit' | 'password' | 'set-password'>('view');
   const [email, setEmail] = useState(account.email);
   const [cpf, setCpf] = useState(account.cpf ? formatCpf(account.cpf) : '');
+  const [passport, setPassport] = useState(account.passport ?? '');
+  const [country, setCountry] = useState(account.country ?? '');
   const [password, setPassword] = useState('');
   const [chosen, setChosen] = useState<MemberRole | ''>('');
   const [fullName, setFullName] = useState(account.fullName);
@@ -931,6 +934,8 @@ function AccountRow({
     setInstitution(account.institution ?? '');
     setEmail(account.email);
     setCpf(account.cpf ? formatCpf(account.cpf) : '');
+    setPassport(account.passport ?? '');
+    setCountry(account.country ?? '');
     setMode('edit');
   };
   return (
@@ -944,7 +949,8 @@ function AccountRow({
               void onSave({
                 fullName: fullName.trim(),
                 institution: institution.trim(),
-                ...(owner ? { email: email.trim(), cpf: cpf.trim() } : {}),
+                // An empty CPF or passport takes it off the account; a passport goes with its country.
+                ...(owner ? { email: email.trim(), cpf: cpf.trim(), passport: passport.trim(), ...(passport.trim() ? { country } : {}) } : {}),
               }).then((ok) => ok && setMode('view'));
             }}
           >
@@ -966,13 +972,31 @@ function AccountRow({
                   {t('registration.cpf')}
                   <input value={cpf} onChange={(e) => setCpf(maskCpf(e.target.value))} inputMode="numeric" maxLength={14} placeholder="000.000.000-00" />
                 </label>
+                <label>
+                  {t('registration.passport')}
+                  <input
+                    value={passport}
+                    onChange={(e) => {
+                      setPassport(e.target.value);
+                      if (!e.target.value.trim()) setCountry('');
+                    }}
+                    maxLength={30}
+                    autoCapitalize="characters"
+                  />
+                </label>
+                {passport.trim() && (
+                  <label>
+                    {t('account.area.country')}
+                    <CountrySelect value={country} onChange={setCountry} />
+                  </label>
+                )}
                 <span className="panel__meta">{t('panel.people.ownerFieldsHint')}</span>
               </>
             ) : (
               <span className="panel__meta">{account.email}</span>
             )}
             <span>
-              <button className="account__button" type="submit" disabled={busy || fullName.trim().length < 3 || (owner && (!email.trim() || ![0, 11].includes(cpf.replace(/\D/g, '').length)))}>
+              <button className="account__button" type="submit" disabled={busy || fullName.trim().length < 3 || (owner && (!email.trim() || ![0, 11].includes(cpf.replace(/\D/g, '').length) || (passport.trim() !== '' && !country)))}>
                 {t('common.save')}
               </button>{' '}
               <button className="account__button account__button--quiet" type="button" onClick={() => setMode('view')}>

@@ -103,14 +103,28 @@ test.describe('accounts @accounts', () => {
   test('create an account, choose the password, register, log out and back in', async ({ page }) => {
     const email = unique('conta');
     made.push(email);
+    const cpf = randomCpf();
+    const typedCpf = `${cpf.slice(0, 3)}.${cpf.slice(3, 6)}.${cpf.slice(6, 9)}-${cpf.slice(9)}`;
 
-    // 1. Ask for the account: only name and e-mail, and the same answer for any address.
+    // 1. Ask for the account: name, e-mail and who the person is (ADR-010), never a password.
     await page.goto(`/${EVENT}/conta/criar`);
     await expect(page.getByLabel(/Senha/)).toHaveCount(0);
     await page.getByLabel('Nome completo').fill('Conta de Teste E2E');
     await page.getByLabel('E-mail').fill(email);
+    // Without a document nothing is sent, and the page says why.
+    await page.getByRole('button', { name: 'Enviar link de confirmação' }).click();
+    await expect(page.getByRole('alert')).toHaveText('Informe o CPF ou o passaporte com o país.');
+    // A CPF with wrong check digits is not one.
+    await page.getByLabel('CPF').fill(`${cpf.slice(0, 10)}${(Number(cpf[10]) + 1) % 10}`);
+    await page.getByRole('button', { name: 'Enviar link de confirmação' }).click();
+    await expect(page.getByRole('alert')).toHaveText('CPF inválido.');
+    await page.getByLabel('CPF').fill(cpf);
+    await expect(page.getByLabel('CPF')).toHaveValue(typedCpf);
     await page.getByRole('button', { name: 'Enviar link de confirmação' }).click();
     await expect(page.getByRole('heading', { name: 'Confira seu e-mail' })).toBeVisible();
+    // The document waits under the address; the account has none until the e-mail is confirmed.
+    expect(await admin<{ cpf: string | null }[]>(`/rest/v1/signup_documents?email=eq.${encodeURIComponent(email)}&select=cpf`)).toEqual([{ cpf }]);
+    expect(await admin<{ cpf: string | null }[]>(`/rest/v1/users?email=eq.${encodeURIComponent(email)}&select=cpf`)).toEqual([{ cpf: null }]);
 
     // 2. Before the link is used, nobody can log in to it.
     await logIn(page, email, 'qualquer-senha-aqui');
@@ -122,6 +136,8 @@ test.describe('accounts @accounts', () => {
       body: JSON.stringify({ type: 'signup', email, password: randomBytes(24).toString('base64url') }),
     });
     await page.goto(`/${EVENT}/conta/confirmar?token_hash=${link.hashed_token}&type=signup`);
+    // The document typed when the account was asked for is shown, to confirm or correct.
+    await expect(page.getByTestId('confirm-document').getByLabel('CPF')).toHaveValue(typedCpf);
     await page.getByLabel('Nova senha').fill('curta');
     await page.getByLabel('Repita a senha').fill('curta');
     await page.getByRole('button', { name: 'Salvar senha' }).click();
@@ -136,13 +152,20 @@ test.describe('accounts @accounts', () => {
     await expect(page.getByTestId('area-papers').getByRole('link', { name: 'Enviar novo trabalho' })).toHaveAttribute('href', `/${EVENT}/meus-trabalhos/novo`);
     await expect(page.getByTestId('no-registration')).toBeVisible();
     await expect(page.getByLabel('Nome completo')).toHaveValue('Conta de Teste E2E');
+    // The document is the account's now, shown and locked, and nothing waits any more.
+    await expect(page.getByLabel('CPF')).toHaveValue(typedCpf);
+    await expect(page.getByLabel('CPF')).toBeDisabled();
+    await expect(page.getByTestId('document-missing')).toHaveCount(0);
+    expect(await admin<{ cpf: string | null }[]>(`/rest/v1/users?email=eq.${encodeURIComponent(email)}&select=cpf`)).toEqual([{ cpf }]);
+    expect(await admin<unknown[]>(`/rest/v1/signup_documents?email=eq.${encodeURIComponent(email)}&select=email`)).toEqual([]);
 
     // 5. Register: the form uses the account's e-mail and does not let it be changed.
     await page.getByRole('link', { name: 'Fazer a inscrição' }).click();
     const formEmail = page.locator('#email');
     await expect(formEmail).toHaveValue(email);
     await expect(formEmail).toHaveAttribute('readonly', '');
-    await page.locator('#cpf').fill(randomCpf());
+    // The CPF comes from the account: the registration and the account carry the same document.
+    await expect(page.locator('#cpf')).toHaveValue(typedCpf);
     await page.getByRole('checkbox').check();
     await page.getByRole('button', { name: /Enviar inscrição/ }).click();
     await expect(page.getByRole('status').first()).toBeVisible();

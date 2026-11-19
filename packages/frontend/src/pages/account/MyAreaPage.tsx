@@ -1,4 +1,5 @@
-import { formatCpf, maskCpf } from '@sieamb/shared';
+import { formatCpf, isPassportCountry, isValidCpf, isValidPassport, maskCpf } from '@sieamb/shared';
+import { DocumentFields, type DocumentValue } from '../../components/account/DocumentFields';
 import { Processing } from '../../components/shared/Processing';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -8,7 +9,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useEvent } from '../../contexts/EventContext';
 import { useLocale } from '../../hooks/useLocale';
 import {
-  AccountError,
+  accountErrorText,
   fetchAccount,
   requestRegistrationLink,
   saveProfile,
@@ -133,9 +134,21 @@ function ProfileForm({
   const { user } = account;
   const [fullName, setFullName] = useState(user.fullName);
   const [institution, setInstitution] = useState(user.institution ?? '');
-  const [cpf, setCpf] = useState('');
-  const [passport, setPassport] = useState('');
-  const [country, setCountry] = useState('');
+  // Each kind of document is given once (ADR-010): what the account has is shown and cannot
+  // be changed; what it lacks can be typed. An account from before starts with what was
+  // typed when it was asked for, if anything.
+  const locked = { cpf: Boolean(user.cpf), passport: Boolean(user.passport) };
+  const shown = useCallback(
+    (): DocumentValue => ({
+      cpf: user.cpf ? formatCpf(user.cpf) : maskCpf(user.pendingDocument?.cpf ?? ''),
+      passport: user.passport ?? user.pendingDocument?.passport ?? '',
+      country: user.passport ? user.country : (user.pendingDocument?.country ?? ''),
+    }),
+    [user.cpf, user.passport, user.country, user.pendingDocument],
+  );
+  const [document, setDocument] = useState<DocumentValue>(shown);
+  // What was just saved comes back as the account's, locked.
+  useEffect(() => setDocument(shown()), [shown]);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -144,15 +157,20 @@ function ProfileForm({
     event.preventDefault();
     setError(null);
     setSaved(false);
-    setBusy(true);
     const input: ProfileInput = { fullName: fullName.trim(), institution: institution.trim() };
-    if (!user.documentLocked) {
-      if (cpf.trim()) input.cpf = cpf;
-      else if (passport.trim()) {
-        input.passport = passport;
-        input.country = country;
-      }
+    // Only what the account does not have yet is sent, and checked first by the server's own rules.
+    const passport = document.passport.trim();
+    if (!locked.cpf && document.cpf.trim()) {
+      if (!isValidCpf(document.cpf)) return setError(t('account.errors.invalid_cpf'));
+      input.cpf = document.cpf;
     }
+    if (!locked.passport && passport) {
+      if (!isValidPassport(passport)) return setError(t('account.errors.invalid_passport'));
+      if (!isPassportCountry(document.country)) return setError(t('account.errors.invalid_country'));
+      input.passport = passport;
+      input.country = document.country;
+    }
+    setBusy(true);
     const problem = await onSave(input);
     setBusy(false);
     if (problem) setError(problem);
@@ -185,60 +203,10 @@ function ProfileForm({
           onChange={(e) => setInstitution(e.target.value)}
         />
       </div>
-      {user.documentLocked ? (
-        <div className="reg-form__field">
-          <label htmlFor="profile-document">
-            {user.cpf ? t('registration.cpf') : t('registration.passport')}
-          </label>
-          <input
-            id="profile-document"
-            type="text"
-            value={user.cpf ? formatCpf(user.cpf) : `${user.passport ?? ''} (${user.country})`}
-            readOnly
-            disabled
-          />
-          <p className="reg-form__hint">{t('account.area.documentLockedHint')}</p>
-        </div>
-      ) : (
-        <>
-          <div className="reg-form__row">
-            <div className="reg-form__field">
-              <label htmlFor="profile-cpf">{t('registration.cpf')}</label>
-              <input
-                id="profile-cpf"
-                type="text"
-                inputMode="numeric"
-                placeholder="000.000.000-00"
-                value={cpf}
-                onChange={(e) => setCpf(maskCpf(e.target.value))}
-              />
-            </div>
-            <div className="reg-form__field">
-              <label htmlFor="profile-passport">{t('registration.passport')}</label>
-              <input
-                id="profile-passport"
-                type="text"
-                value={passport}
-                onChange={(e) => setPassport(e.target.value)}
-              />
-            </div>
-          </div>
-          {passport.trim() && !cpf.trim() && (
-            <div className="reg-form__field">
-              <label htmlFor="profile-country">{t('account.area.country')}</label>
-              <input
-                id="profile-country"
-                type="text"
-                maxLength={2}
-                placeholder="PT"
-                value={country}
-                onChange={(e) => setCountry(e.target.value.toUpperCase())}
-              />
-            </div>
-          )}
-          <p className="reg-form__hint">{t('account.area.documentHint')}</p>
-        </>
-      )}
+      <DocumentFields idPrefix="profile" value={document} onChange={setDocument} locked={locked} disabled={busy} />
+      <p className="reg-form__hint">
+        {locked.cpf && locked.passport ? t('account.area.documentLockedHint') : t('account.area.documentHint')}
+      </p>
       {error && (
         <p className="reg-form__error reg-form__error--global" role="alert">
           {error}
@@ -297,10 +265,7 @@ export function MyAreaPage() {
   }, [accessToken, eventSlug]);
   const [error, setError] = useState<string | null>(null);
 
-  const message = useCallback(
-    (err: unknown) => t(`account.errors.${err instanceof AccountError ? err.code : 'generic'}`),
-    [t],
-  );
+  const message = useCallback((err: unknown) => accountErrorText(t, err), [t]);
 
   useEffect(() => {
     if (!accessToken) return;
@@ -372,6 +337,16 @@ export function MyAreaPage() {
                 </p>
               )}
 
+              {/* An account from before documents were asked for: nothing can be sent until it says who the person is (ADR-010). */}
+              {account.user.documentMissing && (
+                <div className="account__notice" role="status" data-testid="document-missing">
+                  <h2>{t('account.document.missingTitle')}</h2>
+                  <p>
+                    {t('account.document.missingBody')} <a href="#meus-dados">{t('account.area.profileTitle')}</a>
+                  </p>
+                </div>
+              )}
+
               {/* Papers come first: most people open an account to send one (#246). */}
               <h2>{t('papers.title')}</h2>
               <div className="account__card" data-testid="area-papers">
@@ -411,7 +386,9 @@ export function MyAreaPage() {
                 </>
               )}
 
-              <h2 className="account__section">{t('account.area.profileTitle')}</h2>
+              <h2 className="account__section" id="meus-dados">
+                {t('account.area.profileTitle')}
+              </h2>
               <ProfileForm account={account} onSave={save} />
 
               {/* Not registered yet: a reminder at the end of the page, not the first thing on it (#246). */}

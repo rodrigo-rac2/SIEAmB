@@ -4,7 +4,10 @@ import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { PageHeader } from '../../components/shared/PageHeader';
 import { useAuth, type LinkType } from '../../contexts/AuthContext';
-import { AccountError, PASSWORD_MIN, savePassword } from '../../services/account';
+import { maskCpf } from '@sieamb/shared';
+import { DocumentFields, NO_DOCUMENT, documentInput, documentProblem } from '../../components/account/DocumentFields';
+import { Loading } from '../../components/shared/Loading';
+import { PASSWORD_MIN, accountErrorText, fetchAccount, savePassword } from '../../services/account';
 import { NotFoundPage } from '../NotFoundPage';
 import '../../components/registration/RegistrationForm.css';
 import './Account.css';
@@ -15,6 +18,10 @@ import { useAccountPaths } from './useAccountPaths';
  * `/:event/conta/confirmar` (new account) and `/:event/conta/nova-senha` (forgotten
  * password): the link from the e-mail logs the person in, and the password is
  * chosen here. Until it is, the account has a password nobody knows.
+ *
+ * A new account also confirms here who the person is (ADR-010): the document typed when
+ * the account was asked for is shown, to keep or to correct, and becomes the account's
+ * with the password. Only now, because only now is it known who reads this e-mail.
  */
 export function PasswordPage({ type }: { type: LinkType }) {
   const { t } = useTranslation();
@@ -29,8 +36,31 @@ export function PasswordPage({ type }: { type: LinkType }) {
   const [repeat, setRepeat] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // Whether this account still has to say who the person is, and what is typed for it.
+  // `null` until the account has answered.
+  const [needsDocument, setNeedsDocument] = useState<boolean | null>(type === 'signup' ? null : false);
+  const [document, setDocument] = useState(NO_DOCUMENT);
 
-  const { enabled } = auth;
+  const { enabled, accessToken } = auth;
+  useEffect(() => {
+    if (type !== 'signup' || link !== 'ok' || !accessToken) return;
+    let active = true;
+    fetchAccount(accessToken)
+      .then(({ user }) => {
+        if (!active) return;
+        const waiting = user.pendingDocument;
+        if (user.documentMissing && waiting) {
+          setDocument({ cpf: maskCpf(waiting.cpf ?? ''), passport: waiting.passport ?? '', country: waiting.country ?? '' });
+        }
+        setNeedsDocument(Boolean(user.documentMissing));
+      })
+      // The account could not be read: ask for the document anyway, the server decides.
+      .catch(() => active && setNeedsDocument(true));
+    return () => {
+      active = false;
+    };
+  }, [type, link, accessToken]);
+
   useEffect(() => {
     if (!tokenHash || !enabled) return;
     let active = true;
@@ -53,9 +83,11 @@ export function PasswordPage({ type }: { type: LinkType }) {
     if (password.length < PASSWORD_MIN) return setError(t('account.errors.weak_password', { min: PASSWORD_MIN }));
     if (password !== repeat) return setError(t('account.password.mismatch'));
     if (!auth.accessToken) return setError(t('account.errors.not_logged_in'));
+    const problem = needsDocument ? documentProblem(document) : null;
+    if (problem) return setError(t(`account.errors.${problem}`));
     setBusy(true);
     try {
-      await savePassword(auth.accessToken, password);
+      await savePassword(auth.accessToken, password, needsDocument ? documentInput(document) : {});
       // Changing the password ends every session of the account, this one included.
       if (auth.email) await auth.signIn(auth.email, password);
       // On to where the person was going before the site asked for an account, if anywhere.
@@ -63,8 +95,7 @@ export function PasswordPage({ type }: { type: LinkType }) {
       const remembered = takeNext(paths.area);
       navigate(safeNext(params.get('next'), remembered), { replace: true });
     } catch (err) {
-      const code = err instanceof AccountError ? err.code : 'generic';
-      setError(t(`account.errors.${code}`, { min: PASSWORD_MIN }));
+      setError(accountErrorText(t, err, { min: PASSWORD_MIN }));
       setBusy(false);
     }
   };
@@ -87,10 +118,18 @@ export function PasswordPage({ type }: { type: LinkType }) {
               </p>
             </div>
           )}
-          {link === 'ok' && (
+          {link === 'ok' && needsDocument === null && <Loading />}
+          {link === 'ok' && needsDocument !== null && (
             <>
               <p>{t(`${key}.intro`)}</p>
               <form className="reg-form" onSubmit={(e) => void submit(e)} noValidate>
+                {needsDocument && (
+                  <fieldset className="account__fieldset" data-testid="confirm-document">
+                    <legend>{t('account.document.title')}</legend>
+                    <DocumentFields idPrefix="confirm" value={document} onChange={setDocument} disabled={busy} />
+                    <p className="reg-form__hint">{t('account.document.confirm')}</p>
+                  </fieldset>
+                )}
                 <div className="reg-form__field">
                   <label htmlFor="new-password">{t('account.password.new')}</label>
                   <PasswordInput

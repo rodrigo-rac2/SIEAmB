@@ -318,7 +318,7 @@
     },
     "signup": {
       "title": "创建账户",
-      "intro": "请填写您的姓名和邮箱。我们将发送一个链接，用于确认邮箱并设置密码。",
+      "intro": "请填写您的姓名、电子邮箱和证件。我们将发送链接，用于确认邮箱并设置密码。",
       "submit": "发送确认链接",
       "sentTitle": "请查看您的邮箱",
       "sentBody": "如果 {{email}} 可以创建账户，我们已发送一封包含后续链接的邮件。"
@@ -379,8 +379,8 @@
       "followPayment": "查看付款",
       "registeredOn": "注册于 {{date}}",
       "profileTitle": "我的资料",
-      "country": "护照签发国（两位字母代码）",
-      "documentHint": "请填写 CPF；如果没有 CPF，请填写护照。保存后，证件只能由组委会修改。",
+      "country": "护照签发国家",
+      "documentHint": "请填写 CPF，或护照及其签发国家，也可两者都填。保存后，每种证件只能由组委会修改。",
       "documentLockedHint": "如需更正证件，请联系组委会。",
       "saved": "资料已保存。",
       "suggestionBody": "我们发现了一条使用您的证件在 {{event}} 的注册，注册邮箱为 {{email}}。这是您的吗？",
@@ -398,7 +398,7 @@
       "invalid_name": "请填写您的全名。",
       "invalid_cpf": "CPF 无效。",
       "invalid_passport": "护照无效。",
-      "invalid_country": "请填写护照签发国的两位字母代码。",
+      "invalid_country": "请选择护照的签发国家。",
       "weak_password": "密码至少需要 {{min}} 个字符，且不能包含您的邮箱。",
       "too_many_attempts": "尝试次数过多。请稍等后重试。",
       "not_logged_in": "您的会话已结束。请重新登录。",
@@ -409,7 +409,19 @@
       "registration_not_found": "未找到该注册。",
       "link_not_found": "此链接无效。",
       "link_expired": "此链接已过期。请在“我的主页”中重新申请。",
-      "cannot_link": "无法将注册关联到该账户。请联系组委会。"
+      "cannot_link": "无法将注册关联到该账户。请联系组委会。",
+      "document_required": "请填写 CPF，或护照及其签发国家。",
+      "cpf_in_use": "该 CPF 已用邮箱 {{email}} 注册。请用该邮箱登录或找回密码。",
+      "cpf_in_use_plain": "该 CPF 已在另一个账户注册。请用您当时使用的邮箱登录，或联系组委会。",
+      "passport_in_use": "该国家的这本护照已用邮箱 {{email}} 注册。请用该邮箱登录或找回密码。",
+      "passport_in_use_plain": "该国家的这本护照已在另一个账户注册。请用您当时使用的邮箱登录，或联系组委会。"
+    },
+    "document": {
+      "title": "证件",
+      "hint": "请填写 CPF，或护照及其签发国家，也可两者都填。有 CPF 的请填写 CPF。每人只能有一个账户。",
+      "confirm": "请核对申请账户时填写的证件，如不是您的请更正。保存后只能由组委会修改。",
+      "missingTitle": "尚未填写证件",
+      "missingBody": "如需投稿，请在下方“我的资料”中填写您的 CPF 或护照及其签发国家。"
     }
   },
   "papers": {
@@ -622,7 +634,7 @@
     },
     "people": {
       "role": "角色",
-      "ownerFieldsHint": "电子邮箱和 CPF：只有您作为网站所有者可以修改。将 CPF 留空即可从账户中移除。",
+      "ownerFieldsHint": "电子邮箱、CPF 和护照：只有您作为网站所有者可以修改。将 CPF 或护照留空即可从账户中移除。",
       "passwordSet": "设置密码",
       "passwordSetFor": "设置 {{name}} 的密码",
       "passwordNew": "{{name}} 的新密码",
@@ -672,13 +684,15 @@
       "admin_only": "只有管理员可以执行此操作。",
       "owner_only": "只有网站所有者可以执行此操作。",
       "email_in_use": "已存在使用该电子邮箱的账户。",
-      "document_in_use": "该 CPF 已用于其他账户。",
+      "document_in_use": "该证件已用于其他账户。",
       "weak_password": "密码太弱：请至少使用 10 个字符，且不要使用本人的电子邮箱。",
       "account_not_found": "未找到账户。",
       "account_without_login": "该账户尚无法登录网站。",
       "invalid_name": "请填写全名。",
       "invalid_email": "请填写有效的邮箱。",
       "invalid_cpf": "CPF 无效。",
+      "invalid_passport": "护照无效。",
+      "invalid_country": "请选择护照的签发国家。",
       "document_required": "请填写 CPF 或护照。",
       "invalid_category": "请选择类别。",
       "invalid_status": "请选择状态。",

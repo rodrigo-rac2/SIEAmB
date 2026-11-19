@@ -1,3 +1,4 @@
+import type { PersonDocument } from '../core/document';
 import type { PaymentStatus } from '../payments/status';
 
 export interface Profile {
@@ -6,6 +7,7 @@ export interface Profile {
   fullName: string;
   cpf: string | null;
   passport: string | null;
+  /** Of the passport; means nothing without one (the column is never empty). */
   country: string;
   institution: string | null;
 }
@@ -67,6 +69,15 @@ export interface DocumentQuery {
   country?: string | null;
 }
 
+/** An account as far as its document goes: enough to tell who holds a CPF or a passport. */
+export interface DocumentHolder {
+  id: string;
+  email: string;
+  cpf: string | null;
+  passport: string | null;
+  country: string;
+}
+
 /** Thrown when the CPF or passport already belongs to another account. */
 export class DocumentInUseError extends Error {
   constructor() {
@@ -90,6 +101,17 @@ export interface AccountStore {
 
   getProfile(userId: string): Promise<Profile | null>;
   updateProfile(userId: string, patch: ProfilePatch): Promise<Profile>;
+
+  /** The accounts that hold this CPF, or this passport with its country. Empty for an empty document. */
+  findAccountsByDocument(document: PersonDocument): Promise<DocumentHolder[]>;
+
+  /**
+   * What was typed when an account was asked for (ADR-010): it waits by address until the
+   * e-mail is confirmed. One per address; a new one replaces the one before.
+   */
+  saveSignupDocument(email: string, document: PersonDocument): Promise<void>;
+  getSignupDocument(email: string): Promise<PersonDocument | null>;
+  deleteSignupDocument(email: string): Promise<void>;
 
   /**
    * Gives the account every registration made with its (confirmed) e-mail that has

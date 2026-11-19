@@ -1,4 +1,5 @@
 // Test helpers for the account handlers. Not imported by runtime code.
+import type { PersonDocument } from '../core/document';
 import type { Mailer, OutgoingMail } from '../payments/notifications';
 import type { AuthGateway, AuthUser, SignupStart } from './auth';
 import type { AccountDeps } from './handlers';
@@ -23,6 +24,17 @@ export const OLD_EVENT: EventRef = { id: 'ev-2025', slug: '2025', name: 'I SIEAm
 export const CPF = '52998224725';
 export const OTHER_CPF = '11144477735';
 
+/** A CPF with valid check digits made from any nine digits, for tests that need many different ones. */
+export function cpfFrom(nine: string): string {
+  const digit = (base: string): number => {
+    const sum = [...base].reduce((acc, d, i) => acc + Number(d) * (base.length + 1 - i), 0);
+    const rest = (sum * 10) % 11;
+    return rest === 10 ? 0 : rest;
+  };
+  const first = digit(nine);
+  return `${nine}${first}${digit(`${nine}${first}`)}`;
+}
+
 export interface FakeRegistration extends RegistrationMatch {
   cpf: string | null;
   passport: string | null;
@@ -41,6 +53,8 @@ export class FakeAccountStore implements AccountStore {
   registrations: FakeRegistration[] = [];
   links: (LinkRequest & { tokenHash: string })[] = [];
   hits = new Map<string, number>();
+  /** What waits for a confirmed e-mail, by address. */
+  signupDocuments = new Map<string, PersonDocument>();
 
   addProfile(user: AuthUser, fullName = 'Maria Clara de Souza'): Profile {
     const profile: Profile = {
@@ -90,11 +104,34 @@ export class FakeAccountStore implements AccountStore {
   async updateProfile(userId: string, patch: ProfilePatch) {
     const profile = this.profiles.get(userId);
     if (!profile) throw new Error('profile_not_found');
-    if (patch.cpf && [...this.profiles.values()].some((p) => p.id !== userId && p.cpf === patch.cpf)) {
+    const others = [...this.profiles.values()].filter((p) => p.id !== userId);
+    // One account per CPF, and one per passport with its country, as in the database.
+    if (patch.cpf && others.some((p) => p.cpf === patch.cpf)) throw new DocumentInUseError();
+    if (patch.passport && others.some((p) => p.passport === patch.passport && p.country === (patch.country ?? profile.country))) {
       throw new DocumentInUseError();
     }
     Object.assign(profile, patch);
     return { ...profile };
+  }
+  async findAccountsByDocument(document: PersonDocument) {
+    if (!document.cpf && !document.passport) return [];
+    return [...this.profiles.values()]
+      .filter(
+        (p) =>
+          (document.cpf && p.cpf === document.cpf) ||
+          (document.passport && p.passport === document.passport && p.country === document.country),
+      )
+      .map(({ id, email, cpf, passport, country }) => ({ id, email, cpf, passport, country }));
+  }
+  async saveSignupDocument(email: string, document: PersonDocument) {
+    this.signupDocuments.set(email.toLowerCase(), { ...document });
+  }
+  async getSignupDocument(email: string) {
+    const waiting = this.signupDocuments.get(email.toLowerCase());
+    return waiting ? { ...waiting } : null;
+  }
+  async deleteSignupDocument(email: string) {
+    this.signupDocuments.delete(email.toLowerCase());
   }
   async linkRegistrationsByEmail(userId: string, email: string) {
     let linked = 0;
