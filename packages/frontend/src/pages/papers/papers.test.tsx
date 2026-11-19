@@ -788,6 +788,16 @@ describe('SubmissionsPage', () => {
     expect(calls).toEqual([]);
   });
 
+  it('an edition with no submission rules is not asked about: no request, no waiting, no "could not check" (#339)', () => {
+    const calls = stubApi({ rules: { status: 404, body: { error: 'event_not_found' } } });
+    mount('/2025/submissoes', '/:eventSlug/submissoes', <SubmissionsPage />);
+    // Drawn at once: there is no answer to wait for.
+    expect(screen.getByRole('heading', { name: 'As submissões abrem em breve' })).toBeInTheDocument();
+    expect(screen.queryByTestId('submissions-loading')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('submissions-unknown')).not.toBeInTheDocument();
+    expect(calls).toEqual([]);
+  });
+
   it('offers to send a paper when submissions are open', async () => {
     stubApi({ rules: { body: { state: 'open', opensAt: '', closesAt: '' } } });
     mount(...PAGE, <SubmissionsPage />);

@@ -9,7 +9,7 @@ import { useContent } from '../hooks/useContent';
 import { useLocale, useLocalized } from '../hooks/useLocale';
 import { assetUrl } from '../lib/assets';
 import { accountsEnabled } from '../services/account';
-import { fetchWindow, type WindowState } from '../services/submissions';
+import { fetchWindow, rulesForEvent, type WindowState } from '../services/submissions';
 import './HomePage.css';
 import { Loading } from '../components/shared/Loading';
 
@@ -43,28 +43,35 @@ export function HomePage() {
   // Newest call of the edition drives the strip under the hero.
   const editais = useContent('getEditais', event?.id) ?? [];
   const edital = [...editais].sort((a, b) => b.publishedAt.localeCompare(a.publishedAt))[0] ?? null;
-  // Whether papers can be sent right now, and until when (#306). Null where the system is off.
-  const [papers, setPapers] = useState<{ state: WindowState; closesAt: string } | null>(null);
-  const [papersUnknown, setPapersUnknown] = useState(false);
+  // Only an edition with submission rules has a window to ask about: the archive of an older
+  // one has nothing to wait for (#339).
+  const asks = accountsEnabled() && Boolean(event && rulesForEvent(event.id));
+  // Whether papers can be sent right now, and until when (#306). The answer belongs to the
+  // edition it was asked for; `window` is null when the server could not say.
+  const [answer, setAnswer] = useState<{ slug: string; window: { state: WindowState; closesAt: string } | null } | null>(null);
 
   useEffect(() => {
-    if (!event || !accountsEnabled()) return;
+    if (!event || !asks) return;
     let active = true;
-    fetchWindow(event.slug)
-      .then((w) => active && setPapers(w))
+    const slug = event.slug;
+    fetchWindow(slug)
+      .then((window) => active && setAnswer({ slug, window }))
       // Without the answer the page stays as it is without submissions: nothing is promised.
-      .catch(() => active && setPapersUnknown(true));
+      .catch(() => active && setAnswer({ slug, window: null }));
     return () => {
       active = false;
     };
-  }, [event]);
+  }, [event, asks]);
 
   if (!event) return null;
   const base = `/${event.slug}`;
+  // What another edition was told says nothing about this one.
+  const told = asks && answer?.slug === event.slug ? answer : null;
+  const papers = told?.window ?? null;
   const papersOpen = papers?.state === 'open';
   // Asked and not answered yet. Until then the page shows neither "Edital publicado" nor
   // "Submissões abertas", so that neither is drawn only to be replaced by the other (#324).
-  const papersPending = accountsEnabled() && !papers && !papersUnknown;
+  const papersPending = asks && !told;
 
   const pdf = edital?.attachments.find((f) => f.format === 'pdf');
 
