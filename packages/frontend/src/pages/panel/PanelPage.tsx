@@ -841,6 +841,12 @@ function PapersTab({ token, slug, message }: TabProps) {
                   {s.authors.map((a) => (
                     <span key={a.position}>
                       {a.fullName} <span className="panel__meta">({a.email})</span>{' '}
+                      {/* Who the author is (ADR-010): the server sends it to administrators only. */}
+                      {(a.cpf || a.passport) && (
+                        <span className="panel__meta" data-testid="author-document">
+                          {[a.cpf ? `CPF ${formatCpf(a.cpf)}` : null, a.passport ? `${a.passport} (${a.country ?? ''})` : null].filter(Boolean).join(' · ')}{' '}
+                        </span>
+                      )}
                       <span className="panel__meta" data-testid="author-registration">
                         {a.registration ? t(`panel.states.${a.registration}`) : t('panel.papers.notRegistered')}
                       </span>

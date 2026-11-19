@@ -32,7 +32,7 @@ interface LocaleCopy {
 const COPY: Record<'pt-BR' | 'en' | 'es' | 'zh-CN', LocaleCopy> = {
   'pt-BR': {
     greeting: (name) => (name ? `Olá, ${name}.` : 'Olá.'),
-    noAccount: 'Você ainda não tem conta no site com este e-mail. Crie uma, com este mesmo e-mail, para acompanhar o trabalho.',
+    noAccount: 'Você ainda não tem conta no site com este e-mail. Quem enviou o trabalho informou seu nome, este e-mail e seu documento (CPF ou passaporte). Para acompanhar o trabalho, crie uma conta com este mesmo e-mail e com o seu documento.',
     createAccount: 'Criar conta com este e-mail',
     signature: (event) => `Comissão organizadora do ${event}`,
     kinds: {
@@ -65,7 +65,7 @@ const COPY: Record<'pt-BR' | 'en' | 'es' | 'zh-CN', LocaleCopy> = {
   },
   en: {
     greeting: (name) => (name ? `Hello, ${name}.` : 'Hello.'),
-    noAccount: 'You do not have an account on the website with this e-mail yet. Create one, with this same e-mail, to follow the paper.',
+    noAccount: 'You do not have an account on the website with this e-mail yet. Whoever sent the paper gave your name, this e-mail and your document (CPF or passport). To follow the paper, create an account with this same e-mail and with your document.',
     createAccount: 'Create an account with this e-mail',
     signature: (event) => `${event} organising committee`,
     kinds: {
@@ -98,7 +98,7 @@ const COPY: Record<'pt-BR' | 'en' | 'es' | 'zh-CN', LocaleCopy> = {
   },
   es: {
     greeting: (name) => (name ? `Hola, ${name}.` : 'Hola.'),
-    noAccount: 'Todavía no tiene una cuenta en el sitio con este correo. Cree una, con este mismo correo, para seguir el trabajo.',
+    noAccount: 'Todavía no tiene una cuenta en el sitio con este correo. Quien envió el trabajo indicó su nombre, este correo y su documento (CPF o pasaporte). Para seguir el trabajo, cree una cuenta con este mismo correo y con su documento.',
     createAccount: 'Crear una cuenta con este correo',
     signature: (event) => `Comisión organizadora del ${event}`,
     kinds: {
@@ -131,7 +131,7 @@ const COPY: Record<'pt-BR' | 'en' | 'es' | 'zh-CN', LocaleCopy> = {
   },
   'zh-CN': {
     greeting: (name) => (name ? `${name}，您好。` : '您好。'),
-    noAccount: '您尚未使用此电子邮箱在网站注册账户。请使用同一电子邮箱创建账户，以便跟进稿件。',
+    noAccount: '您尚未使用此电子邮箱在网站注册账户。投稿人填写了您的姓名、此电子邮箱和您的证件（CPF 或护照）。如需跟进稿件，请使用同一电子邮箱和您的证件创建账户。',
     createAccount: '使用此电子邮箱创建账户',
     signature: (event) => `${event} 组委会`,
     kinds: {

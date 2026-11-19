@@ -104,6 +104,19 @@ const PEOPLE: Person[] = [
 
 const email = (key: string) => `demo.${key}@${DOMAIN}`;
 
+/**
+ * Who each sample person is (ADR-010): the CPF of their registration, which is also the
+ * document of their account and of their lines in a paper. Someone who is in a paper and
+ * not in PEOPLE gets one of their own.
+ */
+const cpfOfPerson = (key: string): string => {
+  const index = PEOPLE.findIndex((p) => p.key === key);
+  // The duplicate is the same person as Tiago, registered twice.
+  if (key === 'duplicado') return cpf(2);
+  return cpf(index >= 0 ? index + 1 : 90 + key.length);
+};
+const keyOfEmail = (address: string): string => address.slice('demo.'.length, address.indexOf('@'));
+
 interface Paper {
   main: string;
   coauthors: { name: string; email: string }[];
@@ -177,10 +190,12 @@ async function main(): Promise<void> {
       }),
     });
     accounts.set(person.key, user.id);
+    // An account says who the person is from the start, as one made through the site does.
+    await api(`/rest/v1/users?id=eq.${user.id}`, { method: 'PATCH', body: JSON.stringify({ cpf: cpfOfPerson(person.key) }) });
   }
 
   let sandbox = 0;
-  for (const [index, person] of PEOPLE.entries()) {
+  for (const person of PEOPLE) {
     const created = daysAgo(person.days);
     const [row] = await api<{ id: string; pay_token: string }[]>('/rest/v1/pre_registrations?select=id,pay_token', {
       method: 'POST',
@@ -189,7 +204,7 @@ async function main(): Promise<void> {
         full_name: person.name,
         // The duplicate has its own address: one live registration per e-mail.
         email: email(person.key),
-        cpf: cpf(person.key === 'duplicado' ? 2 : index + 1),
+        cpf: cpfOfPerson(person.key),
         country: 'BR',
         institution: `${person.institution} ${TAG}`,
         category: person.category,
@@ -273,8 +288,14 @@ async function main(): Promise<void> {
     await api('/rest/v1/submission_authors?select=id', {
       method: 'POST',
       body: JSON.stringify([
-        { submission_id: row!.id, position: 1, full_name: main.name, email: email(main.key) },
-        ...paper.coauthors.map((c, i) => ({ submission_id: row!.id, position: i + 2, full_name: c.name, email: c.email })),
+        { submission_id: row!.id, position: 1, full_name: main.name, email: email(main.key), cpf: cpfOfPerson(main.key) },
+        ...paper.coauthors.map((c, i) => ({
+          submission_id: row!.id,
+          position: i + 2,
+          full_name: c.name,
+          email: c.email,
+          cpf: cpfOfPerson(keyOfEmail(c.email)),
+        })),
       ]),
     });
   }

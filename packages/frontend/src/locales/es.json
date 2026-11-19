@@ -498,7 +498,16 @@
       "submit": "Enviar trabajo",
       "save": "Guardar cambios",
       "sending": "Enviando…",
-      "sendAnyway": "Es otro trabajo, enviar de todos modos"
+      "sendAnyway": "Es otro trabajo, enviar de todos modos",
+      "authorsDocumentHint": "De cada autor, indique el CPF o el pasaporte con el país que lo emitió. Así reconoce el sistema a cada persona, y solo lo ve la administración.",
+      "authorCpf": "CPF del autor {{n}}",
+      "authorPassport": "Pasaporte del autor {{n}}",
+      "authorCountry": "País del pasaporte del autor {{n}}",
+      "authorDocumentOwn": "Su documento es el de su cuenta.",
+      "authorDocumentOnFile": "El documento de esta persona ya consta en el registro.",
+      "authorDocumentTyped": "Documento indicado: {{hint}}",
+      "authorDocumentChange": "Corregir documento",
+      "authorDocumentChangeLabel": "Corregir el documento del autor {{n}}"
     },
     "errors": {
       "generic": "Algo salió mal. Intente de nuevo en un momento.",
@@ -528,11 +537,24 @@
       "too_many_as_main": "{{name}} ya es el primer autor en {{max}} trabajos, el límite de la convocatoria.",
       "coauthor_limit": "{{name}} ya figura en {{max}} trabajos fuera de la primera posición, el límite de la convocatoria.",
       "duplicate_title": "Uno de los autores ya envió un trabajo con este título (n.º {{number}}). Cada trabajo debe enviarse una sola vez.",
-      "upload_failed": "No fue posible enviar el archivo. Revise su conexión e intente de nuevo."
+      "upload_failed": "No fue posible enviar el archivo. Revise su conexión e intente de nuevo.",
+      "document_required": "Antes de enviar un trabajo, indique su CPF o pasaporte en Mi área.",
+      "author_document_required": "Indique el CPF o el pasaporte, con su país, de {{name}}.",
+      "author_invalid_cpf": "El CPF de {{name}} no es válido.",
+      "author_invalid_passport": "El pasaporte de {{name}} no es válido.",
+      "author_invalid_country": "Seleccione el país del pasaporte de {{name}}.",
+      "author_other_email": "{{name}} ya tiene una cuenta con el correo {{maskedEmail}}. Use ese correo para esa persona."
     },
     "count_one": "{{count}} trabajo",
     "count_other": "{{count}} trabajos",
-    "readOnly": "solo quien lo envió puede modificarlo"
+    "readOnly": "solo quien lo envió puede modificarlo",
+    "documentMissing": "Para enviar trabajos y ver aquellos en los que consta como autor, indique su CPF o pasaporte en Mi área.",
+    "documentMissingCta": "Indicar mi documento",
+    "waitingOtherDocument_one": "Usted consta como autor en {{count}} trabajo con un documento distinto del suyo. Pida a quien lo envió que lo corrija, o hable con la organización.",
+    "waitingOtherDocument_other": "Usted consta como autor en {{count}} trabajos con un documento distinto del suyo. Pida a quien los envió que lo corrija, o hable con la organización.",
+    "waitingOtherEmail_one": "Usted consta como autor en {{count}} trabajo con el correo {{email}}. Pida a quien lo envió que use el correo de esta cuenta.",
+    "waitingOtherEmail_other": "Usted consta como autor en {{count}} trabajos con el correo {{email}}. Pida a quien los envió que use el correo de esta cuenta.",
+    "authorIssue": "El documento indicado para {{name}} no coincide con la cuenta de esa persona. Abra el trabajo y guárdelo de nuevo para corregirlo."
   },
   "reviewing": {
     "title": "Trabajos para evaluar",

@@ -92,6 +92,11 @@ const paper = (over: Partial<Paper> = {}): Paper => ({
   position: 1,
   sentByMe: true,
   canEdit: true,
+  // Who each author is, as the server tells whoever may change the paper (ADR-010).
+  authorDocuments: [
+    { position: 1, state: 'account' },
+    { position: 2, state: 'account' },
+  ],
   ...over,
 });
 
@@ -341,6 +346,7 @@ describe('PaperFormPage, new paper', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Adicionar autor' }));
     await userEvent.type(screen.getByLabelText('Nome do autor 2'), 'João Lima');
     await userEvent.type(screen.getByLabelText('E-mail do autor 2'), 'joao@ufpb.br');
+    await userEvent.type(screen.getByLabelText('CPF do autor 2'), '11144477735');
     await userEvent.upload(screen.getByLabelText('Arquivo do trabalho'), pdfFile());
     await userEvent.click(screen.getByRole('button', { name: 'Enviar trabalho' }));
     expect(await screen.findByTestId('where')).toHaveTextContent('/2027/meus-trabalhos');
@@ -361,7 +367,7 @@ describe('PaperFormPage, new paper', () => {
       abstract: 'Um resumo com mais de cinquenta caracteres, para passar na conferência.',
       keywords: 'água; governança',
       keywordsEn: '',
-      authors: [ME, { fullName: 'João Lima', email: 'joao@ufpb.br' }],
+      authors: [ME, { fullName: 'João Lima', email: 'joao@ufpb.br', cpf: '111.444.777-35' }],
       confirmDuplicate: false,
       eventSlug: '2027',
       locale: 'pt-BR',
@@ -428,17 +434,21 @@ describe('PaperFormPage, new paper', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Adicionar autor' }));
     await userEvent.type(screen.getByLabelText('Nome do autor 2'), 'Prof. Carlos Meira');
     await userEvent.type(screen.getByLabelText('E-mail do autor 2'), 'carlos@ufcg.edu.br');
+    await userEvent.type(screen.getByLabelText('Passaporte do autor 2'), 'ab 123-456');
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'País do passaporte do autor 2' }), 'Portugal');
     expect(screen.getByRole('button', { name: 'Subir autor 1' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Descer autor 2' })).toBeDisabled();
     await userEvent.click(screen.getByRole('button', { name: 'Subir autor 2' }));
-    // The professor is first now, and what was typed moved with the row.
+    // The professor is first now, and what was typed moved with the row, document included.
     expect(screen.getByLabelText('Nome do autor 1')).toHaveValue('Prof. Carlos Meira');
+    expect(screen.getByLabelText('Passaporte do autor 1')).toHaveValue('ab 123-456');
+    expect(screen.getByRole('combobox', { name: 'País do passaporte do autor 1' })).toHaveValue('PT');
     expect(screen.getByLabelText('Nome do autor 2 (você)')).toHaveValue('Maria');
     await userEvent.upload(screen.getByLabelText('Arquivo do trabalho'), pdfFile());
     await userEvent.click(screen.getByRole('button', { name: 'Enviar trabalho' }));
     await screen.findByTestId('where');
     expect((posted(calls).at(-1)!.body as { authors: unknown[] }).authors).toEqual([
-      { fullName: 'Prof. Carlos Meira', email: 'carlos@ufcg.edu.br' },
+      { fullName: 'Prof. Carlos Meira', email: 'carlos@ufcg.edu.br', passport: 'ab 123-456', country: 'PT' },
       ME,
     ]);
   });
@@ -550,8 +560,9 @@ describe('PaperFormPage, new paper', () => {
 
 describe('PaperFormPage, suggestions of people already in the system', () => {
   const UPLOAD = 'https://storage.example/upload/2027/u/f.pdf?token=t';
-  const RODRIGO = { fullName: 'Rodrigo Alves Costa', institution: 'UFCG', emailHint: 'r•••@ufcg.edu.br', ref: 'sealed-ref-rodrigo' };
-  const OTHER_RODRIGO = { fullName: 'Rodrigo Antônio Lima', institution: null, emailHint: 'r•••@ufpb.br', ref: 'sealed-ref-antonio' };
+  // Rodrigo has an account that says who he is; the other Rodrigo is only known from a registration.
+  const RODRIGO = { fullName: 'Rodrigo Alves Costa', institution: 'UFCG', emailHint: 'r•••@ufcg.edu.br', ref: 'sealed-ref-rodrigo', hasDocument: true };
+  const OTHER_RODRIGO = { fullName: 'Rodrigo Antônio Lima', institution: null, emailHint: 'r•••@ufpb.br', ref: 'sealed-ref-antonio', hasDocument: false };
   const api = (people: unknown[] = [RODRIGO, OTHER_RODRIGO]) => ({
     me: account(null),
     people: { body: { people } },
@@ -609,12 +620,13 @@ describe('PaperFormPage, suggestions of people already in the system', () => {
     expect(screen.getByLabelText('E-mail do autor 2')).toHaveFocus();
     noSuggestions();
     await userEvent.type(screen.getByLabelText('E-mail do autor 2'), 'rpereira@ufrn.br');
+    await userEvent.type(screen.getByLabelText('CPF do autor 2'), '11144477735');
     await userEvent.upload(screen.getByLabelText('Arquivo do trabalho'), pdfFile());
     await userEvent.click(screen.getByRole('button', { name: 'Enviar trabalho' }));
     await screen.findByTestId('where');
     expect((posted(calls).at(-1)!.body as { authors: unknown[] }).authors).toEqual([
       ME,
-      { fullName: 'Rodrigo Pereira', email: 'rpereira@ufrn.br' },
+      { fullName: 'Rodrigo Pereira', email: 'rpereira@ufrn.br', cpf: '111.444.777-35' },
     ]);
   });
 
@@ -643,6 +655,8 @@ describe('PaperFormPage, suggestions of people already in the system', () => {
     expect(email).toHaveValue('');
     expect(email).not.toHaveAttribute('readonly');
     await userEvent.type(email, 'filho@ufcg.edu.br');
+    // He is someone else now: what was on record for the person picked is not his.
+    await userEvent.type(screen.getByLabelText('CPF do autor 2'), '11144477735');
     await userEvent.upload(screen.getByLabelText('Arquivo do trabalho'), pdfFile());
     await userEvent.click(screen.getByRole('button', { name: 'Enviar trabalho' }));
     await screen.findByTestId('where');
@@ -775,6 +789,281 @@ describe('PaperFormPage, changing a paper', () => {
       { fullName: 'Maria Clara de Souza', email: 'maria@ufcg.edu.br' },
       { fullName: 'João Lima', email: 'joao@ufpb.br' },
     ]);
+  });
+});
+
+describe('PaperFormPage, who each author is (ADR-010)', () => {
+  const UPLOAD = 'https://storage.example/upload/2027/u/f.pdf?token=t';
+  const EDIT = ['/2027/meus-trabalhos/paper-1', '/:eventSlug/meus-trabalhos/:paperId'] as const;
+  const SEND = { name: 'Enviar trabalho' };
+  const ok = (over: Record<string, unknown> = {}) => ({
+    me: account(null),
+    'upload-url': { body: { path: '2027/u/f.pdf', uploadUrl: UPLOAD } },
+    [UPLOAD]: { body: {} },
+    save: { status: 201, body: { submission: paper() } },
+    ...over,
+  });
+  const secondAuthor = async (name = 'Ana Reis', email = 'ana@ufrn.br') => {
+    await ownRow();
+    await userEvent.click(screen.getByRole('button', { name: 'Adicionar autor' }));
+    await userEvent.type(screen.getByLabelText('Nome do autor 2'), name);
+    await userEvent.type(screen.getByLabelText('E-mail do autor 2'), email);
+  };
+  const authorsSent = (calls: Call[]) => (calls.find((c) => c.url.includes('/save'))!.body as { authors: unknown[] }).authors;
+
+  it('asks nothing about the sender: their document is the account\'s', async () => {
+    stubApi(ok());
+    mount(...NEW, <PaperFormPage />);
+    await ownRow();
+    const own = screen.getAllByTestId('author-document')[0]!;
+    expect(own).toHaveTextContent('Seu documento é o da sua conta.');
+    expect(screen.queryByLabelText('CPF do autor 1')).not.toBeInTheDocument();
+    expect(screen.getByText(/De cada autor, informe o CPF ou o passaporte/)).toBeInTheDocument();
+  });
+
+  it.each([
+    ['no document', async () => undefined, 'Informe o CPF ou o passaporte, com o país, de Ana Reis.'],
+    ['a CPF with wrong check digits', async () => userEvent.type(screen.getByLabelText('CPF do autor 2'), '11144477736'), 'O CPF de Ana Reis é inválido.'],
+    ['a passport with no country chosen', async () => userEvent.type(screen.getByLabelText('Passaporte do autor 2'), 'AB123456'), 'Selecione o país do passaporte de Ana Reis.'],
+    ['a passport that is too short', async () => { await userEvent.type(screen.getByLabelText('Passaporte do autor 2'), 'A1'); await userEvent.selectOptions(screen.getByRole('combobox', { name: 'País do passaporte do autor 2' }), 'Portugal'); }, 'O passaporte de Ana Reis é inválido.'],
+  ])('with %s for a co-author, says whose and sends nothing, not even the file', async (_name, type, message) => {
+    const calls = stubApi(ok());
+    mount(...NEW, <PaperFormPage />);
+    await fill();
+    await secondAuthor();
+    await type();
+    await userEvent.upload(screen.getByLabelText('Arquivo do trabalho'), pdfFile());
+    await userEvent.click(screen.getByRole('button', SEND));
+    expect(await screen.findByRole('alert')).toHaveTextContent(message);
+    expect(posted(calls)).toEqual([]);
+  });
+
+  it('sends a CPF and a passport together when both are typed', async () => {
+    const calls = stubApi(ok());
+    mount(...NEW, <PaperFormPage />);
+    await fill();
+    await secondAuthor();
+    await userEvent.type(screen.getByLabelText('CPF do autor 2'), '11144477735');
+    await userEvent.type(screen.getByLabelText('Passaporte do autor 2'), 'AB123456');
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'País do passaporte do autor 2' }), 'Estados Unidos');
+    await userEvent.upload(screen.getByLabelText('Arquivo do trabalho'), pdfFile());
+    await userEvent.click(screen.getByRole('button', SEND));
+    await screen.findByTestId('where');
+    expect(authorsSent(calls)).toEqual([ME, { fullName: 'Ana Reis', email: 'ana@ufrn.br', cpf: '111.444.777-35', passport: 'AB123456', country: 'US' }]);
+  });
+
+  it('a person picked from the suggestions whose account says who they are needs nothing typed', async () => {
+    const picked = { fullName: 'Rodrigo Alves Costa', institution: 'UFCG', emailHint: 'r•••@ufcg.edu.br', ref: 'sealed-ref-rodrigo', hasDocument: true };
+    const calls = stubApi(ok({ people: { body: { people: [picked] } } }));
+    mount(...NEW, <PaperFormPage />);
+    await fill();
+    await ownRow();
+    await userEvent.click(screen.getByRole('button', { name: 'Adicionar autor' }));
+    await userEvent.type(screen.getByLabelText('Nome do autor 2'), 'Rodrigo');
+    await userEvent.click(within(await screen.findByRole('listbox')).getAllByRole('option')[0]!);
+    expect(screen.getAllByTestId('author-document')[1]).toHaveTextContent('O documento desta pessoa já consta no cadastro.');
+    expect(screen.queryByLabelText('CPF do autor 2')).not.toBeInTheDocument();
+    await userEvent.upload(screen.getByLabelText('Arquivo do trabalho'), pdfFile());
+    await userEvent.click(screen.getByRole('button', SEND));
+    await screen.findByTestId('where');
+    expect(authorsSent(calls)).toEqual([ME, { fullName: 'Rodrigo Alves Costa', ref: 'sealed-ref-rodrigo' }]);
+  });
+
+  it('a person picked who has no document on record is asked for one, and undoing the pick asks again', async () => {
+    const known = { fullName: 'Rodrigo Com Conta', institution: null, emailHint: 'r•••@ufcg.edu.br', ref: 'ref-1', hasDocument: true };
+    const unknown = { fullName: 'Rodrigo Sem Documento', institution: null, emailHint: 'r•••@ufpb.br', ref: 'ref-2', hasDocument: false };
+    stubApi(ok({ people: { body: { people: [known, unknown] } } }));
+    mount(...NEW, <PaperFormPage />);
+    await ownRow();
+    await userEvent.click(screen.getByRole('button', { name: 'Adicionar autor' }));
+    await userEvent.type(screen.getByLabelText('Nome do autor 2'), 'Rodrigo');
+    await userEvent.click(within(await screen.findByRole('listbox')).getAllByRole('option')[1]!);
+    expect(screen.getByLabelText('CPF do autor 2')).toBeInTheDocument();
+    // The other one, then undone: the fields come back.
+    await userEvent.click(screen.getByRole('button', { name: 'Desfazer escolha do autor 2' }));
+    await userEvent.clear(screen.getByLabelText('Nome do autor 2'));
+    await userEvent.type(screen.getByLabelText('Nome do autor 2'), 'Rodrigo');
+    await userEvent.click(within(await screen.findByRole('listbox')).getAllByRole('option')[0]!);
+    expect(screen.queryByLabelText('CPF do autor 2')).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Desfazer escolha do autor 2' }));
+    expect(screen.getByLabelText('CPF do autor 2')).toBeInTheDocument();
+  });
+
+  it.each([
+    ['author_other_email', { name: 'Ana Reis', maskedEmail: 'a•••@gmail.com' }, 'Ana Reis já tem cadastro com o e-mail a•••@gmail.com. Use esse e-mail para essa pessoa.'],
+    ['author_document_required', { name: 'Ana Reis' }, 'Informe o CPF ou o passaporte, com o país, de Ana Reis.'],
+    ['author_invalid_cpf', { name: 'Ana Reis' }, 'O CPF de Ana Reis é inválido.'],
+    ['document_required', {}, 'Antes de enviar um trabalho, informe seu CPF ou passaporte em Minha área.'],
+    ['duplicate_author', { name: 'Ana R.' }, 'Ana R. aparece mais de uma vez entre os autores.'],
+  ])('explains %s from the server and stays on the form', async (error, extra, message) => {
+    stubApi(ok({ save: { status: 409, body: { error, ...extra } } }));
+    mount(...NEW, <PaperFormPage />);
+    await fill();
+    await secondAuthor();
+    await userEvent.type(screen.getByLabelText('CPF do autor 2'), '11144477735');
+    await userEvent.upload(screen.getByLabelText('Arquivo do trabalho'), pdfFile());
+    await userEvent.click(screen.getByRole('button', SEND));
+    expect(await screen.findByRole('alert')).toHaveTextContent(message);
+    expect(screen.getByLabelText('CPF do autor 2')).toHaveValue('111.444.777-35');
+    expect(screen.queryByTestId('where')).not.toBeInTheDocument();
+  });
+
+  it('an account that has not said who the person is cannot send: told at the top, with the way to fix it', async () => {
+    const calls = stubApi(ok({ me: { body: { ...account(null).body, user: { ...account(null).body.user, documentMissing: true } } } }));
+    mount(...NEW, <PaperFormPage />);
+    const notice = await screen.findByTestId('document-missing');
+    expect(notice).toHaveTextContent('Antes de enviar um trabalho, informe seu CPF ou passaporte em Minha área.');
+    expect(within(notice).getByRole('link', { name: 'Informar meu documento' })).toHaveAttribute('href', '/2027/minha-area#meus-dados');
+    expect(screen.getByRole('button', SEND)).toBeDisabled();
+    expect(posted(calls)).toEqual([]);
+  });
+
+  describe('changing a paper', () => {
+    const withDocuments = (authorDocuments: Paper['authorDocuments'], over: Partial<Paper> = {}) => paper({ authorDocuments, ...over });
+
+    it('shows what is on record for each author and asks for nothing that is there', async () => {
+      const calls = stubApi({
+        one: { body: { submission: withDocuments([{ position: 1, state: 'account' }, { position: 2, state: 'typed', hint: '***.444.777-**' }]) } },
+        save: { body: { submission: paper() } },
+      });
+      mount(...EDIT, <PaperFormPage />);
+      await screen.findByLabelText('Título em português');
+      const [own, second] = screen.getAllByTestId('author-document');
+      expect(own).toHaveTextContent('Seu documento é o da sua conta.');
+      expect(second).toHaveTextContent('Documento informado: ***.444.777-**');
+      expect(screen.queryByLabelText('CPF do autor 2')).not.toBeInTheDocument();
+      await userEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }));
+      await screen.findByTestId('where');
+      // Nothing is sent for a document that is kept: the server keeps it by the address.
+      expect(authorsSent(calls)).toEqual([
+        { fullName: 'Maria Clara de Souza', email: 'maria@ufcg.edu.br' },
+        { fullName: 'João Lima', email: 'joao@ufpb.br' },
+      ]);
+    });
+
+    it('lets the sender correct a document they typed before', async () => {
+      const calls = stubApi({
+        one: { body: { submission: withDocuments([{ position: 1, state: 'account' }, { position: 2, state: 'typed', hint: '***.444.777-**' }]) } },
+        save: { body: { submission: paper() } },
+      });
+      mount(...EDIT, <PaperFormPage />);
+      await screen.findByLabelText('Título em português');
+      await userEvent.click(screen.getByRole('button', { name: 'Corrigir o documento do autor 2' }));
+      await userEvent.type(screen.getByLabelText('CPF do autor 2'), '52998224725');
+      await userEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }));
+      await screen.findByTestId('where');
+      expect(authorsSent(calls)[1]).toEqual({ fullName: 'João Lima', email: 'joao@ufpb.br', cpf: '529.982.247-25' });
+    });
+
+    it('the document of an account cannot be corrected here: there is no button for it', async () => {
+      stubApi({ one: { body: { submission: paper() } } });
+      mount(...EDIT, <PaperFormPage />);
+      await screen.findByLabelText('Título em português');
+      expect(screen.getAllByTestId('author-document')[1]).toHaveTextContent('O documento desta pessoa já consta no cadastro.');
+      expect(screen.queryByRole('button', { name: /Corrigir o documento/ })).not.toBeInTheDocument();
+    });
+
+    it('another address is another person: the document is asked for again', async () => {
+      const calls = stubApi({ one: { body: { submission: paper() } }, save: { body: { submission: paper() } } });
+      mount(...EDIT, <PaperFormPage />);
+      const email = await screen.findByLabelText('E-mail do autor 2');
+      await userEvent.clear(email);
+      await userEvent.type(email, 'joao.novo@ufpb.br');
+      expect(screen.getByLabelText('CPF do autor 2')).toBeInTheDocument();
+      await userEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }));
+      expect(await screen.findByRole('alert')).toHaveTextContent('Informe o CPF ou o passaporte, com o país, de João Lima.');
+      expect(calls.filter((c) => c.url.includes('/save'))).toEqual([]);
+    });
+
+    it('a line from before documents existed must be completed by whoever sent the paper', async () => {
+      const calls = stubApi({ one: { body: { submission: withDocuments([{ position: 1, state: 'account' }, { position: 2, state: 'missing' }]) } }, save: { body: { submission: paper() } } });
+      mount(...EDIT, <PaperFormPage />);
+      await screen.findByLabelText('CPF do autor 2');
+      await userEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }));
+      expect(await screen.findByRole('alert')).toHaveTextContent('Informe o CPF ou o passaporte, com o país, de João Lima.');
+      expect(calls.filter((c) => c.url.includes('/save'))).toEqual([]);
+    });
+
+    it('an administrator correcting a paper may leave such a line as it is, or complete it', async () => {
+      const legacy = withDocuments([{ position: 1, state: 'missing' }, { position: 2, state: 'missing' }], { sentByMe: false, asOrganiser: true, position: null });
+      const calls = stubApi({ one: { body: { submission: legacy } }, save: { body: { submission: paper() } } });
+      mount(...EDIT, <PaperFormPage />);
+      await screen.findByLabelText('CPF do autor 2');
+      await userEvent.type(screen.getByLabelText('CPF do autor 2'), '11144477735');
+      await userEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }));
+      await screen.findByTestId('where');
+      expect(authorsSent(calls)).toEqual([
+        { fullName: 'Maria Clara de Souza', email: 'maria@ufcg.edu.br' },
+        { fullName: 'João Lima', email: 'joao@ufpb.br', cpf: '111.444.777-35' },
+      ]);
+    });
+
+    it('but a wrong document typed by the administrator is still refused', async () => {
+      const legacy = withDocuments([{ position: 1, state: 'missing' }, { position: 2, state: 'missing' }], { sentByMe: false, asOrganiser: true, position: null });
+      const calls = stubApi({ one: { body: { submission: legacy } } });
+      mount(...EDIT, <PaperFormPage />);
+      await userEvent.type(await screen.findByLabelText('CPF do autor 2'), '11144477736');
+      await userEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }));
+      expect(await screen.findByRole('alert')).toHaveTextContent('O CPF de João Lima é inválido.');
+      expect(calls.filter((c) => c.url.includes('/save'))).toEqual([]);
+    });
+  });
+});
+
+describe('MyPapersPage, places that wait (ADR-010)', () => {
+  it('tells an account without a document why it sees nothing and cannot send', async () => {
+    stubApi({ mine: { body: mine({ documentMissing: true, waiting: { otherDocument: 2, otherEmail: [] } }) }, me: account(null) });
+    mount(...LIST, <MyPapersPage />);
+    const notice = await screen.findByTestId('document-missing');
+    expect(notice).toHaveTextContent('Para enviar trabalhos e ver aqueles em que você consta como autor, informe seu CPF ou passaporte em Minha área.');
+    expect(within(notice).getByRole('link', { name: 'Informar meu documento' })).toHaveAttribute('href', '/2027/minha-area#meus-dados');
+    // No way to send, and no second notice about another document: giving one comes first.
+    expect(screen.queryByRole('link', { name: 'Enviar trabalho' })).not.toBeInTheDocument();
+    expect(screen.queryByTestId('waiting-other-document')).not.toBeInTheDocument();
+  });
+
+  it('says how many papers list the person with another document, one or several', async () => {
+    stubApi({ mine: { body: mine({ waiting: { otherDocument: 1, otherEmail: [] } }) }, me: account(null) });
+    const first = mount(...LIST, <MyPapersPage />);
+    expect(await screen.findByTestId('waiting-other-document')).toHaveTextContent('Você consta como autor em 1 trabalho com um documento diferente do seu.');
+    first.unmount();
+    stubApi({ mine: { body: mine({ waiting: { otherDocument: 3, otherEmail: [] } }) }, me: account(null) });
+    mount(...LIST, <MyPapersPage />);
+    expect(await screen.findByTestId('waiting-other-document')).toHaveTextContent('Você consta como autor em 3 trabalhos com um documento diferente do seu.');
+  });
+
+  it('says under which masked address the person is listed elsewhere, one line per address', async () => {
+    stubApi({
+      mine: { body: mine({ waiting: { otherDocument: 0, otherEmail: [{ maskedEmail: 'a•••@gmail.com', count: 1 }, { maskedEmail: 'a•••@ufrn.br', count: 2 }] } }) },
+      me: account(null),
+    });
+    mount(...LIST, <MyPapersPage />);
+    const lines = await screen.findAllByTestId('waiting-other-email');
+    expect(lines.map((l) => l.textContent)).toEqual([
+      'Você consta como autor em 1 trabalho com o e-mail a•••@gmail.com. Peça a quem enviou para usar o e-mail desta conta.',
+      'Você consta como autor em 2 trabalhos com o e-mail a•••@ufrn.br. Peça a quem enviou para usar o e-mail desta conta.',
+    ]);
+    expect(screen.queryByTestId('waiting-other-document')).not.toBeInTheDocument();
+  });
+
+  it('shows whoever sent a paper which author no longer matches their account, on that paper', async () => {
+    stubApi({
+      mine: { body: mine({ submissions: [paper({ authorIssues: [{ position: 2, fullName: 'João Lima' }] }), paper({ id: 'paper-2', number: 13, title: 'Outro', authorIssues: [] })] }) },
+      me: account(null),
+    });
+    mount(...LIST, <MyPapersPage />);
+    const cards = await screen.findAllByTestId('paper-card');
+    expect(within(cards[0]!).getByTestId('author-issue')).toHaveTextContent('O documento informado para João Lima não confere com o cadastro dessa pessoa. Abra o trabalho e salve de novo para corrigir.');
+    expect(within(cards[1]!).queryByTestId('author-issue')).not.toBeInTheDocument();
+  });
+
+  it('shows none of these to someone with nothing waiting', async () => {
+    stubApi({ mine: { body: mine({ submissions: [paper()], waiting: { otherDocument: 0, otherEmail: [] }, documentMissing: false }) }, me: account(null) });
+    mount(...LIST, <MyPapersPage />);
+    await screen.findByTestId('paper-card');
+    for (const id of ['document-missing', 'waiting-other-document', 'waiting-other-email', 'author-issue']) {
+      expect(screen.queryByTestId(id)).not.toBeInTheDocument();
+    }
   });
 });
 

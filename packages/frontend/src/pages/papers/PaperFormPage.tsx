@@ -18,7 +18,8 @@ import {
   type Paper,
 } from '../../services/submissions';
 import { NotFoundPage } from '../NotFoundPage';
-import { AuthorList, newAuthorRow, toAuthorInput, type AuthorRow } from './AuthorList';
+import { AuthorList, asksDocument, newAuthorRow, toAuthorInput, type AuthorRow } from './AuthorList';
+import { documentProblem } from '../../components/account/DocumentFields';
 import '../../components/registration/RegistrationForm.css';
 import '../account/Account.css';
 import './Papers.css';
@@ -57,6 +58,8 @@ export function PaperFormPage() {
   const [busy, setBusy] = useState(false);
   // The name of the account, on its way: someone quick to press Send must not lose their own name.
   const ownName = useRef<Promise<string>>(Promise.resolve(''));
+  // An account that has not said who the person is sends nothing (ADR-010): said before the form is filled.
+  const [documentMissing, setDocumentMissing] = useState(false);
 
   useEffect(() => {
     if (!accessToken || !event || !paperId) return;
@@ -76,9 +79,19 @@ export function PaperFormPage() {
           setKeywords(paper.keywords.join('; '));
           setKeywordsEn(paper.keywordsEn.join('; '));
           setAuthors(
-            paper.authors.map(({ fullName, email }) =>
-              newAuthorRow({ fullName, email, self: email === auth.email?.toLowerCase() }),
-            ),
+            paper.authors.map(({ fullName, email, position }) => {
+              // What is on record about who each author is: asked again only where it is missing.
+              const known = paper.authorDocuments?.find((d) => d.position === position);
+              const onRecord =
+                known?.state === 'account'
+                  ? ({ state: 'account' } as const)
+                  : known?.state === 'typed'
+                    ? ({ state: 'typed', hint: known.hint ?? '' } as const)
+                    : undefined;
+              // An administrator correcting a paper may leave a line from before documents as it is.
+              const legacy = Boolean(paper.asOrganiser) && known?.state !== 'account' && known?.state !== 'typed';
+              return newAuthorRow({ fullName, email, self: email === auth.email?.toLowerCase(), onRecord, legacy });
+            }),
           );
         }
         setReady(true);
@@ -97,7 +110,10 @@ export function PaperFormPage() {
     const email = auth.email.toLowerCase();
     setAuthors((current) => (current.length ? current : [newAuthorRow({ email, self: true })]));
     ownName.current = fetchAccount(accessToken)
-      .then((account) => account.user.fullName)
+      .then((account) => {
+        if (active) setDocumentMissing(Boolean(account.user.documentMissing));
+        return account.user.fullName;
+      })
       .catch(() => '');
     void ownName.current.then((fullName) => {
       if (!active || !fullName) return;
@@ -158,6 +174,15 @@ export function PaperFormPage() {
       setBusy(false);
       return setError(t('papers.errors.invalid_author'));
     }
+    // So is who an author is: the same check the server makes, with the person's name.
+    for (const row of authors.filter((r) => asksDocument(r) && (r.fullName.trim() || r.email.trim() || r.ref))) {
+      const problem = documentProblem(row.document);
+      if (row.legacy && problem === 'document_required') continue;
+      if (problem) {
+        setBusy(false);
+        return setError(t(`papers.errors.author_${problem}`, { name: row.fullName.trim() }));
+      }
+    }
     try {
       const uploaded = file
         ? { path: await uploadPaperFile(accessToken, event.slug, file), name: file.name }
@@ -204,6 +229,14 @@ export function PaperFormPage() {
       <PageHeader title={t(editing ? 'papers.editTitle' : 'papers.send')} />
       <section className="section">
         <div className="container papers">
+          {documentMissing && (
+            <div className="account__notice" role="status" data-testid="document-missing">
+              <p>{t('papers.errors.document_required')}</p>
+              <Link className="account__button" to={`/${event.slug}/minha-area#meus-dados`}>
+                {t('papers.documentMissingCta')}
+              </Link>
+            </div>
+          )}
           <form className="reg-form" style={{ maxWidth: 'none' }} onSubmit={onSubmit} noValidate>
             <div className="reg-form__field">
               <label htmlFor="paper-title">{t('papers.form.title')}</label>
@@ -285,7 +318,7 @@ export function PaperFormPage() {
                 </div>
               </div>
             )}
-            <button className="reg-form__submit" type="submit" disabled={busy}>
+            <button className="reg-form__submit" type="submit" disabled={busy || documentMissing}>
               {busy ? t('papers.form.sending') : t(editing ? 'papers.form.save' : 'papers.form.submit')}
             </button>
           </form>

@@ -34,14 +34,17 @@ interface Props {
   /** A kind the account already has cannot be changed here: shown, not editable. */
   locked?: { cpf?: boolean; passport?: boolean };
   disabled?: boolean;
+  /** Other names for the three fields, where a page has several of these (one per author). */
+  labels?: { cpf: string; passport: string; country: string };
 }
 
 /**
  * Who the person is (ADR-010): a CPF, a passport with the country that issued it, or both.
  * The country is only asked for once a passport is being typed, and is chosen from a list.
  */
-export function DocumentFields({ idPrefix, value, onChange, locked = {}, disabled = false }: Props) {
+export function DocumentFields({ idPrefix, value, onChange, locked = {}, disabled = false, labels }: Props) {
   const { t } = useTranslation();
+  const names = labels ?? { cpf: t('registration.cpf'), passport: t('registration.passport'), country: t('account.area.country') };
   const set = (patch: Partial<DocumentValue>) => onChange({ ...value, ...patch });
   const hasPassport = value.passport.trim() !== '';
 
@@ -49,7 +52,7 @@ export function DocumentFields({ idPrefix, value, onChange, locked = {}, disable
     <>
       <div className="reg-form__row">
         <div className="reg-form__field">
-          <label htmlFor={`${idPrefix}-cpf`}>{t('registration.cpf')}</label>
+          <label htmlFor={`${idPrefix}-cpf`}>{names.cpf}</label>
           <input
             id={`${idPrefix}-cpf`}
             type="text"
@@ -63,7 +66,7 @@ export function DocumentFields({ idPrefix, value, onChange, locked = {}, disable
           />
         </div>
         <div className="reg-form__field">
-          <label htmlFor={`${idPrefix}-passport`}>{t('registration.passport')}</label>
+          <label htmlFor={`${idPrefix}-passport`}>{names.passport}</label>
           <input
             id={`${idPrefix}-passport`}
             type="text"
@@ -80,7 +83,7 @@ export function DocumentFields({ idPrefix, value, onChange, locked = {}, disable
       </div>
       {hasPassport && (
         <div className="reg-form__field">
-          <label htmlFor={`${idPrefix}-country`}>{t('account.area.country')}</label>
+          <label htmlFor={`${idPrefix}-country`}>{names.country}</label>
           <CountrySelect
             id={`${idPrefix}-country`}
             value={value.country}

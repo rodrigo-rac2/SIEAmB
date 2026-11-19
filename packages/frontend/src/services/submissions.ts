@@ -38,6 +38,14 @@ export interface Paper {
   /** The reader may change it as an organiser, not as its sender (#250). */
   asOrganiser?: boolean;
   canEdit: boolean;
+  /**
+   * For whoever may change the paper (ADR-010): what is on record about who each author is.
+   * `account`: the person's own account says it; `typed`: typed by the sender, shown as a
+   * hint; `missing`: a line from before documents were asked for.
+   */
+  authorDocuments?: { position: number; state: 'account' | 'typed' | 'missing'; hint?: string }[];
+  /** On a paper the reader sent: authors whose document no longer matches their own account. */
+  authorIssues?: { position: number; fullName: string }[];
 }
 
 export interface MyPapers {
@@ -49,6 +57,17 @@ export interface MyPapers {
   closedAt?: string | null;
   limits: { asMain: number; maxAsMain: number; asCoauthor: number; maxAsCoauthor: number };
   submissions: Paper[];
+  /** The account has not said who the person is: nothing can be sent yet (ADR-010). */
+  documentMissing?: boolean;
+  /** Places that wait for this person: listed with another document, or under another address. */
+  waiting?: { otherDocument: number; otherEmail: { maskedEmail: string; count: number }[] };
+}
+
+/** The document typed for an author who has no account, as the form holds it. */
+export interface AuthorDocumentInput {
+  cpf?: string;
+  passport?: string;
+  country?: string;
 }
 
 export interface PaperInput {
@@ -61,7 +80,7 @@ export interface PaperInput {
   keywords: string;
   keywordsEn: string;
   /** Every author, in the order of the paper. A person picked from the suggestions goes as `ref`. */
-  authors: ({ fullName: string; email: string } | { fullName: string; ref: string })[];
+  authors: (({ fullName: string; email: string } | { fullName: string; ref: string }) & AuthorDocumentInput)[];
   confirmDuplicate?: boolean;
 }
 
@@ -105,6 +124,12 @@ const KNOWN_ERRORS = [
   'invalid_keywords',
   'invalid_author',
   'sender_not_listed',
+  'document_required',
+  'author_document_required',
+  'author_invalid_cpf',
+  'author_invalid_passport',
+  'author_invalid_country',
+  'author_other_email',
   'duplicate_author',
   'too_many_authors',
   'too_many_as_main',
@@ -170,6 +195,8 @@ export interface PersonSuggestion {
   emailHint: string;
   /** What the form sends back instead of the e-mail. */
   ref: string;
+  /** Their account already says who they are: no document has to be typed for them. */
+  hasDocument?: boolean;
 }
 
 /** People whose name matches what is being typed; empty when nothing matches or on any failure. */

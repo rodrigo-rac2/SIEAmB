@@ -7,13 +7,43 @@ import type { NewNotification, OutboxJob, OutboxMail, OutboxStore } from '../cor
 import type { Mailer, OutgoingMail } from '../payments/notifications';
 import type { SubmissionDeps } from './handlers';
 import { RULES } from './rules';
-import type { Author, FileStorage, Organiser, Person, Submission, SubmissionInput, SubmissionStore } from './store';
+import { NO_DOCUMENT, type PersonDocument } from '../core/document';
+import { countPlaces, isLineOf, passportKey, type Identity } from './identity';
+import type {
+  AccountRef,
+  Author,
+  FileStorage,
+  LimitCheck,
+  Organiser,
+  Person,
+  SaveResult,
+  StoredAuthor,
+  Submission,
+  SubmissionInput,
+  SubmissionStore,
+} from './store';
 
 export const NOW = new Date('2026-12-01T15:00:00-03:00');
 export const EVENT = { id: 'ev-2027', slug: '2027', name: 'II SIEAmB' };
 export const MAIN: AuthUser = { id: 'user-main', email: 'maria@ufcg.edu.br', emailConfirmed: true };
 export const OTHER: AuthUser = { id: 'user-other', email: 'joao@ufpb.br', emailConfirmed: true };
 export const ORGANISER: AuthUser = { id: 'user-org', email: 'viviane@ufcg.edu.br', emailConfirmed: true };
+
+/** CPFs with valid check digits: the documents of the three accounts above, and a spare. */
+export const MAIN_CPF = '52998224725';
+export const OTHER_CPF = '11144477735';
+export const ORGANISER_CPF = '39053344705';
+export const SPARE_CPF = '12345678909';
+export const cpfOnly = (cpf: string): PersonDocument => ({ cpf, passport: null, country: null });
+export const passportOnly = (passport: string, country: string): PersonDocument => ({ cpf: null, passport, country });
+
+/** An author line as stored; without a document it is a line from before documents were asked for. */
+export const line = (position: number, fullName: string, email: string, document: PersonDocument = NO_DOCUMENT): StoredAuthor => ({
+  position,
+  fullName,
+  email,
+  document,
+});
 
 export async function pdf(pages: number): Promise<Uint8Array> {
   const document = await PDFDocument.create();
@@ -42,11 +72,14 @@ let seq = 0;
 export class FakeSubmissionStore implements SubmissionStore {
   submissions: Submission[] = [];
   organisers: Organiser[] = [];
-  users: { id: string; email: string }[] = [
-    { id: MAIN.id, email: MAIN.email },
-    { id: OTHER.id, email: OTHER.email },
-    { id: ORGANISER.id, email: ORGANISER.email },
+  /** The accounts, each with the document that says who the person is. */
+  users: AccountRef[] = [
+    { id: MAIN.id, email: MAIN.email, document: cpfOnly(MAIN_CPF) },
+    { id: OTHER.id, email: OTHER.email, document: cpfOnly(OTHER_CPF) },
+    { id: ORGANISER.id, email: ORGANISER.email, document: cpfOnly(ORGANISER_CPF) },
   ];
+  /** Every call that wrote a paper, with the people it was checked for. */
+  saves: { id: string | null; check: LimitCheck }[] = [];
   deletions: { id: string; userId: string; reason: string }[] = [];
   /** Who the name suggestions can find. */
   people: Person[] = [];
@@ -57,9 +90,9 @@ export class FakeSubmissionStore implements SubmissionStore {
   async findEvent(slug: string) {
     return slug === EVENT.slug ? { ...EVENT, closedAt: this.closedAt } : null;
   }
-  async listByAuthorEmail(eventId: string, email: string) {
+  async listByIdentity(eventId: string, who: Identity) {
     return this.submissions.filter(
-      (s) => s.eventId === eventId && !s.deletedAt && s.authors.some((a) => a.email === email),
+      (s) => s.eventId === eventId && !s.deletedAt && s.authors.some((a) => isLineOf(a, who)),
     );
   }
   async findById(id: string) {
@@ -80,7 +113,25 @@ export class FakeSubmissionStore implements SubmissionStore {
     const fold = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
     return this.people.filter((p) => fold(p.fullName).includes(fold(query.trim()))).slice(0, limit);
   }
-  async insert(eventId: string, userId: string, input: SubmissionInput, now: Date) {
+  /**
+   * As the database function does: the limits are counted again for every author, over the
+   * papers that stand, and only then is anything written.
+   */
+  async save(eventId: string, userId: string, id: string | null, input: SubmissionInput, check: LimitCheck, now: Date): Promise<SaveResult> {
+    this.saves.push({ id, check });
+    for (const [i, author] of input.authors.entries()) {
+      const who = check.identities[i]!;
+      const others = (await this.listByIdentity(eventId, who)).filter((s) => s.id !== id);
+      const places = countPlaces(others, who);
+      if (author.position === 1 && places.asMain >= check.maxAsMain) return { refused: 'too_many_as_main', position: 1 };
+      if (author.position > 1 && places.asCoauthor >= check.maxAsCoauthor) return { refused: 'coauthor_limit', position: author.position };
+    }
+    if (id) {
+      const submission = this.submissions.find((s) => s.id === id && s.eventId === eventId && !s.deletedAt);
+      if (!submission) return { refused: 'submission_not_found', position: null };
+      Object.assign(submission, input, { updatedAt: now.toISOString() });
+      return { submission };
+    }
     seq += 1;
     const submission: Submission = {
       ...input,
@@ -94,13 +145,7 @@ export class FakeSubmissionStore implements SubmissionStore {
       deletedAt: null,
     };
     this.submissions.push(submission);
-    return submission;
-  }
-  async update(id: string, input: SubmissionInput, now: Date) {
-    const submission = this.submissions.find((s) => s.id === id);
-    if (!submission) throw new Error('submission_not_found');
-    Object.assign(submission, input, { updatedAt: now.toISOString() });
-    return submission;
+    return { submission };
   }
   async softDelete(id: string, userId: string, reason: string, now: Date) {
     const submission = this.submissions.find((s) => s.id === id);
@@ -118,12 +163,27 @@ export class FakeSubmissionStore implements SubmissionStore {
   async isAdmin(_eventId: string, userId: string) {
     return this.organisers.some((o) => o.userId === userId) && !this.notAdmins.has(userId);
   }
-  async findUsersByEmail(emails: string[]) {
+  async findAccountsByEmail(emails: string[]) {
     return this.users.filter((u) => emails.includes(u.email));
+  }
+  async findAccountsByDocument(documents: PersonDocument[]) {
+    return this.users.filter((u) =>
+      documents.some(
+        (d) =>
+          (d.cpf !== null && u.document.cpf === d.cpf) ||
+          (passportKey(d) !== null && passportKey(u.document) === passportKey(d)),
+      ),
+    );
+  }
+  /** An account, with or without a document, for tests about who a person is. */
+  addUser(user: AuthUser, document: PersonDocument = NO_DOCUMENT): AccountRef {
+    const account = { id: user.id, email: user.email, document };
+    this.users = [...this.users.filter((u) => u.id !== user.id), account];
+    return account;
   }
 
   /** A paper already in the table, for tests about limits and visibility. */
-  seed(over: Partial<Submission> & { authors?: Author[] } = {}): Submission {
+  seed(over: Omit<Partial<Submission>, 'authors'> & { authors?: (Author & { document?: PersonDocument })[] } = {}): Submission {
     seq += 1;
     const submission: Submission = {
       id: `sub-${seq}`,
@@ -145,8 +205,11 @@ export class FakeSubmissionStore implements SubmissionStore {
       createdAt: NOW.toISOString(),
       updatedAt: NOW.toISOString(),
       deletedAt: null,
-      authors: [{ position: 1, fullName: 'Maria Clara de Souza', email: MAIN.email }],
       ...over,
+      // A line given without a document is a line from before documents were asked for.
+      authors: (over.authors ?? [{ position: 1, fullName: 'Maria Clara de Souza', email: MAIN.email, document: cpfOnly(MAIN_CPF) }]).map(
+        (a) => ({ ...a, document: a.document ?? NO_DOCUMENT }),
+      ),
     };
     this.submissions.push(submission);
     return submission;

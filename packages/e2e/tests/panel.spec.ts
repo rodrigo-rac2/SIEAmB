@@ -224,11 +224,14 @@ test.describe('organisation panel @panel', () => {
     expect(queued.map((q) => q.subject).filter((subject) => subject.startsWith('Escolha uma nova senha'))).toHaveLength(1);
     // E-mail, CPF and a typed password are the owner's alone (#272): ignored or refused for an administrator.
     await expect(person.getByRole('button', { name: /Definir a senha/ })).toHaveCount(0);
-    const ignored = await page.request.post('/api/v1/admin/account-update', { headers: asAdmin, data: { eventSlug: EVENT, userId: personId, email: unique('tomada'), cpf: randomCpf() } });
+    const untouched = await admin<{ email: string; cpf: string | null }[]>(`/rest/v1/users?id=eq.${personId}&select=email,cpf`);
+    expect(untouched[0]!.email).toBe(listedEmail);
+    const ignored = await page.request.post('/api/v1/admin/account-update', { headers: asAdmin, data: { eventSlug: EVENT, userId: personId, email: unique('tomada'), cpf: randomCpf(), passport: 'AB123456', country: 'PT' } });
     expect(await ignored.json()).toEqual({ ok: true, changed: false });
     const typed = await page.request.post('/api/v1/admin/account-password-set', { headers: asAdmin, data: { eventSlug: EVENT, userId: personId, password: 'e2e-senha-de-administradora' } });
     expect(typed.status()).toBe(403);
-    expect(await admin<{ email: string; cpf: string | null }[]>(`/rest/v1/users?id=eq.${personId}&select=email,cpf`)).toEqual([{ email: listedEmail, cpf: null }]);
+    expect(await admin<{ email: string; cpf: string | null }[]>(`/rest/v1/users?id=eq.${personId}&select=email,cpf`)).toEqual(untouched);
+    expect(await admin<{ passport: string | null }[]>(`/rest/v1/users?id=eq.${personId}&select=passport`)).toEqual([{ passport: null }]);
     // Not for another administrator: that one is the owner's to do.
     const otherAdmin = await admin<{ user_id: string }[]>(`/rest/v1/event_members?event_id=eq.${await eventId()}&role=eq.ADMIN&user_id=neq.${adminId}&select=user_id&limit=1`);
     if (otherAdmin[0]) {

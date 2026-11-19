@@ -498,7 +498,16 @@
       "submit": "提交论文",
       "save": "保存修改",
       "sending": "正在提交…",
-      "sendAnyway": "这是另一篇论文，仍然提交"
+      "sendAnyway": "这是另一篇论文，仍然提交",
+      "authorsDocumentHint": "请为每位作者填写 CPF，或护照及其签发国家。系统据此识别每个人，且仅管理员可见。",
+      "authorCpf": "第 {{n}} 作者的 CPF",
+      "authorPassport": "第 {{n}} 作者的护照",
+      "authorCountry": "第 {{n}} 作者护照的签发国家",
+      "authorDocumentOwn": "您的证件即您账户中的证件。",
+      "authorDocumentOnFile": "此人的证件已登记在案。",
+      "authorDocumentTyped": "已填写的证件：{{hint}}",
+      "authorDocumentChange": "更正证件",
+      "authorDocumentChangeLabel": "更正第 {{n}} 作者的证件"
     },
     "errors": {
       "generic": "出了点问题。请稍后重试。",
@@ -528,11 +537,24 @@
       "too_many_as_main": "{{name}} 已是 {{max}} 篇论文的第一作者，已达征稿通知的上限。",
       "coauthor_limit": "{{name}} 已在 {{max}} 篇论文中列于第一作者以外的位置，已达征稿通知的上限。",
       "duplicate_title": "其中一位作者已提交过同名论文（第 {{number}} 号）。每篇论文只能提交一次。",
-      "upload_failed": "无法上传文件。请检查网络连接后重试。"
+      "upload_failed": "无法上传文件。请检查网络连接后重试。",
+      "document_required": "投稿前，请先在“我的专区”填写您的 CPF 或护照。",
+      "author_document_required": "请填写 {{name}} 的 CPF，或护照及其签发国家。",
+      "author_invalid_cpf": "{{name}} 的 CPF 无效。",
+      "author_invalid_passport": "{{name}} 的护照无效。",
+      "author_invalid_country": "请选择 {{name}} 护照的签发国家。",
+      "author_other_email": "{{name}} 已用邮箱 {{maskedEmail}} 注册。请为此人使用该邮箱。"
     },
     "count_one": "{{count}} 篇论文",
     "count_other": "{{count}} 篇论文",
-    "readOnly": "仅提交者可修改"
+    "readOnly": "仅提交者可修改",
+    "documentMissing": "如需投稿并查看列有您为作者的稿件，请在“我的专区”填写您的 CPF 或护照。",
+    "documentMissingCta": "填写我的证件",
+    "waitingOtherDocument_one": "有 {{count}} 篇稿件将您列为作者，但证件与您的不同。请联系投稿人更正，或联系组委会。",
+    "waitingOtherDocument_other": "有 {{count}} 篇稿件将您列为作者，但证件与您的不同。请联系投稿人更正，或联系组委会。",
+    "waitingOtherEmail_one": "有 {{count}} 篇稿件以邮箱 {{email}} 将您列为作者。请联系投稿人改用本账户的邮箱。",
+    "waitingOtherEmail_other": "有 {{count}} 篇稿件以邮箱 {{email}} 将您列为作者。请联系投稿人改用本账户的邮箱。",
+    "authorIssue": "为 {{name}} 填写的证件与其账户不符。请打开稿件并重新保存以更正。"
   },
   "reviewing": {
     "title": "待评审论文",

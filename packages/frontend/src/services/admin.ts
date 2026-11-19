@@ -47,7 +47,8 @@ export interface PanelPaper {
   createdAt: string;
   deletedAt: string | null;
   /** `registration` is the state of that author's registration, or null when they have none (#225). */
-  authors: { position: number; fullName: string; email: string; registration?: PanelState | null }[];
+  /** The document (ADR-010) is sent to administrators only. */
+  authors: { position: number; fullName: string; email: string; cpf?: string | null; passport?: string | null; country?: string | null; registration?: PanelState | null }[];
   authorRegistered: boolean;
   /** Who reviews it (#232). */
   reviewers: { userId: string; fullName: string; email: string }[];

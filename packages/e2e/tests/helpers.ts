@@ -44,12 +44,22 @@ export async function admin<T>(path: string, init: RequestInit = {}): Promise<T>
 export const unique = (label: string) =>
   `e2e+${process.env.E2E_RUN_ID ?? 'local'}-${label}-${Date.now().toString(36)}${Math.random().toString(16).slice(2, 8)}@sieamb.org`;
 
-/** A confirmed account with a known password. */
-export async function createAccount(email: string, fullName: string): Promise<string> {
+/** A CPF as a person types it: `529.982.247-25`. */
+export const typedCpf = (cpf: string): string => `${cpf.slice(0, 3)}.${cpf.slice(3, 6)}.${cpf.slice(6, 9)}-${cpf.slice(9)}`;
+
+/**
+ * A confirmed account with a known password, which says who the person is (ADR-010): a CPF
+ * of its own, as any account made through the site has. `document: null` makes an account
+ * from before documents were asked for.
+ */
+export async function createAccount(email: string, fullName: string, document: { cpf: string } | null = { cpf: randomCpf() }): Promise<string> {
   const user = await admin<{ id: string }>('/auth/v1/admin/users', {
     method: 'POST',
     body: JSON.stringify({ email, password: PASSWORD, email_confirm: true, user_metadata: { full_name: fullName } }),
   });
+  if (document) {
+    await admin(`/rest/v1/users?id=eq.${user.id}`, { method: 'PATCH', body: JSON.stringify({ cpf: document.cpf }) });
+  }
   return user.id;
 }
 

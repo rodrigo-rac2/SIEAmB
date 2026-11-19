@@ -28,6 +28,16 @@
   margin-bottom: var(--space-3);
 }
 
+/* Who the author is: under the name and the address, the whole width of the line. */
+.papers__author-document {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+
+.papers__author-document > .reg-form__hint {
+  margin: 0;
+}
+
 .papers__author-actions {
   display: flex;
   gap: var(--space-2);
@@ -123,6 +133,11 @@
 @media (max-width: 560px) {
   .papers__author {
     grid-template-columns: 1fr;
+  }
+
+  /* One column: the document follows the address, in the order of the page. */
+  .papers__author-document {
+    grid-row: auto;
   }
 
   .papers__author-actions {

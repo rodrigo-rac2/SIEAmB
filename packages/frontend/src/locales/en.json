@@ -498,7 +498,16 @@
       "submit": "Submit paper",
       "save": "Save changes",
       "sending": "Sending…",
-      "sendAnyway": "It is another paper, send it anyway"
+      "sendAnyway": "It is another paper, send it anyway",
+      "authorsDocumentHint": "For each author, enter the CPF or the passport with the country that issued it. That is how the system recognises each person, and only the administrators see it.",
+      "authorCpf": "CPF of author {{n}}",
+      "authorPassport": "Passport of author {{n}}",
+      "authorCountry": "Country of the passport of author {{n}}",
+      "authorDocumentOwn": "Your document is the one of your account.",
+      "authorDocumentOnFile": "This person's document is already on record.",
+      "authorDocumentTyped": "Document entered: {{hint}}",
+      "authorDocumentChange": "Correct the document",
+      "authorDocumentChangeLabel": "Correct the document of author {{n}}"
     },
     "errors": {
       "generic": "Something went wrong. Try again in a moment.",
@@ -528,11 +537,24 @@
       "too_many_as_main": "{{name}} is already the first author of {{max}} papers, the limit of the call.",
       "coauthor_limit": "{{name}} is already listed in {{max}} papers outside the first position, the limit of the call.",
       "duplicate_title": "One of the authors already sent a paper with this title (no. {{number}}). Each paper must be sent only once.",
-      "upload_failed": "The file could not be sent. Check your connection and try again."
+      "upload_failed": "The file could not be sent. Check your connection and try again.",
+      "document_required": "Before sending a paper, enter your CPF or passport in My area.",
+      "author_document_required": "Enter the CPF, or the passport with its country, of {{name}}.",
+      "author_invalid_cpf": "The CPF of {{name}} is invalid.",
+      "author_invalid_passport": "The passport of {{name}} is invalid.",
+      "author_invalid_country": "Choose the country of the passport of {{name}}.",
+      "author_other_email": "{{name}} already has an account with the e-mail {{maskedEmail}}. Use that e-mail for this person."
     },
     "count_one": "{{count}} paper",
     "count_other": "{{count}} papers",
-    "readOnly": "only the sender can change it"
+    "readOnly": "only the sender can change it",
+    "documentMissing": "To send papers and see those that list you as an author, enter your CPF or passport in My area.",
+    "documentMissingCta": "Enter my document",
+    "waitingOtherDocument_one": "You are listed as an author of {{count}} paper with a document different from yours. Ask whoever sent it to correct it, or contact the organisers.",
+    "waitingOtherDocument_other": "You are listed as an author of {{count}} papers with a document different from yours. Ask whoever sent them to correct it, or contact the organisers.",
+    "waitingOtherEmail_one": "You are listed as an author of {{count}} paper with the e-mail {{email}}. Ask whoever sent it to use the e-mail of this account.",
+    "waitingOtherEmail_other": "You are listed as an author of {{count}} papers with the e-mail {{email}}. Ask whoever sent them to use the e-mail of this account.",
+    "authorIssue": "The document entered for {{name}} does not match that person's account. Open the paper and save it again to correct it."
   },
   "reviewing": {
     "title": "Papers to review",
