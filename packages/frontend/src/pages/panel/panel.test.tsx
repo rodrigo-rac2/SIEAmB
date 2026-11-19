@@ -1236,7 +1236,7 @@ describe('registration and papers side by side, and reminders (#225)', () => {
     stubApi(
       answer([
         { cpf: '52998224725', passport: null, country: null, lines: [{ email: 'ana@ufrn.br', fullName: 'Ana Reis', papers: [1, 3] }, { email: 'ana.reis@gmail.com', fullName: 'Ana R.', papers: [2] }] },
-        { cpf: null, passport: 'AB123456', country: 'PT', lines: [{ email: 'joana@uc.pt', fullName: 'Joana', papers: [1] }, { email: 'j@gmail.com', fullName: 'Joana S.', papers: [2] }] },
+        { cpf: null, passport: 'AB123456', country: 'PT', lines: [{ email: 'joana@uc.pt', fullName: 'Joana', papers: [1] }, { email: 'j@gmail.com', fullName: 'Joana S.', papers: [2] }, { email: 'joana.conta@uc.pt', fullName: 'Joana Conta', papers: [] }] },
       ]),
     );
     const first = mount('/2027/painel/trabalhos', <PanelPage tab="papers" />);
@@ -1244,7 +1244,8 @@ describe('registration and papers side by side, and reminders (#225)', () => {
     expect(within(notice).getByRole('heading', { name: 'Mesma pessoa com mais de um e-mail' })).toBeInTheDocument();
     expect(within(notice).getAllByRole('listitem').map((li) => li.textContent)).toEqual([
       'CPF 529.982.247-25: Ana Reis (ana@ufrn.br, nº 1, 3); Ana R. (ana.reis@gmail.com, nº 2)',
-      'AB123456 (PT): Joana (joana@uc.pt, nº 1); Joana S. (j@gmail.com, nº 2)',
+      // The account that holds the document under another address has no paper to name (#357).
+      'AB123456 (PT): Joana (joana@uc.pt, nº 1); Joana S. (j@gmail.com, nº 2); Joana Conta (joana.conta@uc.pt, conta)',
     ]);
     first.unmount();
     stubApi(answer([]));

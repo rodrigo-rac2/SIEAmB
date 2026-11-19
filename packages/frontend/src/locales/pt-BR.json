@@ -658,7 +658,8 @@
       "withdrawConfirm": "Retirar o trabalho nº {{number}}? Os autores serão avisados.",
       "sameDocumentTitle": "Mesma pessoa com mais de um e-mail",
       "sameDocumentBody": "Documentos com mais de um e-mail entre os autores. Os limites do edital já contam cada um como uma só pessoa.",
-      "sameDocumentPapers": "nº {{numbers}}"
+      "sameDocumentPapers": "nº {{numbers}}",
+      "sameDocumentAccount": "conta"
     },
     "people": {
       "role": "Papel",

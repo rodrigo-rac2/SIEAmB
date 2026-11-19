@@ -470,6 +470,23 @@ describe('papers list', () => {
       ]);
       // It is made of documents: an organiser is not sent it at all.
       expect(await body(await get(deps, 'submissions', tokens.organiser))).not.toHaveProperty('sameDocument');
+
+      // The account that holds a listed document under another address is the same person (#357):
+      // listed with no paper. An account under an address already listed adds nothing, and an
+      // account whose document is in no paper is not looked at.
+      store.users.push(
+        { id: 'u-unico', email: 'unico.conta@y.org', fullName: 'Conta do Único', cpf: '11144477735' },
+        { id: 'u-ana', email: 'ana@ufrn.br', fullName: 'Ana Reis', cpf: CPF },
+        { id: 'u-joana', email: 'joana.conta@uc.pt', fullName: 'Joana Conta', passport: 'AB123456', country: 'PT' },
+        { id: 'u-fora', email: 'fora@y.org', fullName: 'Sem trabalho', passport: 'ZZ999999', country: 'AR' },
+      );
+      const withAccounts = (await body(await get(deps, 'submissions', tokens.admin))) as unknown as { sameDocument: unknown[] };
+      expect(withAccounts.sameDocument).toEqual([
+        { cpf: CPF, passport: null, country: null, lines: [{ email: 'ana@ufrn.br', fullName: 'Ana Reis', papers: [1, 3] }, { email: 'ana.reis@gmail.com', fullName: 'Ana R.', papers: [2] }] },
+        { cpf: null, passport: 'AB123456', country: 'PT', lines: [{ email: 'joana@uc.pt', fullName: 'Joana', papers: [1] }, { email: 'joana.s@gmail.com', fullName: 'Joana S.', papers: [2] }, { email: 'joana.conta@uc.pt', fullName: 'Joana Conta', papers: [] }] },
+        { cpf: '11144477735', passport: null, country: null, lines: [{ email: 'unico@x.org', fullName: 'Só um e-mail', papers: [6, 7] }, { email: 'unico.conta@y.org', fullName: 'Conta do Único', papers: [] }] },
+      ]);
+      expect(await body(await get(deps, 'submissions', tokens.organiser))).not.toHaveProperty('sameDocument');
     });
 
     it('sends an empty list when nobody is listed in two ways', async () => {

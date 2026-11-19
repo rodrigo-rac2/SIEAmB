@@ -658,7 +658,8 @@
       "withdrawConfirm": "确定撤回第 {{number}} 号论文吗？作者将收到通知。",
       "sameDocumentTitle": "同一人使用多个邮箱",
       "sameDocumentBody": "在作者中对应多个邮箱的证件。征稿限制已将每个证件视为同一人。",
-      "sameDocumentPapers": "第 {{numbers}} 号"
+      "sameDocumentPapers": "第 {{numbers}} 号",
+      "sameDocumentAccount": "账户"
     },
     "people": {
       "role": "角色",
