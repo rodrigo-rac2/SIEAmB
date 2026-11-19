@@ -304,10 +304,11 @@ function NewRegistration({ token, slug, message, onDone }: TabProps & { onDone: 
           <input id="new-passport" type="text" value={passport} onChange={(e) => setPassport(e.target.value)} />
         </div>
       </div>
-      {passport.trim() && !cpf.trim() && (
+      {/* A passport goes with the country that issued it, chosen from a list (ADR-010); a CPF may be given as well. */}
+      {passport.trim() && (
         <div className="reg-form__field">
           <label htmlFor="new-country">{t('account.area.country')}</label>
-          <input id="new-country" type="text" maxLength={2} value={country} onChange={(e) => setCountry(e.target.value.toUpperCase())} />
+          <CountrySelect id="new-country" value={country} onChange={setCountry} />
         </div>
       )}
       <div className="reg-form__field">

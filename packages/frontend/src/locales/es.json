@@ -147,7 +147,7 @@
     "email": "Correo electrónico",
     "cpf": "CPF",
     "passport": "Pasaporte",
-    "cpfOrPassportHint": "Informe CPF (brasileños) o pasaporte (extranjeros).",
+    "cpfOrPassportHint": "Indique el CPF, o el pasaporte con el país que lo emitió. Quien tiene CPF indica el CPF.",
     "country": "País",
     "countryChoose": "Seleccione el país",
     "institution": "Institución",
@@ -159,6 +159,8 @@
     "paymentNote": "El pago de la tasa se realiza por Mercado Pago justo después de enviar el formulario, con tarjeta o boleto.",
     "errors": {
       "invalid_cpf": "CPF inválido. Verifique los dígitos.",
+      "invalid_passport": "Pasaporte inválido.",
+      "invalid_country": "Seleccione el país del pasaporte.",
       "cpf_or_passport_required": "Informe CPF o pasaporte.",
       "fullName": "Ingrese su nombre completo.",
       "email": "Ingrese un correo electrónico válido.",
@@ -169,6 +171,7 @@
     },
     "lotRange": "del {{from}} al {{until}}",
     "accountEmailHint": "La inscripción usa el correo de su cuenta.",
+    "accountDocumentHint": "Este es el documento de su cuenta y va junto con la inscripción.",
     "accountCta": "Para seguir su inscripción y enviar trabajos, cree su cuenta con el mismo correo:",
     "goToArea": "Ver mi inscripción en Mi área"
   },

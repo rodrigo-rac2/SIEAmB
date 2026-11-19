@@ -147,7 +147,7 @@
     "email": "电子邮箱",
     "cpf": "CPF",
     "passport": "护照",
-    "cpfOrPassportHint": "请填写 CPF（巴西人）或护照号（外国人）。",
+    "cpfOrPassportHint": "请填写 CPF，或护照及其签发国家。有 CPF 的请填写 CPF。",
     "country": "国家",
     "countryChoose": "请选择国家",
     "institution": "所属机构",
@@ -159,6 +159,8 @@
     "paymentNote": "提交表格后即可通过 Mercado Pago 支付注册费，支持银行卡或 boleto。",
     "errors": {
       "invalid_cpf": "CPF 无效，请检查号码。",
+      "invalid_passport": "护照无效。",
+      "invalid_country": "请选择护照的签发国家。",
       "cpf_or_passport_required": "请填写 CPF 或护照号。",
       "fullName": "请输入您的全名。",
       "email": "请输入有效的电子邮箱。",
@@ -169,6 +171,7 @@
     },
     "lotRange": "{{from}} 至 {{until}}",
     "accountEmailHint": "注册使用您账户的邮箱。",
+    "accountDocumentHint": "这是您账户中的证件，将随报名一并提交。",
     "accountCta": "如需查看注册情况并提交论文，请使用相同邮箱创建账户：",
     "goToArea": "在“我的主页”查看我的注册"
   },

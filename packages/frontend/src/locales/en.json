@@ -147,7 +147,7 @@
     "email": "Email",
     "cpf": "CPF",
     "passport": "Passport",
-    "cpfOrPassportHint": "Provide CPF (Brazilians) or passport (foreigners).",
+    "cpfOrPassportHint": "Enter the CPF, or the passport with the country that issued it. If you have a CPF, enter the CPF.",
     "country": "Country",
     "countryChoose": "Choose the country",
     "institution": "Institution",
@@ -159,6 +159,8 @@
     "paymentNote": "The fee is paid through Mercado Pago right after you submit the form, by card or boleto.",
     "errors": {
       "invalid_cpf": "Invalid CPF. Check the digits.",
+      "invalid_passport": "Invalid passport.",
+      "invalid_country": "Choose the country of the passport.",
       "cpf_or_passport_required": "Provide CPF or passport.",
       "fullName": "Enter your full name.",
       "email": "Enter a valid email.",
@@ -169,6 +171,7 @@
     },
     "lotRange": "{{from}} to {{until}}",
     "accountEmailHint": "The registration uses the e-mail of your account.",
+    "accountDocumentHint": "This is the document of your account and goes with the registration.",
     "accountCta": "To follow your registration and submit papers, create your account with the same e-mail:",
     "goToArea": "See my registration in My area"
   },

@@ -579,8 +579,12 @@ async function checkRegistration(request: Request, deps: AccountDeps): Promise<R
   const cpf = normalizeCpf(body.cpf);
   const passport = normalizePassport(body.passport);
   const country = text(body.country, 2).toUpperCase();
-  const query = cpf && isValidCpf(cpf) ? { cpf } : passport && country ? { passport, country } : null;
-  if (!query) return json(200, { duplicate: false });
+  // By the CPF, by the passport with its country, or by both when both were typed (ADR-010).
+  const query = {
+    ...(cpf && isValidCpf(cpf) ? { cpf } : {}),
+    ...(passport && country ? { passport, country } : {}),
+  };
+  if (Object.keys(query).length === 0) return json(200, { duplicate: false });
   const other = (await deps.store.findRegistrationsByDocument(query, event.id)).find(
     (m) => m.email !== email,
   );

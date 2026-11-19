@@ -997,6 +997,30 @@ describe('registration form: document already registered', () => {
     expect(await body(await check({ email: 'novo@gmail.com' }, deps))).toEqual({ duplicate: false });
   });
 
+  it('finds a registration by the passport with its country, typed in any shape (ADR-010)', async () => {
+    const { deps, store } = setup();
+    store.addRegistration({ email: 'joana@uc.pt', passport: 'AB123456', country: 'PT' });
+    expect(await body(await check({ passport: 'ab 123-456', country: 'pt', email: 'joana.silva@gmail.com' }, deps))).toEqual({ duplicate: true, maskedEmail: 'j•••@uc.pt' });
+    // The same number from another country is another person; a passport without a country is not asked about.
+    expect(await body(await check({ passport: 'AB123456', country: 'ES', email: 'x@gmail.com' }, deps))).toEqual({ duplicate: false });
+    expect(await body(await check({ passport: 'AB123456', email: 'x@gmail.com' }, deps))).toEqual({ duplicate: false });
+  });
+
+  it('finds a passport registered before the form asked for its country, stored as BR', async () => {
+    const { deps, store } = setup();
+    store.addRegistration({ email: 'antiga@uc.pt', passport: 'OLD12345', country: 'BR' });
+    expect(await body(await check({ passport: 'OLD12345', country: 'PT', email: 'nova@gmail.com' }, deps))).toEqual({ duplicate: true, maskedEmail: 'a•••@uc.pt' });
+  });
+
+  it('asks by both documents when both are typed: either one is enough', async () => {
+    const { deps, store } = setup();
+    store.addRegistration({ email: 'pelo.passaporte@uc.pt', passport: 'AB123456', country: 'PT' });
+    // The CPF is new; the passport already has a registration.
+    expect(await body(await check({ cpf: CPF, passport: 'AB123456', country: 'PT', email: 'nova@gmail.com' }, deps))).toEqual({ duplicate: true, maskedEmail: 'p•••@uc.pt' });
+    // An invalid CPF next to a good passport does not hide the passport.
+    expect(await body(await check({ cpf: '123', passport: 'AB123456', country: 'PT', email: 'nova@gmail.com' }, deps))).toEqual({ duplicate: true, maskedEmail: 'p•••@uc.pt' });
+  });
+
   it('answers 404 for an unknown event', async () => {
     const { deps } = setup();
     expect((await check({ eventSlug: '1999', cpf: CPF }, deps)).status).toBe(404);
