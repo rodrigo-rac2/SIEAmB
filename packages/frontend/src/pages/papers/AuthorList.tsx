@@ -87,6 +87,8 @@ function NameField({
   // Suggestions are for what is being typed now: not for a prefilled, picked or own name.
   const [typed, setTyped] = useState(false);
   const latest = useRef(0);
+  // An answer may arrive after the field was left: it must not open the list then (#359).
+  const focused = useRef(false);
 
   const query = row.fullName.trim();
   const wanted = Boolean(search) && typed && !row.self && !row.ref && query.replace(/\s+/g, '').length >= SEARCH_FROM;
@@ -105,7 +107,7 @@ function NameField({
         if (ticket !== latest.current) return;
         setPeople(found);
         setActive(-1);
-        setOpen(found.length > 0);
+        setOpen(found.length > 0 && focused.current);
       });
     }, SEARCH_DELAY_MS);
     return () => clearTimeout(timer);
@@ -159,8 +161,14 @@ function NameField({
         }}
         onKeyDown={onKeyDown}
         // Leaving the field closes the list; a click on a suggestion lands first (mousedown below).
-        onBlur={() => setOpen(false)}
-        onFocus={() => setOpen(shown.length > 0 && wanted)}
+        onBlur={() => {
+          focused.current = false;
+          setOpen(false);
+        }}
+        onFocus={() => {
+          focused.current = true;
+          setOpen(shown.length > 0 && wanted);
+        }}
       />
       <ul
         id={listId}
