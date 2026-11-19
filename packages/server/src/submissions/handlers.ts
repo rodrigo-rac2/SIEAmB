@@ -8,6 +8,7 @@ import { json, readJsonObject, type Log } from '../payments/http';
 import { audienceFor, firstName } from '../payments/notifications';
 import {
   MODALITY_NAMES,
+  renderAuthorIssueEmail,
   renderOrganiserEmail,
   renderSubmissionEmail,
   type SubmissionEmailKind,
@@ -195,6 +196,7 @@ async function mine(request: Request, deps: SubmissionDeps): Promise<Response> {
           })
           .map(({ position, fullName }) => ({ position, fullName }));
   const places = countPlaces(all, who);
+  await tellSendersOfWaiting(hidden, ctx, deps);
   return json(200, {
     state: ctx.state,
     closesAt: r.closesAt,
@@ -216,6 +218,49 @@ async function mine(request: Request, deps: SubmissionDeps): Promise<Response> {
     },
     submissions: shown.map((s) => ({ ...view(s, ctx, ctx.open, organiser), authorIssues: issuesOf(s) })),
   });
+}
+
+/**
+ * A co-author's place waits because their account says they are someone else than the line
+ * in the paper says (decision 9): whoever sent the paper is told, once, by e-mail and under
+ * the bell. Once per paper, address and document: the outbox remembers what it already
+ * queued, and the bell is rung only with a new e-mail. Never fails the request.
+ */
+async function tellSendersOfWaiting(hidden: Submission[], ctx: Context, deps: SubmissionDeps): Promise<void> {
+  const { user, document, event } = ctx;
+  // An account that has not said who the person is has nothing to disagree with yet.
+  if (!hasDocument(document)) return;
+  try {
+    for (const submission of hidden) {
+      const line = submission.authors.find((a) => standingOn(a, user.email, document) === 'waiting');
+      if (!line || submission.userId === user.id) continue;
+      const sender = (await deps.store.findAccountsByEmail(submission.authors.map((a) => a.email))).find((a) => a.id === submission.userId);
+      if (!sender) continue;
+      const senderLine = submission.authors.find((a) => a.email === sender.email);
+      const mail: OutboxMail = {
+        to: sender.email,
+        // The document only as a hash: the key is stored, and says who to nobody.
+        dedupeKey: `author-issue:${submission.id}:${line.email}:${sha256(`${deps.pepper}:${document.cpf ?? ''}:${passportKey(document) ?? ''}`).slice(0, 16)}`,
+        ...renderAuthorIssueEmail(submission.locale, {
+          firstName: firstName(senderLine?.fullName ?? ''),
+          eventName: event.name,
+          number: submission.number,
+          title: submission.title,
+          authorName: line.fullName,
+          url: `${site(deps)}/${encodeURIComponent(event.slug)}/meus-trabalhos`,
+        }),
+      };
+      const queued = await sendThroughOutbox([mail], deps, deps.now());
+      if (queued > 0) {
+        await notifyUsers(
+          [{ userId: sender.id, eventId: event.id, kind: 'submission.author_issue', data: { number: submission.number, title: submission.title, authorName: line.fullName } }],
+          deps,
+        );
+      }
+    }
+  } catch (error) {
+    deps.log('author_issue_notice_failed', { error: error instanceof Error ? error.message : 'unknown' });
+  }
 }
 
 /**
@@ -332,7 +377,7 @@ async function people(request: Request, deps: SubmissionDeps): Promise<Response>
       fullName: p.fullName,
       institution: p.institution,
       emailHint: maskEmail(p.email),
-      ref: sealEmail(p.email, deps.pepper),
+      ref: sealEmail(p.email, deps.pepper, { userId: ctx.user.id, eventId: ctx.event.id, now: deps.now() }),
       hasDocument: known.has(p.email),
     })),
   });
@@ -388,7 +433,7 @@ type Parsed =
   | Refusal
   | { fields: Omit<SubmissionInput, 'filePath' | 'fileName' | 'filePages' | 'authors' | 'locale'>; authors: TypedAuthor[] };
 
-function parse(body: Record<string, unknown>, ctx: Context, pepper: string, mustBeListed: boolean): Parsed {
+function parse(body: Record<string, unknown>, ctx: Context, pepper: string, now: Date, mustBeListed: boolean): Parsed {
   const { rules: r, user, event } = ctx;
   const title = text(body.title, TITLE.max + 1);
   const titleEn = text(body.titleEn, TITLE.max + 1);
@@ -413,7 +458,10 @@ function parse(body: Record<string, unknown>, ctx: Context, pepper: string, must
     const fullName = text(entry.fullName, 150);
     // A person picked from the suggestions comes as a sealed reference, not as an address.
     const ref = text(entry.ref, 600);
-    const email = ref ? (openEmail(ref, pepper) ?? '') : text(entry.email, 200).toLowerCase();
+    // Only the reference this account was given, in this edition, and not long ago.
+    const email = ref
+      ? (openEmail(ref, pepper, { userId: user.id, eventId: event.id, now }) ?? '')
+      : text(entry.email, 200).toLowerCase();
     if (fullName.length < 3 || !isEmail(email)) return { error: 'invalid_author' };
     if (authors.some((a) => a.email === email)) {
       // Never echo an address the person did not type themselves.
@@ -519,7 +567,7 @@ async function save(request: Request, deps: SubmissionDeps): Promise<Response> {
     return json(429, { error: 'too_many_attempts' });
   }
 
-  const parsed = parse(body, ctx, deps.pepper, !asOrganiser);
+  const parsed = parse(body, ctx, deps.pepper, deps.now(), !asOrganiser);
   if ('error' in parsed) return json(400, { error: parsed.error, ...parsed.extra });
   const { fields } = parsed;
   const resolved = await resolveAuthors(parsed.authors, existing, asOrganiser, deps);

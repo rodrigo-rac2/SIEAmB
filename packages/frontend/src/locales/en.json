@@ -655,7 +655,10 @@
       "withdraw": "Withdraw",
       "editFor": "Change paper no. {{number}}",
       "withdrawFor": "Withdraw paper no. {{number}}",
-      "withdrawConfirm": "Withdraw paper no. {{number}}? Its authors will be told."
+      "withdrawConfirm": "Withdraw paper no. {{number}}? Its authors will be told.",
+      "sameDocumentTitle": "Same person under more than one e-mail",
+      "sameDocumentBody": "These documents appear with more than one e-mail among the authors. The limits of the call already count each as one person; check and, if needed, correct the e-mail in the paper.",
+      "sameDocumentPapers": "no. {{numbers}}"
     },
     "people": {
       "role": "Role",
@@ -709,6 +712,7 @@
       "admin_only": "Only an administrator can do that.",
       "owner_only": "Only the site owner can do that.",
       "email_in_use": "There is already an account with that e-mail.",
+      "email_in_paper": "That e-mail already belongs to another author of a paper this person is in. Correct the paper first.",
       "document_in_use": "That document is already on another account.",
       "weak_password": "Weak password: use at least 10 characters and do not use the person's e-mail.",
       "account_not_found": "Account not found.",
@@ -796,6 +800,7 @@
       "submission.received": "Paper no. {{number}}, \"{{title}}\", was received.",
       "submission.updated": "Paper no. {{number}}, \"{{title}}\", was changed by {{mainAuthor}}.",
       "submission.withdrawn": "Paper no. {{number}}, \"{{title}}\", was withdrawn by {{mainAuthor}}.",
+      "submission.author_issue": "{{authorName}} created an account with a document different from the one entered in paper no. {{number}}, \"{{title}}\". Open the paper and save it again to correct it.",
       "organiser.submission.received": "New paper no. {{number}}: \"{{title}}\", sent by {{mainAuthor}}.",
       "organiser.submission.updated": "Paper no. {{number}}, \"{{title}}\", was changed by {{mainAuthor}}.",
       "organiser.submission.withdrawn": "Paper no. {{number}}, \"{{title}}\", was withdrawn by {{mainAuthor}}.",

@@ -449,6 +449,34 @@ describe('papers list', () => {
       }
     });
 
+    it('lists for an administrator every document that appears under more than one address, among the papers that stand (#352)', async () => {
+      const { deps, tokens, store } = setup();
+      const a = (position: number, fullName: string, email: string, doc: { cpf?: string; passport?: string; country?: string }) => ({ position, fullName, email, cpf: doc.cpf ?? null, passport: doc.passport ?? null, country: doc.country ?? null });
+      store.submissions.push(
+        { ...base, id: 's1', number: 1, title: 'Um', authors: [a(1, 'Ana Reis', 'ana@ufrn.br', { cpf: CPF }), a(2, 'Joana', 'joana@uc.pt', { passport: 'AB123456', country: 'PT' })] },
+        { ...base, id: 's2', number: 2, title: 'Dois', authors: [a(1, 'Ana R.', 'ana.reis@gmail.com', { cpf: CPF }), a(2, 'Joana S.', 'joana.s@gmail.com', { passport: 'AB123456', country: 'PT' })] },
+        { ...base, id: 's3', number: 3, title: 'Três', authors: [a(1, 'Ana Reis', 'ana@ufrn.br', { cpf: CPF }), a(2, 'Outra pessoa', 'juana@uv.es', { passport: 'AB123456', country: 'ES' })] },
+        // A withdrawn paper, and a paper of another edition, say nothing here.
+        { ...base, id: 's4', number: 4, title: 'Retirado', deletedAt: NOW.toISOString(), authors: [a(1, 'Ana', 'ana.terceira@x.org', { cpf: CPF })] },
+        { ...base, id: 's5', number: 5, title: 'De outra edição', eventId: OTHER_EVENT.id, authors: [a(1, 'Ana', 'ana.quarta@x.org', { cpf: CPF })] },
+        // One address, one document, twice: nothing to look at.
+        { ...base, id: 's6', number: 6, title: 'Seis', authors: [a(1, 'Só um e-mail', 'unico@x.org', { cpf: '11144477735' })] },
+        { ...base, id: 's7', number: 7, title: 'Sete', authors: [a(1, 'Só um e-mail', 'unico@x.org', { cpf: '11144477735' }), a(2, 'De antes', 'antes@x.org', {})] },
+      );
+      const data = (await body(await get(deps, 'submissions', tokens.admin))) as unknown as { sameDocument: unknown[] };
+      expect(data.sameDocument).toEqual([
+        { cpf: CPF, passport: null, country: null, lines: [{ email: 'ana@ufrn.br', fullName: 'Ana Reis', papers: [1, 3] }, { email: 'ana.reis@gmail.com', fullName: 'Ana R.', papers: [2] }] },
+        { cpf: null, passport: 'AB123456', country: 'PT', lines: [{ email: 'joana@uc.pt', fullName: 'Joana', papers: [1] }, { email: 'joana.s@gmail.com', fullName: 'Joana S.', papers: [2] }] },
+      ]);
+      // It is made of documents: an organiser is not sent it at all.
+      expect(await body(await get(deps, 'submissions', tokens.organiser))).not.toHaveProperty('sameDocument');
+    });
+
+    it('sends an empty list when nobody is listed in two ways', async () => {
+      const { deps, tokens } = setup();
+      expect(((await body(await get(deps, 'submissions', tokens.admin))) as unknown as { sameDocument: unknown[] }).sameDocument).toEqual([]);
+    });
+
     it('a registration under the author\'s own e-mail is found first, whatever the documents say', async () => {
       const { deps, tokens, store } = setup();
       store.submissions.push({ ...base, id: 's1', number: 1, title: 'x', authors: [{ position: 1, fullName: 'A', email: 'a@x.org', cpf: CPF, passport: null, country: null }] });
@@ -1662,6 +1690,88 @@ describe('the owner changes what nobody else does: e-mail, CPF and password (#27
     const response = await post(deps, 'account-update', tokens.admin, { userId: NOBODY.id, passport: 'AB123456', country: 'PT' });
     expect(await body(response)).toEqual({ ok: true, changed: false });
     expect(store.users.find((u) => u.id === NOBODY.id)!.passport ?? null).toBeNull();
+  });
+
+  describe('the owner\'s changes reach the person\'s lines in papers (ADR-010, #352)', () => {
+    const base = { eventId: EVENT.id, modality: 'ARTIGO', areaRef: 'a1', status: 'SUBMITTED', fileName: 'a.pdf', filePages: 13, createdAt: NOW.toISOString(), updatedAt: NOW.toISOString(), deletedAt: null, deletedReason: null, reviewers: [] };
+    const OLD_CPF = '11144477735';
+    const seed = (store: ReturnType<typeof setup>['store']) => {
+      Object.assign(store.users.find((u) => u.id === NOBODY.id)!, { cpf: OLD_CPF });
+      store.submissions.push(
+        { ...base, id: 's1', number: 1, title: 'Dela', authors: [{ position: 1, fullName: 'Pessoa Comum', email: NOBODY.email, cpf: OLD_CPF, passport: null, country: null }, { position: 2, fullName: 'Outra', email: 'outra@x.org', cpf: '39053344705', passport: null, country: null }] },
+        { ...base, id: 's2', number: 2, title: 'Em que ela é coautora', authors: [{ position: 1, fullName: 'Líder', email: 'lider@x.org', cpf: '12345678909', passport: null, country: null }, { position: 2, fullName: 'Pessoa Comum', email: NOBODY.email, cpf: OLD_CPF, passport: null, country: null }] },
+      );
+      return (id: string) => store.submissions.find((s) => s.id === id)!.authors;
+    };
+
+    it('a new e-mail replaces the old one on every line of that person, and touches nobody else', async () => {
+      const { deps, tokens, store } = setup();
+      const authors = seed(store);
+      expect(await body(await post(deps, 'account-update', tokens.platform, { userId: NOBODY.id, email: 'nova@ufcg.edu.br' }))).toEqual({ ok: true, changed: true });
+      expect(authors('s1').map((a) => a.email)).toEqual(['nova@ufcg.edu.br', 'outra@x.org']);
+      expect(authors('s2').map((a) => a.email)).toEqual(['lider@x.org', 'nova@ufcg.edu.br']);
+      // Her document went with her lines, unchanged.
+      expect(authors('s2')[1]).toMatchObject({ cpf: OLD_CPF });
+    });
+
+    it('a corrected CPF replaces the old one on her lines', async () => {
+      const { deps, tokens, store } = setup();
+      const authors = seed(store);
+      await post(deps, 'account-update', tokens.platform, { userId: NOBODY.id, cpf: CPF });
+      expect(authors('s1')[0]).toMatchObject({ email: NOBODY.email, cpf: CPF });
+      expect(authors('s2')[1]).toMatchObject({ cpf: CPF });
+      expect(authors('s1')[1]).toMatchObject({ cpf: '39053344705' });
+    });
+
+    it('a passport given by the owner is added to her lines with its country, next to the CPF she has', async () => {
+      const { deps, tokens, store } = setup();
+      const authors = seed(store);
+      await post(deps, 'account-update', tokens.platform, { userId: NOBODY.id, passport: 'ab 123-456', country: 'pt' });
+      expect(authors('s2')[1]).toMatchObject({ cpf: OLD_CPF, passport: 'AB123456', country: 'PT' });
+    });
+
+    it('an e-mail and a document changed together both arrive', async () => {
+      const { deps, tokens, store } = setup();
+      const authors = seed(store);
+      await post(deps, 'account-update', tokens.platform, { userId: NOBODY.id, email: 'nova@ufcg.edu.br', cpf: CPF });
+      expect(authors('s1')[0]).toMatchObject({ email: 'nova@ufcg.edu.br', cpf: CPF });
+    });
+
+    it('taking the document off the account leaves her lines as they were', async () => {
+      const { deps, tokens, store } = setup();
+      const authors = seed(store);
+      await post(deps, 'account-update', tokens.platform, { userId: NOBODY.id, cpf: '' });
+      expect(authors('s1')[0]).toMatchObject({ cpf: OLD_CPF });
+    });
+
+    it('refuses an e-mail that is already another author of one of her papers, and changes nothing', async () => {
+      const { deps, tokens, store, auth } = setup();
+      const authors = seed(store);
+      const response = await post(deps, 'account-update', tokens.platform, { userId: NOBODY.id, email: 'outra@x.org' });
+      expect(response.status).toBe(409);
+      expect(await body(response)).toEqual({ error: 'email_in_paper' });
+      expect(store.users.find((u) => u.id === NOBODY.id)!.email).toBe(NOBODY.email);
+      expect(authors('s1').map((a) => a.email)).toEqual([NOBODY.email, 'outra@x.org']);
+      expect(auth.emails).toEqual([]);
+    });
+
+    it('a change of name alone touches no line', async () => {
+      const { deps, tokens, store } = setup();
+      const authors = seed(store);
+      const before = JSON.stringify(store.submissions);
+      await post(deps, 'account-update', tokens.platform, { userId: NOBODY.id, fullName: 'Pessoa Comum da Silva' });
+      expect(JSON.stringify(store.submissions)).toBe(before);
+      expect(authors('s1')[0]!.fullName).toBe('Pessoa Comum');
+    });
+
+    it('when the account cannot take the change, no line is touched', async () => {
+      const { deps, tokens, store } = setup();
+      const authors = seed(store);
+      store.users.find((u) => u.id === REVIEWER.id)!.cpf = CPF;
+      const response = await post(deps, 'account-update', tokens.platform, { userId: NOBODY.id, email: 'nova@ufcg.edu.br', cpf: CPF });
+      expect(response.status).toBe(409);
+      expect(authors('s1')[0]).toMatchObject({ email: NOBODY.email, cpf: OLD_CPF });
+    });
   });
 
   it('shows the passport and its country in the list to the owner only', async () => {

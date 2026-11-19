@@ -371,6 +371,35 @@ export class SupabaseAdminStore implements AdminStore {
     }
   }
 
+  async shareAPaper(emailA: string, emailB: string): Promise<boolean> {
+    const [a, b] = [emailA.toLowerCase(), emailB.toLowerCase()];
+    if (a === b) return false;
+    const rows = await this.rest.request<{ submission_id: string; email: string }[]>(
+      `submission_authors?email=in.(${q(`"${a.replace(/["\\]/g, '')}","${b.replace(/["\\]/g, '')}"`)})&select=submission_id,email&limit=2000`,
+    );
+    const of = (email: string) => new Set(rows.filter((r) => r.email === email).map((r) => r.submission_id));
+    const second = of(b);
+    return [...of(a)].some((id) => second.has(id));
+  }
+
+  async syncAuthorLines(oldEmail: string, newEmail: string, document: { cpf: string | null; passport: string | null; country: string | null } | null): Promise<void> {
+    const [before, after] = [oldEmail.toLowerCase(), newEmail.toLowerCase()];
+    if (before !== after) {
+      await this.rest.request<unknown>(`submission_authors?email=eq.${q(before)}`, {
+        method: 'PATCH',
+        headers: { Prefer: 'return=minimal' },
+        body: JSON.stringify({ email: after }),
+      });
+    }
+    if (document && (document.cpf || document.passport)) {
+      await this.rest.request<unknown>(`submission_authors?email=eq.${q(after)}`, {
+        method: 'PATCH',
+        headers: { Prefer: 'return=minimal' },
+        body: JSON.stringify({ cpf: document.cpf, passport: document.passport, country: document.passport ? document.country : null }),
+      });
+    }
+  }
+
   async listMembers(eventId: string): Promise<Member[]> {
     const rows = await this.rest.request<
       { role: MemberRole; user: { id: string; email: string; full_name: string } | null }[]

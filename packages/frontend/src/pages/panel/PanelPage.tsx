@@ -796,6 +796,24 @@ function PapersTab({ token, slug, message }: TabProps) {
         onClose={() => change(() => closeSubmissions(token, slug))}
         onReopen={() => change(() => reopenSubmissions(token, slug))}
       />
+      {/* One document under more than one address (ADR-010): sent to administrators only. */}
+      {(data.sameDocument ?? []).length > 0 && (
+        <div className="account__notice" role="status" data-testid="same-document">
+          <h3>{t('panel.papers.sameDocumentTitle')}</h3>
+          <p>{t('panel.papers.sameDocumentBody')}</p>
+          <ul>
+            {data.sameDocument!.map((group) => (
+              <li key={`${group.cpf ?? ''}|${group.country ?? ''}|${group.passport ?? ''}`}>
+                <strong>{group.cpf ? `CPF ${formatCpf(group.cpf)}` : `${group.passport ?? ''} (${group.country ?? ''})`}</strong>
+                {': '}
+                {group.lines
+                  .map((line) => `${line.fullName} (${line.email}, ${t('panel.papers.sameDocumentPapers', { numbers: line.papers.join(', ') })})`)
+                  .join('; ')}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <p className="panel__meta">{t('panel.papers.reviewersHint')}</p>
       {people && reviewers.length === 0 && (
         <p className="account__notice" data-testid="no-reviewers">

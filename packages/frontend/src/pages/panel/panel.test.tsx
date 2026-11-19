@@ -1231,6 +1231,34 @@ describe('registration and papers side by side, and reminders (#225)', () => {
     expect(within(await screen.findByTestId('paper-row')).queryByTestId('author-document')).not.toBeInTheDocument();
   });
 
+  it('shows an administrator who is listed under more than one e-mail, and nothing when nobody is (#352)', async () => {
+    const answer = (sameDocument: unknown) => ({ members: members('ADMIN'), submissions: { body: { role: 'ADMIN', counts: { total: 0, withdrawn: 0 }, submissions: [], sameDocument } } });
+    stubApi(
+      answer([
+        { cpf: '52998224725', passport: null, country: null, lines: [{ email: 'ana@ufrn.br', fullName: 'Ana Reis', papers: [1, 3] }, { email: 'ana.reis@gmail.com', fullName: 'Ana R.', papers: [2] }] },
+        { cpf: null, passport: 'AB123456', country: 'PT', lines: [{ email: 'joana@uc.pt', fullName: 'Joana', papers: [1] }, { email: 'j@gmail.com', fullName: 'Joana S.', papers: [2] }] },
+      ]),
+    );
+    const first = mount('/2027/painel/trabalhos', <PanelPage tab="papers" />);
+    const notice = await screen.findByTestId('same-document');
+    expect(within(notice).getByRole('heading', { name: 'Mesma pessoa com mais de um e-mail' })).toBeInTheDocument();
+    expect(within(notice).getAllByRole('listitem').map((li) => li.textContent)).toEqual([
+      'CPF 529.982.247-25: Ana Reis (ana@ufrn.br, nº 1, 3); Ana R. (ana.reis@gmail.com, nº 2)',
+      'AB123456 (PT): Joana (joana@uc.pt, nº 1); Joana S. (j@gmail.com, nº 2)',
+    ]);
+    first.unmount();
+    stubApi(answer([]));
+    const second = mount('/2027/painel/trabalhos', <PanelPage tab="papers" />);
+    await screen.findByTestId('panel-counts');
+    expect(screen.queryByTestId('same-document')).not.toBeInTheDocument();
+    second.unmount();
+    // An organiser is sent no such list.
+    stubApi({ members: members('ORGANIZER'), submissions: { body: { role: 'ORGANIZER', counts: { total: 0, withdrawn: 0 }, submissions: [] } } });
+    mount('/2027/painel/trabalhos', <PanelPage tab="papers" />);
+    await screen.findByTestId('panel-counts');
+    expect(screen.queryByTestId('same-document')).not.toBeInTheDocument();
+  });
+
   it('opens the papers list already filtered to the person, with each author’s registration beside the name', async () => {
     stubApi({
       members: members('ORGANIZER'),

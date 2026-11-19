@@ -56,6 +56,8 @@ export interface PanelPaper {
 
 export interface PanelPapers {
   role: PanelRole;
+  /** To administrators: one document under more than one address among the papers that stand (ADR-010). */
+  sameDocument?: { cpf: string | null; passport: string | null; country: string | null; lines: { email: string; fullName: string; papers: number[] }[] }[];
   /** Set while the organisers have submissions closed by hand (#236). */
   closed?: { closedAt: string; closedBy: string } | null;
   counts: { total: number; withdrawn: number };
@@ -130,6 +132,7 @@ const KNOWN_ERRORS = [
   'account_not_found',
   'account_without_login',
   'email_in_use',
+  'email_in_paper',
   'document_in_use',
   'weak_password',
 ] as const;
