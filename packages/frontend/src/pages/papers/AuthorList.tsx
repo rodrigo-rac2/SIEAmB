@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import { DocumentFields, NO_DOCUMENT, documentInput, type DocumentValue } from '../../components/account/DocumentFields';
 import type { PersonSuggestion } from '../../services/submissions';
 
 /** One line of the author list as the form holds it. */
@@ -14,23 +15,41 @@ export interface AuthorRow {
   ref?: string;
   /** The masked address of the picked person, e.g. `r•••@ufcg.edu.br`. */
   emailHint?: string;
+  /** Who the person is (ADR-010), as typed: asked for whoever has no account that says it. */
+  document: DocumentValue;
+  /**
+   * What is already on record about who this author is, so nothing is asked twice:
+   * `account`, their own account says it; `typed`, typed before for this address (shown as
+   * a hint). Dropped when the address changes: it is then another person.
+   */
+  onRecord?: { state: 'account' } | { state: 'typed'; hint: string };
+  /**
+   * A line from before documents were asked for, on a paper an administrator is correcting:
+   * the fields are there, and may be left empty. Dropped with the address, like `onRecord`.
+   */
+  legacy?: boolean;
 }
 
 let nextKey = 0;
 export const newAuthorRow = (over: Partial<AuthorRow> = {}): AuthorRow => {
   nextKey += 1;
-  return { key: `author-${nextKey}`, fullName: '', email: '', ...over };
+  return { key: `author-${nextKey}`, fullName: '', email: '', document: NO_DOCUMENT, ...over };
 };
 
-/** What the server takes: a typed e-mail, or the reference of a picked person. */
+/** Whether the form has to ask who this author is: not for the sender, nor where it is on record. */
+export const asksDocument = (row: AuthorRow): boolean => !row.self && !row.onRecord;
+
+/**
+ * What the server takes: a typed e-mail, or the reference of a picked person, and the
+ * document typed for them when one was asked for.
+ */
 export const toAuthorInput = (rows: AuthorRow[]) =>
   rows
     .filter((row) => row.fullName.trim() || row.email.trim() || row.ref)
-    .map((row) =>
-      row.ref
-        ? { fullName: row.fullName.trim(), ref: row.ref }
-        : { fullName: row.fullName.trim(), email: row.email.trim() },
-    );
+    .map((row) => ({
+      ...(row.ref ? { fullName: row.fullName.trim(), ref: row.ref } : { fullName: row.fullName.trim(), email: row.email.trim() }),
+      ...(asksDocument(row) ? documentInput(row.document) : {}),
+    }));
 
 /** A reference is sealed anew on every search, so a picked person is recognised by name and hint. */
 const personKey = (fullName: string, emailHint: string | undefined) => `${fullName}|${emailHint ?? ''}`;
@@ -208,6 +227,7 @@ export function AuthorList({
     <>
       <h2>{t('papers.form.authorsTitle')}</h2>
       <p className="reg-form__hint">{t('papers.form.authorsHint', { max })}</p>
+      <p className="reg-form__hint">{t('papers.form.authorsDocumentHint')}</p>
       <ol className="papers__author-list">
         {rows.map((row, index) => {
           const n = index + 1;
@@ -220,10 +240,18 @@ export function AuthorList({
                 search={search}
                 // Typing over a picked person lets go of them: the name is no longer theirs.
                 onType={(fullName) =>
-                  patch(index, row.ref ? { fullName, ref: undefined, emailHint: undefined, email: '' } : { fullName })
+                  patch(index, row.ref ? { fullName, ref: undefined, emailHint: undefined, email: '', onRecord: undefined } : { fullName })
                 }
                 onPick={(person) =>
-                  patch(index, { fullName: person.fullName, ref: person.ref, emailHint: person.emailHint, email: '' })
+                  patch(index, {
+                    fullName: person.fullName,
+                    ref: person.ref,
+                    emailHint: person.emailHint,
+                    email: '',
+                    // Someone whose account says who they are needs nothing typed for them.
+                    onRecord: person.hasDocument ? { state: 'account' } : undefined,
+                    document: NO_DOCUMENT,
+                  })
                 }
               />
               <div className="reg-form__field">
@@ -236,7 +264,7 @@ export function AuthorList({
                         className="account__button account__button--quiet"
                         type="button"
                         aria-label={t('papers.form.suggestionClear', { n })}
-                        onClick={() => patch(index, { ref: undefined, emailHint: undefined, email: '' })}
+                        onClick={() => patch(index, { ref: undefined, emailHint: undefined, email: '', onRecord: undefined })}
                       >
                         {t('papers.form.suggestionUndo')}
                       </button>
@@ -249,7 +277,40 @@ export function AuthorList({
                     type="email"
                     value={row.email}
                     readOnly={row.self}
-                    onChange={(e) => patch(index, { email: e.target.value })}
+                    // Another address is another person: what was on record is not theirs.
+                    onChange={(e) => patch(index, { email: e.target.value, onRecord: undefined, legacy: undefined })}
+                  />
+                )}
+              </div>
+              <div className="papers__author-document" data-testid="author-document">
+                {row.self ? (
+                  <p className="reg-form__hint">{t('papers.form.authorDocumentOwn')}</p>
+                ) : row.onRecord ? (
+                  <p className="reg-form__hint">
+                    {row.onRecord.state === 'account'
+                      ? t('papers.form.authorDocumentOnFile')
+                      : t('papers.form.authorDocumentTyped', { hint: row.onRecord.hint })}{' '}
+                    {row.onRecord.state === 'typed' && (
+                      <button
+                        className="account__button account__button--quiet"
+                        type="button"
+                        aria-label={t('papers.form.authorDocumentChangeLabel', { n })}
+                        onClick={() => patch(index, { onRecord: undefined, document: NO_DOCUMENT })}
+                      >
+                        {t('papers.form.authorDocumentChange')}
+                      </button>
+                    )}
+                  </p>
+                ) : (
+                  <DocumentFields
+                    idPrefix={`author-document-${row.key}`}
+                    value={row.document}
+                    onChange={(document) => patch(index, { document })}
+                    labels={{
+                      cpf: t('papers.form.authorCpf', { n }),
+                      passport: t('papers.form.authorPassport', { n }),
+                      country: t('papers.form.authorCountry', { n }),
+                    }}
                   />
                 )}
               </div>

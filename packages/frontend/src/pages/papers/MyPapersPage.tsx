@@ -107,6 +107,12 @@ function PaperCard({
           <li key={a.position}>{a.fullName}</li>
         ))}
       </ol>
+      {/* An author who signed up saying they are someone else than the line says (ADR-010): the place waits until this is saved again. */}
+      {(paper.authorIssues ?? []).map((issue) => (
+        <p className="account__notice" role="status" data-testid="author-issue" key={issue.position}>
+          {t('papers.authorIssue', { name: issue.fullName })}
+        </p>
+      ))}
       <p className="papers__meta">
         {paper.fileName}
         {paper.filePages !== null && ` · ${t('papers.pages', { count: paper.filePages })}`}
@@ -228,7 +234,27 @@ export function MyPapersPage() {
                 })}{' '}
                 {t('papers.limits', papers.limits)}
               </p>
-              {canSend && (
+              {/* Nothing is sent, and no paper that names a document is shown, until the account says who the person is (ADR-010). */}
+              {papers.documentMissing && (
+                <div className="account__notice" role="status" data-testid="document-missing">
+                  <p>{t('papers.documentMissing')}</p>
+                  <Link className="account__button" to={`/${event.slug}/minha-area#meus-dados`}>
+                    {t('papers.documentMissingCta')}
+                  </Link>
+                </div>
+              )}
+              {/* Places that wait: listed with another document, or under another address. */}
+              {(papers.waiting?.otherDocument ?? 0) > 0 && !papers.documentMissing && (
+                <p className="account__notice" role="status" data-testid="waiting-other-document">
+                  {t('papers.waitingOtherDocument', { count: papers.waiting!.otherDocument })}
+                </p>
+              )}
+              {(papers.waiting?.otherEmail ?? []).map((place) => (
+                <p className="account__notice" role="status" data-testid="waiting-other-email" key={place.maskedEmail}>
+                  {t('papers.waitingOtherEmail', { count: place.count, email: place.maskedEmail })}
+                </p>
+              ))}
+              {canSend && !papers.documentMissing && (
                 <p>
                   <Link className="account__button" to={`/${event.slug}/meus-trabalhos/novo`}>
                     {t('papers.send')}
