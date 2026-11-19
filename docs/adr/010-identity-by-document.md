@@ -1,0 +1,45 @@
+# ADR-010: A person is identified by a document, not by an e-mail address
+
+**Date:** 2026-11-19 · **Status:** Accepted, being built in five parts (the "Built so far" list at the end says what is in place) · **Issues:** #342 (#343 to #347)
+
+## Context
+
+Until now a person was known to the submission system by an e-mail address. "Create account" asked for name and e-mail (ADR-007, decision 2), the CPF was optional and given later, and the authors of a paper were a name and an e-mail each (ADR-008, decision 3). The edital's limits (3 papers as first author, 5 in any other place) were counted by that address, so anyone with two addresses got around them.
+
+Rodrigo found it testing on a real phone the day before the planned release: "when i registered i'm automatically taken into the area, can send the paper without defining a CPF or passport... it's just really tied to the email." The conferences authors here know do it otherwise: ENGEMA asks the CPF of every Brazilian author and the passport of foreign ones, with every co-author registered; SIMPEP asks the CPF to create the account; ANPAD logs people in by CPF, e-mail or passport. EasyChair, which asks only name and e-mail, is the exception among them.
+
+His decisions (2026-11-19): CPF or passport with its country at sign-up, both allowed; one of them for every co-author too, typed by whoever sends the paper; co-authors still need no account, and their place waits "until they register with the email and (cpf or passport/country)"; "CPF already registered" and "Passport/Country already registered" when a document is tried with another e-mail; "enforcing valid CPF numbers at all times"; registrations and submissions stay integrated. "It's the only way for authors not to get around registering with different emails."
+
+## Decisions
+
+1. **One way to read a document, in the browser, on the server and in the database.** A CPF is 11 digits with valid check digits. A passport is stored in upper case without spaces, dots or dashes, 5 to 20 letters or digits. Its country is an ISO two-letter code chosen from a list (never typed), and is never BR: Brazilians are identified by the CPF. A person may have a CPF, a passport with its country, or both. Two documents are of the same person when a kind they both have is the same and no kind they both have differs (`compareDocuments`).
+   - The rules exist twice, in `packages/shared/src/utils/document.ts` and `packages/server/src/core/document.ts`, because the server cannot import the shared package once deployed (ADR-007). One file of cases, `document.vectors.json`, is run against both, and against the database's own `is_valid_cpf`.
+   - The database refuses what the rules refuse: checks on `users`, `submission_authors` and `signup_documents`. So no path at all, including one written later, stores a CPF that is not one.
+2. **Sign-up asks for the document, and an account has it from its first day.** The form has name, e-mail, CPF and passport with country; at least one document is required. This replaces "name and e-mail only" in ADR-007, decision 2; the password is still chosen after the e-mail is confirmed.
+3. **One account per document.** `users.cpf` was already unique; `users (country, passport)` now is too. A document held by a confirmed account with another e-mail is refused at sign-up as `cpf_in_use` or `passport_in_use`, with that account's address masked (`r•••@gmail.com`), as the registration form already did for a repeated CPF. This narrows ADR-007, decision 4 ("no hint of who has an account"): an address still tells nothing, a document tells that it has an account and a masked hint of where. The check is limited per address of origin and per document.
+4. **A document belongs to an account only after its e-mail is confirmed.** What was typed at sign-up waits in `signup_documents`, by address, and is shown on the screen where the password is chosen, to confirm or correct; saving the password saves it. So an address nobody confirmed reserves no document, and nobody can attach a document to an address that is not theirs by asking for an account in its name.
+5. **Each kind of document is given once** (ADR-007, decision 6, now per kind): someone with a CPF may add a passport later, and the other way round, but changes neither. The owner corrects CPF, passport and country (ADR-008, decision 9a, which had the CPF only).
+6. **An account without a document sends no paper.** Only accounts made before this exist that way (on dev); Minha área asks for the document first.
+7. **Every author of a paper has a document.** The line of whoever sends takes the account's. A line whose e-mail belongs to an account that has a document takes the account's, whatever was typed for it: nobody learns someone's CPF by trying. The other lines carry what the sender typed. A line is refused without a document, with an invalid one, with a document already in the paper, or with a document that belongs to an account under another e-mail (the error names the person and that account's masked address).
+8. **The limits are counted per person**, over the live papers of the edition where a line has the person's e-mail, or CPF, or passport and country, using everything the person's account says about them. The count and the write happen in one database step, so two saves at the same moment cannot both pass.
+9. **A co-author's place waits for the e-mail and the document together.** The e-mail proves the mailbox; a CPF is not a secret, so a document alone never opens an unpublished paper (ADR-007, decision 5, same reasoning).
+   - Same e-mail and a matching document: the paper is theirs to see.
+   - Same e-mail, another document: the paper keeps waiting (Rodrigo's choice over "the account's document wins"). The person is told they were listed with another document, whoever sent the paper is told once, and correcting it is an ordinary change, which counts the limits again. The waiting line counts against the person meanwhile.
+   - Matching document, another e-mail: the account is created, the paper is not shown, the person sees a hint with the masked address, and the paper counts against them.
+   - Lines written before documents existed match by e-mail alone.
+10. **Only an Administrador sees an author's document** (ADR-008, decision 9). Not the other authors, reviewers or organisers, not the e-mails, not the audit log. Whoever sent the paper sees a masked hint of what they typed.
+11. **Registrations follow the same rules.** The form shows the country list when a passport is typed. Logged in, the document comes from the account and cannot be changed there, so a registration and its account carry the same document. The organisers' panel takes an author as registered by e-mail or by document. The form keeps working without an account.
+    - The form writes straight from the browser, and a page loaded before a release keeps sending what it always sent. So a trigger puts the row in shape on the way in, and refuses only a CPF that is not one, on new rows or a changed CPF. Rows already there are left alone.
+
+## Consequences
+
+- A made-up CPF with valid check digits cannot be told from a real one: nothing here asks the Receita. The rules make getting around the limits a deliberate lie about a document, they do not prove identity.
+- Someone can list another person's CPF in a paper under some other address and use up that person's places, as was already possible by e-mail. Minha área shows a person how many papers list them under another address, so they can see it and ask the organisers.
+- Passport registrations made on production before this have country BR, because the form never asked. They are read as "country not known" and matched by hand.
+- A CPF now says, to anyone who types it at sign-up, that it has an account and a masked hint of its address. Accepted for the message Rodrigo asked for.
+- The edital says nothing about a document for co-authors. The committee should say so before the form asks.
+- The production release of accounts and submissions (ADR-007, ADR-008) waits for all five parts: production has no account yet, so none has to be converted.
+
+## Built so far
+
+- **Part 1 (#343):** the migration `20261119010000_identity_documents` (the CPF check, the checks and the unique passport on `users`, the document columns on `submission_authors`, the trigger on `pre_registrations`, `signup_documents`); the rules on both sides with their shared cases; the country list and `CountrySelect`. Nothing asks for a document yet.

@@ -149,6 +149,7 @@
     "passport": "Passport",
     "cpfOrPassportHint": "Provide CPF (Brazilians) or passport (foreigners).",
     "country": "Country",
+    "countryChoose": "Choose the country",
     "institution": "Institution",
     "consent": "I authorise the use of my data (name, e-mail, CPF or passport) to organise the event and to send me information about registrations, under the Brazilian data protection law (LGPD).",
     "submit": "Submit registration",

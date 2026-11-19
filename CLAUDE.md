@@ -29,7 +29,7 @@ packages/
   db/           # Prisma schema + hand-written SQL migrations
   shared/       # Shared types and utilities (frontend only at runtime; the server cannot import it once deployed)
   e2e/          # Playwright E2E tests, sample data and cleanup scripts
-docs/adr/       # Decision records 001 to 009
+docs/adr/       # Decision records 001 to 010
 ```
 
 ## Commands
@@ -63,7 +63,7 @@ npm run lint          # Lint all packages
 
 ## Key Architectural Decisions
 
-The full records are in `docs/adr/` (001 themes, 002 roles, 003 peer review, 004 payments, 005 e-mails and reminders, 006 soft delete, 007 accounts, 008 submissions and the organisers' panel, 009 how the site runs). Write a new one whenever a decision changes how the system is built, in the same pull request as the change.
+The full records are in `docs/adr/` (001 themes, 002 roles, 003 peer review, 004 payments, 005 e-mails and reminders, 006 soft delete, 007 accounts, 008 submissions and the organisers' panel, 009 how the site runs, 010 a person is identified by CPF or passport). Write a new one whenever a decision changes how the system is built, in the same pull request as the change.
 
 - Multi-event by design: `events` table with `is_current` flag; all content (news, submissions, registrations) scoped to an event
 - Per-edition visual theme: each event has an optional `theme` (EventTheme) overriding CSS tokens for that edition only (applied in PageLayout via `eventThemeVars`); the palette changes every edition and archived editions keep theirs

@@ -147,9 +147,11 @@ model User {
   id              String   @id @db.Uuid // == Supabase auth.users.id (trigger in migration SQL)
   email           String   @unique
   fullName        String   @default("") @map("full_name")
-  cpf             String?  @unique // digits only; null for foreigners
+  // One person, one document (ADR-010): a CPF (11 digits, valid check digits), a passport
+  // (upper case, no separators) with its country (ISO code, never BR), or both. Checked in SQL.
+  cpf             String?  @unique
   passport        String?
-  country         String   @default("BR")
+  country         String   @default("BR") // of the passport; means nothing without one
   institution     String?
   lattesUrl       String?  @map("lattes_url")
   orcid           String?
@@ -304,6 +306,7 @@ model PreRegistration {
   eventId       String                @map("event_id") @db.Uuid
   fullName      String                @map("full_name")
   email         String // lower-cased by the frontend; unique per event
+  // Put in shape by a trigger on insert (ADR-010); BR next to a passport means "country not known".
   cpf           String? // digits only; null for foreigners
   passport      String?
   country       String                @default("BR")
@@ -550,6 +553,10 @@ model SubmissionAuthor {
   position     Int
   fullName     String   @map("full_name")
   email        String // lower-cased
+  // Who the author is (ADR-010). Empty only on lines written before documents were asked for.
+  cpf          String?
+  passport     String?
+  country      String? // of the passport; null without one
   createdAt    DateTime @default(now()) @map("created_at")
 
   submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
@@ -557,7 +564,22 @@ model SubmissionAuthor {
   @@unique([submissionId, position])
   @@unique([submissionId, email])
   @@index([email])
+  @@index([cpf])
+  @@index([country, passport])
   @@map("submission_authors")
+}
+
+/// What someone typed when asking for an account (ADR-010). It becomes the account's
+/// document only after the e-mail is confirmed; one line per address, the last request wins.
+model SignupDocument {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email     String   @unique // lower-cased
+  cpf       String?
+  passport  String?
+  country   String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("signup_documents")
 }
 
 // Who reviews a paper (#232): one or more people with the Avaliador role, chosen by the
