@@ -303,7 +303,7 @@ test.describe('accounts @accounts', () => {
     await expect(page.locator('#cpf')).toHaveValue(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/);
     await page.getByRole('checkbox').check();
     await page.getByRole('button', { name: /Enviar inscrição/ }).click();
-    await expect(page.getByRole('alert')).toContainText('feita com o e-mail e•••@sieamb.org');
+    await expect(page.getByRole('alert')).toContainText('no e-mail e•••@sieamb.org');
     const rows = await admin<unknown[]>(`/rest/v1/pre_registrations?email=eq.${encodeURIComponent(newEmail)}&select=id`);
     expect(rows).toEqual([]);
   });
