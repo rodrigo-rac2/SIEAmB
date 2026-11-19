@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { isValidCpf, normalizeCpf } from '../utils/cpf.js';
+import { isPassportCountry, isValidPassport, normalizePassport } from '../utils/document.js';
 
 export const participantCategorySchema = z.enum([
   'ESTUDANTE_GRADUACAO',
@@ -24,8 +25,17 @@ export const registrationSchema = z
       .refine((v) => v === '' || isValidCpf(v), { message: 'invalid_cpf' })
       .optional()
       .or(z.literal('')),
-    passport: z.string().trim().max(20).optional().or(z.literal('')),
-    country: z.string().trim().length(2).default('BR'),
+    // A passport in its stored shape (upper case, no separators), and the country that issued
+    // it, which is asked for only with a passport and is never Brazil (ADR-010).
+    passport: z
+      .string()
+      .trim()
+      .max(40)
+      .transform(normalizePassport)
+      .refine((v) => v === '' || isValidPassport(v), { message: 'invalid_passport' })
+      .optional()
+      .or(z.literal('')),
+    country: z.string().trim().toUpperCase().max(2).default('BR'),
     institution: z.string().trim().max(200).optional().or(z.literal('')),
     category: participantCategorySchema,
     modality: modalitySchema,
@@ -34,6 +44,12 @@ export const registrationSchema = z
   .refine((data) => Boolean(data.cpf) || Boolean(data.passport), {
     message: 'cpf_or_passport_required',
     path: ['cpf'],
-  });
+  })
+  .refine((data) => !data.passport || isPassportCountry(data.country), {
+    message: 'invalid_country',
+    path: ['country'],
+  })
+  // Without a passport there is no country to keep: the column holds BR for everybody else.
+  .transform((data) => ({ ...data, country: data.passport ? data.country : 'BR' }));
 
 export type RegistrationFormData = z.input<typeof registrationSchema>;

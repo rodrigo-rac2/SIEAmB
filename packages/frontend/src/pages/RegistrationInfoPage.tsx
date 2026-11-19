@@ -1,21 +1,14 @@
-import type { FeeTier } from '@sieamb/shared';
-import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { FeeTable } from '../components/registration/FeeTable';
 import { PageHeader } from '../components/shared/PageHeader';
 import { useEvent } from '../contexts/EventContext';
-import { getDataProvider } from '../services';
+import { useContent } from '../hooks/useContent';
 
 export function RegistrationInfoPage() {
   const { t } = useTranslation();
   const { event } = useEvent();
-  const [tiers, setTiers] = useState<FeeTier[]>([]);
-
-  useEffect(() => {
-    if (!event) return;
-    void getDataProvider().getFeeTiers(event.id).then(setTiers);
-  }, [event]);
+  const tiers = useContent('getFeeTiers', event?.id) ?? [];
 
   if (!event) return null;
 

@@ -1,29 +1,20 @@
-import type { EventSummary, Founder, SiteContent } from '@sieamb/shared';
-import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Markdown from 'react-markdown';
 import { Link } from 'react-router-dom';
 import { PageHeader } from '../components/shared/PageHeader';
 import { PersonCard } from '../components/shared/PersonCard';
 import { useEvent } from '../contexts/EventContext';
+import { useContent } from '../hooks/useContent';
 import { useLocalized } from '../hooks/useLocale';
-import { getDataProvider } from '../services';
 import './AboutPage.css';
 
 export function AboutPage() {
   const { t } = useTranslation();
   const { event } = useEvent();
   const l = useLocalized();
-  const [site, setSite] = useState<SiteContent | null>(null);
-  const [founders, setFounders] = useState<Founder[]>([]);
-  const [editions, setEditions] = useState<EventSummary[]>([]);
-
-  useEffect(() => {
-    const provider = getDataProvider();
-    void provider.getSiteContent().then(setSite);
-    void provider.getFounders().then(setFounders);
-    void provider.getEvents().then(setEditions);
-  }, []);
+  const site = useContent('getSiteContent') ?? null;
+  const founders = useContent('getFounders') ?? [];
+  const editions = useContent('getEvents') ?? [];
 
   if (!event) return null;
   const previous = editions.filter((e) => e.id !== event.id);

@@ -1,0 +1,278 @@
+/**
+ * Browser side of accounts (#208). Logging in and keeping the session is done by
+ * Supabase Auth; everything else goes through /api/v1/account, where the server
+ * checks who is logged in on every call.
+ */
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+
+/** Accounts are switched on per deployment, so production stays as it is until released. */
+export const accountsEnabled = (): boolean =>
+  import.meta.env.VITE_ACCOUNTS_ENABLED === 'true' &&
+  Boolean(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY);
+
+let client: SupabaseClient | null = null;
+
+/** The one auth client of the page: it owns the session kept in the browser. */
+export function getAuthClient(): SupabaseClient | null {
+  if (!accountsEnabled()) return null;
+  client ??= createClient(
+    import.meta.env.VITE_SUPABASE_URL as string,
+    import.meta.env.VITE_SUPABASE_ANON_KEY as string,
+    {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        // Our links carry a token hash we verify ourselves; nothing is read from the URL.
+        detectSessionInUrl: false,
+        storageKey: 'sieamb-auth',
+      },
+    },
+  );
+  return client;
+}
+
+export type RegistrationState = 'PAID' | 'PENDING' | 'UNPAID' | 'CANCELLED';
+export type LinkRequestState = 'PENDING' | 'NEEDS_ORGANISER' | null;
+
+export interface AccountUser {
+  email: string;
+  fullName: string;
+  cpf: string | null;
+  passport: string | null;
+  /** Of the passport; means nothing without one. */
+  country: string;
+  institution: string | null;
+  /** Each kind of document is given once (ADR-010). */
+  cpfLocked?: boolean;
+  passportLocked?: boolean;
+  documentLocked: boolean;
+  /** No CPF and no passport yet: nothing can be sent until one is given. */
+  documentMissing?: boolean;
+  /** What was typed when the account was asked for, to confirm or correct. */
+  pendingDocument?: { cpf: string | null; passport: string | null; country: string | null } | null;
+}
+
+/** What a form holds for a document, as typed. */
+export interface DocumentInput {
+  cpf?: string;
+  passport?: string;
+  country?: string;
+}
+
+export interface AccountRegistration {
+  id: string;
+  eventSlug: string;
+  eventName: string;
+  category: string;
+  modality: string;
+  createdAt: string;
+  state: RegistrationState;
+  amountCents: number | null;
+  payToken: string | null;
+  paymentId: string | null;
+}
+
+export interface AccountSuggestion {
+  registrationId: string;
+  eventSlug: string;
+  eventName: string;
+  maskedEmail: string;
+  createdAt: string;
+  request: LinkRequestState;
+}
+
+export interface Account {
+  /** Where this person may open the organisation area (#219). */
+  /** Editions whose organisation area the person may open (`slugs`) and where they review (`reviewing`). */
+  panels?: { platformAdmin: boolean; slugs: string[]; reviewing?: string[] };
+  user: AccountUser;
+  registrations: AccountRegistration[];
+  suggestions: AccountSuggestion[];
+}
+
+export interface ProfileInput {
+  fullName?: string;
+  institution?: string;
+  cpf?: string;
+  passport?: string;
+  country?: string;
+}
+
+/** Error codes the screens have a text for; anything else is shown as `generic`. */
+const KNOWN_ERRORS = [
+  'invalid_email',
+  'invalid_name',
+  'invalid_cpf',
+  'invalid_passport',
+  'invalid_country',
+  'weak_password',
+  'too_many_attempts',
+  'not_logged_in',
+  'email_not_confirmed',
+  'document_locked',
+  'document_in_use',
+  'document_required',
+  'cpf_in_use',
+  'passport_in_use',
+  'already_registered',
+  'registration_not_found',
+  'link_not_found',
+  'link_expired',
+  'cannot_link',
+] as const;
+
+export type AccountErrorCode = (typeof KNOWN_ERRORS)[number] | 'generic';
+
+export class AccountError extends Error {
+  constructor(
+    readonly code: AccountErrorCode,
+    /** The address of the account that holds a document, masked; absent when the server keeps it. */
+    readonly maskedEmail?: string,
+  ) {
+    super(code);
+    this.name = 'AccountError';
+  }
+}
+
+/**
+ * The text for an error of the account screens. "Already registered" names the masked
+ * address of that account when the server gave it, and says it plainly when it did not.
+ */
+export function accountErrorText(
+  t: (key: string, options?: Record<string, unknown>) => string,
+  error: unknown,
+  options: Record<string, unknown> = {},
+): string {
+  const code = error instanceof AccountError ? error.code : 'generic';
+  if (error instanceof AccountError && (code === 'cpf_in_use' || code === 'passport_in_use')) {
+    return error.maskedEmail
+      ? t(`account.errors.${code}`, { email: error.maskedEmail })
+      : t(`account.errors.${code}_plain`);
+  }
+  return t(`account.errors.${code}`, options);
+}
+
+async function request<T>(
+  method: 'GET' | 'POST' | 'PUT',
+  action: string,
+  options: { body?: unknown; token?: string | null } = {},
+): Promise<T> {
+  let response: Response;
+  try {
+    response = await fetch(`/api/v1/account/${action}`, {
+      method,
+      headers: {
+        ...(options.body !== undefined ? { 'content-type': 'application/json' } : {}),
+        ...(options.token ? { authorization: `Bearer ${options.token}` } : {}),
+      },
+      ...(options.body !== undefined ? { body: JSON.stringify(options.body) } : {}),
+    });
+  } catch {
+    throw new AccountError('generic');
+  }
+  const data = (await response.json().catch(() => ({}))) as { error?: string; maskedEmail?: unknown };
+  if (!response.ok) {
+    const code = (KNOWN_ERRORS as readonly string[]).includes(data.error ?? '')
+      ? (data.error as AccountErrorCode)
+      : 'generic';
+    throw new AccountError(code, typeof data.maskedEmail === 'string' ? data.maskedEmail : undefined);
+  }
+  return data as T;
+}
+
+export const startSignup = (input: {
+  email: string;
+  fullName: string;
+  locale: string;
+  eventSlug: string;
+  /** Who the person is (ADR-010): a CPF, a passport with its country, or both. */
+  cpf?: string;
+  passport?: string;
+  country?: string;
+  /** The page the person was going to, to continue there after the e-mail link. */
+  next?: string;
+}): Promise<unknown> => request('POST', 'signup', { body: input });
+
+export const startRecovery = (input: {
+  email: string;
+  locale: string;
+  eventSlug: string;
+}): Promise<unknown> => request('POST', 'recover', { body: input });
+
+export const fetchAccount = (token: string): Promise<Account> => request('GET', 'me', { token });
+
+const accountListeners = new Set<(account: Account) => void>();
+
+/**
+ * Hears every change the person makes to their own account, with the account as it was saved.
+ * The top bar shows the first name and would otherwise keep the old one until a reload (#313).
+ * Returns the way to stop listening.
+ */
+export function onAccountChange(listener: (account: Account) => void): () => void {
+  accountListeners.add(listener);
+  return () => {
+    accountListeners.delete(listener);
+  };
+}
+
+export const saveProfile = async (token: string, input: ProfileInput): Promise<Account> => {
+  const account = await request<Account>('PUT', 'profile', { token, body: input });
+  for (const listener of accountListeners) listener(account);
+  return account;
+};
+
+/**
+ * Sets the password. After the confirmation link of a new account it also carries the
+ * document the person confirmed or corrected on that screen (ADR-010).
+ */
+export const savePassword = (token: string, password: string, document: DocumentInput = {}): Promise<unknown> =>
+  request('POST', 'password', { token, body: { password, ...document } });
+
+export const requestRegistrationLink = (
+  token: string,
+  registrationId: string,
+  noAccess = false,
+): Promise<{ request: LinkRequestState; maskedEmail?: string }> =>
+  request('POST', 'link-request', { token, body: { registrationId, noAccess } });
+
+export const confirmRegistrationLink = (linkToken: string): Promise<unknown> =>
+  request('POST', 'link-confirm', { body: { token: linkToken } });
+
+export interface SiteNotification {
+  id: string;
+  kind: string;
+  data: Record<string, string | number>;
+  eventSlug: string | null;
+  readAt: string | null;
+  createdAt: string;
+}
+
+/** What is under the bell (#221). */
+export const fetchNotifications = (token: string): Promise<{ unread: number; items: SiteNotification[] }> =>
+  request('GET', 'notifications', { token });
+
+export const markNotificationsRead = (token: string): Promise<unknown> =>
+  request('POST', 'notifications-read', { token, body: {} });
+
+export interface DuplicateCheck {
+  duplicate: boolean;
+  maskedEmail?: string;
+}
+
+/** Never blocks a registration on its own failure: an error counts as "no duplicate". */
+export async function checkDuplicateRegistration(input: {
+  eventSlug: string;
+  email: string;
+  cpf?: string;
+  passport?: string;
+  country?: string;
+}): Promise<DuplicateCheck> {
+  if (!accountsEnabled()) return { duplicate: false };
+  try {
+    return await request<DuplicateCheck>('POST', 'registration-check', { body: input });
+  } catch {
+    return { duplicate: false };
+  }
+}
+
+export const PASSWORD_MIN = 10;

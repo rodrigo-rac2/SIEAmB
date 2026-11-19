@@ -1,12 +1,12 @@
-import { formatDate, type NewsItem } from '@sieamb/shared';
-import { useEffect, useState } from 'react';
+import { formatDate } from '@sieamb/shared';
 import { useTranslation } from 'react-i18next';
 import Markdown from 'react-markdown';
 import { Link, useParams } from 'react-router-dom';
 import { PageHeader } from '../components/shared/PageHeader';
 import { useEvent } from '../contexts/EventContext';
+import { useContent } from '../hooks/useContent';
 import { useLocale, useLocalized } from '../hooks/useLocale';
-import { getDataProvider } from '../services';
+import { Loading } from '../components/shared/Loading';
 
 export function NewsDetailPage() {
   const { t } = useTranslation();
@@ -14,12 +14,7 @@ export function NewsDetailPage() {
   const locale = useLocale();
   const { event } = useEvent();
   const { newsSlug } = useParams<{ newsSlug: string }>();
-  const [item, setItem] = useState<NewsItem | null | undefined>(undefined);
-
-  useEffect(() => {
-    if (!event || !newsSlug) return;
-    void getDataProvider().getNewsBySlug(event.id, newsSlug).then(setItem);
-  }, [event, newsSlug]);
+  const item = useContent('getNewsBySlug', event?.id, newsSlug);
 
   if (!event) return null;
 
@@ -27,7 +22,7 @@ export function NewsDetailPage() {
     return (
       <section className="section">
         <div className="container">
-          <p>{t('common.loading')}</p>
+          <Loading />
         </div>
       </section>
     );

@@ -1,19 +1,14 @@
-import type { EventSummary, Locale } from '@sieamb/shared';
+import type { Locale } from '@sieamb/shared';
 import { formatDateRange } from '@sieamb/shared';
-import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { PageHeader } from '../components/shared/PageHeader';
-import { getDataProvider } from '../services';
+import { useContent } from '../hooks/useContent';
 
 export function EditionsPage() {
   const { t, i18n } = useTranslation();
-  const [events, setEvents] = useState<EventSummary[]>([]);
+  const events = useContent('getEvents') ?? [];
   const locale = (i18n.resolvedLanguage ?? 'pt-BR') as Locale;
-
-  useEffect(() => {
-    void getDataProvider().getEvents().then(setEvents);
-  }, []);
 
   return (
     <>

@@ -1,0 +1,170 @@
+.papers {
+  max-width: 760px;
+}
+
+.papers__meta {
+  color: var(--color-muted, #4a564f);
+  font-size: var(--text-sm);
+  margin: 0;
+}
+
+.papers__authors {
+  margin: var(--space-2) 0;
+  padding-left: var(--space-5, 1.25rem);
+}
+
+.papers__author-list {
+  list-style: decimal;
+  margin: 0 0 var(--space-3);
+  padding-left: var(--space-5, 1.25rem);
+}
+
+.papers__author {
+  display: grid;
+  /* The last column always has room for three controls, so every row lines up. */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) calc(3 * 2.5rem + 2 * var(--space-2));
+  gap: var(--space-3);
+  align-items: start;
+  margin-bottom: var(--space-3);
+}
+
+/* Who the author is: under the name and the address, the whole width of the line. */
+.papers__author-document {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+
+.papers__author-document > .reg-form__hint {
+  margin: 0;
+}
+
+.papers__author-actions {
+  display: flex;
+  gap: var(--space-2);
+  /* Lines up with the inputs, under their labels. */
+  padding-top: 1.6rem;
+}
+
+/* Move up, move down, remove: real buttons, big enough for a finger. */
+.papers__icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font: inherit;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.papers__icon:hover:not(:disabled) {
+  background: var(--color-border);
+}
+
+.papers__icon:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* A grid or flex child never grows past its column because of what is inside it. */
+.papers .reg-form__field {
+  min-width: 0;
+}
+
+.papers select,
+.papers input {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.papers select {
+  width: 100%;
+  text-overflow: ellipsis;
+}
+
+.papers__name {
+  position: relative;
+}
+
+.papers__picked {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.papers__picked button {
+  flex: none;
+}
+
+.papers__picked input {
+  flex: 1;
+  min-width: 0;
+}
+
+.papers__suggestions {
+  list-style: none;
+  margin: 2px 0 0;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  max-height: 14rem;
+  overflow-y: auto;
+}
+
+.papers__suggestions li {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-2) var(--space-3);
+  cursor: pointer;
+}
+
+.papers__suggestions li:hover,
+.papers__suggestions li.is-active {
+  background: var(--color-border);
+}
+
+@media (max-width: 560px) {
+  .papers__author {
+    grid-template-columns: 1fr;
+  }
+
+  /* One column: the document follows the address, in the order of the page. */
+  .papers__author-document {
+    grid-row: auto;
+  }
+
+  .papers__author-actions {
+    padding-top: 0;
+  }
+}
+
+.papers textarea {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  min-height: 9rem;
+  resize: vertical;
+}
+
+.papers__abstract {
+  white-space: pre-wrap;
+}
+
+.papers__current-file {
+  margin: var(--space-5) 0 var(--space-2);
+  font-weight: 600;
+}
+
+.papers__limits {
+  margin: var(--space-4) 0;
+}

@@ -1,0 +1,54 @@
+{
+  "cpf": [
+    { "input": "52998224725", "digits": "52998224725", "valid": true },
+    { "input": "529.982.247-25", "digits": "52998224725", "valid": true },
+    { "input": " 111.444.777-35 ", "digits": "11144477735", "valid": true },
+    { "input": "00000000191", "digits": "00000000191", "valid": true },
+    { "input": "52998224724", "digits": "52998224724", "valid": false },
+    { "input": "52998224735", "digits": "52998224735", "valid": false },
+    { "input": "11111111111", "digits": "11111111111", "valid": false },
+    { "input": "00000000000", "digits": "00000000000", "valid": false },
+    { "input": "5299822472", "digits": "5299822472", "valid": false },
+    { "input": "529982247250", "digits": "529982247250", "valid": false },
+    { "input": "abc", "digits": "", "valid": false }
+  ],
+  "passport": [
+    { "input": "AB123456", "stored": "AB123456", "valid": true },
+    { "input": "ab 123-456", "stored": "AB123456", "valid": true },
+    { "input": " c.f.9.x.2 ", "stored": "CF9X2", "valid": true },
+    { "input": "12345", "stored": "12345", "valid": true },
+    { "input": "A1234567890123456789", "stored": "A1234567890123456789", "valid": true },
+    { "input": "A12345678901234567890", "stored": "A12345678901234567890", "valid": false },
+    { "input": "AB12", "stored": "AB12", "valid": false },
+    { "input": "AB_123456", "stored": "AB_123456", "valid": false },
+    { "input": "ÁB123456", "stored": "ÁB123456", "valid": false },
+    { "input": "", "stored": "", "valid": false }
+  ],
+  "country": [
+    { "input": "PT", "valid": true },
+    { "input": "pt", "valid": true },
+    { "input": " us ", "valid": true },
+    { "input": "XK", "valid": true },
+    { "input": "BR", "valid": false },
+    { "input": "br", "valid": false },
+    { "input": "ZZ", "valid": false },
+    { "input": "P", "valid": false },
+    { "input": "PRT", "valid": false },
+    { "input": "", "valid": false }
+  ],
+  "document": [
+    { "raw": { "cpf": "529.982.247-25" }, "document": { "cpf": "52998224725", "passport": null, "country": null } },
+    { "raw": { "passport": "ab 123-456", "country": "pt" }, "document": { "cpf": null, "passport": "AB123456", "country": "PT" } },
+    { "raw": { "cpf": "52998224725", "passport": "AB123456", "country": "US" }, "document": { "cpf": "52998224725", "passport": "AB123456", "country": "US" } },
+    { "raw": { "cpf": "52998224725", "country": "PT" }, "document": { "cpf": "52998224725", "passport": null, "country": null } },
+    { "raw": { "cpf": "", "passport": "  ", "country": "PT" }, "problem": "document_required" },
+    { "raw": {}, "problem": "document_required" },
+    { "raw": { "cpf": "52998224724" }, "problem": "invalid_cpf" },
+    { "raw": { "cpf": "52998224724", "passport": "AB123456", "country": "PT" }, "problem": "invalid_cpf" },
+    { "raw": { "passport": "AB12", "country": "PT" }, "problem": "invalid_passport" },
+    { "raw": { "passport": "AB123456" }, "problem": "invalid_country" },
+    { "raw": { "passport": "AB123456", "country": "BR" }, "problem": "invalid_country" },
+    { "raw": { "passport": "AB123456", "country": "ZZ" }, "problem": "invalid_country" },
+    { "raw": { "cpf": "52998224725", "passport": "AB123456" }, "problem": "invalid_country" }
+  ]
+}

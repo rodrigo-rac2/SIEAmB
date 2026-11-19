@@ -1,3 +1,4 @@
+import { CountrySelect } from '../shared/CountrySelect';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   maskCpf,
@@ -5,10 +6,12 @@ import {
   type Registration,
   type RegistrationFormData,
 } from '@sieamb/shared';
-import { useState, type ChangeEvent } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../../contexts/AuthContext';
 import { useEvent } from '../../contexts/EventContext';
+import { checkDuplicateRegistration, fetchAccount } from '../../services/account';
 import {
   DuplicateRegistrationError,
   RegistrationClosedError,
@@ -22,27 +25,96 @@ const CATEGORIES = ['ESTUDANTE_GRADUACAO', 'ESTUDANTE_POS', 'PROFISSIONAL'] as c
 export function RegistrationForm({
   onSuccess,
 }: {
-  onSuccess: (registration: Registration) => void;
+  /** The e-mail is handed back too: the saved row cannot be read by the browser. */
+  onSuccess: (registration: Registration, email: string) => void;
 }) {
   const { t, i18n } = useTranslation();
   const { event } = useEvent();
+  const { accessToken, email: sessionEmail, loading: authLoading } = useAuth();
   const [submitError, setSubmitError] = useState<string | null>(null);
+  // Logged in (#210): the registration is made with the account's own e-mail. It comes from the
+  // session, known before any call to the server, so there is no moment in which a logged-in person
+  // can type another one (#290).
+  const accountEmail = sessionEmail ? sessionEmail.toLowerCase() : null;
+  const tokenRef = useRef(accessToken);
+  tokenRef.current = accessToken;
+  // While the account's data is on its way the form cannot be sent: the name may still be missing.
+  const [accountPending, setAccountPending] = useState(false);
+  // Logged in, the document is the account's (ADR-010, decision 11): what the account has is
+  // shown and cannot be changed here, so a registration and its account say the same person.
+  const [locked, setLocked] = useState<{ cpf: boolean; passport: boolean }>({ cpf: false, passport: false });
 
   const {
     register,
     handleSubmit,
+    getValues,
+    setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
     defaultValues: { country: 'BR', category: 'ESTUDANTE_POS', modality: 'ONLINE', consent: false },
   });
 
+  // The account's e-mail goes in at once; name, document and institution follow from the account,
+  // and only into fields still empty, so nothing the person already typed is thrown away. Keyed on
+  // the e-mail, not on the token, which changes on every refresh and used to drop the answer (#290).
+  useEffect(() => {
+    if (!accountEmail) return;
+    setValue('email', accountEmail, { shouldValidate: false });
+    const token = tokenRef.current;
+    if (!token) return;
+    let active = true;
+    setAccountPending(true);
+    const fillEmpty = (field: 'fullName' | 'institution', value: string | null | undefined) => {
+      if (value && !getValues(field)) setValue(field, value);
+    };
+    fetchAccount(token)
+      .then(({ user }) => {
+        if (!active) return;
+        fillEmpty('fullName', user.fullName);
+        fillEmpty('institution', user.institution);
+        // The account's document replaces whatever was typed; a kind the account lacks stays free.
+        if (user.cpf) setValue('cpf', maskCpf(user.cpf));
+        if (user.passport) {
+          setValue('passport', user.passport);
+          setValue('country', user.country);
+        }
+        setLocked({ cpf: Boolean(user.cpf), passport: Boolean(user.passport) });
+      })
+      // The form still works without the account's data.
+      .catch(() => undefined)
+      .finally(() => {
+        if (active) setAccountPending(false);
+      });
+    return () => {
+      active = false;
+      setAccountPending(false);
+    };
+  }, [accountEmail, getValues, setValue]);
+
+  const passport = watch('passport') ?? '';
+  const country = watch('country') ?? '';
+  const hasPassport = passport.trim() !== '';
+
   if (!event) return null;
 
   const onSubmit = handleSubmit(async (data) => {
     setSubmitError(null);
     try {
-      const parsed = registrationSchema.parse(data);
+      // Logged in, the e-mail is the account's whatever the field says (#290).
+      const parsed = registrationSchema.parse(accountEmail ? { ...data, email: accountEmail } : data);
+      const check = await checkDuplicateRegistration({
+        eventSlug: event.slug,
+        email: parsed.email,
+        cpf: parsed.cpf || undefined,
+        passport: parsed.passport || undefined,
+        country: parsed.country,
+      });
+      if (check.duplicate) {
+        setSubmitError(t('registration.errors.duplicateDocument', { email: check.maskedEmail ?? '' }));
+        return;
+      }
       const registration = await getDataProvider().createRegistration(event.id, {
         fullName: parsed.fullName,
         email: parsed.email,
@@ -54,7 +126,7 @@ export function RegistrationForm({
         modality: parsed.modality,
         locale: i18n.language,
       });
-      onSuccess(registration);
+      onSuccess(registration, parsed.email);
     } catch (err) {
       if (err instanceof DuplicateRegistrationError) {
         setSubmitError(t('registration.errors.duplicate'));
@@ -70,7 +142,7 @@ export function RegistrationForm({
     const err = errors[field];
     if (!err) return null;
     const msg = err.message ?? '';
-    if (msg === 'invalid_cpf' || msg === 'cpf_or_passport_required' || msg === 'consent_required') {
+    if (['invalid_cpf', 'invalid_passport', 'invalid_country', 'cpf_or_passport_required', 'consent_required'].includes(msg)) {
       return t(`registration.errors.${msg}`);
     }
     return t(`registration.errors.${String(field)}`, { defaultValue: t('common.error') });
@@ -90,7 +162,14 @@ export function RegistrationForm({
         <label htmlFor="email">
           {t('registration.email')} <span aria-hidden="true">*</span>
         </label>
-        <input id="email" type="email" autoComplete="email" {...register('email')} />
+        <input
+          id="email"
+          type="email"
+          autoComplete="email"
+          readOnly={Boolean(accountEmail) || authLoading}
+          {...register('email')}
+        />
+        {accountEmail && <p className="reg-form__hint">{t('registration.accountEmailHint')}</p>}
         {errKey('email') && <p className="reg-form__error">{errKey('email')}</p>}
       </div>
 
@@ -102,6 +181,7 @@ export function RegistrationForm({
             type="text"
             inputMode="numeric"
             placeholder="000.000.000-00"
+            readOnly={locked.cpf}
             {...register('cpf', {
               // Format while typing; the schema strips the mask again before validating.
               onChange: (e: ChangeEvent<HTMLInputElement>) => {
@@ -113,10 +193,27 @@ export function RegistrationForm({
         </div>
         <div className="reg-form__field">
           <label htmlFor="passport">{t('registration.passport')}</label>
-          <input id="passport" type="text" {...register('passport')} />
+          <input id="passport" type="text" autoCapitalize="characters" maxLength={30} readOnly={locked.passport} {...register('passport')} />
+          {errKey('passport') && <p className="reg-form__error">{errKey('passport')}</p>}
         </div>
       </div>
-      <p className="reg-form__hint">{t('registration.cpfOrPassportHint')}</p>
+      {/* The country is asked for only with a passport, and chosen from a list (ADR-010). */}
+      {hasPassport && (
+        <div className="reg-form__field">
+          <label htmlFor="country">{t('account.area.country')}</label>
+          <CountrySelect
+            id="country"
+            // BR is what the field holds when no country was chosen: it is never a passport country.
+            value={country === 'BR' ? '' : country}
+            onChange={(code) => setValue('country', code || 'BR', { shouldValidate: Boolean(errors.country) })}
+            disabled={locked.passport}
+          />
+          {errKey('country') && <p className="reg-form__error">{errKey('country')}</p>}
+        </div>
+      )}
+      <p className="reg-form__hint">
+        {locked.cpf || locked.passport ? t('registration.accountDocumentHint') : t('registration.cpfOrPassportHint')}
+      </p>
 
       <div className="reg-form__field">
         <label htmlFor="institution">{t('registration.institution')}</label>
@@ -170,7 +267,7 @@ export function RegistrationForm({
         </p>
       )}
 
-      <button className="reg-form__submit" type="submit" disabled={isSubmitting}>
+      <button className="reg-form__submit" type="submit" disabled={isSubmitting || accountPending || authLoading}>
         {isSubmitting ? t('registration.submitting') : t('registration.submit')}
       </button>
     </form>

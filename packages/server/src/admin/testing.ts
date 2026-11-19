@@ -1,0 +1,353 @@
+// Test helpers for the organisation area. Not imported by runtime code.
+import type { AuthUser } from '../account/auth';
+import { FakeAuth } from '../account/testing';
+import type { Mailer, OutgoingMail } from '../payments/notifications';
+import { FakeOutbox } from '../submissions/testing';
+import type { AdminDeps } from './handlers';
+import {
+  RegistrationExistsError,
+  AccountConflictError,
+  type Account,
+  type AccountPatch,
+  type AdminRegistration,
+  type AdminStore,
+  type AdminSubmission,
+  type Audience,
+  type Person,
+  type SentAnnouncement,
+  type Invite,
+  type Member,
+  type MemberRole,
+  type NewRegistration,
+  type PanelRole,
+  type PendingLink,
+  type RegistrationPatch,
+} from './store';
+
+export const NOW = new Date('2026-12-01T15:00:00-03:00');
+export const EVENT = { id: 'ev-2027', slug: '2027', name: 'II SIEAmB' };
+export const OTHER_EVENT = { id: 'ev-2025', slug: '2025', name: 'I SIEAmB' };
+export const ADMIN: AuthUser = { id: 'user-admin', email: 'najara@ufcg.edu.br', emailConfirmed: true };
+export const ORGANISER: AuthUser = { id: 'user-org', email: 'viviane@ufcg.edu.br', emailConfirmed: true };
+export const REVIEWER: AuthUser = { id: 'user-rev', email: 'avaliador@ufpb.br', emailConfirmed: true };
+export const NOBODY: AuthUser = { id: 'user-none', email: 'pessoa@ufrn.br', emailConfirmed: true };
+export const PLATFORM: AuthUser = { id: 'user-root', email: 'rodrigo@sieamb.org', emailConfirmed: true };
+
+let seq = 0;
+
+export class FakeAdminStore implements AdminStore {
+  registrations: AdminRegistration[] = [];
+  submissions: (AdminSubmission & { eventId: string })[] = [];
+  members: (Member & { eventId: string })[] = [
+    { eventId: EVENT.id, userId: ADMIN.id, email: ADMIN.email, fullName: 'Najara Escarião', role: 'ADMIN' },
+    { eventId: EVENT.id, userId: ORGANISER.id, email: ORGANISER.email, fullName: 'Viviane Farias', role: 'ORGANIZER' },
+    { eventId: EVENT.id, userId: REVIEWER.id, email: REVIEWER.email, fullName: 'Avaliador Um', role: 'REVIEWER' },
+  ];
+  invites: (Invite & { eventId: string })[] = [];
+  users: { id: string; email: string; fullName: string; institution?: string | null; cpf?: string | null; passport?: string | null; country?: string; owner?: boolean }[] = [
+    { id: ADMIN.id, email: ADMIN.email, fullName: 'Najara Escarião' },
+    { id: ORGANISER.id, email: ORGANISER.email, fullName: 'Viviane Farias' },
+    { id: REVIEWER.id, email: REVIEWER.email, fullName: 'Avaliador Um' },
+    { id: NOBODY.id, email: NOBODY.email, fullName: 'Pessoa Comum' },
+    { id: PLATFORM.id, email: PLATFORM.email, fullName: 'Rodrigo Dono', owner: true },
+  ];
+  private account = (u: FakeAdminStore['users'][number]): Account => ({
+    id: u.id,
+    email: u.email,
+    fullName: u.fullName,
+    institution: u.institution ?? null,
+    cpf: u.cpf ?? null,
+    passport: u.passport ?? null,
+    country: u.passport ? (u.country ?? null) : null,
+    owner: u.owner === true,
+  });
+  async listAccounts() {
+    return [...this.users].sort((a, b) => a.fullName.localeCompare(b.fullName)).map(this.account);
+  }
+  async findAccount(id: string) {
+    const user = this.users.find((u) => u.id === id);
+    return user ? this.account(user) : null;
+  }
+  async updateAccount(id: string, patch: AccountPatch) {
+    const user = this.users.find((u) => u.id === id)!;
+    const taken = this.users.some(
+      (u) =>
+        u.id !== id &&
+        ((patch.cpf && u.cpf === patch.cpf) ||
+          (patch.email && u.email === patch.email) ||
+          (patch.passport && u.passport === patch.passport && u.country === patch.country)),
+    );
+    if (taken) throw new AccountConflictError();
+    Object.assign(user, patch);
+    if (patch.passport === null) delete user.country;
+    // The people lists read the name from the account, as the real one does with its join.
+    for (const member of this.members) if (member.userId === id) Object.assign(member, { fullName: user.fullName, email: user.email });
+  }
+  async shareAPaper(emailA: string, emailB: string) {
+    return emailA !== emailB && this.submissions.some((s) => s.authors.some((a) => a.email === emailA) && s.authors.some((a) => a.email === emailB));
+  }
+  async syncAuthorLines(oldEmail: string, newEmail: string, document: { cpf: string | null; passport: string | null; country: string | null } | null) {
+    for (const paper of this.submissions) {
+      for (const author of paper.authors) {
+        if (author.email === oldEmail) author.email = newEmail;
+        if (author.email === newEmail && document && (document.cpf || document.passport)) {
+          Object.assign(author, { cpf: document.cpf, passport: document.passport, country: document.passport ? document.country : null });
+        }
+      }
+    }
+  }
+  links: (PendingLink & { eventId: string; status: string })[] = [];
+  audits: { actorId: string; action: string; entity: string; entityId: string | null; meta: Record<string, unknown> }[] = [];
+  failAudit = false;
+
+  async findEvent(slug: string) {
+    return [EVENT, OTHER_EVENT].find((e) => e.slug === slug) ?? null;
+  }
+  async roleOf(eventId: string, userId: string): Promise<PanelRole | null> {
+    if (userId === PLATFORM.id) return 'ADMIN';
+    const roles = this.members.filter((m) => m.eventId === eventId && m.userId === userId).map((m) => m.role);
+    if (roles.includes('ADMIN')) return 'ADMIN';
+    return roles.includes('ORGANIZER') ? 'ORGANIZER' : null;
+  }
+  async listRegistrations(eventId: string) {
+    return this.registrations.filter((r) => r.eventId === eventId);
+  }
+  async findRegistration(id: string) {
+    return this.registrations.find((r) => r.id === id) ?? null;
+  }
+  private clash(candidate: { id?: string; eventId: string; email: string; userId: string | null }) {
+    return this.registrations.some(
+      (r) =>
+        r.id !== candidate.id &&
+        !r.deletedAt &&
+        r.eventId === candidate.eventId &&
+        (r.email === candidate.email || (candidate.userId !== null && r.userId === candidate.userId)),
+    );
+  }
+  async insertRegistration(input: NewRegistration) {
+    if (this.clash({ eventId: input.eventId, email: input.email, userId: null })) throw new RegistrationExistsError();
+    return this.seed({
+      eventId: input.eventId,
+      fullName: input.fullName,
+      email: input.email,
+      cpf: input.cpf,
+      passport: input.passport,
+      country: input.country,
+      institution: input.institution,
+      category: input.category,
+      createdAt: input.now.toISOString(),
+      createdBy: input.createdBy,
+      manualStatus: input.manualStatus,
+      manualReason: input.manualReason,
+      manualBy: input.manualStatus ? input.createdBy : null,
+      manualAt: input.manualStatus ? input.now.toISOString() : null,
+    });
+  }
+  async patchRegistration(id: string, patch: RegistrationPatch) {
+    const registration = this.registrations.find((r) => r.id === id)!;
+    // Restoring must respect "only one live registration per e-mail and per account".
+    if (patch.deletedAt === null && this.clash(registration)) throw new RegistrationExistsError();
+    Object.assign(registration, patch);
+  }
+  closed = new Map<string, { closedAt: string; closedBy: string }>();
+  async submissionsClosed(eventId: string) {
+    return this.closed.get(eventId) ?? null;
+  }
+  async setSubmissionsClosed(eventId: string, closed: { at: Date; by: string } | null) {
+    if (Boolean(closed) === this.closed.has(eventId)) return false;
+    if (closed) {
+      const user = this.users.find((u) => u.id === closed.by);
+      this.closed.set(eventId, { closedAt: closed.at.toISOString(), closedBy: user?.fullName ?? '' });
+    } else {
+      this.closed.delete(eventId);
+    }
+    return true;
+  }
+  async listSubmissions(eventId: string) {
+    return this.submissions.filter((s) => s.eventId === eventId);
+  }
+  async findSubmission(id: string) {
+    return this.submissions.find((s) => s.id === id) ?? null;
+  }
+  async assignReviewer(submissionId: string, userId: string) {
+    const paper = this.submissions.find((s) => s.id === submissionId)!;
+    if (paper.reviewers.some((r) => r.userId === userId)) return false;
+    const user = this.users.find((u) => u.id === userId)!;
+    paper.reviewers.push({ userId, fullName: user.fullName, email: user.email });
+    return true;
+  }
+  async unassignReviewer(submissionId: string, userId: string) {
+    const paper = this.submissions.find((s) => s.id === submissionId)!;
+    const before = paper.reviewers.length;
+    paper.reviewers = paper.reviewers.filter((r) => r.userId !== userId);
+    return paper.reviewers.length < before;
+  }
+  async unassignReviewerEverywhere(eventId: string, userId: string) {
+    const touched = this.submissions.filter((s) => s.eventId === eventId && s.reviewers.some((r) => r.userId === userId));
+    for (const paper of touched) paper.reviewers = paper.reviewers.filter((r) => r.userId !== userId);
+    return touched.map((s) => s.id);
+  }
+  async setSubmissionStatus(id: string, status: 'SUBMITTED' | 'UNDER_REVIEW') {
+    this.submissions.find((s) => s.id === id)!.status = status;
+  }
+  async listMembers(eventId: string) {
+    return this.members.filter((m) => m.eventId === eventId).map(({ eventId: _e, ...m }) => m);
+  }
+  async listInvites(eventId: string) {
+    return this.invites.filter((i) => i.eventId === eventId).map(({ eventId: _e, ...i }) => i);
+  }
+  async findUserByEmail(email: string) {
+    return this.users.find((u) => u.email === email) ?? null;
+  }
+  async addMember(eventId: string, userId: string, role: MemberRole) {
+    if (this.members.some((m) => m.eventId === eventId && m.userId === userId && m.role === role)) return;
+    const user = this.users.find((u) => u.id === userId)!;
+    this.members.push({ eventId, userId, email: user.email, fullName: user.fullName, role });
+  }
+  async removeMember(eventId: string, userId: string, role: MemberRole) {
+    this.members = this.members.filter((m) => !(m.eventId === eventId && m.userId === userId && m.role === role));
+  }
+  async addInvite(eventId: string, email: string, role: MemberRole) {
+    if (this.invites.some((i) => i.eventId === eventId && i.email === email && i.role === role)) return;
+    this.invites.push({ eventId, email, role });
+  }
+  async removeInvite(eventId: string, email: string, role: MemberRole) {
+    this.invites = this.invites.filter((i) => !(i.eventId === eventId && i.email === email && i.role === role));
+  }
+  async listPendingLinks(eventId: string) {
+    return this.links.filter((l) => l.eventId === eventId && l.status === 'NEEDS_ORGANISER');
+  }
+  async findPendingLink(id: string) {
+    return this.links.find((l) => l.id === id && l.status === 'NEEDS_ORGANISER') ?? null;
+  }
+  async decideLink(id: string, status: 'CONFIRMED' | 'REJECTED') {
+    const link = this.links.find((l) => l.id === id);
+    if (link) link.status = status;
+  }
+  async linkRegistration(registrationId: string, userId: string) {
+    const registration = this.registrations.find((r) => r.id === registrationId);
+    if (!registration || registration.userId || registration.deletedAt) return false;
+    if (this.clash({ id: registration.id, eventId: registration.eventId, email: '', userId })) return false;
+    registration.userId = userId;
+    return true;
+  }
+  groups: Record<'registered' | 'authors' | 'reviewers' | 'organisers', Person[]> = { registered: [], authors: [], reviewers: [], organisers: [] };
+  announcements: (SentAnnouncement & { eventId: string; senderId: string; emails: string[] })[] = [];
+  async listAudiences(eventId: string) {
+    return eventId === EVENT.id ? this.groups : { registered: [], authors: [], reviewers: [], organisers: [] };
+  }
+  async findAccounts(emails: string[]) {
+    return this.users.filter((u) => emails.includes(u.email)).map((u) => ({ id: u.id, email: u.email }));
+  }
+  async insertAnnouncement(input: { eventId: string; senderId: string; audience: Audience; subject: string; body: string; recipients: string[]; now: Date }) {
+    seq += 1;
+    const id = `ann-${seq}`;
+    this.announcements.push({
+      id,
+      eventId: input.eventId,
+      senderId: input.senderId,
+      emails: input.recipients,
+      audience: input.audience,
+      subject: input.subject,
+      body: input.body,
+      recipients: input.recipients.length,
+      senderName: this.users.find((u) => u.id === input.senderId)?.fullName ?? '',
+      createdAt: input.now.toISOString(),
+    });
+    return id;
+  }
+  async listAnnouncements(eventId: string) {
+    return this.announcements.filter((a) => a.eventId === eventId).map(({ eventId: _e, senderId: _s, emails: _m, ...a }) => a);
+  }
+  async countAnnouncementsSince(senderId: string, since: Date) {
+    return this.announcements.filter((a) => a.senderId === senderId && Date.parse(a.createdAt) >= since.getTime()).length;
+  }
+
+  async audit(entry: { actorId: string; action: string; entity: string; entityId: string | null; meta: Record<string, unknown> }) {
+    if (this.failAudit) throw new Error('db down');
+    this.audits.push(entry);
+  }
+
+  seed(over: Partial<AdminRegistration> = {}): AdminRegistration {
+    seq += 1;
+    const registration: AdminRegistration = {
+      id: `reg-${seq}`,
+      eventId: EVENT.id,
+      fullName: `Pessoa Inscrita ${seq}`,
+      email: `pessoa${seq}@ufcg.edu.br`,
+      cpf: '52998224725',
+      passport: null,
+      country: 'BR',
+      institution: 'UFCG',
+      category: 'ESTUDANTE_POS',
+      modality: 'ONLINE',
+      createdAt: NOW.toISOString(),
+      userId: null,
+      createdBy: null,
+      manualStatus: null,
+      manualReason: null,
+      manualBy: null,
+      manualAt: null,
+      deletedAt: null,
+      deletedBy: null,
+      deletedReason: null,
+      payments: [],
+      ...over,
+    };
+    this.registrations.push(registration);
+    return registration;
+  }
+}
+
+export function setup(options: { failSends?: boolean } = {}) {
+  const store = new FakeAdminStore();
+  const outbox = new FakeOutbox();
+  const auth = new FakeAuth();
+  const sent: OutgoingMail[] = [];
+  const logs: { event: string; data: Record<string, unknown> }[] = [];
+  const mailer: Mailer = {
+    async send(mail) {
+      if (options.failSends) throw new Error('smtp down');
+      sent.push(mail);
+    },
+  };
+  // Reminders asked for by hand: one per key, like the unique key of the payment outbox.
+  const reminders: { id: string; key: string; deliver: boolean }[] = [];
+  const deps: AdminDeps = {
+    remind: async (id, key, _now, deliver) => {
+      if (reminders.some((r) => r.key === key)) return 'duplicate';
+      reminders.push({ id, key, deliver });
+      return deliver ? 'sent' : 'queued';
+    },
+    store,
+    outbox,
+    auth,
+    mailer,
+    siteUrl: 'https://dev.sieamb.org/',
+    log: (event, data) => logs.push({ event, data }),
+    now: () => NOW,
+  };
+  const tokens = {
+    admin: auth.login(ADMIN),
+    organiser: auth.login(ORGANISER),
+    reviewer: auth.login(REVIEWER),
+    nobody: auth.login(NOBODY),
+    platform: auth.login(PLATFORM),
+  };
+  return { store, outbox, auth, sent, logs, deps, tokens, reminders };
+}
+
+export function call(
+  method: 'GET' | 'POST',
+  action: string,
+  options: { body?: unknown; token?: string; query?: string } = {},
+): Request {
+  return new Request(`https://dev.sieamb.org/api/v1/admin/${action}${options.query ?? ''}`, {
+    method,
+    headers: {
+      'content-type': 'application/json',
+      ...(options.token ? { authorization: `Bearer ${options.token}` } : {}),
+    },
+    ...(options.body !== undefined ? { body: JSON.stringify(options.body) } : {}),
+  });
+}

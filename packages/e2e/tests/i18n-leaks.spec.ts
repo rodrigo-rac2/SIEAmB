@@ -80,8 +80,9 @@ async function visibleTexts(page: Page, locale: string, route: string): Promise<
 }
 
 test.describe('no Portuguese leaks in the other languages @smoke', () => {
-  test('every public page in en, es and zh-CN', async ({ browser, isMobile }) => {
+  test('every public page in en, es and zh-CN', async ({ browser, browserName, isMobile }) => {
     test.skip(isMobile, 'text content is viewport-independent; desktop run covers it');
+    test.skip(browserName !== 'chromium', 'which text is on a page does not depend on the engine; one engine covers it (#332)');
     test.setTimeout(240_000);
     const leaks: string[] = [];
     for (const route of ROUTES) {

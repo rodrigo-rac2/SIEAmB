@@ -58,3 +58,42 @@ describe('registrationSchema', () => {
     expect(result.success).toBe(false);
   });
 });
+
+describe('registrationSchema: passport and its country (ADR-010)', () => {
+  const foreigner = { ...base, cpf: '', passport: 'ab 123-456', country: 'pt' };
+  const problem = (data: unknown) => {
+    const result = registrationSchema.safeParse(data);
+    return result.success ? null : result.error.issues.map((i) => `${i.path.join('.')}:${i.message}`);
+  };
+
+  it('stores a passport in upper case without separators, with its country in upper case', () => {
+    expect(registrationSchema.parse(foreigner)).toMatchObject({ cpf: '', passport: 'AB123456', country: 'PT' });
+  });
+
+  it.each([
+    ['no country', { country: '' }, ['country:invalid_country']],
+    ['Brazil as the country', { country: 'BR' }, ['country:invalid_country']],
+    ['a country that does not exist', { country: 'ZZ' }, ['country:invalid_country']],
+    ['a passport that is too short', { passport: 'A1' }, ['passport:invalid_passport']],
+    ['a passport with a strange character', { passport: 'AB_123456' }, ['passport:invalid_passport']],
+  ])('refuses a passport with %s', (_name, over, issues) => {
+    expect(problem({ ...foreigner, ...over })).toEqual(issues);
+  });
+
+  it('takes a CPF and a passport together', () => {
+    expect(registrationSchema.parse({ ...base, passport: 'AB123456', country: 'US' })).toMatchObject({
+      cpf: '52998224725',
+      passport: 'AB123456',
+      country: 'US',
+    });
+  });
+
+  it('without a passport the country is BR whatever was sent, as the column holds for everybody else', () => {
+    expect(registrationSchema.parse({ ...base, country: 'PT' }).country).toBe('BR');
+    expect(registrationSchema.parse({ ...base, country: undefined }).country).toBe('BR');
+  });
+
+  it('still asks for one of the two documents', () => {
+    expect(problem({ ...base, cpf: '', passport: '', country: 'PT' })).toEqual(['cpf:cpf_or_passport_required']);
+  });
+});

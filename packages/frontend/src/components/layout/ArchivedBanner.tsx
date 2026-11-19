@@ -1,21 +1,14 @@
-import type { EventSummary } from '@sieamb/shared';
-import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { useEvent } from '../../contexts/EventContext';
-import { getDataProvider } from '../../services';
+import { useCurrentEvent } from '../../hooks/useCurrentEvent';
 import './ArchivedBanner.css';
 
 /** Shown on archived editions: tells the visitor this is a past edition and links to the current one. */
 export function ArchivedBanner() {
   const { t } = useTranslation();
   const { event } = useEvent();
-  const [current, setCurrent] = useState<EventSummary | null>(null);
-
-  useEffect(() => {
-    if (!event?.isArchived) return;
-    void getDataProvider().getCurrentEvent().then(setCurrent);
-  }, [event]);
+  const { current } = useCurrentEvent();
 
   if (!event?.isArchived) return null;
 

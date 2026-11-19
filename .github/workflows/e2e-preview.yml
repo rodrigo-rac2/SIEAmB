@@ -15,11 +15,20 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  e2e-preview:
+  # Where the commit under test is served, and not before it is.
+  deployment:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 35
+    outputs:
+      url: ${{ steps.target.outputs.url }}
+      sha: ${{ steps.target.outputs.sha }}
+      playwright: ${{ steps.playwright.outputs.version }}
     steps:
       - uses: actions/checkout@v4
+      # The browser jobs run in Playwright's own image of exactly the version the lockfile installs.
+      - name: Read the Playwright version from the lockfile
+        id: playwright
+        run: echo "version=$(node -p "require('./package-lock.json').packages['node_modules/@playwright/test'].version")" >> "$GITHUB_OUTPUT"
       - name: Resolve the deployment URL for this ref
         id: target
         env:
@@ -50,20 +59,73 @@ jobs:
           done
           echo "::error::$URL never served $SHA (30 min). Check the Vercel build for this commit."
           exit 1
+
+  # One job per browser project, side by side (#332): the three engines on a desktop and a
+  # phone of each mobile family. They run in Playwright's image, which has the browsers and
+  # their system packages already: nothing is installed from a package mirror during the run (#337).
+  browsers:
+    needs: deployment
+    name: e2e-preview (${{ matrix.project }})
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v${{ needs.deployment.outputs.playwright }}-noble
+      # Chromium needs more shared memory than a container gets by default.
+      options: --ipc=host
+    timeout-minutes: 25
+    strategy:
+      # A failure on one browser says nothing about the others: let them all finish.
+      fail-fast: false
+      matrix:
+        project: [chromium, firefox, webkit, mobile, mobile-safari]
+    env:
+      # Firefox refuses to start as root in a home that is not root's.
+      HOME: /root
+      # Every test address of this job carries it, so the job removes its own data and nobody
+      # else's (#227, #248). The job index keeps the projects of one run apart: they share the
+      # dev database while they run.
+      E2E_RUN_ID: r${{ github.run_id }}a${{ github.run_attempt }}p${{ strategy.job-index }}
+    steps:
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
-      - name: Playwright against ${{ steps.target.outputs.url }}
+      - name: Playwright (${{ matrix.project }}) against ${{ needs.deployment.outputs.url }}
         env:
-          BASE_URL: ${{ steps.target.outputs.url }}
+          BASE_URL: ${{ needs.deployment.outputs.url }}
           E2E_BYPASS_TOKEN: ${{ secrets.E2E_BYPASS_TOKEN }}
-        run: npm run test -w @sieamb/e2e
+          # The account tests (#208) read their confirmation links from the dev login
+          # service; they skip themselves on production.
+          SUPABASE_DEV_URL: ${{ secrets.SUPABASE_DEV_URL }}
+          SUPABASE_DEV_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_DEV_SERVICE_ROLE_KEY }}
+        run: npm run test -w @sieamb/e2e -- --project=${{ matrix.project }}
+      # A run cancelled by a newer push never reaches Playwright's teardown (#248):
+      # this step runs whatever happened, removes the job's data and fails if any is left.
+      - name: Remove this job's test data
+        if: always()
+        env:
+          SUPABASE_DEV_URL: ${{ secrets.SUPABASE_DEV_URL }}
+          SUPABASE_DEV_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_DEV_SERVICE_ROLE_KEY }}
+        run: npm run cleanup:run -w @sieamb/e2e
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: playwright-report-deployed-${{ steps.target.outputs.sha }}
+          name: playwright-report-deployed-${{ matrix.project }}-${{ needs.deployment.outputs.sha }}
           path: packages/e2e/playwright-report/
           retention-days: 7
+
+  # The check the branch rules require, under the name they know: passes only when every
+  # browser passed. A skipped or cancelled browser job is not a pass.
+  e2e-preview:
+    needs: [deployment, browsers]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Every browser passed
+        env:
+          DEPLOYMENT: ${{ needs.deployment.result }}
+          BROWSERS: ${{ needs.browsers.result }}
+        run: |
+          echo "deployment: $DEPLOYMENT, browsers: $BROWSERS"
+          [ "$DEPLOYMENT" = "success" ] && [ "$BROWSERS" = "success" ]

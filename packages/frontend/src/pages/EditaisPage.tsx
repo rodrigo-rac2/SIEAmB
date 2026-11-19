@@ -1,24 +1,19 @@
-import { formatDate, type Edital } from '@sieamb/shared';
-import { useEffect, useState } from 'react';
+import { formatDate } from '@sieamb/shared';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { PageHeader } from '../components/shared/PageHeader';
 import { useEvent } from '../contexts/EventContext';
+import { useContent } from '../hooks/useContent';
 import { useLocale, useLocalized } from '../hooks/useLocale';
-import { getDataProvider } from '../services';
 import '../components/news/NewsCard.css';
+import { Loading } from '../components/shared/Loading';
 
 export function EditaisPage() {
   const { t } = useTranslation();
   const l = useLocalized();
   const locale = useLocale();
   const { event } = useEvent();
-  const [editais, setEditais] = useState<Edital[] | null>(null);
-
-  useEffect(() => {
-    if (!event) return;
-    void getDataProvider().getEditais(event.id).then(setEditais);
-  }, [event]);
+  const editais = useContent('getEditais', event?.id);
 
   if (!event) return null;
   const base = `/${event.slug}/editais`;
@@ -30,8 +25,8 @@ export function EditaisPage() {
       </PageHeader>
       <section className="section">
         <div className="container" style={{ maxWidth: '72ch' }}>
-          {editais === null ? (
-            <p>{t('common.loading')}</p>
+          {editais === undefined ? (
+            <Loading />
           ) : editais.length === 0 ? (
             <p role="status">{t('editais.empty', { edition: event.name })}</p>
           ) : (
