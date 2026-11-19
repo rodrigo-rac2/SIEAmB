@@ -64,7 +64,7 @@ Nobody is shown a role above their own. Roles given to an address without an acc
 
 ## The release to production
 
-Prepared, not done. Rodrigo chose "prepare only" on 2026-11-17 and set the release for the evening of 2026-11-18, once the team has tested enough on dev. Whatever the testing of that day finds is fixed on dev first and joins the release. The steps, in order, are in the draft pull request **#274**:
+**Done on 2026-11-19**, with Rodrigo's go, after a rehearsal of the twelve migrations on `sieamb-prod` inside a transaction that was rolled back. In order: fresh backup (label `before-submissions-release-2026-11-19`), the twelve migrations, the private bucket `submissions`, the two Vault secrets, the two flags on Vercel Production, pull request #274 merged into `main` (630543a). Checked after: 15 registrations and 9 payments untouched, the 10-minute job answered 200 from sieamb.org, the public pages and the new forms open on desktop and iPhone profile with no error, and nothing was written as a test. Still to do: steps 7 and 8 below, and the one registration with a passport, whose country is stored as BR (unknown) and is to be corrected by hand in the panel. The steps as they were planned:
 
 1. Backup of `sieamb-prod`. One was taken on 2026-11-17 (label `before-submissions-release`); take a fresh one right before the release, since registrations and payments keep arriving.
 2. Twelve migrations, `20261117010000_accounts` to `20261119020000_save_submission`. They add, with one exception: `20261119010000_identity_documents` rewrites passport numbers already in `pre_registrations` to upper case without separators (format only). Count the passport registrations on production first: their country is BR, because the form never asked, and is read as "not known".
@@ -79,7 +79,7 @@ The 43 issues finished on dev close when that pull request reaches `main`.
 
 ## Waiting on Rodrigo
 
-- The go for the release above.
+- To create his account on sieamb.org, so it can be marked as the owner, and then give the roles (steps 7 and 8 of the release).
 - One real low-value payment and its refund, and sending the pay link to the people who registered before payments existed (#166). The R$ 30 boleto test and the R$ 70 card test are still to be refunded.
 - A boleto paid after its one-day order expires: is it credited? (#167)
 - The Vercel plan: Hobby forbids commercial use and caps functions at 12; we use 8 (#168).
