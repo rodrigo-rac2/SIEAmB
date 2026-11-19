@@ -13,13 +13,14 @@ import {
   rulesForEvent,
   savePaper,
   searchPeople,
+  emailHasDocument,
   uploadPaperFile,
   type Modality,
   type Paper,
 } from '../../services/submissions';
 import { NotFoundPage } from '../NotFoundPage';
 import { AuthorList, asksDocument, newAuthorRow, toAuthorInput, type AuthorRow } from './AuthorList';
-import { documentProblem } from '../../components/account/DocumentFields';
+import { NO_DOCUMENT, documentProblem } from '../../components/account/DocumentFields';
 import '../../components/registration/RegistrationForm.css';
 import '../account/Account.css';
 import './Papers.css';
@@ -127,6 +128,24 @@ export function PaperFormPage() {
   const slug = event?.slug;
   const search = useCallback(
     (query: string) => (accessToken && slug ? searchPeople(accessToken, slug, query) : Promise.resolve([])),
+    [accessToken, slug],
+  );
+  // A co-author whose account already says who they are is asked no document (#363): the
+  // account's is the one kept. Only a line that still holds that address is changed.
+  const emailLeft = useCallback(
+    (email: string) => {
+      if (!accessToken || !slug) return;
+      void emailHasDocument(accessToken, slug, email).then((known) => {
+        if (!known) return;
+        setAuthors((rows) =>
+          rows.map((row) =>
+            !row.self && !row.onRecord && row.email.trim().toLowerCase() === email
+              ? { ...row, onRecord: { state: 'account' as const }, document: NO_DOCUMENT, legacy: undefined }
+              : row,
+          ),
+        );
+      });
+    },
     [accessToken, slug],
   );
 
@@ -283,7 +302,7 @@ export function PaperFormPage() {
             </div>
             <p className="reg-form__hint">{t('papers.form.keywordsHint', { max: rules.maxKeywords })}</p>
 
-            <AuthorList rows={authors} max={rules.maxAuthors} onChange={setAuthors} search={search} />
+            <AuthorList rows={authors} max={rules.maxAuthors} onChange={setAuthors} search={search} onEmailLeft={emailLeft} />
 
             {/* What the paper has now, in plain sight above the field that replaces it (#257). */}
             {existing && (

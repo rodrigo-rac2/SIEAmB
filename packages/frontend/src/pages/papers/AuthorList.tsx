@@ -212,12 +212,15 @@ export function AuthorList({
   max,
   onChange,
   search,
+  onEmailLeft,
 }: {
   rows: AuthorRow[];
   max: number;
   onChange: (rows: AuthorRow[]) => void;
   /** Looks people up by name; null turns the suggestions off. */
   search: ((query: string) => Promise<PersonSuggestion[]>) | null;
+  /** Told the address typed for a co-author once the field is left, to see whether a document is still needed (#363). */
+  onEmailLeft?: (email: string) => void;
 }) {
   const { t } = useTranslation();
   const patch = (index: number, change: Partial<AuthorRow>) =>
@@ -287,6 +290,10 @@ export function AuthorList({
                     readOnly={row.self}
                     // Another address is another person: what was on record is not theirs.
                     onChange={(e) => patch(index, { email: e.target.value, onRecord: undefined, legacy: undefined })}
+                    onBlur={() => {
+                      const email = row.email.trim().toLowerCase();
+                      if (onEmailLeft && !row.self && !row.onRecord && /^\S+@\S+\.\S+$/.test(email)) onEmailLeft(email);
+                    }}
                   />
                 )}
               </div>

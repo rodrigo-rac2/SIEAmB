@@ -683,6 +683,46 @@ describe('name suggestions for the author list', () => {
     expect((await search(deps, tokens.other, 'Rodrigo')).status).toBe(200);
   });
 
+  describe('by address: is a document already on record? (#363)', () => {
+    const ask = (deps: SubmissionDeps, token: string | undefined, email: string) =>
+      handleSubmissions(call('GET', 'people', { token, query: `?eventSlug=2027&email=${encodeURIComponent(email)}` }), 'people', deps);
+
+    it('needs a login', async () => {
+      const { deps } = setup();
+      expect((await ask(deps, undefined, 'alguem@ufpb.br')).status).toBe(401);
+    });
+
+    it('says yes only for an account that has a document, and says nothing else', async () => {
+      const { deps, tokens, store } = setup();
+      store.addUser({ id: 'user-com', email: 'com.documento@ufpb.br', emailConfirmed: true }, cpfOnly(SPARE_CPF));
+      store.addUser({ id: 'user-sem', email: 'sem.documento@ufpb.br', emailConfirmed: true });
+      for (const [email, known] of [
+        ['com.documento@ufpb.br', true],
+        ['  COM.Documento@UFPB.br ', true],
+        ['sem.documento@ufpb.br', false],
+        ['ninguem@ufpb.br', false],
+        ['isto-nao-e-email', false],
+        // Their own line never asks: the answer about oneself is always no.
+        [MAIN.email, false],
+      ] as const) {
+        const response = await ask(deps, tokens.main, email);
+        expect(response.status).toBe(200);
+        expect(await response.json(), email).toEqual({ known });
+      }
+    });
+
+    it('counts against the hourly limit of the name search', async () => {
+      const { deps, tokens } = setup();
+      let allowed = true;
+      deps.hitRateLimit = async () => allowed;
+      expect((await ask(deps, tokens.main, 'alguem@ufpb.br')).status).toBe(200);
+      allowed = false;
+      const refused = await ask(deps, tokens.main, 'alguem@ufpb.br');
+      expect(refused.status).toBe(429);
+      expect(await refused.json()).toEqual({ error: 'too_many_attempts' });
+    });
+  });
+
   it('does not find an edition that does not exist', async () => {
     const { deps, tokens } = setup();
     const response = await handleSubmissions(call('GET', 'people', { token: tokens.main, query: '?eventSlug=1999&q=Rodrigo' }), 'people', deps);
