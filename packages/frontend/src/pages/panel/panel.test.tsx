@@ -1192,6 +1192,45 @@ describe('registration and papers side by side, and reminders (#225)', () => {
     expect(await screen.findByRole('link', { name: '1 trabalho' })).toBeInTheDocument();
   });
 
+  it('shows an administrator who each author is, and shows nothing of it when the server sends none (ADR-010)', async () => {
+    const one = (authors: unknown[]) => ({
+      id: 'p1', number: 1, title: 'Com documentos', modality: 'ARTIGO', areaRef: 'a1', status: 'SUBMITTED', fileName: 'a.pdf', filePages: 13,
+      createdAt: '2026-12-01T12:00:00Z', deletedAt: null, authorRegistered: false, reviewers: [], authors,
+    });
+    stubApi({
+      members: members('ADMIN'),
+      submissions: {
+        body: {
+          role: 'ADMIN',
+          counts: { total: 1, withdrawn: 0 },
+          submissions: [
+            one([
+              { position: 1, fullName: 'Com CPF', email: 'a@x.org', cpf: '52998224725', passport: null, country: null, registration: null },
+              { position: 2, fullName: 'Com passaporte', email: 'b@uc.pt', cpf: null, passport: 'AB123456', country: 'PT', registration: null },
+              { position: 3, fullName: 'Com os dois', email: 'c@x.org', cpf: '11144477735', passport: 'ZZ999999', country: 'US', registration: null },
+              { position: 4, fullName: 'De antes', email: 'd@x.org', cpf: null, passport: null, country: null, registration: null },
+            ]),
+          ],
+        },
+      },
+    });
+    const first = mount('/2027/painel/trabalhos', <PanelPage tab="papers" />);
+    const row = await screen.findByTestId('paper-row');
+    expect(within(row).getAllByTestId('author-document').map((e) => e.textContent?.trim())).toEqual([
+      'CPF 529.982.247-25',
+      'AB123456 (PT)',
+      'CPF 111.444.777-35 · ZZ999999 (US)',
+    ]);
+    first.unmount();
+    // An organiser is sent no document, and the page invents none.
+    stubApi({
+      members: members('ORGANIZER'),
+      submissions: { body: { role: 'ORGANIZER', counts: { total: 1, withdrawn: 0 }, submissions: [one([{ position: 1, fullName: 'Com CPF', email: 'a@x.org', registration: null }])] } },
+    });
+    mount('/2027/painel/trabalhos', <PanelPage tab="papers" />);
+    expect(within(await screen.findByTestId('paper-row')).queryByTestId('author-document')).not.toBeInTheDocument();
+  });
+
   it('opens the papers list already filtered to the person, with each author’s registration beside the name', async () => {
     stubApi({
       members: members('ORGANIZER'),
