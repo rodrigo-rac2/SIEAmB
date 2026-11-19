@@ -2,6 +2,16 @@
 
 Append a dated entry per working session. Newest first.
 
+## 2026-11-18 and 19 — Cross-browser tests, identity by document, release to production
+
+- **First paint and browsers (11-18):** public content is read synchronously, so no empty first frame (#329, #331); the pipeline runs on Chromium, Firefox, WebKit, Pixel 7 and iPhone 14 inside the Playwright container image (#332, #337); the 2025 archive no longer asks for submission rules (#339).
+- **Identity by document (ADR-010, #342 to #347, #352):** Rodrigo's iPhone test showed a paper could be sent with only an e-mail. A person is now a CPF and/or a passport with its country: required at sign-up and for every author, one account per document, limits counted per person inside the SQL function `save_submission`, a co-author's place waits until e-mail and document match, documents shown to administrators only.
+- **Wording (#355, #361):** Rodrigo found the copy over-explaining; texts cut to one plain instruction in the four languages.
+- **Bug bashes on dev (11-19):** scripted on desktop Chrome and WebKit iPhone, screenshots reviewed. Fixed: the panel's "same person, several e-mails" list ignored the account holding the document (#357); name suggestions opened under a field already left (#359); a co-author whose e-mail has an account with a document is no longer asked for one (#363, Rodrigo's finding and decision).
+- **Release (11-19, pull request #274):** rehearsal of the twelve migrations on production in a rolled-back transaction, backup, migrations, bucket, Vault secrets, flags, merge into `main` (630543a). 15 registrations and 9 payments untouched; the 10-minute job answers 200.
+- **After the release:** Rodrigo's account was the first on production and is the owner. Eight reviewers from Najara's list were given Avaliador by e-mail; the invitations are recorded as sent (delivery not confirmed: the Resend key here is send-only).
+- **Lesson:** a script that hangs is not "running". Report what a run printed, not that it was started; and never let test accounts on the shared dev database carry words a pipeline selector matches ("E-mail").
+
 ## 2026-11-17, afternoon and evening — Feedback on dev, people and roles, e-mail trouble, release prepared
 
 - **Organiser limits** (#264, #265, #266): an Organizador no longer changes or withdraws papers and is not told who the administrators are; the reviewer picker says why nobody can be chosen.
