@@ -369,6 +369,69 @@ describe('papers list', () => {
     }
   });
 
+  describe('who each author is (ADR-010)', () => {
+    const CPF = '52998224725';
+    const base = { eventId: EVENT.id, modality: 'ARTIGO', areaRef: 'a1', status: 'SUBMITTED', fileName: 'a.pdf', filePages: 13, createdAt: NOW.toISOString(), updatedAt: NOW.toISOString(), deletedAt: null, deletedReason: null, reviewers: [] };
+    const paid = { payments: [{ status: 'APPROVED' as const, amountCents: 5000, paidAt: null }] };
+
+    it('sends the authors\' documents to an administrator and to nobody else', async () => {
+      const { deps, tokens, store } = setup();
+      store.submissions.push({
+        ...base,
+        id: 's1',
+        number: 1,
+        title: 'Com documentos',
+        authors: [
+          { position: 1, fullName: 'A', email: 'a@x.org', cpf: CPF, passport: null, country: null },
+          { position: 2, fullName: 'B', email: 'b@uc.pt', cpf: null, passport: 'AB123456', country: 'PT' },
+        ],
+      });
+      const asAdmin = await body(await get(deps, 'submissions', tokens.admin));
+      expect((asAdmin.submissions[0]!.authors as Record<string, unknown>[]).map((a) => [a.cpf, a.passport, a.country])).toEqual([
+        [CPF, null, null],
+        [null, 'AB123456', 'PT'],
+      ]);
+      const asOrganiser = JSON.stringify(await body(await get(deps, 'submissions', tokens.organiser)));
+      for (const secret of [CPF, 'AB123456', '"cpf"', '"passport"', '"country"']) expect(asOrganiser).not.toContain(secret);
+    });
+
+    it('takes an author as registered by the document, when the registration is under another e-mail', async () => {
+      const { deps, tokens, store } = setup();
+      store.submissions.push(
+        { ...base, id: 's1', number: 1, title: 'Pelo CPF', authors: [{ position: 1, fullName: 'A', email: 'a.trabalho@x.org', cpf: CPF, passport: null, country: null }] },
+        { ...base, id: 's2', number: 2, title: 'Pelo passaporte', authors: [{ position: 1, fullName: 'B', email: 'b.trabalho@uc.pt', cpf: null, passport: 'AB123456', country: 'PT' }] },
+        { ...base, id: 's3', number: 3, title: 'Passaporte de outro país', authors: [{ position: 1, fullName: 'C', email: 'c@uv.es', cpf: null, passport: 'ZZ999999', country: 'ES' }] },
+        { ...base, id: 's4', number: 4, title: 'Passaporte inscrito antes de haver país', authors: [{ position: 1, fullName: 'D', email: 'd.trabalho@x.org', cpf: null, passport: 'OLD12345', country: 'US' }] },
+        { ...base, id: 's5', number: 5, title: 'Outro CPF', authors: [{ position: 1, fullName: 'E', email: 'e@x.org', cpf: '11144477735', passport: null, country: null }] },
+      );
+      store.seed({ email: 'a.inscricao@x.org', cpf: CPF, ...paid });
+      store.seed({ email: 'b.inscricao@uc.pt', cpf: null, passport: 'AB123456', country: 'PT', ...paid });
+      // The same number, registered from another country: another person.
+      store.seed({ email: 'outra@x.org', cpf: null, passport: 'ZZ999999', country: 'PT', ...paid });
+      // Registered on the public form before it asked for the country: stored as BR.
+      store.seed({ email: 'd.inscricao@x.org', cpf: null, passport: 'OLD12345', country: 'BR', ...paid });
+      for (const who of ['admin', 'organiser'] as const) {
+        const data = await body(await get(deps, 'submissions', tokens[who]));
+        expect(data.submissions.map((s) => [s.title, s.authorRegistered, (s.authors as { registration: string | null }[])[0]!.registration])).toEqual([
+          ['Pelo CPF', true, 'PAID'],
+          ['Pelo passaporte', true, 'PAID'],
+          ['Passaporte de outro país', false, null],
+          ['Passaporte inscrito antes de haver país', true, 'PAID'],
+          ['Outro CPF', false, null],
+        ]);
+      }
+    });
+
+    it('a registration under the author\'s own e-mail is found first, whatever the documents say', async () => {
+      const { deps, tokens, store } = setup();
+      store.submissions.push({ ...base, id: 's1', number: 1, title: 'x', authors: [{ position: 1, fullName: 'A', email: 'a@x.org', cpf: CPF, passport: null, country: null }] });
+      store.seed({ email: 'a@x.org', cpf: '11144477735' });
+      store.seed({ email: 'outra@x.org', cpf: CPF, ...paid });
+      const data = await body(await get(deps, 'submissions', tokens.admin));
+      expect((data.submissions[0]!.authors as { registration: string | null }[])[0]!.registration).toBe('UNPAID');
+    });
+  });
+
   it('counts an author as registered when an administrator confirmed or exempted them, not when cancelled or deleted', async () => {
     const { deps, tokens, store } = setup();
     const base = { eventId: EVENT.id, modality: 'ARTIGO', areaRef: 'a1', status: 'SUBMITTED', fileName: 'a.pdf', filePages: 13, createdAt: NOW.toISOString(), updatedAt: NOW.toISOString(), deletedAt: null, deletedReason: null, reviewers: [] };
@@ -1057,6 +1120,19 @@ describe('reviewers of a paper (#232)', () => {
     expect(paper.reviewers).toEqual([]);
     expect(paper.status).toBe('SUBMITTED');
     expect(sent).toEqual([]);
+  });
+
+  it('refuses a reviewer who is one of the paper’s authors by the document, listed under another e-mail (ADR-010)', async () => {
+    const { assign, paper, store } = ready();
+    const authors = paper.authors as { position: number; fullName: string; email: string; cpf?: string | null; passport?: string | null; country?: string | null }[];
+    Object.assign(store.users.find((u) => u.id === REVIEWER.id)!, { cpf: '52998224725', passport: 'AB123456', country: 'PT' });
+    authors.push({ position: 2, fullName: 'Avaliador, por outro endereço', email: 'outro@gmail.com', cpf: '52998224725', passport: null, country: null });
+    expect(await body(await assign(REVIEWER.id))).toEqual({ error: 'reviewer_is_author' });
+    // By the passport too, and only with its country.
+    authors[1] = { position: 2, fullName: 'x', email: 'outro@gmail.com', cpf: null, passport: 'AB123456', country: 'PT' };
+    expect(await body(await assign(REVIEWER.id))).toEqual({ error: 'reviewer_is_author' });
+    authors[1] = { position: 2, fullName: 'x', email: 'outro@gmail.com', cpf: null, passport: 'AB123456', country: 'ES' };
+    expect((await assign(REVIEWER.id)).status).toBe(200);
   });
 
   it('refuses a reviewer who is one of the paper’s authors, whatever the case of the e-mail', async () => {

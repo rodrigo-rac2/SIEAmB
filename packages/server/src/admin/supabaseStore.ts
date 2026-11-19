@@ -236,11 +236,11 @@ export class SupabaseAdminStore implements AdminStore {
         updated_at: string;
         deleted_at: string | null;
         deleted_reason: string | null;
-        submission_authors: { position: number; full_name: string; email: string }[];
+        submission_authors: { position: number; full_name: string; email: string; cpf: string | null; passport: string | null; country: string | null }[];
         submission_reviewers: { created_at: string; user: { id: string; email: string; full_name: string } | null }[];
       }[]
     >(
-      `submissions?${filter}&select=id,event_id,number,title,modality,area_ref,status,file_name,file_pages,created_at,updated_at,deleted_at,deleted_reason,submission_authors(position,full_name,email),submission_reviewers(created_at,user:users(id,email,full_name))&order=number.asc&limit=5000`,
+      `submissions?${filter}&select=id,event_id,number,title,modality,area_ref,status,file_name,file_pages,created_at,updated_at,deleted_at,deleted_reason,submission_authors(position,full_name,email,cpf,passport,country),submission_reviewers(created_at,user:users(id,email,full_name))&order=number.asc&limit=5000`,
     );
     return rows.map((row) => ({
       id: row.id,
@@ -257,7 +257,7 @@ export class SupabaseAdminStore implements AdminStore {
       deletedAt: row.deleted_at,
       deletedReason: row.deleted_reason,
       authors: row.submission_authors
-        .map((a) => ({ position: a.position, fullName: a.full_name, email: a.email }))
+        .map((a) => ({ position: a.position, fullName: a.full_name, email: a.email, cpf: a.cpf, passport: a.passport, country: a.passport ? a.country : null }))
         .sort((a, b) => a.position - b.position),
       reviewers: [...row.submission_reviewers]
         .sort((a, b) => a.created_at.localeCompare(b.created_at))

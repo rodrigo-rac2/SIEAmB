@@ -68,7 +68,8 @@ export interface AdminSubmission {
   updatedAt: string;
   deletedAt: string | null;
   deletedReason: string | null;
-  authors: { position: number; fullName: string; email: string }[];
+  /** With who each one is (ADR-010): the handler sends the document on to administrators only. */
+  authors: { position: number; fullName: string; email: string; cpf?: string | null; passport?: string | null; country?: string | null }[];
   /** Who reviews it (#232), in the order they were chosen. */
   reviewers: { userId: string; fullName: string; email: string }[];
 }

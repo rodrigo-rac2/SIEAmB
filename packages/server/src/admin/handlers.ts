@@ -12,6 +12,7 @@ import {
   type Account,
   type AccountPatch,
   type AdminRegistration,
+  type AdminSubmission,
   type Audience,
   type Person,
   type AdminStore,
@@ -317,12 +318,23 @@ async function submissions(request: Request, deps: AdminDeps): Promise<Response>
   if ('response' in ctx) return ctx.response;
   const all = await deps.store.listSubmissions(ctx.event.id);
   // For each paper: is at least one of its authors registered and confirmed? (the edital's condition)
-  const states = new Map<string, RegistrationState>(
-    (await deps.store.listRegistrations(ctx.event.id))
-      .filter((r) => !r.deletedAt)
-      .map((r) => [r.email, (r.manualStatus ?? paymentState(r)) as RegistrationState]),
-  );
-  const isConfirmed = (email: string) => ['PAID', 'CONFIRMED', 'EXEMPT'].includes(states.get(email) ?? '');
+  const registrations = (await deps.store.listRegistrations(ctx.event.id))
+    .filter((r) => !r.deletedAt)
+    .map((r) => ({ ...r, state: (r.manualStatus ?? paymentState(r)) as RegistrationState }));
+  // An author is the person of a registration by the address or by the document (ADR-010,
+  // decision 11): someone registered under another e-mail is still registered. A passport
+  // registered before the form asked for its country (stored as BR) matches by the number.
+  type Line = AdminSubmission['authors'][number];
+  const registrationOf = (a: Line): RegistrationState | null => {
+    const found =
+      registrations.find((r) => r.email === a.email) ??
+      (a.cpf ? registrations.find((r) => r.cpf === a.cpf) : undefined) ??
+      (a.passport ? registrations.find((r) => r.passport === a.passport && (r.country === a.country || r.country === 'BR')) : undefined);
+    return found?.state ?? null;
+  };
+  const isConfirmed = (a: Line) => ['PAID', 'CONFIRMED', 'EXEMPT'].includes(registrationOf(a) ?? '');
+  // Only an Administrador sees a document (ADR-008, decision 9; ADR-010, decision 10).
+  const admin = ctx.role === 'ADMIN';
   return json(200, {
     role: ctx.role,
     // Closed by hand (#236): since when and by whom; null while open.
@@ -331,8 +343,12 @@ async function submissions(request: Request, deps: AdminDeps): Promise<Response>
     submissions: all.map((s) => ({
       ...s,
       // Each author with the state of their registration, or null when they have none (#225).
-      authors: s.authors.map((a) => ({ ...a, registration: states.get(a.email) ?? null })),
-      authorRegistered: s.authors.some((a) => isConfirmed(a.email)),
+      authors: s.authors.map(({ cpf, passport, country, ...a }) => ({
+        ...a,
+        ...(admin ? { cpf, passport, country } : {}),
+        registration: registrationOf({ ...a, cpf, passport, country }),
+      })),
+      authorRegistered: s.authors.some(isConfirmed),
     })),
   });
 }
@@ -393,9 +409,15 @@ async function reviewerChange(request: Request, deps: AdminDeps, assign: boolean
   // Only someone who holds the Avaliador role in this edition.
   const reviewer = (await deps.store.listMembers(ctx.event.id)).find((m) => m.userId === userId && m.role === 'REVIEWER');
   if (!reviewer) return json(400, { error: 'not_a_reviewer' });
-  if (paper.authors.some((a) => a.email === reviewer.email.toLowerCase())) {
-    return json(409, { error: 'reviewer_is_author' });
-  }
+  // An author by the address, or by the document under any address (ADR-010).
+  const account = await deps.store.findAccount(reviewer.userId);
+  const isAuthor = paper.authors.some(
+    (a) =>
+      a.email === reviewer.email.toLowerCase() ||
+      (Boolean(account?.cpf) && a.cpf === account!.cpf) ||
+      (Boolean(account?.passport) && a.passport === account!.passport && a.country === account!.country),
+  );
+  if (isAuthor) return json(409, { error: 'reviewer_is_author' });
   const added = await deps.store.assignReviewer(paper.id, reviewer.userId, ctx.user.id, now);
   // Asked twice (two organisers, a double click): the person reviews it once and is told once.
   if (!added) return json(200, { ok: true, already: true });
