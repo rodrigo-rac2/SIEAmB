@@ -90,7 +90,7 @@
   "submissions": {
     "title": "Paper Submission",
     "comingSoon": "Submissions open soon",
-    "comingSoonBody": "The submission system is being prepared. Follow the news to know when submissions open.",
+    "comingSoonBody": "Submissions are not open yet. Follow the announcements.",
     "rulesTitle": "Submission Rules",
     "rulesBody": "The submission rules, thematic areas and schedule are in the call for papers.",
     "rulesCta": "Read the call for papers",
@@ -102,7 +102,7 @@
     "state": {
       "open": {
         "title": "Submissions are open",
-        "body": "Send your paper through the website. You need an account; registering for the event can be done later."
+        "body": "Send your paper through the website. An account is required."
       },
       "not_open": {
         "title": "Submissions have not opened yet",
@@ -147,7 +147,7 @@
     "email": "Email",
     "cpf": "CPF",
     "passport": "Passport",
-    "cpfOrPassportHint": "Enter the CPF, or the passport with the country that issued it. If you have a CPF, enter the CPF.",
+    "cpfOrPassportHint": "Enter the CPF or the passport.",
     "country": "Country",
     "countryChoose": "Choose the country",
     "institution": "Institution",
@@ -167,11 +167,11 @@
       "duplicate": "A registration with this email already exists for this event.",
       "consent_required": "You need to authorise the use of your data to send the registration.",
       "closed": "Registration for this event is not open.",
-      "duplicateDocument": "There is already a registration for this edition with this document, made with the e-mail {{email}}. Log in to your account or contact the organisers."
+      "duplicateDocument": "This document already has a registration in this edition, under the e-mail {{email}}."
     },
     "lotRange": "{{from}} to {{until}}",
     "accountEmailHint": "The registration uses the e-mail of your account.",
-    "accountDocumentHint": "This is the document of your account and goes with the registration.",
+    "accountDocumentHint": "The document of your account.",
     "accountCta": "To follow your registration and submit papers, create your account with the same e-mail:",
     "goToArea": "See my registration in My area"
   },
@@ -321,7 +321,7 @@
     },
     "signup": {
       "title": "Create account",
-      "intro": "Enter your name, your e-mail and your document. We will send a link to confirm the e-mail and choose a password.",
+      "intro": "Enter your details. We will send a link to confirm the e-mail and choose a password.",
       "submit": "Send confirmation link",
       "sentTitle": "Check your e-mail",
       "sentBody": "If {{email}} can have an account, we sent a message with the link to continue."
@@ -383,7 +383,7 @@
       "registeredOn": "registered on {{date}}",
       "profileTitle": "My details",
       "country": "Country of the passport",
-      "documentHint": "Enter the CPF, the passport with the country that issued it, or both. Once saved, each document can only be changed by the organisers.",
+      "documentHint": "Enter the CPF or the passport. Once saved, only the organisers can change it.",
       "documentLockedHint": "To correct the document, contact the organisers.",
       "saved": "Details saved.",
       "suggestionBody": "We found a registration for the {{event}} with your document, made with the e-mail {{email}}. Is it yours?",
@@ -407,24 +407,24 @@
       "not_logged_in": "Your session has ended. Log in again.",
       "email_not_confirmed": "Confirm your e-mail to continue.",
       "document_locked": "The document was already given and can only be changed by the organisers.",
-      "document_in_use": "This document is already in another account. If that account is yours, log in with it; if not, contact the organisers.",
+      "document_in_use": "This document is already in another account.",
       "already_registered": "This account already has a registration for this edition.",
       "registration_not_found": "We could not find that registration.",
       "link_not_found": "This link is not valid.",
       "link_expired": "This link has expired. Ask for another one in My area.",
       "cannot_link": "The registration could not be added to that account. Contact the organisers.",
-      "document_required": "Enter the CPF, or the passport with its country.",
-      "cpf_in_use": "This CPF is already registered with the e-mail {{email}}. Log in with that e-mail or recover the password.",
-      "cpf_in_use_plain": "This CPF is already registered to another account. Log in with the e-mail you used or contact the organisers.",
-      "passport_in_use": "This passport, from this country, is already registered with the e-mail {{email}}. Log in with that e-mail or recover the password.",
-      "passport_in_use_plain": "This passport, from this country, is already registered to another account. Log in with the e-mail you used or contact the organisers."
+      "document_required": "Enter the CPF or the passport.",
+      "cpf_in_use": "CPF already registered with the e-mail {{email}}.",
+      "cpf_in_use_plain": "CPF already registered to another account.",
+      "passport_in_use": "Passport already registered with the e-mail {{email}}.",
+      "passport_in_use_plain": "Passport already registered to another account."
     },
     "document": {
       "title": "Document",
-      "hint": "Enter the CPF, the passport with the country that issued it, or both. If you have a CPF, enter the CPF. Each person has a single account.",
-      "confirm": "Check the document entered when the account was requested and correct it if it is not yours. Once saved, only the organisers can change it.",
-      "missingTitle": "Your document is missing",
-      "missingBody": "To send papers, enter your CPF or your passport with its country below, under My details."
+      "hint": "Enter the CPF or the passport.",
+      "confirm": "Check your document. Once saved, only the organisers can change it.",
+      "missingTitle": "Enter your document",
+      "missingBody": "It is required to send papers."
     }
   },
   "papers": {
@@ -463,7 +463,7 @@
     },
     "registration": {
       "none": "You are not registered for the event yet. You can register at any time.",
-      "noneWithPapers": "You are not registered yet. An approved paper only enters the programme if at least one of its authors is registered.",
+      "noneWithPapers": "You are not registered yet. Approved papers need at least one registered author.",
       "UNPAID": "The fee still has to be paid to complete the registration.",
       "PENDING": "We are waiting for the payment to be confirmed.",
       "PAID": "Nothing else to do about the registration.",
@@ -481,7 +481,7 @@
       "keywordsEn": "Keywords in English",
       "keywordsHint": "Up to {{max}} in each language, separated by semicolons.",
       "authorsTitle": "Authors",
-      "authorsHint": "Up to {{max}} authors, in the order they appear in the paper. You must be in the list, in any position. The others need neither an account nor a registration for the paper to be sent, and are told by e-mail. Once sent, only you, the sender, can change or withdraw the paper; the other authors follow it in My papers.",
+      "authorsHint": "Up to {{max}} authors, in the order of the paper, including you. Only the sender can change or withdraw the paper.",
       "authorName": "Name of author {{n}}",
       "authorEmail": "E-mail of author {{n}}",
       "authorYou": "you",
@@ -502,14 +502,14 @@
       "save": "Save changes",
       "sending": "Sending…",
       "sendAnyway": "It is another paper, send it anyway",
-      "authorsDocumentHint": "For each author, enter the CPF or the passport with the country that issued it. That is how the system recognises each person, and only the administrators see it.",
+      "authorsDocumentHint": "Enter the CPF or the passport of each author.",
       "authorCpf": "CPF of author {{n}}",
       "authorPassport": "Passport of author {{n}}",
       "authorCountry": "Country of the passport of author {{n}}",
-      "authorDocumentOwn": "Your document is the one of your account.",
-      "authorDocumentOnFile": "This person's document is already on record.",
+      "authorDocumentOwn": "The document of your account.",
+      "authorDocumentOnFile": "Document already on record.",
       "authorDocumentTyped": "Document entered: {{hint}}",
-      "authorDocumentChange": "Correct the document",
+      "authorDocumentChange": "Correct",
       "authorDocumentChangeLabel": "Correct the document of author {{n}}"
     },
     "errors": {
@@ -525,7 +525,7 @@
       "wrong_file_type": "The file must be a PDF or a Word file (.docx).",
       "file_missing": "Attach the paper file.",
       "file_too_large": "The file is over {{maxMb}} MB.",
-      "unreadable_file": "The file could not be read. Check that it opens normally and that it really is a PDF or a .docx.",
+      "unreadable_file": "The file could not be read. Send a valid PDF or .docx.",
       "wrong_page_count": "The file has {{pages}} pages. For this modality the call asks for {{minPages}} to {{maxPages}}.",
       "invalid_title": "Enter the title in Portuguese.",
       "invalid_title_en": "Enter the title in English.",
@@ -541,29 +541,29 @@
       "coauthor_limit": "{{name}} is already listed in {{max}} papers outside the first position, the limit of the call.",
       "duplicate_title": "One of the authors already sent a paper with this title (no. {{number}}). Each paper must be sent only once.",
       "upload_failed": "The file could not be sent. Check your connection and try again.",
-      "document_required": "Before sending a paper, enter your CPF or passport in My area.",
-      "author_document_required": "Enter the CPF, or the passport with its country, of {{name}}.",
-      "author_invalid_cpf": "The CPF of {{name}} is invalid.",
-      "author_invalid_passport": "The passport of {{name}} is invalid.",
+      "document_required": "Enter your CPF or passport in My area to send papers.",
+      "author_document_required": "Enter the CPF or the passport of {{name}}.",
+      "author_invalid_cpf": "Invalid CPF for {{name}}.",
+      "author_invalid_passport": "Invalid passport for {{name}}.",
       "author_invalid_country": "Choose the country of the passport of {{name}}.",
-      "author_other_email": "{{name}} already has an account with the e-mail {{maskedEmail}}. Use that e-mail for this person."
+      "author_other_email": "{{name}} already has an account with the e-mail {{maskedEmail}}. Use that e-mail."
     },
     "count_one": "{{count}} paper",
     "count_other": "{{count}} papers",
     "readOnly": "only the sender can change it",
-    "documentMissing": "To send papers and see those that list you as an author, enter your CPF or passport in My area.",
-    "documentMissingCta": "Enter my document",
-    "waitingOtherDocument_one": "You are listed as an author of {{count}} paper with a document different from yours. Ask whoever sent it to correct it, or contact the organisers.",
-    "waitingOtherDocument_other": "You are listed as an author of {{count}} papers with a document different from yours. Ask whoever sent them to correct it, or contact the organisers.",
-    "waitingOtherEmail_one": "You are listed as an author of {{count}} paper with the e-mail {{email}}. Ask whoever sent it to use the e-mail of this account.",
-    "waitingOtherEmail_other": "You are listed as an author of {{count}} papers with the e-mail {{email}}. Ask whoever sent them to use the e-mail of this account.",
-    "authorIssue": "The document entered for {{name}} does not match that person's account. Open the paper and save it again to correct it."
+    "documentMissing": "Enter your CPF or passport in My area to send and see papers.",
+    "documentMissingCta": "Enter document",
+    "waitingOtherDocument_one": "You are listed in {{count}} paper with another document. Ask the sender to correct it.",
+    "waitingOtherDocument_other": "You are listed in {{count}} papers with another document. Ask the sender to correct it.",
+    "waitingOtherEmail_one": "You are listed in {{count}} paper with the e-mail {{email}}. Ask the sender to correct it.",
+    "waitingOtherEmail_other": "You are listed in {{count}} papers with the e-mail {{email}}. Ask the sender to correct it.",
+    "authorIssue": "The document of {{name}} does not match their account. Open the paper and save it again."
   },
   "reviewing": {
     "title": "Papers to review",
     "link": "Papers to review ({{count}})",
     "none": "No paper has been assigned to you for review.",
-    "intro": "These are the papers the organising committee assigned to you. Download each file; the committee will say how to send your review.",
+    "intro": "Papers assigned to you by the organising committee, which will say how to send your review.",
     "abstract": "Abstract",
     "keywords": "Keywords"
   },
@@ -641,9 +641,9 @@
       "assignFor": "Assign to paper no. {{number}}",
       "removeReviewer": "Take {{name}} off paper no. {{number}}",
       "noReviewers": "Nobody has the Reviewer role in this edition. Give that role in People and roles.",
-      "noOtherReviewer": "There is no other reviewer to choose. To have more, give the Reviewer role to other people in People and roles.",
+      "noOtherReviewer": "No other reviewer is available. Give the Reviewer role in People and roles.",
       "reviewersAreAuthors": "Whoever has the Reviewer role is an author of this paper and cannot review it. Give the Reviewer role to someone else in People and roles.",
-      "reviewersHint": "Each paper needs at least one reviewer, and you can assign as many as you want. With a reviewer assigned, the paper is under review and its authors can no longer change it. Reviewers see the file with the authors' names.",
+      "reviewersHint": "Assign at least one reviewer per paper. With a reviewer assigned, the paper is under review and its authors cannot change it.",
       "window": {
         "open": "Submissions are open.",
         "closed": "Submissions closed on {{date}} by {{name}}. Nobody can send, change or withdraw papers.",
@@ -657,12 +657,12 @@
       "withdrawFor": "Withdraw paper no. {{number}}",
       "withdrawConfirm": "Withdraw paper no. {{number}}? Its authors will be told.",
       "sameDocumentTitle": "Same person under more than one e-mail",
-      "sameDocumentBody": "These documents appear with more than one e-mail among the authors. The limits of the call already count each as one person; check and, if needed, correct the e-mail in the paper.",
+      "sameDocumentBody": "Documents with more than one e-mail among the authors. The limits of the call already count each as one person.",
       "sameDocumentPapers": "no. {{numbers}}"
     },
     "people": {
       "role": "Role",
-      "ownerFieldsHint": "E-mail, CPF and passport: only you, as the site owner, change these. Leave the CPF or the passport empty to take it off the account.",
+      "ownerFieldsHint": "E-mail, CPF and passport: only the site owner changes these. Leave empty to remove.",
       "passwordSet": "Set password",
       "passwordSetFor": "Set the password of {{name}}",
       "passwordNew": "New password for {{name}}",
@@ -692,14 +692,14 @@
       "pending": "Roles kept for people who have no account yet",
       "add": "Give the role",
       "remove": "Remove",
-      "hint": "Enter the person's e-mail. If they have no account yet, the role is kept and applies as soon as the account is created with that e-mail.",
+      "hint": "Enter the e-mail. Without an account, the role applies once the account is created with that e-mail.",
       "added": "Role given. The person was told by e-mail.",
-      "invited": "This person has no account yet. The role is kept and they were told by e-mail to create the account.",
+      "invited": "No account yet. The role is kept and the person was told by e-mail.",
       "waiting": "no account yet",
       "nobody": "Nobody has this role."
     },
     "requests": {
-      "intro": "People who asked to bring into their account a registration made with another e-mail they can no longer read. Check with the person before approving.",
+      "intro": "Requests to join to an account a registration made with another e-mail. Check with the person before approving.",
       "none": "No request waiting.",
       "body": "{{accountName}} ({{accountEmail}}) asks for the registration made in the name of {{registrationName}} with the e-mail {{registrationEmail}}. Asked on {{date}}.",
       "approve": "Approve",
@@ -800,7 +800,7 @@
       "submission.received": "Paper no. {{number}}, \"{{title}}\", was received.",
       "submission.updated": "Paper no. {{number}}, \"{{title}}\", was changed by {{mainAuthor}}.",
       "submission.withdrawn": "Paper no. {{number}}, \"{{title}}\", was withdrawn by {{mainAuthor}}.",
-      "submission.author_issue": "{{authorName}} created an account with a document different from the one entered in paper no. {{number}}, \"{{title}}\". Open the paper and save it again to correct it.",
+      "submission.author_issue": "The document of {{authorName}} does not match paper no. {{number}}, \"{{title}}\". Open the paper and save it again.",
       "organiser.submission.received": "New paper no. {{number}}: \"{{title}}\", sent by {{mainAuthor}}.",
       "organiser.submission.updated": "Paper no. {{number}}, \"{{title}}\", was changed by {{mainAuthor}}.",
       "organiser.submission.withdrawn": "Paper no. {{number}}, \"{{title}}\", was withdrawn by {{mainAuthor}}.",
@@ -808,7 +808,7 @@
       "member.added": "You were given the role of {{role}}.",
       "account.updated": "The organisers updated the details of your account.",
       "link.approved": "The organisers approved your request: the registration now shows in your account.",
-      "link.rejected": "The organisers did not approve your request to bring the registration into your account. If in doubt, contact the organisers.",
+      "link.rejected": "The organisers did not approve your request to join the registration to your account.",
       "review.assigned": "You were chosen to review paper no. {{number}}, \"{{title}}\".",
       "review.unassigned": "You no longer review paper no. {{number}}, \"{{title}}\"."
     }

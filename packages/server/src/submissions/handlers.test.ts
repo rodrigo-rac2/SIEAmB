@@ -293,7 +293,7 @@ describe('sending a paper', () => {
     expect(toAuthor.text).not.toContain('Criar conta');
     // An author with no account is offered to create one, and then lands on Meus trabalhos (#292).
     const toNewcomer = sent.find((m) => m.to === 'semconta@ufrn.br')!;
-    expect(toNewcomer.text).toContain('Você ainda não tem conta no site com este e-mail.');
+    expect(toNewcomer.text).toContain('Para acompanhar o trabalho, crie uma conta com este e-mail e com o seu documento (CPF ou passaporte).');
     expect(toNewcomer.html).toContain('Criar conta com este e-mail');
     expect(toNewcomer.text).toContain('https://dev.sieamb.org/2027/conta/criar?next=%2F2027%2Fmeus-trabalhos');
     const toOrganiser = sent.find((m) => m.to === ORGANISER.email)!;
@@ -1885,6 +1885,7 @@ describe('whoever sent the paper is told when a co-author\'s document does not m
     expect(mails[0]!.subject).toBe('Trabalho nº 1: confira o documento de Ana Reis (II SIEAmB)'.replace('nº 1', `nº ${ctx.store.submissions[0]!.number}`));
     expect(mails[0]!.text).toContain('Ana Reis criou uma conta no site com um documento diferente');
     expect(mails[0]!.text).toContain('abra o trabalho e salve de novo');
+    expect(mails[0]!.text.length).toBeLessThan(700);
     expect(mails[0]!.text).toContain('https://dev.sieamb.org/2027/meus-trabalhos');
     expect(bells).toEqual([
       { userId: MAIN.id, eventId: EVENT.id, kind: 'submission.author_issue', data: { number: ctx.store.submissions[0]!.number, title: 'Governança da água no semiárido paraibano', authorName: 'Ana Reis' } },

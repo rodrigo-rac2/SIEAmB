@@ -96,8 +96,8 @@ test.describe('submissions @submissions', () => {
     // The address of the person suggested is nowhere in the page.
     expect(await page.content()).not.toContain(knownEmail);
     // Her account says who she is, so nothing is asked about her (ADR-010); the sender's is the account's.
-    await expect(page.getByTestId('author-document').nth(1)).toHaveText('O documento desta pessoa já consta no cadastro.');
-    await expect(page.getByTestId('author-document').nth(0)).toHaveText('Seu documento é o da sua conta.');
+    await expect(page.getByTestId('author-document').nth(1)).toHaveText('Documento já cadastrado.');
+    await expect(page.getByTestId('author-document').nth(0)).toHaveText('Documento da sua conta.');
     await expect(page.getByLabel('CPF do autor 2')).toHaveCount(0);
 
     // 4. The professor, typed by hand, then moved up to be the first author.
@@ -107,7 +107,7 @@ test.describe('submissions @submissions', () => {
     // He has no account: the sender says who he is. Without it the paper is not sent.
     await page.getByLabel('Arquivo do trabalho').setInputFiles(await pdfFile(5, 'sem documento.pdf'));
     await page.getByRole('button', { name: 'Enviar trabalho' }).click();
-    await expect(page.getByRole('alert')).toHaveText('Informe o CPF ou o passaporte, com o país, de Prof. Sem Conta E2E.');
+    await expect(page.getByRole('alert')).toHaveText('Informe o CPF ou o passaporte de Prof. Sem Conta E2E.');
     await page.getByLabel('CPF do autor 3').fill(profCpf);
     await expect(page.getByLabel('CPF do autor 3')).toHaveValue(typedCpf(profCpf));
     await page.getByRole('button', { name: 'Subir autor 3' }).click();
@@ -140,7 +140,7 @@ test.describe('submissions @submissions', () => {
     await expect(card).toContainText('Resumo expandido E2E.pdf · 5 páginas');
     await expect(card.getByRole('listitem')).toHaveText(['Prof. Sem Conta E2E', 'Autora Que Envia E2E', knownName]);
     await expect(page.getByTestId('paper-limits')).toContainText('Você é o primeiro autor em 0 de 3 trabalhos e consta nas demais posições em 1 de 5.');
-    await expect(page.getByTestId('registration-notice')).toContainText('só entra na programação se pelo menos um dos autores estiver inscrito');
+    await expect(page.getByTestId('registration-notice')).toContainText('Trabalhos aprovados exigem ao menos um autor inscrito');
     // In the database: the real addresses, lower-cased, in the order of the paper, each with who the person is.
     const saved = await admin<{ submission_authors: { position: number; email: string; cpf: string | null }[] }[]>(
       `/rest/v1/submissions?title=eq.${encodeURIComponent(title)}&select=submission_authors(position,email,cpf)`,
@@ -204,7 +204,7 @@ test.describe('submissions @submissions', () => {
     await expect(page.getByLabel('Nome do autor 2 (você)')).toHaveValue('Autora Que Envia E2E');
     // What is on record about each author: a hint of what she typed for the professor, never the number.
     await expect(page.getByTestId('author-document').nth(0)).toHaveText(new RegExp(`^Documento informado: \\*\\*\\*\\.${profCpf.slice(3, 6)}\\.${profCpf.slice(6, 9)}-\\*\\*`));
-    await expect(page.getByTestId('author-document').nth(2)).toHaveText('O documento desta pessoa já consta no cadastro.');
+    await expect(page.getByTestId('author-document').nth(2)).toHaveText('Documento já cadastrado.');
     expect(await page.content()).not.toContain(profCpf);
     await page.getByLabel('Título em português').fill(`${title} (revisto)`);
     await page.getByRole('button', { name: 'Salvar alterações' }).click();

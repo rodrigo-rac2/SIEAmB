@@ -168,7 +168,7 @@ test.describe('organisation panel @panel', () => {
     await page.getByLabel('E-mail').fill(reviewerEmail);
     await page.getByTestId('invite-role').selectOption('REVIEWER');
     await page.getByRole('button', { name: 'Dar o papel', exact: true }).click();
-    await expect(page.getByRole('status')).toContainText('Essa pessoa ainda não tem conta.');
+    await expect(page.getByRole('status')).toContainText('Sem conta ainda.');
     await expect(page.getByTestId('pending-invites')).toContainText(`${reviewerEmail} (Avaliador)`);
 
     // 5a. An administrator gives Organizador and Avaliador, never Administrador: that is the owner's (#268).

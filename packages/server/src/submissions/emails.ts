@@ -32,7 +32,7 @@ interface LocaleCopy {
 const COPY: Record<'pt-BR' | 'en' | 'es' | 'zh-CN', LocaleCopy> = {
   'pt-BR': {
     greeting: (name) => (name ? `Olá, ${name}.` : 'Olá.'),
-    noAccount: 'Você ainda não tem conta no site com este e-mail. Quem enviou o trabalho informou seu nome, este e-mail e seu documento (CPF ou passaporte). Para acompanhar o trabalho, crie uma conta com este mesmo e-mail e com o seu documento.',
+    noAccount: 'Para acompanhar o trabalho, crie uma conta com este e-mail e com o seu documento (CPF ou passaporte).',
     createAccount: 'Criar conta com este e-mail',
     signature: (event) => `Comissão organizadora do ${event}`,
     kinds: {
@@ -65,7 +65,7 @@ const COPY: Record<'pt-BR' | 'en' | 'es' | 'zh-CN', LocaleCopy> = {
   },
   en: {
     greeting: (name) => (name ? `Hello, ${name}.` : 'Hello.'),
-    noAccount: 'You do not have an account on the website with this e-mail yet. Whoever sent the paper gave your name, this e-mail and your document (CPF or passport). To follow the paper, create an account with this same e-mail and with your document.',
+    noAccount: 'To follow the paper, create an account with this e-mail and with your document (CPF or passport).',
     createAccount: 'Create an account with this e-mail',
     signature: (event) => `${event} organising committee`,
     kinds: {
@@ -98,7 +98,7 @@ const COPY: Record<'pt-BR' | 'en' | 'es' | 'zh-CN', LocaleCopy> = {
   },
   es: {
     greeting: (name) => (name ? `Hola, ${name}.` : 'Hola.'),
-    noAccount: 'Todavía no tiene una cuenta en el sitio con este correo. Quien envió el trabajo indicó su nombre, este correo y su documento (CPF o pasaporte). Para seguir el trabajo, cree una cuenta con este mismo correo y con su documento.',
+    noAccount: 'Para seguir el trabajo, cree una cuenta con este correo y con su documento (CPF o pasaporte).',
     createAccount: 'Crear una cuenta con este correo',
     signature: (event) => `Comisión organizadora del ${event}`,
     kinds: {
@@ -131,7 +131,7 @@ const COPY: Record<'pt-BR' | 'en' | 'es' | 'zh-CN', LocaleCopy> = {
   },
   'zh-CN': {
     greeting: (name) => (name ? `${name}，您好。` : '您好。'),
-    noAccount: '您尚未使用此电子邮箱在网站注册账户。投稿人填写了您的姓名、此电子邮箱和您的证件（CPF 或护照）。如需跟进稿件，请使用同一电子邮箱和您的证件创建账户。',
+    noAccount: '如需跟进稿件，请使用此电子邮箱和您的证件（CPF 或护照）创建账户。',
     createAccount: '使用此电子邮箱创建账户',
     signature: (event) => `${event} 组委会`,
     kinds: {
@@ -195,8 +195,7 @@ const AUTHOR_ISSUE: Record<'pt-BR' | 'en' | 'es' | 'zh-CN', { subject: (d: Autho
     subject: (d) => `Trabalho nº ${d.number}: confira o documento de ${d.authorName} (${d.eventName})`,
     body: (d) => [
       `${d.authorName} criou uma conta no site com um documento diferente do que foi informado no trabalho nº ${d.number}, "${d.title}".`,
-      'Enquanto os dois não conferem, essa pessoa não vê o trabalho na conta dela. Para corrigir, abra o trabalho e salve de novo: o documento da conta dela passa a valer.',
-      'Se você não reconhece essa pessoa como autora, fale com a organização.',
+      'Para corrigir, abra o trabalho e salve de novo. Até lá, essa pessoa não vê o trabalho na conta dela.',
     ],
     linkLabel: 'Ver meus trabalhos',
   },
@@ -204,8 +203,7 @@ const AUTHOR_ISSUE: Record<'pt-BR' | 'en' | 'es' | 'zh-CN', { subject: (d: Autho
     subject: (d) => `Paper no. ${d.number}: check the document of ${d.authorName} (${d.eventName})`,
     body: (d) => [
       `${d.authorName} created an account on the website with a document different from the one entered in paper no. ${d.number}, "${d.title}".`,
-      'While the two do not match, this person does not see the paper in their account. To correct it, open the paper and save it again: the document of their account will then be used.',
-      'If you do not recognise this person as an author, contact the organisers.',
+      'To correct it, open the paper and save it again. Until then, this person does not see the paper in their account.',
     ],
     linkLabel: 'See my papers',
   },
@@ -213,8 +211,7 @@ const AUTHOR_ISSUE: Record<'pt-BR' | 'en' | 'es' | 'zh-CN', { subject: (d: Autho
     subject: (d) => `Trabajo n.º ${d.number}: revise el documento de ${d.authorName} (${d.eventName})`,
     body: (d) => [
       `${d.authorName} creó una cuenta en el sitio con un documento distinto del indicado en el trabajo n.º ${d.number}, "${d.title}".`,
-      'Mientras los dos no coincidan, esa persona no ve el trabajo en su cuenta. Para corregirlo, abra el trabajo y guárdelo de nuevo: pasará a valer el documento de la cuenta de esa persona.',
-      'Si no reconoce a esa persona como autora, hable con la organización.',
+      'Para corregirlo, abra el trabajo y guárdelo de nuevo. Hasta entonces, esa persona no ve el trabajo en su cuenta.',
     ],
     linkLabel: 'Ver mis trabajos',
   },
@@ -222,8 +219,7 @@ const AUTHOR_ISSUE: Record<'pt-BR' | 'en' | 'es' | 'zh-CN', { subject: (d: Autho
     subject: (d) => `第 ${d.number} 号稿件：请核对 ${d.authorName} 的证件（${d.eventName}）`,
     body: (d) => [
       `${d.authorName} 在网站创建账户时使用的证件，与第 ${d.number} 号稿件“${d.title}”中填写的不同。`,
-      '在两者一致之前，此人在其账户中看不到该稿件。如需更正，请打开稿件并重新保存：届时将采用其账户中的证件。',
-      '如果您不认识此人为作者，请联系组委会。',
+      '如需更正，请打开稿件并重新保存。在此之前，此人在其账户中看不到该稿件。',
     ],
     linkLabel: '查看我的稿件',
   },

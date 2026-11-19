@@ -90,7 +90,7 @@
   "submissions": {
     "title": "Envío de Trabajos",
     "comingSoon": "Los envíos abren pronto",
-    "comingSoonBody": "El sistema de envío de trabajos está en preparación. Siga los avisos para saber cuándo se abrirán los envíos.",
+    "comingSoonBody": "Los envíos aún no están abiertos. Siga los avisos.",
     "rulesTitle": "Reglas de Envío",
     "rulesBody": "Las normas de envío, las áreas temáticas y el cronograma están en la convocatoria.",
     "rulesCta": "Leer la convocatoria",
@@ -102,7 +102,7 @@
     "state": {
       "open": {
         "title": "Envíos abiertos",
-        "body": "Envíe su trabajo por el sitio. Es necesario tener una cuenta; la inscripción en el evento puede hacerse después."
+        "body": "Envíe su trabajo por el sitio. Se necesita una cuenta."
       },
       "not_open": {
         "title": "Los envíos todavía no abrieron",
@@ -147,7 +147,7 @@
     "email": "Correo electrónico",
     "cpf": "CPF",
     "passport": "Pasaporte",
-    "cpfOrPassportHint": "Indique el CPF, o el pasaporte con el país que lo emitió. Quien tiene CPF indica el CPF.",
+    "cpfOrPassportHint": "Indique el CPF o el pasaporte.",
     "country": "País",
     "countryChoose": "Seleccione el país",
     "institution": "Institución",
@@ -167,11 +167,11 @@
       "duplicate": "Ya existe una inscripción con este correo para este evento.",
       "consent_required": "Es necesario autorizar el uso de los datos para enviar la inscripción.",
       "closed": "La inscripción de este evento no está abierta.",
-      "duplicateDocument": "Ya existe una inscripción en esta edición con este documento, hecha con el correo {{email}}. Entre en su cuenta o hable con la organización."
+      "duplicateDocument": "Este documento ya tiene inscripción en esta edición, con el correo {{email}}."
     },
     "lotRange": "del {{from}} al {{until}}",
     "accountEmailHint": "La inscripción usa el correo de su cuenta.",
-    "accountDocumentHint": "Este es el documento de su cuenta y va junto con la inscripción.",
+    "accountDocumentHint": "Documento de su cuenta.",
     "accountCta": "Para seguir su inscripción y enviar trabajos, cree su cuenta con el mismo correo:",
     "goToArea": "Ver mi inscripción en Mi área"
   },
@@ -321,7 +321,7 @@
     },
     "signup": {
       "title": "Crear cuenta",
-      "intro": "Indique su nombre, su correo y su documento. Enviaremos un enlace para confirmar el correo y elegir la contraseña.",
+      "intro": "Indique sus datos. Enviaremos un enlace para confirmar el correo y elegir la contraseña.",
       "submit": "Enviar enlace de confirmación",
       "sentTitle": "Revise su correo",
       "sentBody": "Si {{email}} puede tener una cuenta, enviamos un mensaje con el enlace para continuar."
@@ -383,7 +383,7 @@
       "registeredOn": "inscripción hecha el {{date}}",
       "profileTitle": "Mis datos",
       "country": "País del pasaporte",
-      "documentHint": "Indique el CPF, el pasaporte con el país que lo emitió, o ambos. Una vez guardado, cada documento solo puede ser cambiado por la organización.",
+      "documentHint": "Indique el CPF o el pasaporte. Una vez guardado, solo la organización puede cambiarlo.",
       "documentLockedHint": "Para corregir el documento, hable con la organización.",
       "saved": "Datos guardados.",
       "suggestionBody": "Encontramos una inscripción en el {{event}} con su documento, hecha con el correo {{email}}. ¿Es suya?",
@@ -407,24 +407,24 @@
       "not_logged_in": "Su sesión terminó. Entre de nuevo.",
       "email_not_confirmed": "Confirme su correo para continuar.",
       "document_locked": "El documento ya fue informado y solo puede ser modificado por la organización.",
-      "document_in_use": "Este documento ya está en otra cuenta. Si la cuenta es suya, entre con ella; si no, hable con la organización.",
+      "document_in_use": "Este documento ya está en otra cuenta.",
       "already_registered": "Esta cuenta ya tiene una inscripción en esta edición.",
       "registration_not_found": "No encontramos esa inscripción.",
       "link_not_found": "Este enlace no es válido.",
       "link_expired": "Este enlace expiró. Pida otro en Mi área.",
       "cannot_link": "No fue posible unir la inscripción a esa cuenta. Hable con la organización.",
-      "document_required": "Indique el CPF o el pasaporte con su país.",
-      "cpf_in_use": "Este CPF ya está registrado con el correo {{email}}. Entre con ese correo o recupere la contraseña.",
-      "cpf_in_use_plain": "Este CPF ya está registrado en otra cuenta. Entre con el correo que usó o hable con la organización.",
-      "passport_in_use": "Este pasaporte, de este país, ya está registrado con el correo {{email}}. Entre con ese correo o recupere la contraseña.",
-      "passport_in_use_plain": "Este pasaporte, de este país, ya está registrado en otra cuenta. Entre con el correo que usó o hable con la organización."
+      "document_required": "Indique el CPF o el pasaporte.",
+      "cpf_in_use": "CPF ya registrado con el correo {{email}}.",
+      "cpf_in_use_plain": "CPF ya registrado en otra cuenta.",
+      "passport_in_use": "Pasaporte ya registrado con el correo {{email}}.",
+      "passport_in_use_plain": "Pasaporte ya registrado en otra cuenta."
     },
     "document": {
       "title": "Documento",
-      "hint": "Indique el CPF, el pasaporte con el país que lo emitió, o ambos. Quien tiene CPF indica el CPF. Cada persona tiene una sola cuenta.",
-      "confirm": "Revise el documento indicado cuando se pidió la cuenta y corríjalo si no es el suyo. Una vez guardado, solo la organización puede cambiarlo.",
-      "missingTitle": "Falta indicar su documento",
-      "missingBody": "Para enviar trabajos, indique abajo, en Mis datos, su CPF o su pasaporte con el país."
+      "hint": "Indique el CPF o el pasaporte.",
+      "confirm": "Revise su documento. Una vez guardado, solo la organización puede cambiarlo.",
+      "missingTitle": "Indique su documento",
+      "missingBody": "Es necesario para enviar trabajos."
     }
   },
   "papers": {
@@ -463,7 +463,7 @@
     },
     "registration": {
       "none": "Usted todavía no está inscrito en el evento. La inscripción puede hacerse en cualquier momento.",
-      "noneWithPapers": "Usted todavía no está inscrito. Un trabajo aprobado solo entra en la programación si al menos uno de los autores está inscrito.",
+      "noneWithPapers": "Aún no está inscrito. Los trabajos aprobados exigen al menos un autor inscrito.",
       "UNPAID": "Falta el pago de la tasa para completar la inscripción.",
       "PENDING": "Estamos esperando la confirmación del pago.",
       "PAID": "Nada más que hacer en cuanto a la inscripción.",
@@ -481,7 +481,7 @@
       "keywordsEn": "Keywords (en inglés)",
       "keywordsHint": "Hasta {{max}} en cada idioma, separadas por punto y coma.",
       "authorsTitle": "Autores",
-      "authorsHint": "Hasta {{max}} autores, en el orden en que aparecen en el trabajo. Usted debe estar en la lista, en cualquier posición. Los demás no necesitan cuenta ni inscripción para que el trabajo sea enviado, y reciben un aviso por correo. Una vez enviado, solo usted, que lo envió, puede modificar o retirar el trabajo; los demás autores lo siguen en Mis trabajos.",
+      "authorsHint": "Hasta {{max}} autores, en el orden del trabajo, incluido usted. Solo quien envía puede cambiar o retirar el trabajo.",
       "authorName": "Nombre del autor {{n}}",
       "authorEmail": "Correo del autor {{n}}",
       "authorYou": "usted",
@@ -502,14 +502,14 @@
       "save": "Guardar cambios",
       "sending": "Enviando…",
       "sendAnyway": "Es otro trabajo, enviar de todos modos",
-      "authorsDocumentHint": "De cada autor, indique el CPF o el pasaporte con el país que lo emitió. Así reconoce el sistema a cada persona, y solo lo ve la administración.",
+      "authorsDocumentHint": "Indique el CPF o el pasaporte de cada autor.",
       "authorCpf": "CPF del autor {{n}}",
       "authorPassport": "Pasaporte del autor {{n}}",
       "authorCountry": "País del pasaporte del autor {{n}}",
-      "authorDocumentOwn": "Su documento es el de su cuenta.",
-      "authorDocumentOnFile": "El documento de esta persona ya consta en el registro.",
+      "authorDocumentOwn": "Documento de su cuenta.",
+      "authorDocumentOnFile": "Documento ya registrado.",
       "authorDocumentTyped": "Documento indicado: {{hint}}",
-      "authorDocumentChange": "Corregir documento",
+      "authorDocumentChange": "Corregir",
       "authorDocumentChangeLabel": "Corregir el documento del autor {{n}}"
     },
     "errors": {
@@ -525,7 +525,7 @@
       "wrong_file_type": "El archivo debe ser PDF o Word (.docx).",
       "file_missing": "Adjunte el archivo del trabajo.",
       "file_too_large": "El archivo supera los {{maxMb}} MB.",
-      "unreadable_file": "No fue posible leer el archivo. Compruebe que abre normalmente y que realmente es un PDF o un .docx.",
+      "unreadable_file": "No se pudo leer el archivo. Envíe un PDF o .docx válido.",
       "wrong_page_count": "El archivo tiene {{pages}} páginas. En esta modalidad la convocatoria pide de {{minPages}} a {{maxPages}}.",
       "invalid_title": "Informe el título en portugués.",
       "invalid_title_en": "Informe el título en inglés.",
@@ -541,29 +541,29 @@
       "coauthor_limit": "{{name}} ya figura en {{max}} trabajos fuera de la primera posición, el límite de la convocatoria.",
       "duplicate_title": "Uno de los autores ya envió un trabajo con este título (n.º {{number}}). Cada trabajo debe enviarse una sola vez.",
       "upload_failed": "No fue posible enviar el archivo. Revise su conexión e intente de nuevo.",
-      "document_required": "Antes de enviar un trabajo, indique su CPF o pasaporte en Mi área.",
-      "author_document_required": "Indique el CPF o el pasaporte, con su país, de {{name}}.",
-      "author_invalid_cpf": "El CPF de {{name}} no es válido.",
-      "author_invalid_passport": "El pasaporte de {{name}} no es válido.",
+      "document_required": "Indique su CPF o pasaporte en Mi área para enviar trabajos.",
+      "author_document_required": "Indique el CPF o el pasaporte de {{name}}.",
+      "author_invalid_cpf": "CPF de {{name}} inválido.",
+      "author_invalid_passport": "Pasaporte de {{name}} inválido.",
       "author_invalid_country": "Seleccione el país del pasaporte de {{name}}.",
-      "author_other_email": "{{name}} ya tiene una cuenta con el correo {{maskedEmail}}. Use ese correo para esa persona."
+      "author_other_email": "{{name}} ya tiene una cuenta con el correo {{maskedEmail}}. Use ese correo."
     },
     "count_one": "{{count}} trabajo",
     "count_other": "{{count}} trabajos",
     "readOnly": "solo quien lo envió puede modificarlo",
-    "documentMissing": "Para enviar trabajos y ver aquellos en los que consta como autor, indique su CPF o pasaporte en Mi área.",
-    "documentMissingCta": "Indicar mi documento",
-    "waitingOtherDocument_one": "Usted consta como autor en {{count}} trabajo con un documento distinto del suyo. Pida a quien lo envió que lo corrija, o hable con la organización.",
-    "waitingOtherDocument_other": "Usted consta como autor en {{count}} trabajos con un documento distinto del suyo. Pida a quien los envió que lo corrija, o hable con la organización.",
-    "waitingOtherEmail_one": "Usted consta como autor en {{count}} trabajo con el correo {{email}}. Pida a quien lo envió que use el correo de esta cuenta.",
-    "waitingOtherEmail_other": "Usted consta como autor en {{count}} trabajos con el correo {{email}}. Pida a quien los envió que use el correo de esta cuenta.",
-    "authorIssue": "El documento indicado para {{name}} no coincide con la cuenta de esa persona. Abra el trabajo y guárdelo de nuevo para corregirlo."
+    "documentMissing": "Indique su CPF o pasaporte en Mi área para enviar y ver trabajos.",
+    "documentMissingCta": "Indicar documento",
+    "waitingOtherDocument_one": "Usted consta en {{count}} trabajo con otro documento. Pida la corrección a quien lo envió.",
+    "waitingOtherDocument_other": "Usted consta en {{count}} trabajos con otro documento. Pida la corrección a quien los envió.",
+    "waitingOtherEmail_one": "Usted consta en {{count}} trabajo con el correo {{email}}. Pida la corrección a quien lo envió.",
+    "waitingOtherEmail_other": "Usted consta en {{count}} trabajos con el correo {{email}}. Pida la corrección a quien los envió.",
+    "authorIssue": "El documento de {{name}} no coincide con su cuenta. Abra el trabajo y guárdelo de nuevo."
   },
   "reviewing": {
     "title": "Trabajos para evaluar",
     "link": "Trabajos para evaluar ({{count}})",
     "none": "No se le ha indicado ningún trabajo para evaluar.",
-    "intro": "Estos son los trabajos que el comité organizador le indicó. Descargue el archivo de cada uno; el comité informará cómo enviar el dictamen.",
+    "intro": "Trabajos asignados a usted por la comisión organizadora, que informará cómo enviar el dictamen.",
     "abstract": "Resumen",
     "keywords": "Palabras clave"
   },
@@ -641,9 +641,9 @@
       "assignFor": "Indicar para el trabajo n.º {{number}}",
       "removeReviewer": "Quitar a {{name}} del trabajo n.º {{number}}",
       "noReviewers": "Nadie tiene el papel de Evaluador en esta edición. Otorgue ese papel en Personas y papeles.",
-      "noOtherReviewer": "No hay otro evaluador para indicar. Para tener más, otorgue el papel de Evaluador a otras personas en Personas y papeles.",
+      "noOtherReviewer": "No hay otro evaluador disponible. Dé el rol de Evaluador en Personas y roles.",
       "reviewersAreAuthors": "Quien tiene el papel de Evaluador es autor de este trabajo y no puede evaluarlo. Otorgue el papel de Evaluador a otra persona en Personas y papeles.",
-      "reviewersHint": "Cada trabajo necesita al menos un evaluador, y puede indicar cuantos quiera. Con un evaluador indicado, el trabajo queda en evaluación y los autores ya no pueden modificarlo. Los evaluadores ven el archivo con los nombres de los autores.",
+      "reviewersHint": "Indique al menos un evaluador por trabajo. Con evaluador indicado, el trabajo queda en evaluación y sus autores no pueden cambiarlo.",
       "window": {
         "open": "Los envíos están abiertos.",
         "closed": "Envíos cerrados el {{date}} por {{name}}. Nadie puede enviar, modificar ni retirar trabajos.",
@@ -657,12 +657,12 @@
       "withdrawFor": "Retirar el trabajo n.º {{number}}",
       "withdrawConfirm": "¿Retirar el trabajo n.º {{number}}? Se avisará a los autores.",
       "sameDocumentTitle": "Misma persona con más de un correo",
-      "sameDocumentBody": "Estos documentos aparecen con más de un correo entre los autores. Los límites de la convocatoria ya cuentan cada uno como una sola persona; revise y, si corresponde, corrija el correo en el trabajo.",
+      "sameDocumentBody": "Documentos con más de un correo entre los autores. Los límites de la convocatoria ya cuentan cada uno como una sola persona.",
       "sameDocumentPapers": "n.º {{numbers}}"
     },
     "people": {
       "role": "Rol",
-      "ownerFieldsHint": "Correo, CPF y pasaporte: solo usted, como dueño(a) del sitio, los cambia. Deje el CPF o el pasaporte vacío para quitarlo de la cuenta.",
+      "ownerFieldsHint": "Correo, CPF y pasaporte: solo el dueño del sitio los cambia. Deje vacío para quitar.",
       "passwordSet": "Definir contraseña",
       "passwordSetFor": "Definir la contraseña de {{name}}",
       "passwordNew": "Nueva contraseña de {{name}}",
@@ -692,14 +692,14 @@
       "pending": "Papeles guardados para quien aún no tiene cuenta",
       "add": "Dar el rol",
       "remove": "Quitar",
-      "hint": "Informe el correo de la persona. Si todavía no tiene cuenta, el rol queda guardado y vale en cuanto la cuenta sea creada con ese correo.",
+      "hint": "Indique el correo. Sin cuenta, el rol vale cuando la cuenta se cree con ese correo.",
       "added": "Rol otorgado. La persona fue avisada por correo.",
-      "invited": "Esa persona todavía no tiene cuenta. El rol queda guardado y fue avisada por correo para crear la cuenta.",
+      "invited": "Aún sin cuenta. El rol queda guardado y la persona fue avisada por correo.",
       "waiting": "todavía sin cuenta",
       "nobody": "Nadie con este rol."
     },
     "requests": {
-      "intro": "Personas que pidieron unir a su cuenta una inscripción hecha con otro correo, al que ya no tienen acceso. Verifique con la persona antes de aprobar.",
+      "intro": "Solicitudes para unir a la cuenta una inscripción hecha con otro correo. Confirme con la persona antes de aprobar.",
       "none": "Ninguna solicitud en espera.",
       "body": "{{accountName}} ({{accountEmail}}) pide la inscripción hecha a nombre de {{registrationName}} con el correo {{registrationEmail}}. Solicitud del {{date}}.",
       "approve": "Aprobar",
@@ -800,7 +800,7 @@
       "submission.received": "El trabajo n.º {{number}}, \"{{title}}\", fue recibido.",
       "submission.updated": "El trabajo n.º {{number}}, \"{{title}}\", fue modificado por {{mainAuthor}}.",
       "submission.withdrawn": "El trabajo n.º {{number}}, \"{{title}}\", fue retirado por {{mainAuthor}}.",
-      "submission.author_issue": "{{authorName}} creó una cuenta con un documento distinto del indicado en el trabajo n.º {{number}}, \"{{title}}\". Abra el trabajo y guárdelo de nuevo para corregirlo.",
+      "submission.author_issue": "El documento de {{authorName}} no coincide con el trabajo n.º {{number}}, \"{{title}}\". Abra el trabajo y guárdelo de nuevo.",
       "organiser.submission.received": "Nuevo trabajo n.º {{number}}: \"{{title}}\", enviado por {{mainAuthor}}.",
       "organiser.submission.updated": "El trabajo n.º {{number}}, \"{{title}}\", fue modificado por {{mainAuthor}}.",
       "organiser.submission.withdrawn": "El trabajo n.º {{number}}, \"{{title}}\", fue retirado por {{mainAuthor}}.",
@@ -808,7 +808,7 @@
       "member.added": "Usted recibió el rol de {{role}}.",
       "account.updated": "La organización actualizó los datos de su cuenta.",
       "link.approved": "La organización aprobó su solicitud: la inscripción ahora aparece en su cuenta.",
-      "link.rejected": "La organización no aprobó su solicitud para unir la inscripción a su cuenta. En caso de duda, hable con la organización.",
+      "link.rejected": "La organización no aprobó su solicitud de unir la inscripción a su cuenta.",
       "review.assigned": "Se le indicó para evaluar el trabajo n.º {{number}}, \"{{title}}\".",
       "review.unassigned": "Usted ya no evalúa el trabajo n.º {{number}}, \"{{title}}\"."
     }

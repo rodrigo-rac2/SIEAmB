@@ -90,7 +90,7 @@
   "submissions": {
     "title": "论文投稿",
     "comingSoon": "投稿即将开放",
-    "comingSoonBody": "投稿系统正在准备中。请关注公告以了解投稿开放时间。",
+    "comingSoonBody": "投稿尚未开放，请关注通知。",
     "rulesTitle": "投稿规则",
     "rulesBody": "投稿规则、主题领域和日程安排详见征稿通知。",
     "rulesCta": "阅读征稿通知",
@@ -102,7 +102,7 @@
     "state": {
       "open": {
         "title": "投稿已开放",
-        "body": "请通过网站提交论文。需要先创建账户；会议注册可以稍后进行。"
+        "body": "请通过网站投稿，需要先注册账户。"
       },
       "not_open": {
         "title": "投稿尚未开放",
@@ -147,7 +147,7 @@
     "email": "电子邮箱",
     "cpf": "CPF",
     "passport": "护照",
-    "cpfOrPassportHint": "请填写 CPF，或护照及其签发国家。有 CPF 的请填写 CPF。",
+    "cpfOrPassportHint": "请填写 CPF 或护照。",
     "country": "国家",
     "countryChoose": "请选择国家",
     "institution": "所属机构",
@@ -167,11 +167,11 @@
       "duplicate": "该邮箱已在本届会议注册过。",
       "consent_required": "需要同意数据使用后才能提交注册。",
       "closed": "本届会议的注册尚未开放。",
-      "duplicateDocument": "本届会议已有使用此证件的注册，注册邮箱为 {{email}}。请登录您的账户或联系组委会。"
+      "duplicateDocument": "此证件在本届已用邮箱 {{email}} 报名。"
     },
     "lotRange": "{{from}} 至 {{until}}",
     "accountEmailHint": "注册使用您账户的邮箱。",
-    "accountDocumentHint": "这是您账户中的证件，将随报名一并提交。",
+    "accountDocumentHint": "您账户中的证件。",
     "accountCta": "如需查看注册情况并提交论文，请使用相同邮箱创建账户：",
     "goToArea": "在“我的主页”查看我的注册"
   },
@@ -321,7 +321,7 @@
     },
     "signup": {
       "title": "创建账户",
-      "intro": "请填写您的姓名、电子邮箱和证件。我们将发送链接，用于确认邮箱并设置密码。",
+      "intro": "请填写您的信息。我们将发送链接，用于确认邮箱并设置密码。",
       "submit": "发送确认链接",
       "sentTitle": "请查看您的邮箱",
       "sentBody": "如果 {{email}} 可以创建账户，我们已发送一封包含后续链接的邮件。"
@@ -383,7 +383,7 @@
       "registeredOn": "注册于 {{date}}",
       "profileTitle": "我的资料",
       "country": "护照签发国家",
-      "documentHint": "请填写 CPF，或护照及其签发国家，也可两者都填。保存后，每种证件只能由组委会修改。",
+      "documentHint": "请填写 CPF 或护照。保存后只能由组委会修改。",
       "documentLockedHint": "如需更正证件，请联系组委会。",
       "saved": "资料已保存。",
       "suggestionBody": "我们发现了一条使用您的证件在 {{event}} 的注册，注册邮箱为 {{email}}。这是您的吗？",
@@ -407,24 +407,24 @@
       "not_logged_in": "您的会话已结束。请重新登录。",
       "email_not_confirmed": "请确认您的邮箱以继续。",
       "document_locked": "证件已填写，只能由组委会修改。",
-      "document_in_use": "此证件已用于另一个账户。如果该账户是您的，请用它登录；否则请联系组委会。",
+      "document_in_use": "此证件已用于另一个账户。",
       "already_registered": "此账户已有本届会议的注册。",
       "registration_not_found": "未找到该注册。",
       "link_not_found": "此链接无效。",
       "link_expired": "此链接已过期。请在“我的主页”中重新申请。",
       "cannot_link": "无法将注册关联到该账户。请联系组委会。",
-      "document_required": "请填写 CPF，或护照及其签发国家。",
-      "cpf_in_use": "该 CPF 已用邮箱 {{email}} 注册。请用该邮箱登录或找回密码。",
-      "cpf_in_use_plain": "该 CPF 已在另一个账户注册。请用您当时使用的邮箱登录，或联系组委会。",
-      "passport_in_use": "该国家的这本护照已用邮箱 {{email}} 注册。请用该邮箱登录或找回密码。",
-      "passport_in_use_plain": "该国家的这本护照已在另一个账户注册。请用您当时使用的邮箱登录，或联系组委会。"
+      "document_required": "请填写 CPF 或护照。",
+      "cpf_in_use": "该 CPF 已用邮箱 {{email}} 注册。",
+      "cpf_in_use_plain": "该 CPF 已在另一个账户注册。",
+      "passport_in_use": "该护照已用邮箱 {{email}} 注册。",
+      "passport_in_use_plain": "该护照已在另一个账户注册。"
     },
     "document": {
       "title": "证件",
-      "hint": "请填写 CPF，或护照及其签发国家，也可两者都填。有 CPF 的请填写 CPF。每人只能有一个账户。",
-      "confirm": "请核对申请账户时填写的证件，如不是您的请更正。保存后只能由组委会修改。",
-      "missingTitle": "尚未填写证件",
-      "missingBody": "如需投稿，请在下方“我的资料”中填写您的 CPF 或护照及其签发国家。"
+      "hint": "请填写 CPF 或护照。",
+      "confirm": "请核对您的证件。保存后只能由组委会修改。",
+      "missingTitle": "请填写证件",
+      "missingBody": "投稿需要先填写证件。"
     }
   },
   "papers": {
@@ -463,7 +463,7 @@
     },
     "registration": {
       "none": "您尚未注册会议。可以随时注册。",
-      "noneWithPapers": "您尚未注册。只有至少一位作者注册，被录用的论文才会进入会议日程。",
+      "noneWithPapers": "您尚未报名。录用的稿件至少需要一位作者报名。",
       "UNPAID": "还需支付注册费才能完成注册。",
       "PENDING": "我们正在等待付款确认。",
       "PAID": "注册方面无需其他操作。",
@@ -481,7 +481,7 @@
       "keywordsEn": "英语关键词",
       "keywordsHint": "每种语言最多 {{max}} 个，用分号分隔。",
       "authorsTitle": "作者",
-      "authorsHint": "最多 {{max}} 位作者，按论文中的署名顺序排列。您必须在名单中，位置不限。其他作者无需账号或报名即可提交论文，并会收到邮件通知。提交后，只有提交者本人可以修改或撤回论文；其他作者可在“我的论文”中查看。",
+      "authorsHint": "最多 {{max}} 位作者，按稿件顺序排列，包括您本人。只有投稿人可以修改或撤回稿件。",
       "authorName": "第 {{n}} 作者姓名",
       "authorEmail": "第 {{n}} 作者邮箱",
       "authorYou": "您",
@@ -502,14 +502,14 @@
       "save": "保存修改",
       "sending": "正在提交…",
       "sendAnyway": "这是另一篇论文，仍然提交",
-      "authorsDocumentHint": "请为每位作者填写 CPF，或护照及其签发国家。系统据此识别每个人，且仅管理员可见。",
+      "authorsDocumentHint": "请填写每位作者的 CPF 或护照。",
       "authorCpf": "第 {{n}} 作者的 CPF",
       "authorPassport": "第 {{n}} 作者的护照",
       "authorCountry": "第 {{n}} 作者护照的签发国家",
-      "authorDocumentOwn": "您的证件即您账户中的证件。",
-      "authorDocumentOnFile": "此人的证件已登记在案。",
+      "authorDocumentOwn": "您账户中的证件。",
+      "authorDocumentOnFile": "证件已登记。",
       "authorDocumentTyped": "已填写的证件：{{hint}}",
-      "authorDocumentChange": "更正证件",
+      "authorDocumentChange": "更正",
       "authorDocumentChangeLabel": "更正第 {{n}} 作者的证件"
     },
     "errors": {
@@ -525,7 +525,7 @@
       "wrong_file_type": "文件必须是 PDF 或 Word（.docx）。",
       "file_missing": "请附上论文文件。",
       "file_too_large": "文件超过 {{maxMb}} MB。",
-      "unreadable_file": "无法读取文件。请确认它可以正常打开，并且确实是 PDF 或 .docx。",
+      "unreadable_file": "无法读取文件。请上传有效的 PDF 或 .docx。",
       "wrong_page_count": "文件有 {{pages}} 页。此类型要求 {{minPages}} 至 {{maxPages}} 页。",
       "invalid_title": "请填写葡萄牙语标题。",
       "invalid_title_en": "请填写英语标题。",
@@ -541,29 +541,29 @@
       "coauthor_limit": "{{name}} 已在 {{max}} 篇论文中列于第一作者以外的位置，已达征稿通知的上限。",
       "duplicate_title": "其中一位作者已提交过同名论文（第 {{number}} 号）。每篇论文只能提交一次。",
       "upload_failed": "无法上传文件。请检查网络连接后重试。",
-      "document_required": "投稿前，请先在“我的专区”填写您的 CPF 或护照。",
-      "author_document_required": "请填写 {{name}} 的 CPF，或护照及其签发国家。",
+      "document_required": "请先在“我的专区”填写 CPF 或护照再投稿。",
+      "author_document_required": "请填写 {{name}} 的 CPF 或护照。",
       "author_invalid_cpf": "{{name}} 的 CPF 无效。",
       "author_invalid_passport": "{{name}} 的护照无效。",
       "author_invalid_country": "请选择 {{name}} 护照的签发国家。",
-      "author_other_email": "{{name}} 已用邮箱 {{maskedEmail}} 注册。请为此人使用该邮箱。"
+      "author_other_email": "{{name}} 已用邮箱 {{maskedEmail}} 注册。请使用该邮箱。"
     },
     "count_one": "{{count}} 篇论文",
     "count_other": "{{count}} 篇论文",
     "readOnly": "仅提交者可修改",
-    "documentMissing": "如需投稿并查看列有您为作者的稿件，请在“我的专区”填写您的 CPF 或护照。",
-    "documentMissingCta": "填写我的证件",
-    "waitingOtherDocument_one": "有 {{count}} 篇稿件将您列为作者，但证件与您的不同。请联系投稿人更正，或联系组委会。",
-    "waitingOtherDocument_other": "有 {{count}} 篇稿件将您列为作者，但证件与您的不同。请联系投稿人更正，或联系组委会。",
-    "waitingOtherEmail_one": "有 {{count}} 篇稿件以邮箱 {{email}} 将您列为作者。请联系投稿人改用本账户的邮箱。",
-    "waitingOtherEmail_other": "有 {{count}} 篇稿件以邮箱 {{email}} 将您列为作者。请联系投稿人改用本账户的邮箱。",
-    "authorIssue": "为 {{name}} 填写的证件与其账户不符。请打开稿件并重新保存以更正。"
+    "documentMissing": "请在“我的专区”填写 CPF 或护照，以便投稿和查看稿件。",
+    "documentMissingCta": "填写证件",
+    "waitingOtherDocument_one": "有 {{count}} 篇稿件以其他证件将您列为作者。请联系投稿人更正。",
+    "waitingOtherDocument_other": "有 {{count}} 篇稿件以其他证件将您列为作者。请联系投稿人更正。",
+    "waitingOtherEmail_one": "有 {{count}} 篇稿件以邮箱 {{email}} 将您列为作者。请联系投稿人更正。",
+    "waitingOtherEmail_other": "有 {{count}} 篇稿件以邮箱 {{email}} 将您列为作者。请联系投稿人更正。",
+    "authorIssue": "{{name}} 的证件与其账户不符。请打开稿件并重新保存。"
   },
   "reviewing": {
     "title": "待评审论文",
     "link": "待评审论文（{{count}}）",
     "none": "尚未为您指定待评审的论文。",
-    "intro": "以下是组委会指定给您的论文。请下载每篇论文的文件；组委会将告知如何提交评审意见。",
+    "intro": "组委会分配给您的稿件；评审意见的提交方式将另行通知。",
     "abstract": "摘要",
     "keywords": "关键词"
   },
@@ -641,9 +641,9 @@
       "assignFor": "指定给第 {{number}} 号论文",
       "removeReviewer": "将 {{name}} 从第 {{number}} 号论文中移除",
       "noReviewers": "本届会议还没有人拥有审稿人角色。请在“人员与角色”中授予该角色。",
-      "noOtherReviewer": "没有其他可指定的审稿人。如需更多，请在“人员与角色”中授予其他人审稿人角色。",
+      "noOtherReviewer": "没有其他可用的评审人。请在“人员与角色”中授予评审人角色。",
       "reviewersAreAuthors": "拥有审稿人角色的人是本稿件的作者，不能审阅本稿件。请在“人员与角色”中授予其他人审稿人角色。",
-      "reviewersHint": "每篇论文至少需要一位审稿人，可指定任意多位。指定审稿人后，论文进入评审状态，作者不能再修改。审稿人看到的文件包含作者姓名。",
+      "reviewersHint": "每篇稿件至少指定一位评审人。指定后稿件进入评审，作者不能再修改。",
       "window": {
         "open": "投稿通道已开放。",
         "closed": "投稿已于 {{date}} 由 {{name}} 关闭。任何人都不能提交、修改或撤回论文。",
@@ -657,12 +657,12 @@
       "withdrawFor": "撤回第 {{number}} 号论文",
       "withdrawConfirm": "确定撤回第 {{number}} 号论文吗？作者将收到通知。",
       "sameDocumentTitle": "同一人使用多个邮箱",
-      "sameDocumentBody": "这些证件在作者中对应多个邮箱。征稿限制已将其视为同一人；请核对，必要时在稿件中更正邮箱。",
+      "sameDocumentBody": "在作者中对应多个邮箱的证件。征稿限制已将每个证件视为同一人。",
       "sameDocumentPapers": "第 {{numbers}} 号"
     },
     "people": {
       "role": "角色",
-      "ownerFieldsHint": "电子邮箱、CPF 和护照：只有您作为网站所有者可以修改。将 CPF 或护照留空即可从账户中移除。",
+      "ownerFieldsHint": "电子邮箱、CPF 和护照：仅网站所有者可修改。留空即可移除。",
       "passwordSet": "设置密码",
       "passwordSetFor": "设置 {{name}} 的密码",
       "passwordNew": "{{name}} 的新密码",
@@ -692,14 +692,14 @@
       "pending": "为尚无账户者保留的角色",
       "add": "授予角色",
       "remove": "移除",
-      "hint": "请填写对方的邮箱。如果对方还没有账户，角色会被保留，并在使用该邮箱创建账户后生效。",
+      "hint": "请填写邮箱。若尚无账户，角色将在用该邮箱创建账户后生效。",
       "added": "角色已授予。已通过邮件通知对方。",
-      "invited": "此人还没有账户。角色已保留，并已通过邮件通知其创建账户。",
+      "invited": "尚无账户。角色已保留，并已通过邮件通知此人。",
       "waiting": "尚无账户",
       "nobody": "没有人拥有此角色。"
     },
     "requests": {
-      "intro": "这些人申请将使用另一个（已无法访问的）邮箱所做的注册关联到自己的账户。批准前请先与本人核实。",
+      "intro": "将用其他邮箱完成的报名并入账户的申请。批准前请与本人核实。",
       "none": "没有待处理的申请。",
       "body": "{{accountName}}（{{accountEmail}}）申请关联以 {{registrationName}} 的名义、使用邮箱 {{registrationEmail}} 所做的注册。申请日期：{{date}}。",
       "approve": "批准",
@@ -800,7 +800,7 @@
       "submission.received": "已收到第 {{number}} 号论文“{{title}}”。",
       "submission.updated": "第 {{number}} 号论文“{{title}}”已由 {{mainAuthor}} 修改。",
       "submission.withdrawn": "第 {{number}} 号论文“{{title}}”已由 {{mainAuthor}} 撤回。",
-      "submission.author_issue": "{{authorName}} 创建账户时使用的证件与第 {{number}} 号稿件“{{title}}”中填写的不同。请打开稿件并重新保存以更正。",
+      "submission.author_issue": "{{authorName}} 的证件与第 {{number}} 号稿件“{{title}}”不符。请打开稿件并重新保存。",
       "organiser.submission.received": "新论文第 {{number}} 号：“{{title}}”，由 {{mainAuthor}} 提交。",
       "organiser.submission.updated": "第 {{number}} 号论文“{{title}}”已由 {{mainAuthor}} 修改。",
       "organiser.submission.withdrawn": "第 {{number}} 号论文“{{title}}”已由 {{mainAuthor}} 撤回。",
@@ -808,7 +808,7 @@
       "member.added": "您被授予了“{{role}}”角色。",
       "account.updated": "组委会更新了您的账户资料。",
       "link.approved": "组委会已批准您的申请：该注册现在显示在您的账户中。",
-      "link.rejected": "组委会未批准您将注册关联到账户的申请。如有疑问，请联系组委会。",
+      "link.rejected": "组委会未批准您将报名并入账户的申请。",
       "review.assigned": "您被指定评审第 {{number}} 号论文“{{title}}”。",
       "review.unassigned": "您不再评审第 {{number}} 号论文“{{title}}”。"
     }

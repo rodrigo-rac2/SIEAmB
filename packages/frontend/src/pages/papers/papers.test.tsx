@@ -148,7 +148,7 @@ describe('MyPapersPage', () => {
   });
 
   it.each([
-    [null, /só entra na programação se pelo menos um dos autores estiver inscrito/, 'Fazer a inscrição', '/2027/inscricoes/nova'],
+    [null, /Trabalhos aprovados exigem ao menos um autor inscrito/, 'Fazer a inscrição', '/2027/inscricoes/nova'],
     ['UNPAID', /Aguardando pagamento\. Falta o pagamento/, 'Pagar a inscrição', '/2027/inscricoes/pagar?t=3f2b8c1e-9a4d-4e7f-8b21-6c5d4e3f2a10'],
   ] as const)('with a paper and registration %s, says what is missing', async (state, text, link, href) => {
     stubApi({ mine: { body: mine({ submissions: [paper()] }) }, me: account(state) });
@@ -816,16 +816,16 @@ describe('PaperFormPage, who each author is (ADR-010)', () => {
     mount(...NEW, <PaperFormPage />);
     await ownRow();
     const own = screen.getAllByTestId('author-document')[0]!;
-    expect(own).toHaveTextContent('Seu documento é o da sua conta.');
+    expect(own).toHaveTextContent('Documento da sua conta.');
     expect(screen.queryByLabelText('CPF do autor 1')).not.toBeInTheDocument();
-    expect(screen.getByText(/De cada autor, informe o CPF ou o passaporte/)).toBeInTheDocument();
+    expect(screen.getByText('Informe o CPF ou o passaporte de cada autor.')).toBeInTheDocument();
   });
 
   it.each([
-    ['no document', async () => undefined, 'Informe o CPF ou o passaporte, com o país, de Ana Reis.'],
-    ['a CPF with wrong check digits', async () => userEvent.type(screen.getByLabelText('CPF do autor 2'), '11144477736'), 'O CPF de Ana Reis é inválido.'],
+    ['no document', async () => undefined, 'Informe o CPF ou o passaporte de Ana Reis.'],
+    ['a CPF with wrong check digits', async () => userEvent.type(screen.getByLabelText('CPF do autor 2'), '11144477736'), 'CPF de Ana Reis inválido.'],
     ['a passport with no country chosen', async () => userEvent.type(screen.getByLabelText('Passaporte do autor 2'), 'AB123456'), 'Selecione o país do passaporte de Ana Reis.'],
-    ['a passport that is too short', async () => { await userEvent.type(screen.getByLabelText('Passaporte do autor 2'), 'A1'); await userEvent.selectOptions(screen.getByRole('combobox', { name: 'País do passaporte do autor 2' }), 'Portugal'); }, 'O passaporte de Ana Reis é inválido.'],
+    ['a passport that is too short', async () => { await userEvent.type(screen.getByLabelText('Passaporte do autor 2'), 'A1'); await userEvent.selectOptions(screen.getByRole('combobox', { name: 'País do passaporte do autor 2' }), 'Portugal'); }, 'Passaporte de Ana Reis inválido.'],
   ])('with %s for a co-author, says whose and sends nothing, not even the file', async (_name, type, message) => {
     const calls = stubApi(ok());
     mount(...NEW, <PaperFormPage />);
@@ -861,7 +861,7 @@ describe('PaperFormPage, who each author is (ADR-010)', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Adicionar autor' }));
     await userEvent.type(screen.getByLabelText('Nome do autor 2'), 'Rodrigo');
     await userEvent.click(within(await screen.findByRole('listbox')).getAllByRole('option')[0]!);
-    expect(screen.getAllByTestId('author-document')[1]).toHaveTextContent('O documento desta pessoa já consta no cadastro.');
+    expect(screen.getAllByTestId('author-document')[1]).toHaveTextContent('Documento já cadastrado.');
     expect(screen.queryByLabelText('CPF do autor 2')).not.toBeInTheDocument();
     await userEvent.upload(screen.getByLabelText('Arquivo do trabalho'), pdfFile());
     await userEvent.click(screen.getByRole('button', SEND));
@@ -890,10 +890,10 @@ describe('PaperFormPage, who each author is (ADR-010)', () => {
   });
 
   it.each([
-    ['author_other_email', { name: 'Ana Reis', maskedEmail: 'a•••@gmail.com' }, 'Ana Reis já tem cadastro com o e-mail a•••@gmail.com. Use esse e-mail para essa pessoa.'],
-    ['author_document_required', { name: 'Ana Reis' }, 'Informe o CPF ou o passaporte, com o país, de Ana Reis.'],
-    ['author_invalid_cpf', { name: 'Ana Reis' }, 'O CPF de Ana Reis é inválido.'],
-    ['document_required', {}, 'Antes de enviar um trabalho, informe seu CPF ou passaporte em Minha área.'],
+    ['author_other_email', { name: 'Ana Reis', maskedEmail: 'a•••@gmail.com' }, 'Ana Reis já tem cadastro com o e-mail a•••@gmail.com. Use esse e-mail.'],
+    ['author_document_required', { name: 'Ana Reis' }, 'Informe o CPF ou o passaporte de Ana Reis.'],
+    ['author_invalid_cpf', { name: 'Ana Reis' }, 'CPF de Ana Reis inválido.'],
+    ['document_required', {}, 'Informe seu CPF ou passaporte em Minha área para enviar trabalhos.'],
     ['duplicate_author', { name: 'Ana R.' }, 'Ana R. aparece mais de uma vez entre os autores.'],
   ])('explains %s from the server and stays on the form', async (error, extra, message) => {
     stubApi(ok({ save: { status: 409, body: { error, ...extra } } }));
@@ -912,8 +912,8 @@ describe('PaperFormPage, who each author is (ADR-010)', () => {
     const calls = stubApi(ok({ me: { body: { ...account(null).body, user: { ...account(null).body.user, documentMissing: true } } } }));
     mount(...NEW, <PaperFormPage />);
     const notice = await screen.findByTestId('document-missing');
-    expect(notice).toHaveTextContent('Antes de enviar um trabalho, informe seu CPF ou passaporte em Minha área.');
-    expect(within(notice).getByRole('link', { name: 'Informar meu documento' })).toHaveAttribute('href', '/2027/minha-area#meus-dados');
+    expect(notice).toHaveTextContent('Informe seu CPF ou passaporte em Minha área para enviar trabalhos.');
+    expect(within(notice).getByRole('link', { name: 'Informar documento' })).toHaveAttribute('href', '/2027/minha-area#meus-dados');
     expect(screen.getByRole('button', SEND)).toBeDisabled();
     expect(posted(calls)).toEqual([]);
   });
@@ -929,7 +929,7 @@ describe('PaperFormPage, who each author is (ADR-010)', () => {
       mount(...EDIT, <PaperFormPage />);
       await screen.findByLabelText('Título em português');
       const [own, second] = screen.getAllByTestId('author-document');
-      expect(own).toHaveTextContent('Seu documento é o da sua conta.');
+      expect(own).toHaveTextContent('Documento da sua conta.');
       expect(second).toHaveTextContent('Documento informado: ***.444.777-**');
       expect(screen.queryByLabelText('CPF do autor 2')).not.toBeInTheDocument();
       await userEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }));
@@ -959,7 +959,7 @@ describe('PaperFormPage, who each author is (ADR-010)', () => {
       stubApi({ one: { body: { submission: paper() } } });
       mount(...EDIT, <PaperFormPage />);
       await screen.findByLabelText('Título em português');
-      expect(screen.getAllByTestId('author-document')[1]).toHaveTextContent('O documento desta pessoa já consta no cadastro.');
+      expect(screen.getAllByTestId('author-document')[1]).toHaveTextContent('Documento já cadastrado.');
       expect(screen.queryByRole('button', { name: /Corrigir o documento/ })).not.toBeInTheDocument();
     });
 
@@ -971,7 +971,7 @@ describe('PaperFormPage, who each author is (ADR-010)', () => {
       await userEvent.type(email, 'joao.novo@ufpb.br');
       expect(screen.getByLabelText('CPF do autor 2')).toBeInTheDocument();
       await userEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }));
-      expect(await screen.findByRole('alert')).toHaveTextContent('Informe o CPF ou o passaporte, com o país, de João Lima.');
+      expect(await screen.findByRole('alert')).toHaveTextContent('Informe o CPF ou o passaporte de João Lima.');
       expect(calls.filter((c) => c.url.includes('/save'))).toEqual([]);
     });
 
@@ -980,7 +980,7 @@ describe('PaperFormPage, who each author is (ADR-010)', () => {
       mount(...EDIT, <PaperFormPage />);
       await screen.findByLabelText('CPF do autor 2');
       await userEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }));
-      expect(await screen.findByRole('alert')).toHaveTextContent('Informe o CPF ou o passaporte, com o país, de João Lima.');
+      expect(await screen.findByRole('alert')).toHaveTextContent('Informe o CPF ou o passaporte de João Lima.');
       expect(calls.filter((c) => c.url.includes('/save'))).toEqual([]);
     });
 
@@ -1004,7 +1004,7 @@ describe('PaperFormPage, who each author is (ADR-010)', () => {
       mount(...EDIT, <PaperFormPage />);
       await userEvent.type(await screen.findByLabelText('CPF do autor 2'), '11144477736');
       await userEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }));
-      expect(await screen.findByRole('alert')).toHaveTextContent('O CPF de João Lima é inválido.');
+      expect(await screen.findByRole('alert')).toHaveTextContent('CPF de João Lima inválido.');
       expect(calls.filter((c) => c.url.includes('/save'))).toEqual([]);
     });
   });
@@ -1015,8 +1015,8 @@ describe('MyPapersPage, places that wait (ADR-010)', () => {
     stubApi({ mine: { body: mine({ documentMissing: true, waiting: { otherDocument: 2, otherEmail: [] } }) }, me: account(null) });
     mount(...LIST, <MyPapersPage />);
     const notice = await screen.findByTestId('document-missing');
-    expect(notice).toHaveTextContent('Para enviar trabalhos e ver aqueles em que você consta como autor, informe seu CPF ou passaporte em Minha área.');
-    expect(within(notice).getByRole('link', { name: 'Informar meu documento' })).toHaveAttribute('href', '/2027/minha-area#meus-dados');
+    expect(notice).toHaveTextContent('Informe seu CPF ou passaporte em Minha área para enviar e ver trabalhos.');
+    expect(within(notice).getByRole('link', { name: 'Informar documento' })).toHaveAttribute('href', '/2027/minha-area#meus-dados');
     // No way to send, and no second notice about another document: giving one comes first.
     expect(screen.queryByRole('link', { name: 'Enviar trabalho' })).not.toBeInTheDocument();
     expect(screen.queryByTestId('waiting-other-document')).not.toBeInTheDocument();
@@ -1025,11 +1025,11 @@ describe('MyPapersPage, places that wait (ADR-010)', () => {
   it('says how many papers list the person with another document, one or several', async () => {
     stubApi({ mine: { body: mine({ waiting: { otherDocument: 1, otherEmail: [] } }) }, me: account(null) });
     const first = mount(...LIST, <MyPapersPage />);
-    expect(await screen.findByTestId('waiting-other-document')).toHaveTextContent('Você consta como autor em 1 trabalho com um documento diferente do seu.');
+    expect(await screen.findByTestId('waiting-other-document')).toHaveTextContent('Você consta em 1 trabalho com outro documento.');
     first.unmount();
     stubApi({ mine: { body: mine({ waiting: { otherDocument: 3, otherEmail: [] } }) }, me: account(null) });
     mount(...LIST, <MyPapersPage />);
-    expect(await screen.findByTestId('waiting-other-document')).toHaveTextContent('Você consta como autor em 3 trabalhos com um documento diferente do seu.');
+    expect(await screen.findByTestId('waiting-other-document')).toHaveTextContent('Você consta em 3 trabalhos com outro documento.');
   });
 
   it('says under which masked address the person is listed elsewhere, one line per address', async () => {
@@ -1040,8 +1040,8 @@ describe('MyPapersPage, places that wait (ADR-010)', () => {
     mount(...LIST, <MyPapersPage />);
     const lines = await screen.findAllByTestId('waiting-other-email');
     expect(lines.map((l) => l.textContent)).toEqual([
-      'Você consta como autor em 1 trabalho com o e-mail a•••@gmail.com. Peça a quem enviou para usar o e-mail desta conta.',
-      'Você consta como autor em 2 trabalhos com o e-mail a•••@ufrn.br. Peça a quem enviou para usar o e-mail desta conta.',
+      'Você consta em 1 trabalho com o e-mail a•••@gmail.com. Peça a correção a quem enviou.',
+      'Você consta em 2 trabalhos com o e-mail a•••@ufrn.br. Peça a correção a quem enviou.',
     ]);
     expect(screen.queryByTestId('waiting-other-document')).not.toBeInTheDocument();
   });
@@ -1053,7 +1053,7 @@ describe('MyPapersPage, places that wait (ADR-010)', () => {
     });
     mount(...LIST, <MyPapersPage />);
     const cards = await screen.findAllByTestId('paper-card');
-    expect(within(cards[0]!).getByTestId('author-issue')).toHaveTextContent('O documento informado para João Lima não confere com o cadastro dessa pessoa. Abra o trabalho e salve de novo para corrigir.');
+    expect(within(cards[0]!).getByTestId('author-issue')).toHaveTextContent('O documento de João Lima não confere com o cadastro. Abra o trabalho e salve de novo.');
     expect(within(cards[1]!).queryByTestId('author-issue')).not.toBeInTheDocument();
   });
 

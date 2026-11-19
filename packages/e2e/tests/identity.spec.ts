@@ -174,7 +174,7 @@ test.describe('identity by document @identity', () => {
 
     // 2. The paper keeps waiting: he is told why, sees no paper, and the place counts against him.
     await expect(coPage.getByTestId('waiting-other-document')).toHaveText(
-      'Você consta como autor em 1 trabalho com um documento diferente do seu. Peça a quem enviou para corrigir, ou fale com a organização.',
+      'Você consta em 1 trabalho com outro documento. Peça a correção a quem enviou.',
     );
     await expect(coPage.getByTestId('paper-card')).toHaveCount(0);
     await expect(coPage.getByTestId('paper-limits')).toContainText('consta nas demais posições em 1 de 5');
@@ -191,12 +191,12 @@ test.describe('identity by document @identity', () => {
     await page.goto(`/${EVENT}/meus-trabalhos`);
     const card = page.getByTestId('paper-card').filter({ hasText: title });
     await expect(card.getByTestId('author-issue')).toHaveText(
-      'O documento informado para Coautor Com Outro CPF E2E não confere com o cadastro dessa pessoa. Abra o trabalho e salve de novo para corrigir.',
+      'O documento de Coautor Com Outro CPF E2E não confere com o cadastro. Abra o trabalho e salve de novo.',
     );
 
     // 4. Opening it and saving again is the correction: the line takes the document of his account.
     await card.getByRole('link', { name: 'Alterar' }).click();
-    await expect(page.getByTestId('author-document').nth(1)).toHaveText('O documento desta pessoa já consta no cadastro.');
+    await expect(page.getByTestId('author-document').nth(1)).toHaveText('Documento já cadastrado.');
     await page.getByRole('button', { name: 'Salvar alterações' }).click();
     await expect(page).toHaveURL(new RegExp(`/${EVENT}/meus-trabalhos$`));
     await expect(page.getByTestId('paper-card').filter({ hasText: title }).getByTestId('author-issue')).toHaveCount(0);
@@ -222,7 +222,7 @@ test.describe('identity by document @identity', () => {
     await page.getByLabel('E-mail').fill(secondEmail);
     await page.getByLabel('CPF').fill(cpf);
     await page.getByRole('button', { name: 'Enviar link de confirmação' }).click();
-    await expect(page.getByRole('alert')).toHaveText(`Este CPF já está cadastrado com o e-mail ${masked}. Entre com esse e-mail ou recupere a senha.`);
+    await expect(page.getByRole('alert')).toHaveText(`CPF já cadastrado com o e-mail ${masked}.`);
     // Never the address itself, and what was typed is still there to correct.
     expect(await page.content()).not.toContain(holderEmail);
     await expect(page.getByLabel('CPF')).toHaveValue(typedCpf(cpf));
@@ -235,7 +235,7 @@ test.describe('identity by document @identity', () => {
     // The same in English.
     await page.getByRole('button', { name: 'English' }).click();
     await page.getByRole('button', { name: 'Send confirmation link' }).click();
-    await expect(page.getByRole('alert')).toHaveText(`This CPF is already registered with the e-mail ${masked}. Log in with that e-mail or recover the password.`);
+    await expect(page.getByRole('alert')).toHaveText(`CPF already registered with the e-mail ${masked}.`);
     await page.getByRole('button', { name: 'Português' }).click();
   });
 
@@ -246,10 +246,10 @@ test.describe('identity by document @identity', () => {
     await logIn(page, email);
 
     // 1. Minha área says what is missing.
-    await expect(page.getByTestId('document-missing')).toContainText('Falta informar seu documento');
+    await expect(page.getByTestId('document-missing')).toContainText('Informe seu documento');
     // 2. So does the form, which cannot be sent, and the server refuses it too.
     await page.goto(`/${EVENT}/meus-trabalhos/novo`);
-    await expect(page.getByTestId('document-missing')).toContainText('Antes de enviar um trabalho, informe seu CPF ou passaporte em Minha área.');
+    await expect(page.getByTestId('document-missing')).toContainText('Informe seu CPF ou passaporte em Minha área para enviar trabalhos.');
     await expect(page.getByRole('button', { name: 'Enviar trabalho' })).toBeDisabled();
     const token = await page.evaluate(() => JSON.parse(localStorage.getItem('sieamb-auth')!).access_token as string);
     const refused = await page.request.post('/api/v1/submissions/save', {
@@ -260,7 +260,7 @@ test.describe('identity by document @identity', () => {
     expect(await refused.json()).toEqual({ error: 'document_required' });
 
     // 3. She gives it in Minha área, through the link of the notice.
-    await page.getByTestId('document-missing').getByRole('link', { name: 'Informar meu documento' }).click();
+    await page.getByTestId('document-missing').getByRole('link', { name: 'Informar documento' }).click();
     await expect(page).toHaveURL(new RegExp(`/${EVENT}/minha-area#meus-dados$`));
     const cpf = randomCpf();
     await page.getByLabel('CPF').fill(cpf);
