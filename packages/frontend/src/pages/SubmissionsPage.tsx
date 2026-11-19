@@ -6,7 +6,7 @@ import { PageHeader } from '../components/shared/PageHeader';
 import { useAuth } from '../contexts/AuthContext';
 import { useEvent } from '../contexts/EventContext';
 import { useContent } from '../hooks/useContent';
-import { fetchWindow, type WindowState } from '../services/submissions';
+import { fetchWindow, rulesForEvent, type WindowState } from '../services/submissions';
 import './account/Account.css';
 import './SubmissionsPage.css';
 import { Loading } from '../components/shared/Loading';
@@ -16,21 +16,28 @@ export function SubmissionsPage() {
   const { event } = useEvent();
   const edital = useContent('getEditais', event?.id)?.[0] ?? null;
   const auth = useAuth();
-  // Where the submission system is on, the server says whether submissions are open.
-  const [state, setState] = useState<WindowState | null>(null);
-  // The server could not say: the page must not claim anything about the window (#324).
-  const [unknown, setUnknown] = useState(false);
+  // Where the submission system is on, the server says whether submissions are open, for an
+  // edition that has submission rules. One without them has no window to ask about (#339).
+  const asks = auth.enabled && Boolean(event && rulesForEvent(event.id));
+  // The answer belongs to the edition it was asked for. `state` is null when the server could
+  // not say: the page must then claim nothing about the window (#324).
+  const [answer, setAnswer] = useState<{ slug: string; state: WindowState | null } | null>(null);
 
   useEffect(() => {
-    if (!event || !auth.enabled) return;
+    if (!event || !asks) return;
     let active = true;
-    fetchWindow(event.slug)
-      .then((w) => active && setState(w.state))
-      .catch(() => active && setUnknown(true));
+    const slug = event.slug;
+    fetchWindow(slug)
+      .then((w) => active && setAnswer({ slug, state: w.state }))
+      .catch(() => active && setAnswer({ slug, state: null }));
     return () => {
       active = false;
     };
-  }, [event, auth.enabled]);
+  }, [event, asks]);
+
+  const told = asks && event && answer?.slug === event.slug ? answer : null;
+  const state = told?.state ?? null;
+  const unknown = Boolean(told) && !state;
 
   return (
     <>
@@ -50,12 +57,12 @@ export function SubmissionsPage() {
                 <Link to={`/${event.slug}/meus-trabalhos`}>{t('papers.title')}</Link>
               </p>
             </div>
-          ) : auth.enabled && !unknown ? (
+          ) : asks && !unknown ? (
             // Asked and not answered yet: no "opens soon" that the answer would then contradict (#324).
             <div className="submissions-soon" data-testid="submissions-loading">
               <Loading />
             </div>
-          ) : auth.enabled && event ? (
+          ) : asks && event ? (
             <div className="submissions-soon" role="status" data-testid="submissions-unknown">
               <h2>{t('submissions.unknown.title')}</h2>
               <p>{t('submissions.unknown.body')}</p>

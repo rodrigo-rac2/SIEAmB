@@ -1,5 +1,7 @@
-import { screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
+import { MemoryRouter, Route, Routes, useNavigate } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { EventProvider } from '../contexts/EventContext';
 import { renderAtEvent } from '../test/render';
 import { HomePage } from './HomePage';
 
@@ -78,6 +80,39 @@ describe('HomePage', () => {
     expect(screen.queryByTestId('hero-submit')).not.toBeInTheDocument();
     expect(screen.queryByTestId('papers-open-badge')).not.toBeInTheDocument();
     expect(screen.queryByTestId('papers-open-cta')).not.toBeInTheDocument();
+  });
+
+  it('the archive of an edition with no submission rules does not ask, wait or offer to send (#339)', () => {
+    const fetchMock = on('open');
+    renderAtEvent('/2025/', <HomePage />);
+    // On the first render already: there is nothing to wait for.
+    expect(screen.getByTestId('hero-motto')).toBeInTheDocument();
+    expect(screen.queryByTestId('hero-submit-waiting')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('edital-strip-waiting')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('hero-submit')).not.toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('what one edition was told is not shown on another: back from 2027 to the 2025 archive (#339)', async () => {
+    on('open');
+    function Back() {
+      const navigate = useNavigate();
+      return <button onClick={() => navigate(-1)}>back</button>;
+    }
+    render(
+      <MemoryRouter initialEntries={['/2025/', '/2027/']} initialIndex={1}>
+        <Routes>
+          <Route path="/:eventSlug/*" element={<EventProvider><HomePage /><Back /></EventProvider>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(await screen.findByTestId('hero-submit')).toHaveAttribute('href', '/2027/meus-trabalhos/novo');
+    // The same page stays mounted and only the edition changes.
+    fireEvent.click(screen.getByRole('button', { name: 'back' }));
+    expect(await screen.findByTestId('hero-motto')).toHaveTextContent('Tema: Ciência, gestão e sustentabilidade');
+    expect(screen.queryByTestId('hero-submit')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('papers-open-badge')).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Enviar trabalho' })).not.toBeInTheDocument();
   });
 
   it('offers no way into the submission system where it is off, and does not ask the server', async () => {
