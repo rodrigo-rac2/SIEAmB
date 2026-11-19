@@ -113,7 +113,7 @@ test.describe('accounts @accounts', () => {
     await page.getByLabel('E-mail').fill(email);
     // Without a document nothing is sent, and the page says why.
     await page.getByRole('button', { name: 'Enviar link de confirmação' }).click();
-    await expect(page.getByRole('alert')).toHaveText('Informe o CPF ou o passaporte com o país.');
+    await expect(page.getByRole('alert')).toHaveText('Informe o CPF ou o passaporte.');
     // A CPF with wrong check digits is not one.
     await page.getByLabel('CPF').fill(`${cpf.slice(0, 10)}${(Number(cpf[10]) + 1) % 10}`);
     await page.getByRole('button', { name: 'Enviar link de confirmação' }).click();
@@ -303,7 +303,7 @@ test.describe('accounts @accounts', () => {
     await expect(page.locator('#cpf')).toHaveValue(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/);
     await page.getByRole('checkbox').check();
     await page.getByRole('button', { name: /Enviar inscrição/ }).click();
-    await expect(page.getByRole('alert')).toContainText('feita com o e-mail e•••@sieamb.org');
+    await expect(page.getByRole('alert')).toContainText('no e-mail e•••@sieamb.org');
     const rows = await admin<unknown[]>(`/rest/v1/pre_registrations?email=eq.${encodeURIComponent(newEmail)}&select=id`);
     expect(rows).toEqual([]);
   });

@@ -591,7 +591,7 @@ describe('SignupPage', () => {
   });
 
   it.each([
-    ['no document', async () => undefined, 'Informe o CPF ou o passaporte com o país.'],
+    ['no document', async () => undefined, 'Informe o CPF ou o passaporte.'],
     ['a CPF with wrong check digits', async () => userEvent.type(screen.getByLabelText('CPF'), '52998224726'), 'CPF inválido.'],
     ['a CPF that is too short', async () => userEvent.type(screen.getByLabelText('CPF'), '5299822'), 'CPF inválido.'],
     ['a passport with no country chosen', async () => userEvent.type(screen.getByLabelText('Passaporte'), 'AB123456'), 'Selecione o país do passaporte.'],
@@ -608,10 +608,10 @@ describe('SignupPage', () => {
   });
 
   it.each([
-    ['cpf_in_use', { maskedEmail: 'm•••@ufcg.edu.br' }, 'Este CPF já está cadastrado com o e-mail m•••@ufcg.edu.br. Entre com esse e-mail ou recupere a senha.'],
-    ['cpf_in_use', {}, 'Este CPF já está cadastrado em outra conta. Entre com o e-mail que você usou ou fale com a organização.'],
-    ['passport_in_use', { maskedEmail: 'j•••@uc.pt' }, 'Este passaporte, deste país, já está cadastrado com o e-mail j•••@uc.pt. Entre com esse e-mail ou recupere a senha.'],
-    ['passport_in_use', {}, 'Este passaporte, deste país, já está cadastrado em outra conta. Entre com o e-mail que você usou ou fale com a organização.'],
+    ['cpf_in_use', { maskedEmail: 'm•••@ufcg.edu.br' }, 'CPF já cadastrado com o e-mail m•••@ufcg.edu.br.'],
+    ['cpf_in_use', {}, 'CPF já cadastrado em outra conta.'],
+    ['passport_in_use', { maskedEmail: 'j•••@uc.pt' }, 'Passaporte já cadastrado com o e-mail j•••@uc.pt.'],
+    ['passport_in_use', {}, 'Passaporte já cadastrado em outra conta.'],
   ])('says "%s" with what the server gave (%o), and stays on the form with what was typed', async (error, extra, message) => {
     stubApi({ signup: { status: 409, body: { error, ...extra } } });
     mount('/2027/conta/criar', <SignupPage mode="signup" />);
@@ -633,7 +633,7 @@ describe('SignupPage', () => {
     await fillWho();
     await userEvent.type(screen.getByLabelText('CPF'), '52998224725');
     await userEvent.click(screen.getByRole('button', SEND));
-    expect(await screen.findByRole('alert')).toHaveTextContent('Este CPF já está cadastrado em outra conta.');
+    expect(await screen.findByRole('alert')).toHaveTextContent('CPF já cadastrado em outra conta.');
   });
 
   it('tells the server where the person was going, so the e-mail link leads on there (#246)', async () => {
@@ -801,7 +801,7 @@ describe('PasswordPage', () => {
       await passwords();
       const group = screen.getByTestId('confirm-document');
       expect(within(group).getByLabelText('CPF')).toHaveValue('529.982.247-25');
-      expect(group).toHaveTextContent('Confira o documento informado quando a conta foi pedida');
+      expect(group).toHaveTextContent('Confira seu documento.');
       await save();
       expect(await screen.findByTestId('where')).toHaveTextContent('/2027/minha-area');
       expect(calls.find((c) => c.url.endsWith('password'))!.body).toEqual({ password: GOOD, cpf: '529.982.247-25' });
@@ -835,7 +835,7 @@ describe('PasswordPage', () => {
       await passwords();
       expect(screen.getByLabelText('CPF')).toHaveValue('');
       await save();
-      expect(await screen.findByRole('alert')).toHaveTextContent('Informe o CPF ou o passaporte com o país.');
+      expect(await screen.findByRole('alert')).toHaveTextContent('Informe o CPF ou o passaporte.');
       expect(calls.filter((c) => c.url.endsWith('password'))).toEqual([]);
     });
 
@@ -861,7 +861,7 @@ describe('PasswordPage', () => {
       open(state);
       await passwords();
       await save();
-      expect(await screen.findByRole('alert')).toHaveTextContent('Este CPF já está cadastrado com o e-mail o•••@ufcg.edu.br.');
+      expect(await screen.findByRole('alert')).toHaveTextContent('CPF já cadastrado com o e-mail o•••@ufcg.edu.br.');
       expect(screen.getByLabelText('CPF')).toHaveValue('529.982.247-25');
       expect(screen.getByRole('button', { name: 'Salvar senha' })).toBeEnabled();
       expect(state.signIn).not.toHaveBeenCalled();
@@ -1130,7 +1130,7 @@ describe('MyAreaPage', () => {
       stubApi({ me: { body: account({ user: { ...account().user, documentMissing: true, pendingDocument: { cpf: null, passport: 'AB123456', country: 'PT' } } }) } });
       mount('/2027/minha-area', <MyAreaPage />, auth(LOGGED_IN));
       const notice = await screen.findByTestId('document-missing');
-      expect(notice).toHaveTextContent('Falta informar seu documento');
+      expect(notice).toHaveTextContent('Informe seu documento');
       expect(within(notice).getByRole('link', { name: 'Meus dados' })).toHaveAttribute('href', '#meus-dados');
       expect(screen.getByRole('heading', { name: 'Meus dados' })).toHaveAttribute('id', 'meus-dados');
       expect(screen.getByLabelText('Passaporte')).toHaveValue('AB123456');
@@ -1195,7 +1195,7 @@ describe('MyAreaPage', () => {
       await userEvent.type(await screen.findByLabelText('Passaporte'), 'AB123456');
       await userEvent.selectOptions(screen.getByRole('combobox', { name: 'País do passaporte' }), 'Portugal');
       await userEvent.click(screen.getByRole('button', SAVE));
-      expect(await screen.findByRole('alert')).toHaveTextContent('Este passaporte, deste país, já está cadastrado com o e-mail j•••@uc.pt.');
+      expect(await screen.findByRole('alert')).toHaveTextContent('Passaporte já cadastrado com o e-mail j•••@uc.pt.');
     });
 
     it('saving only the name of an account without a document is allowed, and the notice stays', async () => {
@@ -1258,7 +1258,7 @@ describe('RegistrationForm with accounts (#210)', () => {
     mount('/2027/inscricoes/nova', <RegistrationForm onSuccess={onSuccess} />);
     await fill();
     await userEvent.click(screen.getByRole('button', { name: /Enviar inscrição/ }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('feita com o e-mail a•••@outlook.com');
+    expect(await screen.findByRole('alert')).toHaveTextContent('no e-mail a•••@outlook.com');
     expect(onSuccess).not.toHaveBeenCalled();
     expect(calls[0]!.body).toEqual({ eventSlug: '2027', email: 'novo@gmail.com', cpf: '52998224725', country: 'BR' });
   });
@@ -1346,7 +1346,7 @@ describe('RegistrationForm with accounts (#210)', () => {
       release();
       await waitFor(() => expect(screen.getByLabelText('CPF')).toHaveValue('529.982.247-25'));
       expect(screen.getByLabelText('CPF')).toHaveAttribute('readonly');
-      expect(screen.getByText('Este documento é o da sua conta e vai junto com a inscrição.')).toBeInTheDocument();
+      expect(screen.getByText('Documento da sua conta.')).toBeInTheDocument();
       // The passport the account does not have can still be given.
       expect(screen.getByLabelText('Passaporte')).not.toHaveAttribute('readonly');
       await userEvent.click(screen.getByRole('checkbox'));
@@ -1375,7 +1375,7 @@ describe('RegistrationForm with accounts (#210)', () => {
       await waitFor(() => expect(screen.getByLabelText(/Nome completo/)).toHaveValue('Maria da Conta'));
       expect(screen.getByLabelText('CPF')).not.toHaveAttribute('readonly');
       expect(screen.getByLabelText('Passaporte')).not.toHaveAttribute('readonly');
-      expect(screen.getByText(/Informe o CPF, ou o passaporte com o país/)).toBeInTheDocument();
+      expect(screen.getByText(/Informe o CPF ou o passaporte\./)).toBeInTheDocument();
     });
   });
 

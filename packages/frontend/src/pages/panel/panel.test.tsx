@@ -683,7 +683,7 @@ describe('papers tab', () => {
       panel('papers');
       const [first] = await screen.findAllByTestId('paper-row');
       const cell = within(first!).getByTestId('paper-reviewers');
-      expect(await within(cell).findByTestId('no-reviewer-to-choose')).toHaveTextContent('Não há outro avaliador para indicar.');
+      expect(await within(cell).findByTestId('no-reviewer-to-choose')).toHaveTextContent('Não há outro avaliador disponível.');
       expect(cell).toHaveTextContent('Ana Reis');
       expect(within(cell).getByRole('button', { name: /Ana Reis/ })).toBeInTheDocument();
     });
@@ -870,7 +870,7 @@ describe('people tab', () => {
     await userEvent.type(await screen.findByLabelText('E-mail'), ' novo@ufpb.br ');
     await userEvent.selectOptions(screen.getByLabelText('Papel'), 'ORGANIZER');
     await userEvent.click(screen.getByRole('button', { name: 'Dar o papel' }));
-    expect(await screen.findByRole('status')).toHaveTextContent('Essa pessoa ainda não tem conta.');
+    expect(await screen.findByRole('status')).toHaveTextContent('Sem conta ainda.');
     expect(calls.find((c) => c.url.endsWith('member-add'))!.body).toEqual({ eventSlug: '2027', email: 'novo@ufpb.br', role: 'ORGANIZER' });
     expect(screen.getByLabelText('E-mail')).toHaveValue('');
   });
