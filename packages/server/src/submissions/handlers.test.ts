@@ -31,6 +31,9 @@ import {
   setup,
 } from './testing';
 
+/** A suggestion as it is sealed for Maria, in this edition, now. */
+const FOR_MAIN = { userId: MAIN.id, eventId: EVENT.id, now: NOW };
+
 /** A different valid CPF for each number: the document typed for an author who has no account. */
 const cpfOf = (n: number): string => cpfFrom(String(300400500 + n * 17));
 
@@ -645,9 +648,9 @@ describe('name suggestions for the author list', () => {
     expect(raw).not.toContain('rodrigo.costa@');
     expect(raw).not.toContain('ral@');
     // The reference is ours to open, and differs each time it is sealed.
-    expect(openEmail(people[0]!.ref, deps.pepper)).toBe('rodrigo.costa@ufcg.edu.br');
-    expect(openEmail(people[0]!.ref, 'another-pepper')).toBeNull();
-    expect(sealEmail('a@b.co', deps.pepper)).not.toBe(sealEmail('a@b.co', deps.pepper));
+    expect(openEmail(people[0]!.ref, deps.pepper, FOR_MAIN)).toBe('rodrigo.costa@ufcg.edu.br');
+    expect(openEmail(people[0]!.ref, 'another-pepper', FOR_MAIN)).toBeNull();
+    expect(sealEmail('a@b.co', deps.pepper, FOR_MAIN)).not.toBe(sealEmail('a@b.co', deps.pepper, FOR_MAIN));
   });
 
   it.each(['', 'R', 'Ro', ' R o ', '  '])('does not search for "%s": three letters at least', async (q) => {
@@ -703,8 +706,8 @@ describe('name suggestions for the author list', () => {
 
   it('refuses the same person picked and typed, without giving the address away', async () => {
     const { save, deps } = await ready();
-    const ref = sealEmail('rodrigo.costa@ufcg.edu.br', deps.pepper);
-    const response = await save(paper({ authors: [ME, { fullName: 'Rodrigo Alves Costa', ref }, { fullName: 'R. Costa', ref: sealEmail('rodrigo.costa@ufcg.edu.br', deps.pepper) }] }));
+    const ref = sealEmail('rodrigo.costa@ufcg.edu.br', deps.pepper, FOR_MAIN);
+    const response = await save(paper({ authors: [ME, { fullName: 'Rodrigo Alves Costa', ref }, { fullName: 'R. Costa', ref: sealEmail('rodrigo.costa@ufcg.edu.br', deps.pepper, FOR_MAIN) }] }));
     expect(response.status).toBe(400);
     const raw = await response.text();
     expect(JSON.parse(raw)).toEqual({ error: 'duplicate_author', name: 'R. Costa' });
@@ -1812,5 +1815,146 @@ describe('who is sent an author\'s document (ADR-010, decision 10)', () => {
       ['Rodrigo Sem Conta', false],
     ]);
     expect(JSON.stringify(people)).not.toContain(SPARE_CPF);
+  });
+});
+
+describe('a suggestion is for whoever asked, here, for a day (ADR-010, #352)', () => {
+  const RODRIGO = 'rodrigo.costa@ufcg.edu.br';
+  const DAY = 24 * 60 * 60 * 1000;
+  const picked = (ref: string) => paper({ authors: [ME, { fullName: 'Rodrigo Alves Costa', ref, cpf: SPARE_CPF }] });
+
+  it('opens only for the account it was sealed for, in the edition it was sealed for, until it expires', () => {
+    const ref = sealEmail(RODRIGO, 'pepper', FOR_MAIN);
+    expect(openEmail(ref, 'pepper', FOR_MAIN)).toBe(RODRIGO);
+    expect(openEmail(ref, 'pepper', { ...FOR_MAIN, userId: OTHER.id })).toBeNull();
+    expect(openEmail(ref, 'pepper', { ...FOR_MAIN, eventId: 'ev-2029' })).toBeNull();
+    expect(openEmail(ref, 'pepper', { ...FOR_MAIN, now: new Date(NOW.getTime() + DAY - 1000) })).toBe(RODRIGO);
+    expect(openEmail(ref, 'pepper', { ...FOR_MAIN, now: new Date(NOW.getTime() + DAY + 1000) })).toBeNull();
+  });
+
+  it('a reference in the old shape, a tampered one and nonsense open for nobody', () => {
+    const ref = sealEmail(RODRIGO, 'pepper', FOR_MAIN);
+    const flipped = `${ref.slice(0, -2)}${ref.endsWith('A') ? 'B' : 'A'}A`;
+    for (const bad of [flipped, ref.slice(0, 20), '', 'not-a-reference', 'a'.repeat(600)]) {
+      expect(openEmail(bad, 'pepper', FOR_MAIN), bad.slice(0, 12)).toBeNull();
+    }
+  });
+
+  it('the server takes the reference it gave this account, and refuses one given to another', async () => {
+    const { save, deps } = await ready();
+    expect((await save(picked(sealEmail(RODRIGO, deps.pepper, FOR_MAIN)))).status).toBe(201);
+    const forJoao = sealEmail(RODRIGO, deps.pepper, { ...FOR_MAIN, userId: OTHER.id });
+    const response = await save(picked(forJoao));
+    expect(response.status).toBe(400);
+    // The same answer as for any reference that is not ours: nothing to learn from it.
+    expect(await body(response)).toEqual({ error: 'invalid_author' });
+  });
+
+  it('refuses a reference from yesterday, and one sealed for another edition', async () => {
+    const { save, deps } = await ready();
+    const old = sealEmail(RODRIGO, deps.pepper, { ...FOR_MAIN, now: new Date(NOW.getTime() - DAY - 1000) });
+    expect(await body(await save(picked(old)))).toEqual({ error: 'invalid_author' });
+    const elsewhere = sealEmail(RODRIGO, deps.pepper, { ...FOR_MAIN, eventId: 'ev-2029' });
+    expect(await body(await save(picked(elsewhere)))).toEqual({ error: 'invalid_author' });
+  });
+});
+
+describe('whoever sent the paper is told when a co-author\'s document does not match (ADR-010, #352)', () => {
+  const ANA = { fullName: 'Ana Reis', email: 'ana@ufrn.br' };
+  const ana = { id: 'user-ana', email: ANA.email, emailConfirmed: true };
+  const mine = (deps: SubmissionDeps, token: string) => handleSubmissions(call('GET', 'mine', { token, query: '?eventSlug=2027' }), 'mine', deps);
+  const start = async () => {
+    const ctx = await ready();
+    await ctx.save(paper({ coauthors: [{ ...ANA, cpf: SPARE_CPF }] }));
+    // What sending the paper itself queued is not what these tests are about.
+    ctx.sent.length = 0;
+    ctx.outbox.notifications.length = 0;
+    return ctx;
+  };
+  const issues = (ctx: Awaited<ReturnType<typeof start>>) => ({
+    mails: ctx.sent.filter((m) => m.subject.includes('confira o documento')),
+    bells: ctx.outbox.notifications.filter((n) => n.kind === 'submission.author_issue'),
+  });
+
+  it('one e-mail and one bell notice, to the sender, naming the author and never a document', async () => {
+    const ctx = await start();
+    ctx.store.addUser(ana, cpfOnly(cpfOf(70)));
+    await mine(ctx.deps, ctx.auth.login(ana, 'tok-ana'));
+    const { mails, bells } = issues(ctx);
+    expect(mails.map((m) => m.to)).toEqual([MAIN.email]);
+    expect(mails[0]!.subject).toBe('Trabalho nº 1: confira o documento de Ana Reis (II SIEAmB)'.replace('nº 1', `nº ${ctx.store.submissions[0]!.number}`));
+    expect(mails[0]!.text).toContain('Ana Reis criou uma conta no site com um documento diferente');
+    expect(mails[0]!.text).toContain('abra o trabalho e salve de novo');
+    expect(mails[0]!.text).toContain('https://dev.sieamb.org/2027/meus-trabalhos');
+    expect(bells).toEqual([
+      { userId: MAIN.id, eventId: EVENT.id, kind: 'submission.author_issue', data: { number: ctx.store.submissions[0]!.number, title: 'Governança da água no semiárido paraibano', authorName: 'Ana Reis' } },
+    ]);
+    const everything = JSON.stringify([ctx.sent, ctx.outbox.notifications, ctx.outbox.rows]);
+    for (const secret of [SPARE_CPF, cpfOf(70), MAIN_CPF]) expect(everything).not.toContain(secret);
+  });
+
+  it('is said once, however many times she opens Meus trabalhos', async () => {
+    const ctx = await start();
+    ctx.store.addUser(ana, cpfOnly(cpfOf(70)));
+    const token = ctx.auth.login(ana, 'tok-ana');
+    for (let i = 0; i < 4; i += 1) await mine(ctx.deps, token);
+    expect(issues(ctx).mails).toHaveLength(1);
+    expect(issues(ctx).bells).toHaveLength(1);
+  });
+
+  it('is said again if she is then given yet another document, which is another thing to correct', async () => {
+    const ctx = await start();
+    ctx.store.addUser(ana, cpfOnly(cpfOf(70)));
+    const token = ctx.auth.login(ana, 'tok-ana');
+    await mine(ctx.deps, token);
+    ctx.store.addUser(ana, cpfOnly(cpfOf(71)));
+    await mine(ctx.deps, token);
+    expect(issues(ctx).mails).toHaveLength(2);
+  });
+
+  it('says nothing when the documents match, when she has given none yet, or for a line from before documents', async () => {
+    const matching = await start();
+    matching.store.addUser(ana, cpfOnly(SPARE_CPF));
+    await mine(matching.deps, matching.auth.login(ana, 'tok-ana'));
+    expect(issues(matching)).toEqual({ mails: [], bells: [] });
+
+    const none = await start();
+    none.store.addUser(ana);
+    await mine(none.deps, none.auth.login(ana, 'tok-ana'));
+    expect(issues(none)).toEqual({ mails: [], bells: [] });
+
+    const old = await ready();
+    old.store.seed({ authors: [line(1, 'Maria', MAIN.email), line(2, 'Ana', ANA.email)] });
+    old.store.addUser(ana, cpfOnly(cpfOf(70)));
+    await mine(old.deps, old.auth.login(ana, 'tok-ana'));
+    expect(issues(old)).toEqual({ mails: [], bells: [] });
+  });
+
+  it('says nothing to anyone when she is listed under another address: the sender has nothing wrong to fix yet', async () => {
+    const ctx = await start();
+    const other = { id: 'user-ana2', email: 'ana.reis@gmail.com', emailConfirmed: true };
+    ctx.store.addUser(other, cpfOnly(SPARE_CPF));
+    await mine(ctx.deps, ctx.auth.login(other, 'tok-ana2'));
+    expect(issues(ctx)).toEqual({ mails: [], bells: [] });
+  });
+
+  it('writes in the language the paper was sent in', async () => {
+    const ctx = await ready();
+    await ctx.save(paper({ locale: 'en', coauthors: [{ ...ANA, cpf: SPARE_CPF }] }));
+    ctx.sent.length = 0;
+    ctx.store.addUser(ana, cpfOnly(cpfOf(70)));
+    await mine(ctx.deps, ctx.auth.login(ana, 'tok-ana'));
+    expect(ctx.sent.find((m) => m.to === MAIN.email)!.subject).toContain('check the document of Ana Reis');
+  });
+
+  it('a failure to tell the sender never fails her own page', async () => {
+    const ctx = await start();
+    ctx.store.addUser(ana, cpfOnly(cpfOf(70)));
+    ctx.outbox.enqueueOutbox = async () => {
+      throw new Error('outbox down');
+    };
+    const response = await mine(ctx.deps, ctx.auth.login(ana, 'tok-ana'));
+    expect(response.status).toBe(200);
+    expect((await body(response)).waiting).toEqual({ otherDocument: 1, otherEmail: [] });
   });
 });

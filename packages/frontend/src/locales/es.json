@@ -655,7 +655,10 @@
       "withdraw": "Retirar",
       "editFor": "Modificar el trabajo n.º {{number}}",
       "withdrawFor": "Retirar el trabajo n.º {{number}}",
-      "withdrawConfirm": "¿Retirar el trabajo n.º {{number}}? Se avisará a los autores."
+      "withdrawConfirm": "¿Retirar el trabajo n.º {{number}}? Se avisará a los autores.",
+      "sameDocumentTitle": "Misma persona con más de un correo",
+      "sameDocumentBody": "Estos documentos aparecen con más de un correo entre los autores. Los límites de la convocatoria ya cuentan cada uno como una sola persona; revise y, si corresponde, corrija el correo en el trabajo.",
+      "sameDocumentPapers": "n.º {{numbers}}"
     },
     "people": {
       "role": "Rol",
@@ -709,6 +712,7 @@
       "admin_only": "Solo un administrador puede hacer eso.",
       "owner_only": "Solo el dueño del sitio puede hacer eso.",
       "email_in_use": "Ya existe una cuenta con ese correo.",
+      "email_in_paper": "Ese correo ya es el de otro autor de un trabajo en el que consta esta persona. Corrija primero el trabajo.",
       "document_in_use": "Ese documento ya está en otra cuenta.",
       "weak_password": "Contraseña débil: use al menos 10 caracteres y no use el correo de la persona.",
       "account_not_found": "Cuenta no encontrada.",
@@ -796,6 +800,7 @@
       "submission.received": "El trabajo n.º {{number}}, \"{{title}}\", fue recibido.",
       "submission.updated": "El trabajo n.º {{number}}, \"{{title}}\", fue modificado por {{mainAuthor}}.",
       "submission.withdrawn": "El trabajo n.º {{number}}, \"{{title}}\", fue retirado por {{mainAuthor}}.",
+      "submission.author_issue": "{{authorName}} creó una cuenta con un documento distinto del indicado en el trabajo n.º {{number}}, \"{{title}}\". Abra el trabajo y guárdelo de nuevo para corregirlo.",
       "organiser.submission.received": "Nuevo trabajo n.º {{number}}: \"{{title}}\", enviado por {{mainAuthor}}.",
       "organiser.submission.updated": "El trabajo n.º {{number}}, \"{{title}}\", fue modificado por {{mainAuthor}}.",
       "organiser.submission.withdrawn": "El trabajo n.º {{number}}, \"{{title}}\", fue retirado por {{mainAuthor}}.",

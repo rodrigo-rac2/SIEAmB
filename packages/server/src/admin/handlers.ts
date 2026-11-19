@@ -336,11 +336,40 @@ async function submissions(request: Request, deps: AdminDeps): Promise<Response>
   const isConfirmed = (a: Line) => ['PAID', 'CONFIRMED', 'EXEMPT'].includes(registrationOf(a) ?? '');
   // Only an Administrador sees a document (ADR-008, decision 9; ADR-010, decision 10).
   const admin = ctx.role === 'ADMIN';
+  // The same document under more than one address, among the papers that stand: one person
+  // listed in two ways. The limits already count them as one; this is for someone to look.
+  const sameDocument = new Map<string, { cpf: string | null; passport: string | null; country: string | null; lines: Map<string, { email: string; fullName: string; papers: number[] }> }>();
+  for (const paper of all.filter((s) => !s.deletedAt)) {
+    for (const a of paper.authors) {
+      const keys = [a.cpf ? `cpf:${a.cpf}` : null, a.passport ? `passport:${a.country}:${a.passport}` : null].filter((k): k is string => k !== null);
+      for (const key of keys) {
+        const byCpf = key.startsWith('cpf:');
+        const group = sameDocument.get(key) ?? {
+          cpf: byCpf ? (a.cpf ?? null) : null,
+          passport: byCpf ? null : (a.passport ?? null),
+          country: byCpf ? null : (a.country ?? null),
+          lines: new Map(),
+        };
+        const line = group.lines.get(a.email) ?? { email: a.email, fullName: a.fullName, papers: [] };
+        line.papers.push(paper.number);
+        group.lines.set(a.email, line);
+        sameDocument.set(key, group);
+      }
+    }
+  }
   return json(200, {
     role: ctx.role,
     // Closed by hand (#236): since when and by whom; null while open.
     closed: await deps.store.submissionsClosed(ctx.event.id),
     counts: { total: all.filter((s) => !s.deletedAt).length, withdrawn: all.filter((s) => s.deletedAt).length },
+    // To administrators only: it is made of documents.
+    ...(admin
+      ? {
+          sameDocument: [...sameDocument.values()]
+            .filter((g) => g.lines.size > 1)
+            .map((g) => ({ cpf: g.cpf, passport: g.passport, country: g.country, lines: [...g.lines.values()] })),
+        }
+      : {}),
     submissions: all.map((s) => ({
       ...s,
       // Each author with the state of their registration, or null when they have none (#225).
@@ -541,6 +570,9 @@ async function accountUpdate(request: Request, deps: AdminDeps): Promise<Respons
   // An address another account already has (#289): asked here, because Supabase Auth answers it with
   // a 500 and a database error, not with a clear "in use".
   if (patch.email && (await deps.store.findUserByEmail(patch.email))) return json(409, { error: 'email_in_use' });
+  // Nor an address that is already another author of one of this person's papers: their line
+  // could not take it (ADR-010).
+  if (patch.email && (await deps.store.shareAPaper(target.email, patch.email))) return json(409, { error: 'email_in_paper' });
   // Then the login service: it still knows best whether the address is taken.
   if (patch.email && (await deps.auth.setEmail(target.id, patch.email)) === 'in_use') return json(409, { error: 'email_in_use' });
   try {
@@ -550,6 +582,14 @@ async function accountUpdate(request: Request, deps: AdminDeps): Promise<Respons
     if (patch.email) await deps.auth.setEmail(target.id, target.email).catch(() => undefined);
     if (error instanceof AccountConflictError) return json(409, { error: patch.cpf || patch.passport ? 'document_in_use' : 'email_in_use' });
     throw error;
+  }
+  // The person's lines in papers follow: the new address, and the document the account now
+  // has. Otherwise their papers would stop being theirs (ADR-010, decision 9).
+  if (patch.email || patch.cpf !== undefined || patch.passport !== undefined) {
+    const cpf = patch.cpf !== undefined ? patch.cpf : target.cpf;
+    const passport = patch.passport !== undefined ? patch.passport : target.passport;
+    const country = patch.passport ? (patch.country ?? null) : patch.passport === null ? null : target.country;
+    await deps.store.syncAuthorLines(target.email, patch.email ?? target.email, cpf || passport ? { cpf, passport, country } : null);
   }
   await audit(deps, ctx, 'account.update', 'user', target.id, { email: target.email, fields, ...(patch.email ? { newEmail: patch.email } : {}) });
   // A changed address is told to the old one, which is where a surprised owner of the account would look.

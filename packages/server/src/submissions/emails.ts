@@ -180,6 +180,71 @@ export function renderSubmissionEmail(kind: SubmissionEmailKind, locale: string,
   };
 }
 
+export interface AuthorIssueEmailData {
+  firstName: string;
+  eventName: string;
+  number: number;
+  title: string;
+  /** The author whose account says they are someone else than the line in the paper says. */
+  authorName: string;
+  url: string;
+}
+
+const AUTHOR_ISSUE: Record<'pt-BR' | 'en' | 'es' | 'zh-CN', { subject: (d: AuthorIssueEmailData) => string; body: (d: AuthorIssueEmailData) => string[]; linkLabel: string }> = {
+  'pt-BR': {
+    subject: (d) => `Trabalho nº ${d.number}: confira o documento de ${d.authorName} (${d.eventName})`,
+    body: (d) => [
+      `${d.authorName} criou uma conta no site com um documento diferente do que foi informado no trabalho nº ${d.number}, "${d.title}".`,
+      'Enquanto os dois não conferem, essa pessoa não vê o trabalho na conta dela. Para corrigir, abra o trabalho e salve de novo: o documento da conta dela passa a valer.',
+      'Se você não reconhece essa pessoa como autora, fale com a organização.',
+    ],
+    linkLabel: 'Ver meus trabalhos',
+  },
+  en: {
+    subject: (d) => `Paper no. ${d.number}: check the document of ${d.authorName} (${d.eventName})`,
+    body: (d) => [
+      `${d.authorName} created an account on the website with a document different from the one entered in paper no. ${d.number}, "${d.title}".`,
+      'While the two do not match, this person does not see the paper in their account. To correct it, open the paper and save it again: the document of their account will then be used.',
+      'If you do not recognise this person as an author, contact the organisers.',
+    ],
+    linkLabel: 'See my papers',
+  },
+  es: {
+    subject: (d) => `Trabajo n.º ${d.number}: revise el documento de ${d.authorName} (${d.eventName})`,
+    body: (d) => [
+      `${d.authorName} creó una cuenta en el sitio con un documento distinto del indicado en el trabajo n.º ${d.number}, "${d.title}".`,
+      'Mientras los dos no coincidan, esa persona no ve el trabajo en su cuenta. Para corregirlo, abra el trabajo y guárdelo de nuevo: pasará a valer el documento de la cuenta de esa persona.',
+      'Si no reconoce a esa persona como autora, hable con la organización.',
+    ],
+    linkLabel: 'Ver mis trabajos',
+  },
+  'zh-CN': {
+    subject: (d) => `第 ${d.number} 号稿件：请核对 ${d.authorName} 的证件（${d.eventName}）`,
+    body: (d) => [
+      `${d.authorName} 在网站创建账户时使用的证件，与第 ${d.number} 号稿件“${d.title}”中填写的不同。`,
+      '在两者一致之前，此人在其账户中看不到该稿件。如需更正，请打开稿件并重新保存：届时将采用其账户中的证件。',
+      '如果您不认识此人为作者，请联系组委会。',
+    ],
+    linkLabel: '查看我的稿件',
+  },
+};
+
+/** To whoever sent a paper: an author signed up saying they are someone else than the line says (ADR-010). Never carries a document. */
+export function renderAuthorIssueEmail(locale: string, data: AuthorIssueEmailData): Email {
+  const key = emailLocale(locale);
+  const part = AUTHOR_ISSUE[key];
+  return {
+    subject: part.subject(data),
+    ...layoutEmail({
+      greeting: COPY[key].greeting(data.firstName),
+      paragraphs: part.body(data),
+      linkLabel: part.linkLabel,
+      link: data.url,
+      signature: COPY[key].signature(data.eventName),
+    }),
+  };
+}
+
 const ORGANISER_COPY: Record<SubmissionEmailKind, (d: OrganiserEmailData) => { subject: string; body: string[] }> = {
   received: (d) => ({
     subject: `Novo trabalho nº ${d.number}: ${d.title}`,

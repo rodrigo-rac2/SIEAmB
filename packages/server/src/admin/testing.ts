@@ -83,6 +83,19 @@ export class FakeAdminStore implements AdminStore {
     // The people lists read the name from the account, as the real one does with its join.
     for (const member of this.members) if (member.userId === id) Object.assign(member, { fullName: user.fullName, email: user.email });
   }
+  async shareAPaper(emailA: string, emailB: string) {
+    return emailA !== emailB && this.submissions.some((s) => s.authors.some((a) => a.email === emailA) && s.authors.some((a) => a.email === emailB));
+  }
+  async syncAuthorLines(oldEmail: string, newEmail: string, document: { cpf: string | null; passport: string | null; country: string | null } | null) {
+    for (const paper of this.submissions) {
+      for (const author of paper.authors) {
+        if (author.email === oldEmail) author.email = newEmail;
+        if (author.email === newEmail && document && (document.cpf || document.passport)) {
+          Object.assign(author, { cpf: document.cpf, passport: document.passport, country: document.passport ? document.country : null });
+        }
+      }
+    }
+  }
   links: (PendingLink & { eventId: string; status: string })[] = [];
   audits: { actorId: string; action: string; entity: string; entityId: string | null; meta: Record<string, unknown> }[] = [];
   failAudit = false;

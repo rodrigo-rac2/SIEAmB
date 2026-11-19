@@ -655,7 +655,10 @@
       "withdraw": "撤回",
       "editFor": "修改第 {{number}} 号论文",
       "withdrawFor": "撤回第 {{number}} 号论文",
-      "withdrawConfirm": "确定撤回第 {{number}} 号论文吗？作者将收到通知。"
+      "withdrawConfirm": "确定撤回第 {{number}} 号论文吗？作者将收到通知。",
+      "sameDocumentTitle": "同一人使用多个邮箱",
+      "sameDocumentBody": "这些证件在作者中对应多个邮箱。征稿限制已将其视为同一人；请核对，必要时在稿件中更正邮箱。",
+      "sameDocumentPapers": "第 {{numbers}} 号"
     },
     "people": {
       "role": "角色",
@@ -709,6 +712,7 @@
       "admin_only": "只有管理员可以执行此操作。",
       "owner_only": "只有网站所有者可以执行此操作。",
       "email_in_use": "已存在使用该电子邮箱的账户。",
+      "email_in_paper": "该邮箱已是此人所在稿件中另一位作者的邮箱。请先更正稿件。",
       "document_in_use": "该证件已用于其他账户。",
       "weak_password": "密码太弱：请至少使用 10 个字符，且不要使用本人的电子邮箱。",
       "account_not_found": "未找到账户。",
@@ -796,6 +800,7 @@
       "submission.received": "已收到第 {{number}} 号论文“{{title}}”。",
       "submission.updated": "第 {{number}} 号论文“{{title}}”已由 {{mainAuthor}} 修改。",
       "submission.withdrawn": "第 {{number}} 号论文“{{title}}”已由 {{mainAuthor}} 撤回。",
+      "submission.author_issue": "{{authorName}} 创建账户时使用的证件与第 {{number}} 号稿件“{{title}}”中填写的不同。请打开稿件并重新保存以更正。",
       "organiser.submission.received": "新论文第 {{number}} 号：“{{title}}”，由 {{mainAuthor}} 提交。",
       "organiser.submission.updated": "第 {{number}} 号论文“{{title}}”已由 {{mainAuthor}} 修改。",
       "organiser.submission.withdrawn": "第 {{number}} 号论文“{{title}}”已由 {{mainAuthor}} 撤回。",

@@ -185,6 +185,17 @@ export interface AdminStore {
   listAccounts(): Promise<Account[]>;
   findAccount(id: string): Promise<Account | null>;
   updateAccount(id: string, patch: AccountPatch, now: Date): Promise<void>;
+  /**
+   * Whether some paper lists both addresses among its authors: then one cannot be turned
+   * into the other, since a paper has each address once.
+   */
+  shareAPaper(emailA: string, emailB: string): Promise<boolean>;
+  /**
+   * Carries the owner's change of an account to that person's lines in papers (ADR-010):
+   * the new address in place of the old one, and, when the account has a document, that
+   * document on every line of the address. Without it the person's papers stop being theirs.
+   */
+  syncAuthorLines(oldEmail: string, newEmail: string, document: { cpf: string | null; passport: string | null; country: string | null } | null): Promise<void>;
 
   listMembers(eventId: string): Promise<Member[]>;
   listInvites(eventId: string): Promise<Invite[]>;
