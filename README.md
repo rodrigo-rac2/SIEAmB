@@ -178,10 +178,11 @@ Regras práticas: a identidade da edição atual entra no `theme` do evento (nã
 
 ## Contas, trabalhos e painel da organização
 
-Prontos em desenvolvimento, ainda desligados em produção. Decisões em [ADR-007](docs/adr/007-accounts.md) e [ADR-008](docs/adr/008-submissions-and-organisation.md).
+Prontos em desenvolvimento, ainda desligados em produção. Decisões em [ADR-007](docs/adr/007-accounts.md), [ADR-008](docs/adr/008-submissions-and-organisation.md) e [ADR-010](docs/adr/010-identity-by-document.md).
 
-- **Conta**: nome e e-mail; a senha é escolhida depois do link de confirmação. A conta é opcional para se inscrever e obrigatória para enviar trabalho.
-- **Trabalho**: os autores são uma lista ordenada com nome e e-mail, e qualquer um deles envia. Só quem enviou altera ou retira. As regras (prazo, páginas, limites) estão em `packages/frontend/src/data/submissionRules.json`, lidas pela página e pelo servidor. O arquivo fica num bucket privado.
+- **Conta**: nome, e-mail e documento (CPF, passaporte com o país, ou os dois); a senha é escolhida depois do link de confirmação, na mesma tela em que a pessoa confere o documento. Cada documento tem uma única conta. A conta é opcional para se inscrever e obrigatória para enviar trabalho.
+- **Quem é cada pessoa** (ADR-010): o documento, não o e-mail. As regras de leitura (CPF com dígitos válidos, passaporte em maiúsculas e sem separadores, país escolhido de uma lista e nunca o Brasil) valem igual no navegador, no servidor e no banco.
+- **Trabalho**: os autores são uma lista ordenada com nome, e-mail e documento, e qualquer um deles envia. Os limites do edital são contados por pessoa (pelo e-mail ou pelo documento), não por e-mail. Um coautor sem conta vê o trabalho quando cria a conta com o mesmo e-mail e o mesmo documento; se o documento for outro, o trabalho fica aguardando até quem enviou salvar de novo. O documento de um autor só é mostrado a administradores. Só quem enviou altera ou retira. As regras (prazo, páginas, limites) estão em `packages/frontend/src/data/submissionRules.json`, lidas pela página e pelo servidor. O arquivo fica num bucket privado.
 - **Avaliação**: não é às cegas. A organização indica um ou mais avaliadores por trabalho, nunca um autor dele. O formulário de avaliação ainda não existe.
 - **Painel** em `/:edição/painel`: inscrições, trabalhos, pessoas e papéis, comunicados e pedidos.
 
@@ -193,7 +194,7 @@ Prontos em desenvolvimento, ainda desligados em produção. Decisões em [ADR-00
 | Altera ou retira o trabalho de outra pessoa | Sim | Sim | Não | Não |
 | Indica avaliadores, encerra as submissões, envia comunicados | Sim | Sim | Sim | Não |
 | Corrige nome e instituição de outra conta, envia link de nova senha | De qualquer pessoa | De quem está abaixo | Não | Não |
-| Muda e-mail ou CPF de outra conta, define a senha | Sim | Não | Não | Não |
+| Muda e-mail, CPF ou passaporte de outra conta, define a senha | Sim | Não | Não | Não |
 
 Ninguém vê um papel acima do seu. O dono do site é marcado direto no banco (`users.is_platform_admin`), nunca pelo site.
 
